@@ -1,0 +1,14 @@
+name: Propozycja funkcji
+description: Nowa funkcja lub zmiana działania
+labels: [propozycja]
+body:
+  - type: textarea
+    id: opis
+    attributes:
+      label: Opis propozycji
+    validations:
+      required: true
+  - type: input
+    id: podstawa
+    attributes:
+      label: Podstawa prawna (jeśli dotyczy)

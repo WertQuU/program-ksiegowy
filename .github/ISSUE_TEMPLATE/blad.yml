@@ -1,0 +1,34 @@
+name: Zgłoszenie błędu
+description: Program działa niezgodnie z oczekiwaniami
+labels: [błąd]
+body:
+  - type: markdown
+    attributes:
+      value: Nie dołączaj prawdziwych danych księgowych, osobowych, haseł ani tokenów.
+  - type: input
+    id: wersja
+    attributes:
+      label: Wersja programu
+    validations:
+      required: true
+  - type: dropdown
+    id: baza
+    attributes:
+      label: Baza danych
+      options: [SQLite (lokalna), PostgreSQL]
+  - type: textarea
+    id: opis
+    attributes:
+      label: Opis błędu
+    validations:
+      required: true
+  - type: textarea
+    id: kroki
+    attributes:
+      label: Kroki do odtworzenia
+    validations:
+      required: true
+  - type: textarea
+    id: oczekiwane
+    attributes:
+      label: Oczekiwane działanie
