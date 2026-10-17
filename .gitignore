@@ -1,0 +1,18 @@
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+artifacts/
+TestResults/
+*.db
+*.db-shm
+*.db-wal
+*.psabak
+publish/
+# Sekrety nigdy nie trafiają do repozytorium
+*.pfx
+*.pem
+secrets*.json
+appsettings.Local.json
