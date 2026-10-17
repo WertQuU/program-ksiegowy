@@ -1,0 +1,356 @@
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text.Json;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Application.Audit;
+using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Domain.Audit;
+using PelnaKsiegowosc.Domain.Common;
+
+namespace PelnaKsiegowosc.Infrastructure.Backup;
+
+public sealed record ManifestFile(string Path, long Size, string Sha256);
+
+/// <summary>Manifest kopii: wersje, pliki z sumami SHA-256, liczności tabel, sumy kontrolne ksiąg. Nie zawiera sekretów.</summary>
+public sealed class BackupManifest
+{
+    public int FormatVersion { get; set; } = 1;
+    public Guid ArchiveId { get; set; }
+    public DateTime CreatedUtc { get; set; }
+    public string AppVersion { get; set; } = "";
+    public string SchemaVersion { get; set; } = "";
+    public string Engine { get; set; } = "";
+    public string? CompanyName { get; set; }
+    public string? CompanyNip { get; set; }
+    public bool IncludesAttachments { get; set; }
+    public bool IncludesDatabaseFile { get; set; }
+    public List<ManifestFile> Files { get; set; } = new();
+    public List<DataDump.TableInfo> Tables { get; set; } = new();
+    public DataDump.ControlSums? ControlSums { get; set; }
+    public List<string> Warnings { get; set; } = new();
+    public string Reason { get; set; } = "";
+}
+
+public sealed record BackupOptions(BackupKey Key, string TargetDirectory, bool IncludeAttachments = true, string Reason = "ręczna", int RetainCount = 0);
+
+public sealed record BackupResult(Guid ArchiveId, string FilePath, long SizeBytes, string Sha256, BackupManifest Manifest, bool Verified, string? RemoteKey, string? RemoteError);
+
+public sealed record VerifyResult(bool Ok, BackupManifest? Manifest, IReadOnlyList<string> Problems);
+
+public sealed record RestoreResult(string DatabasePath, string AttachmentsPath, BackupManifest Manifest, IReadOnlyList<string> Problems)
+{
+    public bool Ok => Problems.Count == 0;
+}
+
+/// <summary>Cel zdalny kopii (np. OVHcloud Object Storage).</summary>
+public interface IBackupTarget
+{
+    string Name { get; }
+    Task<string> UploadAsync(string localFile, string objectName, string sha256, CancellationToken ct = default);
+    Task<IReadOnlyList<(string Key, long Size, DateTime LastModifiedUtc)>> ListAsync(CancellationToken ct = default);
+    Task DownloadAsync(string key, string localFile, CancellationToken ct = default);
+    Task DeleteAsync(string key, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Kopie zapasowe: spójna kopia bazy (SQLite Online Backup API) + przenośny zrzut danych + załączniki + konfiguracja
+/// (bez sekretów) + manifest. Archiwum ZIP szyfrowane AES-256-GCM (<see cref="ArchiveCrypto"/>), weryfikowane po zapisie.
+/// Odtwarzanie zawsze do nowej lokalizacji — nigdy nie nadpisuje bez wyraźnej decyzji użytkownika.
+/// </summary>
+public sealed class BackupService
+{
+    public const string Extension = ".pkbak";
+    private readonly IClock _clock;
+    private readonly string _tempRoot;
+
+    public BackupService(IClock clock, string tempRoot)
+    {
+        _clock = clock;
+        _tempRoot = tempRoot;
+        Directory.CreateDirectory(tempRoot);
+    }
+
+    public async Task<BackupResult> CreateAsync(KsiegiDbContext db, DatabaseProfile profile, IFileStore attachments, string? configJsonWithoutSecrets,
+        BackupOptions options, IBackupTarget? remote = null, CancellationToken ct = default)
+    {
+        var archiveId = Guid.CreateVersion7();
+        var staging = Path.Combine(_tempRoot, "kopia-" + archiveId.ToString("N"));
+        var zipPath = staging + ".zip";
+        Directory.CreateDirectory(options.TargetDirectory);
+        var finalName = $"kopia-{SystemClock.ToWarsaw(_clock.UtcNow):yyyyMMdd-HHmmss}-{archiveId.ToString("N")[..8]}{Extension}";
+        var finalPath = Path.Combine(options.TargetDirectory, finalName);
+        var partial = finalPath + ".partial";
+        var record = new BackupRecord { ArchiveId = archiveId, CreatedAtUtc = _clock.UtcNow, FileName = finalName, Target = options.TargetDirectory, Encrypted = true, Status = "W TOKU" };
+        try
+        {
+            Directory.CreateDirectory(staging);
+            var manifest = new BackupManifest
+            {
+                ArchiveId = archiveId,
+                CreatedUtc = _clock.UtcNow,
+                AppVersion = typeof(BackupService).Assembly.GetName().Version?.ToString() ?? "?",
+                SchemaVersion = (await db.Database.GetAppliedMigrationsAsync(ct)).LastOrDefault() ?? "",
+                Engine = profile.Engine.ToString(),
+                IncludesAttachments = options.IncludeAttachments,
+                Reason = options.Reason
+            };
+            var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(ct);
+            manifest.CompanyName = company?.FullName;
+            manifest.CompanyNip = company?.Nip;
+
+            if (profile.Engine == DatabaseEngine.Sqlite)
+            {
+                var dbDir = Directory.CreateDirectory(Path.Combine(staging, "baza")).FullName;
+                await using var src = new SqliteConnection(profile.BuildConnectionString(null));
+                await src.OpenAsync(ct);
+                await using var dst = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = Path.Combine(dbDir, "ksiegi.db"), Pooling = false }.ToString());
+                await dst.OpenAsync(ct);
+                src.BackupDatabase(dst);
+                manifest.IncludesDatabaseFile = true;
+            }
+            manifest.Tables = await DataDump.ExportAsync(db, Path.Combine(staging, "dane"), ct);
+            manifest.ControlSums = await DataDump.ControlSumsAsync(db, ct);
+
+            if (options.IncludeAttachments)
+            {
+                var attDir = Path.Combine(staging, "zalaczniki");
+                foreach (var a in await db.Attachments.AsNoTracking().ToListAsync(ct))
+                {
+                    if (!await attachments.ExistsAsync(a.StoragePath, ct)) { manifest.Warnings.Add($"Brak pliku załącznika {a.FileName} ({a.StoragePath})."); continue; }
+                    var dest = Path.Combine(attDir, a.StoragePath.Replace('/', Path.DirectorySeparatorChar));
+                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    await using (var s = await attachments.OpenAsync(a.StoragePath, ct))
+                    await using (var d = File.Create(dest))
+                        await s.CopyToAsync(d, ct);
+                    var sha = await DataDump.Sha256FileAsync(dest, ct);
+                    if (sha != a.Sha256) manifest.Warnings.Add($"Załącznik {a.FileName}: suma SHA-256 niezgodna z bazą (plik uszkodzony lub zmieniony).");
+                }
+            }
+            if (configJsonWithoutSecrets is not null)
+            {
+                Directory.CreateDirectory(Path.Combine(staging, "konfiguracja"));
+                await File.WriteAllTextAsync(Path.Combine(staging, "konfiguracja", "konfiguracja.json"), configJsonWithoutSecrets, ct);
+            }
+            foreach (var f in Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal))
+                manifest.Files.Add(new ManifestFile(Path.GetRelativePath(staging, f).Replace('\\', '/'), new FileInfo(f).Length, await DataDump.Sha256FileAsync(f, ct)));
+            await File.WriteAllTextAsync(Path.Combine(staging, "manifest.json"), JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }), ct);
+
+            ZipFile.CreateFromDirectory(staging, zipPath, CompressionLevel.Optimal, false);
+            await using (var input = File.OpenRead(zipPath))
+            await using (var output = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.None))
+                await ArchiveCrypto.EncryptAsync(input, output, options.Key, archiveId, _clock.UtcNow, ct);
+
+            var verify = await VerifyAsync(partial, options.Key, ct);
+            if (!verify.Ok) throw new InvalidOperationException("Weryfikacja kopii po zapisie nie powiodła się: " + string.Join("; ", verify.Problems));
+            File.Move(partial, finalPath);
+            var archiveSha = await DataDump.Sha256FileAsync(finalPath, ct);
+            var size = new FileInfo(finalPath).Length;
+            record.Sha256 = archiveSha;
+            record.SizeBytes = size;
+            record.Verified = true;
+            record.Status = manifest.Warnings.Count == 0 ? "OK" : "OK Z OSTRZEŻENIAMI";
+            record.Error = manifest.Warnings.Count == 0 ? null : string.Join("; ", manifest.Warnings);
+
+            string? remoteKey = null, remoteError = null;
+            if (remote is not null)
+            {
+                try
+                {
+                    remoteKey = await remote.UploadAsync(finalPath, finalName, archiveSha, ct);
+                    record.RemoteKey = remoteKey;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    remoteError = $"Wysłanie kopii do {remote.Name} nie powiodło się: {ex.Message}";
+                    record.Status = "OK LOKALNIE, BŁĄD WYSYŁKI";
+                    record.Error = remoteError;
+                }
+            }
+            db.BackupRecords.Add(record);
+            await new AuditService(db, _clock).AddAsync(null, "KOPIA_ZAPASOWA", "Backup", archiveId.ToString(), $"{finalName}; {size} B; SHA-256 {archiveSha}; {record.Status}", ct);
+            await db.SaveChangesAsync(ct);
+            if (options.RetainCount > 0) ApplyRetention(options.TargetDirectory, options.RetainCount);
+            return new BackupResult(archiveId, finalPath, size, archiveSha, manifest, true, remoteKey, remoteError);
+        }
+        catch (Exception ex)
+        {
+            if (File.Exists(partial)) File.Delete(partial);
+            record.Status = "BŁĄD";
+            record.Error = ex.Message;
+            try
+            {
+                db.ChangeTracker.Clear();
+                db.BackupRecords.Add(record);
+                await db.SaveChangesAsync(CancellationToken.None);
+            }
+            catch (Exception) { /* brak możliwości zapisu stanu — błąd pierwotny ważniejszy */ }
+            throw new DomainException($"Kopia zapasowa nie została wykonana: {ex.Message}", ex);
+        }
+        finally
+        {
+            TryDelete(staging);
+            if (File.Exists(zipPath)) File.Delete(zipPath);
+        }
+    }
+
+    /// <summary>Weryfikacja archiwum: odszyfrowanie (uwierzytelnienie każdego fragmentu), rozpakowanie, sumy SHA-256 wszystkich plików z manifestu.</summary>
+    public async Task<VerifyResult> VerifyAsync(string archivePath, BackupKey key, CancellationToken ct = default)
+    {
+        var dir = Path.Combine(_tempRoot, "weryfikacja-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var manifest = await ExtractAsync(archivePath, key, dir, ct);
+            var problems = await CheckFilesAsync(dir, manifest, ct);
+            return new VerifyResult(problems.Count == 0, manifest, problems);
+        }
+        catch (Exception ex) when (ex is CryptographicException or InvalidDataException or JsonException or IOException)
+        {
+            return new VerifyResult(false, null, new[] { ex.Message });
+        }
+        finally
+        {
+            TryDelete(dir);
+        }
+    }
+
+    private async Task<BackupManifest> ExtractAsync(string archivePath, BackupKey key, string dir, CancellationToken ct)
+    {
+        Directory.CreateDirectory(dir);
+        var zip = Path.Combine(dir, "archiwum.zip");
+        await using (var input = File.OpenRead(archivePath))
+        await using (var output = File.Create(zip))
+            await ArchiveCrypto.DecryptAsync(input, output, key, ct);
+        var content = Path.Combine(dir, "zawartosc");
+        ZipFile.ExtractToDirectory(zip, content);
+        File.Delete(zip);
+        var manifestPath = Path.Combine(content, "manifest.json");
+        if (!File.Exists(manifestPath)) throw new InvalidDataException("Archiwum nie zawiera manifestu.");
+        return JsonSerializer.Deserialize<BackupManifest>(await File.ReadAllTextAsync(manifestPath, ct))!;
+    }
+
+    private static async Task<List<string>> CheckFilesAsync(string dir, BackupManifest manifest, CancellationToken ct)
+    {
+        var content = Path.Combine(dir, "zawartosc");
+        var problems = new List<string>();
+        foreach (var f in manifest.Files)
+        {
+            var full = Path.GetFullPath(Path.Combine(content, f.Path));
+            if (!full.StartsWith(Path.GetFullPath(content), StringComparison.Ordinal)) { problems.Add($"Niedozwolona ścieżka w archiwum: {f.Path}"); continue; }
+            if (!File.Exists(full)) { problems.Add($"Brak pliku {f.Path}."); continue; }
+            if (await DataDump.Sha256FileAsync(full, ct) != f.Sha256) problems.Add($"Plik {f.Path}: niezgodna suma SHA-256.");
+        }
+        var listed = manifest.Files.Select(f => f.Path).ToHashSet();
+        foreach (var extra in Directory.EnumerateFiles(content, "*", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(content, f).Replace('\\', '/')))
+            if (extra != "manifest.json" && !listed.Contains(extra)) problems.Add($"Plik spoza manifestu: {extra}.");
+        return problems;
+    }
+
+    /// <summary>
+    /// Odtworzenie kopii do NOWEGO katalogu (baza SQLite + załączniki). Jeżeli katalog zawiera bazę, operacja jest odrzucana.
+    /// Po odtworzeniu: migracje schematu, porównanie liczności tabel i sum kontrolnych ksiąg z manifestem.
+    /// </summary>
+    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, CancellationToken ct = default)
+    {
+        var dbPath = Path.Combine(targetDirectory, "ksiegi.db");
+        if (File.Exists(dbPath)) throw new DomainException($"W katalogu {targetDirectory} istnieje już baza — odtwarzanie nie nadpisuje danych. Wskaż pusty katalog.");
+        Directory.CreateDirectory(targetDirectory);
+        var dir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var manifest = await ExtractAsync(archivePath, key, dir, ct);
+            var problems = await CheckFilesAsync(dir, manifest, ct);
+            if (problems.Count > 0) throw new DomainException("Archiwum jest uszkodzone — odtwarzanie przerwane: " + string.Join("; ", problems));
+            var content = Path.Combine(dir, "zawartosc");
+            var attTarget = Path.Combine(targetDirectory, "Zalaczniki");
+            if (Directory.Exists(Path.Combine(content, "zalaczniki"))) CopyDirectory(Path.Combine(content, "zalaczniki"), attTarget);
+            else Directory.CreateDirectory(attTarget);
+
+            var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = dbPath };
+            if (manifest.IncludesDatabaseFile)
+                File.Copy(Path.Combine(content, "baza", "ksiegi.db"), dbPath);
+            await using (var db = DbContextFactory.Create(DatabaseEngine.Sqlite, profile.BuildConnectionString(null)))
+            {
+                await db.Database.MigrateAsync(ct);
+                if (!manifest.IncludesDatabaseFile) await DataDump.ImportAsync(db, Path.Combine(content, "dane"), ct);
+                problems.AddRange(await CompareAsync(db, manifest, ct));
+            }
+            SqliteConnection.ClearAllPools();
+            return new RestoreResult(dbPath, attTarget, manifest, problems);
+        }
+        finally
+        {
+            TryDelete(dir);
+        }
+    }
+
+    /// <summary>Odtworzenie kopii do pustej bazy serwerowej (np. PostgreSQL) z przenośnego zrzutu danych.</summary>
+    public async Task<RestoreResult> RestoreToDatabaseAsync(string archivePath, BackupKey key, KsiegiDbContext target, string attachmentsTarget, CancellationToken ct = default)
+    {
+        var dir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var manifest = await ExtractAsync(archivePath, key, dir, ct);
+            var problems = await CheckFilesAsync(dir, manifest, ct);
+            if (problems.Count > 0) throw new DomainException("Archiwum jest uszkodzone: " + string.Join("; ", problems));
+            var content = Path.Combine(dir, "zawartosc");
+            await target.Database.MigrateAsync(ct);
+            await DataDump.ImportAsync(target, Path.Combine(content, "dane"), ct);
+            if (Directory.Exists(Path.Combine(content, "zalaczniki"))) CopyDirectory(Path.Combine(content, "zalaczniki"), attachmentsTarget);
+            problems.AddRange(await CompareAsync(target, manifest, ct));
+            return new RestoreResult("(serwer)", attachmentsTarget, manifest, problems);
+        }
+        finally
+        {
+            TryDelete(dir);
+        }
+    }
+
+    /// <summary>Kontrola kompletności po odtworzeniu: liczności tabel i sumy kontrolne ksiąg.</summary>
+    public static async Task<List<string>> CompareAsync(KsiegiDbContext db, BackupManifest manifest, CancellationToken ct)
+    {
+        var problems = new List<string>();
+        var counts = await DataDump.CountsAsync(db, ct);
+        foreach (var t in manifest.Tables)
+        {
+            counts.TryGetValue(t.Table, out var c);
+            if (c != t.Rows) problems.Add($"Tabela {t.Table}: odtworzono {c} rekordów, w kopii {t.Rows}.");
+        }
+        if (manifest.ControlSums is { } expected)
+        {
+            var actual = await DataDump.ControlSumsAsync(db, ct);
+            if (actual.PostedEntries != expected.PostedEntries) problems.Add($"Liczba zapisów zaksięgowanych: {actual.PostedEntries} ≠ {expected.PostedEntries}.");
+            if (actual.LastHashes != expected.LastHashes) problems.Add("Skróty zapisów dziennika różnią się od kopii.");
+            foreach (var (year, d) in expected.DebitByYear)
+                if (actual.DebitByYear.GetValueOrDefault(year) != d || actual.CreditByYear.GetValueOrDefault(year) != expected.CreditByYear.GetValueOrDefault(year))
+                    problems.Add($"Obroty roku {year} różnią się od kopii.");
+        }
+        return problems;
+    }
+
+    public static IReadOnlyList<FileInfo> ListLocal(string directory) =>
+        Directory.Exists(directory)
+            ? new DirectoryInfo(directory).GetFiles("*" + Extension).OrderByDescending(f => f.LastWriteTimeUtc).ToList()
+            : Array.Empty<FileInfo>();
+
+    private static void ApplyRetention(string directory, int keep)
+    {
+        foreach (var f in ListLocal(directory).Skip(keep)) f.Delete();
+    }
+
+    private static void CopyDirectory(string from, string to)
+    {
+        foreach (var f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
+        {
+            var dest = Path.Combine(to, Path.GetRelativePath(from, f));
+            Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+            File.Copy(f, dest, false);
+        }
+    }
+
+    private static void TryDelete(string dir)
+    {
+        try { if (Directory.Exists(dir)) Directory.Delete(dir, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+    }
+}
