@@ -418,6 +418,7 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     VatDeductionConfirmed = table.Column<bool>(type: "boolean", nullable: false),
                     JpkProcedures = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     JpkDocumentType = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    VatExemptionBasis = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
                     ExcludedFromVatRegister = table.Column<bool>(type: "boolean", nullable: false),
                     JournalEntryId = table.Column<Guid>(type: "uuid", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "uuid", nullable: false),

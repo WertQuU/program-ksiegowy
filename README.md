@@ -29,7 +29,8 @@ w OVHcloud Object Storage.
 |---|---|
 | [docs/BUILD.md](docs/BUILD.md) | Kompilacja ze źródeł, testy, budowanie pliku `.exe` i instalatora |
 | [docs/INSTALL.md](docs/INSTALL.md) | Instalacja u użytkownika końcowego, aktualizacja, odinstalowanie |
-| [LICENSE](LICENSE) / [LICENSE.pl.md](LICENSE.pl.md) | Licencja MIT i zastrzeżenia |
+| [LICENSE](LICENSE) / [LICENSE.pl.md](LICENSE.pl.md) | Licencja: wolno używać (także w firmie), modyfikować i publikować; zakaz sprzedaży i odpłatnej dystrybucji |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Zasady współtworzenia i oświadczenie współtwórcy |
 | [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) | Licencje bibliotek zewnętrznych |
 | [schemas/README.md](schemas/README.md) | Oficjalne schematy XSD dołączone do projektu |
 
@@ -57,6 +58,13 @@ Wymagany .NET SDK 10 — szczegóły w [docs/BUILD.md](docs/BUILD.md).
 | KSeF (FA(3)), JPK_V7M(3), e-Sprawozdanie | 🔧 w trakcie |
 | Interfejs WPF, kreator pierwszego uruchomienia | 🔧 w trakcie |
 | Instalator MSI / pakiet przenośny `.exe` | 🔧 w trakcie (procedura opisana w docs/BUILD.md) |
+
+## Licencja
+
+Kod jest jawny (*source-available*): program można bezpłatnie używać — także w firmie do prowadzenia jej
+ksiąg — kopiować, modyfikować i publikować na tej samej licencji. **Sprzedaż programu, odpłatna dystrybucja
+i oferowanie go jako płatnej usługi są zabronione** bez odrębnej zgody licencjodawcy. Szczegóły:
+[LICENSE](LICENSE), skrót: [LICENSE.pl.md](LICENSE.pl.md).
 
 ## Zastrzeżenie
 

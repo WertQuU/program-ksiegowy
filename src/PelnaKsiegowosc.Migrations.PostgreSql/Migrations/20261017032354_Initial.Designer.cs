@@ -12,8 +12,8 @@ using PelnaKsiegowosc.Data;
 namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
 {
     [DbContext(typeof(KsiegiDbContext))]
-    [Migration("20261017030230_ImmutabilityGuards")]
-    partial class ImmutabilityGuards
+    [Migration("20261017032354_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1391,6 +1391,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
 
                     b.Property<bool>("VatDeductionConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("VatExemptionBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateOnly?>("VatPeriod")
                         .HasColumnType("date");

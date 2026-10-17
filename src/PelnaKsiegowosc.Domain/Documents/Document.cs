@@ -147,6 +147,8 @@ public class Document : CompanyEntity
     public string? JpkProcedures { get; set; }
     /// <summary>Oznaczenie typu dokumentu w JPK (np. „RO”, „WEW”, „FP”, „MK”, „VAT_RR”).</summary>
     public string? JpkDocumentType { get; set; }
+    /// <summary>Podstawa zwolnienia z VAT (przepis ustawy/aktu wykonawczego lub dyrektywy) — wymagana na fakturze ze stawką „zw” (art. 106e ust. 1 pkt 19).</summary>
+    public string? VatExemptionBasis { get; set; }
     /// <summary>Czy dokument nie podlega ewidencji VAT (np. faktura od podatnika zwolnionego — tylko koszt).</summary>
     public bool ExcludedFromVatRegister { get; set; }
 

@@ -418,6 +418,7 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     VatDeductionConfirmed = table.Column<bool>(type: "INTEGER", nullable: false),
                     JpkProcedures = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     JpkDocumentType = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
+                    VatExemptionBasis = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true),
                     ExcludedFromVatRegister = table.Column<bool>(type: "INTEGER", nullable: false),
                     JournalEntryId = table.Column<Guid>(type: "TEXT", nullable: true),
                     CreatedByUserId = table.Column<Guid>(type: "TEXT", nullable: false),

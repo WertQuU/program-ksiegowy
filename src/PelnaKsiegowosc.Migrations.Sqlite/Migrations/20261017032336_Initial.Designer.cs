@@ -11,7 +11,7 @@ using PelnaKsiegowosc.Data;
 namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
 {
     [DbContext(typeof(KsiegiDbContext))]
-    [Migration("20261017030205_Initial")]
+    [Migration("20261017032336_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1386,6 +1386,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
 
                     b.Property<bool>("VatDeductionConfirmed")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("VatExemptionBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateOnly?>("VatPeriod")
                         .HasColumnType("TEXT");

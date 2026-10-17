@@ -1,39 +1,34 @@
-# Warunki licencji — Pełna Księgowość PSA
+# Licencja — wyjaśnienie w skrócie
 
-> Wiążący jest anglojęzyczny tekst licencji MIT w pliku [`LICENSE`](LICENSE). Poniżej znajduje się tłumaczenie
-> informacyjne oraz dodatkowe zastrzeżenia dotyczące charakteru programu.
+Pełny, wiążący tekst: [`LICENSE`](LICENSE) — „Licencja Pełna Księgowość PSA — użytkowanie bez prawa sprzedaży”, wersja 1.0.
 
-## Licencja MIT (tłumaczenie informacyjne)
+| Czynność | Dozwolona? |
+|---|---|
+| Używanie programu prywatnie i w firmie (np. księgowość własnej PSA) | ✅ tak, bezpłatnie |
+| Używanie przez biuro rachunkowe do obsługi klientów (płatna usługa księgowa) | ✅ tak — klient nie może płacić za sam program |
+| Przeglądanie, kopiowanie, modyfikowanie kodu | ✅ tak |
+| Publikowanie kodu i zmodyfikowanych wersji (bezpłatnie, na tej samej licencji, z kodem źródłowym) | ✅ tak |
+| Sprzedaż programu lub jego zmodyfikowanej wersji | ❌ nie |
+| Płatna dystrybucja, wynajem, abonament, płatny SaaS/hosting dla osób trzecich | ❌ nie |
+| Włączenie do płatnego produktu lub usługi | ❌ nie |
+| Usunięcie informacji o licencji i autorach | ❌ nie |
 
-Niniejszym udziela się każdej osobie, która uzyska kopię tego oprogramowania i związanej z nim dokumentacji
-(„Oprogramowanie”), nieodpłatnej zgody na korzystanie z Oprogramowania bez ograniczeń, w tym bez ograniczeń
-prawa do używania, kopiowania, modyfikowania, łączenia, publikowania, rozpowszechniania, udzielania sublicencji
-i/lub sprzedaży kopii Oprogramowania oraz zezwalania na to osobom, którym Oprogramowanie zostało dostarczone,
-pod następującymi warunkami:
+Czynności zakazane wymagają odrębnej, pisemnej licencji komercyjnej od licencjodawcy.
 
-Powyższa informacja o prawach autorskich i niniejsza zgoda muszą być dołączone do wszystkich kopii lub istotnych
-części Oprogramowania.
+## Ważne uwagi
 
-OPROGRAMOWANIE JEST DOSTARCZANE „TAKIE, JAKIE JEST”, BEZ JAKIEJKOLWIEK GWARANCJI, WYRAŹNEJ LUB DOROZUMIANEJ,
-W TYM GWARANCJI PRZYDATNOŚCI HANDLOWEJ, PRZYDATNOŚCI DO OKREŚLONEGO CELU ORAZ NIENARUSZANIA PRAW. W ŻADNYM
-WYPADKU AUTORZY LUB POSIADACZE PRAW AUTORSKICH NIE ODPOWIADAJĄ ZA JAKIEKOLWIEK ROSZCZENIA, SZKODY LUB INNĄ
-ODPOWIEDZIALNOŚĆ, CZY TO W RAMACH UMOWY, CZYNU NIEDOZWOLONEGO, CZY W INNY SPOSÓB, WYNIKAJĄCE Z OPROGRAMOWANIA,
-JEGO UŻYCIA LUB INNYCH DZIAŁAŃ ZWIĄZANYCH Z OPROGRAMOWANIEM.
-
-## Dodatkowe zastrzeżenia (nie ograniczają licencji MIT)
-
-1. **Brak porady prawnej, podatkowej ani księgowej.** Program jest narzędziem do prowadzenia ksiąg rachunkowych
-   prostej spółki akcyjnej. Nie zastępuje księgowego, biegłego rewidenta, doradcy podatkowego ani radcy prawnego.
-   Za prawidłowość ksiąg, deklaracji i sprawozdań odpowiada kierownik jednostki (art. 4a ustawy o rachunkowości).
-2. **Brak deklaracji pełnej zgodności z przepisami.** Stan weryfikacji poszczególnych wymagań opisuje macierz
-   zgodności (`COMPLIANCE_MATRIX.md`). Funkcje oznaczone jako wymagające weryfikacji nie mogą być traktowane
-   jako potwierdzone.
-3. **Schematy XSD Ministerstwa Finansów** w katalogu `schemas/` są dokumentami urzędowymi dołączonymi w
-   niezmienionej postaci; nie są objęte licencją MIT projektu.
-4. **Biblioteki zewnętrzne** zachowują własne licencje — patrz [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
-
-## Jak zmienić licencję
-
-Właściciel repozytorium może wybrać inną licencję (np. GPL-3.0 lub AGPL-3.0, jeżeli zmiany w programie mają
-pozostawać otwarte). Należy wtedy zastąpić plik `LICENSE` i zaktualizować ten dokument. Wszystkie obecne
-zależności (MIT, Apache-2.0, licencja PostgreSQL) są zgodne również z GPL-3.0.
+1. **To nie jest licencja „open source” w rozumieniu OSI.** Zakaz wykorzystania komercyjnego sprawia, że jest to
+   licencja typu *source-available* (kod jawny). Projekt można publikować na GitHubie, ale nie należy go
+   oznaczać etykietą „OSI-approved open source”.
+2. **Uzupełnij dane licencjodawcy** w pierwszych wierszach pliku `LICENSE` (pole
+   `[WPISZ IMIĘ I NAZWISKO LUB NAZWĘ LICENCJODAWCY]`).
+3. **Zalecana weryfikacja prawna.** Tekst licencji przygotowano według najlepszej wiedzy, ale przed publikacją
+   warto, aby przejrzał go radca prawny lub adwokat (prawo autorskie).
+4. **Wkład innych osób.** Jeżeli przyjmujesz zmiany od współtwórców, rozważ wymóg zgody na licencjonowanie
+   ich wkładu na tych samych zasadach (np. plik `CONTRIBUTING.md` z oświadczeniem współtwórcy), aby móc
+   w przyszłości udzielać licencji komercyjnych.
+5. **Biblioteki zewnętrzne** (MIT, Apache-2.0, licencja PostgreSQL) zachowują własne licencje — patrz
+   [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md). Ich licencje pozwalają na takie połączenie; ograniczenia
+   z § 3 dotyczą wyłącznie kodu tego projektu.
+6. **Brak gwarancji.** Program nie stanowi porady prawnej, podatkowej ani księgowej; odpowiedzialność za księgi
+   ponosi kierownik jednostki (art. 4a ustawy o rachunkowości).

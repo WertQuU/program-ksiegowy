@@ -1,21 +1,111 @@
-MIT License
+LICENCJA „PEŁNA KSIĘGOWOŚĆ PSA” — UŻYTKOWANIE BEZ PRAWA SPRZEDAŻY
+Wersja 1.0 z dnia 17 października 2026 r.
 
-Copyright (c) 2026 Autorzy projektu „Pełna Księgowość PSA”
+Copyright (c) 2026 [WPISZ IMIĘ I NAZWISKO LUB NAZWĘ LICENCJODAWCY]
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Tekst w języku polskim jest wiążący. Tłumaczenie angielskie poniżej ma
+charakter informacyjny.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+§ 1. Definicje
+1. „Program” — oprogramowanie „Pełna Księgowość PSA” w postaci kodu
+   źródłowego i wynikowego, wraz z dokumentacją, udostępnione w tym
+   repozytorium.
+2. „Utwór zależny” — każda modyfikacja, tłumaczenie, rozszerzenie lub inny
+   utwór oparty na Programie albo jego części.
+3. „Licencjobiorca” — każda osoba fizyczna, osoba prawna lub jednostka
+   organizacyjna korzystająca z Programu na podstawie niniejszej licencji.
+4. „Wykorzystanie komercyjne” — każde działanie, którego przedmiotem lub
+   warunkiem jest uzyskanie zapłaty lub innej korzyści majątkowej za sam
+   Program lub Utwór zależny, w szczególności czynności wymienione w § 3.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+§ 2. Udzielone uprawnienia
+Licencjodawca udziela nieodpłatnej, niewyłącznej, ogólnoświatowej licencji,
+na czas nieoznaczony, na korzystanie z Programu w następującym zakresie:
+1. instalowanie i używanie Programu w dowolnej liczbie stanowisk, przez
+   osoby fizyczne, przedsiębiorców i inne jednostki — w tym do prowadzenia
+   ksiąg rachunkowych własnej spółki (np. prostej spółki akcyjnej) lub innej
+   jednostki w ramach działalności gospodarczej;
+2. używanie Programu przez biuro rachunkowe lub księgowego do prowadzenia
+   ksiąg klientów — pod warunkiem, że klient nie płaci za sam Program
+   (wynagrodzenie za usługę księgową jest dozwolone);
+3. zwielokrotnianie, przeglądanie i analizowanie kodu źródłowego;
+4. modyfikowanie Programu i tworzenie Utworów zależnych;
+5. publikowanie i nieodpłatne rozpowszechnianie Programu oraz Utworów
+   zależnych, w tym w postaci kodu źródłowego i wynikowego, pod warunkami
+   określonymi w § 4.
+
+§ 3. Zakazy (wykorzystanie komercyjne)
+Bez odrębnej, pisemnej zgody Licencjodawcy zabrania się:
+1. sprzedaży Programu lub Utworu zależnego, w tym kopii, licencji,
+   kluczy aktywacyjnych lub nośników;
+2. odpłatnego rozpowszechniania, wynajmu, dzierżawy lub użyczenia Programu
+   lub Utworu zależnego za wynagrodzeniem;
+3. udostępniania Programu lub Utworu zależnego osobom trzecim jako płatnej
+   usługi (w tym SaaS, hostingu, abonamentu lub dostępu zdalnego),
+   z zastrzeżeniem § 2 pkt 2;
+4. włączania Programu lub Utworu zależnego, w całości lub w części, do
+   produktu albo usługi oferowanych odpłatnie;
+5. pobierania opłat za udzielenie sublicencji lub za samo przekazanie
+   kopii Programu (dopuszczalny jest zwrot faktycznych kosztów nośnika).
+
+§ 4. Warunki rozpowszechniania
+1. Każda kopia Programu lub Utworu zależnego musi zawierać niniejszą
+   licencję w niezmienionej treści oraz informację o prawach autorskich.
+2. Utwory zależne mogą być rozpowszechniane wyłącznie na warunkach
+   niniejszej licencji, z wyraźnym oznaczeniem, że zostały zmodyfikowane,
+   oraz z udostępnieniem ich kodu źródłowego.
+3. Nie wolno usuwać ani zmieniać informacji o licencji, autorach ani
+   zastrzeżeń z § 6.
+
+§ 5. Składniki osób trzecich
+Biblioteki i dokumenty osób trzecich wymienione w pliku
+THIRD-PARTY-NOTICES.md (w tym oficjalne schematy XSD Ministerstwa Finansów)
+podlegają własnym licencjom i nie są objęte ograniczeniami z § 3.
+
+§ 6. Wyłączenie gwarancji i odpowiedzialności
+1. Program jest udostępniany „taki, jaki jest”, bez jakichkolwiek gwarancji,
+   w tym przydatności do określonego celu i zgodności z przepisami prawa.
+2. W najszerszym zakresie dopuszczalnym przez prawo Licencjodawca nie
+   odpowiada za szkody wynikające z korzystania z Programu, w tym za błędy
+   w księgach rachunkowych, deklaracjach, plikach JPK, fakturach KSeF lub
+   sprawozdaniach finansowych.
+3. Program nie stanowi porady prawnej, podatkowej ani księgowej.
+   Odpowiedzialność za prowadzenie ksiąg ponosi kierownik jednostki
+   (art. 4a ustawy z dnia 29 września 1994 r. o rachunkowości).
+
+§ 7. Wygaśnięcie
+Naruszenie § 3 lub § 4 powoduje automatyczne wygaśnięcie licencji wobec
+naruszającego. Prawa osób, które otrzymały od niego kopie zgodnie z licencją,
+nie wygasają.
+
+§ 8. Prawo właściwe
+Do licencji stosuje się prawo polskie, w szczególności ustawę z dnia
+4 lutego 1994 r. o prawie autorskim i prawach pokrewnych.
+
+Licencje komercyjne (zgoda na czynności z § 3) można uzyskać od
+Licencjodawcy.
+
+-------------------------------------------------------------------------------
+ENGLISH TRANSLATION (INFORMATIVE ONLY — THE POLISH TEXT PREVAILS)
+
+"PEŁNA KSIĘGOWOŚĆ PSA" LICENSE — USE WITHOUT THE RIGHT TO SELL, v1.0
+
+You may, free of charge: install and use the Program (including in a business
+and for keeping the books of your own company, and by accounting firms serving
+clients, provided clients do not pay for the Program itself); copy, study and
+modify the source code; publish and distribute the Program and derivative works
+free of charge under this same license, with the source code and a notice of
+modifications.
+
+Without written permission you may NOT: sell the Program or derivative works;
+distribute, rent or lend them for a fee; offer them as a paid service
+(SaaS, hosting, subscription); include them in paid products or services;
+charge for sublicensing or for copies (except actual media costs).
+
+Third-party components keep their own licenses. The Program is provided
+"AS IS" without warranty; it is not legal, tax or accounting advice. Breach of
+the restrictions terminates the license for the breaching party. Polish law
+applies.
+
+Note: because of the restriction on commercial distribution this license is
+"source-available" and is not an OSI-approved open source license.

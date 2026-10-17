@@ -3,6 +3,10 @@
 Wersje i licencje zweryfikowano 17.10.2026 na podstawie metadanych pakietów w nuget.org.
 Wersje są zarządzane centralnie w `Directory.Packages.props` (z przypinaniem zależności przechodnich).
 
+Komponenty poniżej zachowują własne licencje; ograniczenia licencji projektu (zakaz sprzedaży, § 3 pliku `LICENSE`)
+dotyczą wyłącznie kodu projektu „Pełna Księgowość PSA”. Licencje MIT, Apache-2.0 i PostgreSQL dopuszczają
+łączenie z oprogramowaniem na innej licencji pod warunkiem zachowania informacji o prawach autorskich i licencji.
+
 | Komponent | Wersja | Licencja | Zastosowanie |
 |---|---|---|---|
 | .NET Runtime / ASP.NET Core / WPF (Microsoft) | 10.0 | MIT | środowisko uruchomieniowe, interfejs Windows |

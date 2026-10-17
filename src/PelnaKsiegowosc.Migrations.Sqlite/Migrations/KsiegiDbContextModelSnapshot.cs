@@ -1384,6 +1384,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<bool>("VatDeductionConfirmed")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("VatExemptionBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly?>("VatPeriod")
                         .HasColumnType("TEXT");
 
