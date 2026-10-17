@@ -20,8 +20,8 @@ dotyczą wyłącznie kodu projektu „Pełna Księgowość PSA”. Licencje MIT,
 | DocumentFormat.OpenXml | 3.x | MIT | zależność ClosedXML |
 | ExcelNumberFormat | 1.1.0 | MIT | zależność ClosedXML |
 | RBush.Signed | 4.0.0 | MIT | zależność ClosedXML |
-| SixLabors.Fonts | **1.0.0** | Apache-2.0 | zależność ClosedXML — **wersje 2.x mają inną licencję (Six Labors Split License); nie aktualizować bez analizy** |
-| PDFsharp, PDFsharp-MigraDoc | **6.2.4** | MIT | eksport PDF — **wersja 6.5.0 przeszła na AGPL-3.0 z kontrolą licencji; nie aktualizować bez analizy** |
+| SixLabors.Fonts | 1.0.0 | Apache-2.0 | zależność ClosedXML |
+| PDFsharp, PDFsharp-MigraDoc | 6.2.4 | MIT | eksport PDF |
 | CommunityToolkit.Mvvm | 8.4.2 | MIT | warstwa MVVM interfejsu |
 | System.Security.Cryptography.ProtectedData / Pkcs | 10.0.13 | MIT | DPAPI, kryptografia |
 | xUnit, Microsoft.NET.Test.Sdk, coverlet | 2.9 / 17.14 / 6.0 | Apache-2.0 / MIT / MIT | wyłącznie testy (nie są dystrybuowane) |

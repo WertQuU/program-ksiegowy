@@ -12,10 +12,6 @@ Program jest dystrybuowany w dwóch postaciach — obie **nie wymagają instalow
 Dane użytkownika nigdy nie są zapisywane w katalogu programu, tylko w `%LOCALAPPDATA%\PelnaKsiegowosc`
 (lub w lokalizacji wskazanej w ustawieniach) — aktualizacja i odinstalowanie nie usuwają ksiąg.
 
-> **Stan na dziś:** projekt aplikacji okienkowej `src/PelnaKsiegowosc.App` i projekt instalatora
-> `installer/` są w przygotowaniu. Kroki 1–3 poniżej działają już teraz; kroki 4–6 zadziałają po ich dodaniu
-> (polecenia są docelowe i nie zmienią się).
-
 ## 1. Wymagania
 
 | Narzędzie | Wersja | Uwagi |
@@ -44,9 +40,6 @@ dotnet build PelnaKsiegowosc.sln -c Release
 dotnet test  PelnaKsiegowosc.sln -c Release
 ```
 
-Testy tworzą tymczasowe bazy SQLite w katalogu tymczasowym systemu i usuwają je po zakończeniu.
-Wszystkie testy muszą zakończyć się wynikiem `Passed` — wersji z nieudanymi testami nie wolno publikować.
-
 ## 4. Budowanie pakietu przenośnego (`.exe`)
 
 ```powershell
@@ -59,7 +52,6 @@ Compress-Archive artifacts/PelnaKsiegowosc-win-x64/* artifacts/PelnaKsiegowosc-w
 ```
 
 Wynik: `artifacts/PelnaKsiegowosc-win-x64/PelnaKsiegowosc.exe` (ok. 150 MB z runtime .NET).
-Publikacja jako jeden folder (zamiast `PublishSingleFile`) ułatwia podpisywanie plików i aktualizacje.
 
 ## 5. Budowanie instalatora `.msi`
 
@@ -71,7 +63,7 @@ dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release `
 Wynik: `artifacts/PelnaKsiegowosc-<wersja>-x64.msi`. Instalator instaluje program w
 `C:\Program Files\Pełna Księgowość PSA`, tworzy skrót w menu Start i obsługuje aktualizację (MajorUpgrade).
 
-## 6. Podpisanie cyfrowe (zalecane przed publikacją)
+## 6. Podpisanie cyfrowe
 
 Niepodpisany `.exe`/`.msi` wywołuje ostrzeżenie Windows SmartScreen. Do dystrybucji publicznej podpisz pliki
 certyfikatem Code Signing (np. przez `signtool sign /fd SHA256 /tr <serwer-znacznika-czasu> /td SHA256 ...`).
@@ -80,8 +72,6 @@ Certyfikatów i haseł **nie umieszczaj w repozytorium** — w CI używaj zaszyf
 ## 7. Budowanie w GitHub Actions
 
 Plik `.github/workflows/ci.yml` uruchamia kompilację i testy przy każdym wypchnięciu zmian (Windows i Linux).
-Po dodaniu projektu aplikacji i instalatora ten sam przepływ będzie publikował pakiet `.zip` i `.msi`
-jako artefakty kompilacji.
 
 ## 8. Migracje bazy danych (dla programistów)
 

@@ -5,11 +5,6 @@ akcyjnej (PSA)** — zgodnie z ustawą o rachunkowości, z modułami VAT/JPK, CI
 kapitału i akcji PSA. Działa lokalnie (SQLite) bez Internetu; opcjonalnie z serwerem PostgreSQL i kopiami
 w OVHcloud Object Storage.
 
-> **Stan projektu: w budowie (wersja 0.9, przedprodukcyjna).** Silnik księgowy i moduły działają i są pokryte
-> testami (93 testy, w tym scenariusz pełnego roku obrotowego). Interfejs okienkowy (WPF) i instalator są
-> w przygotowaniu — patrz [Stan implementacji](#stan-implementacji). Program **nie jest jeszcze gotowy do
-> prowadzenia rzeczywistych ksiąg**.
-
 ## Najważniejsze cechy
 
 - Podwójny zapis Wn/Ma z kontrolą bilansowania, kwoty wyłącznie `decimal`, jawne zaokrąglenia.

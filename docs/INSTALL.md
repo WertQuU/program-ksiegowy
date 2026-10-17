@@ -1,9 +1,5 @@
 # Instalacja programu — instrukcja dla użytkownika
 
-> **Uwaga:** wersja 0.9 jest przedprodukcyjna. Pliki instalacyjne pojawią się w zakładce **Releases**
-> repozytorium po ukończeniu interfejsu okienkowego. Do tego czasu program można zbudować ze źródeł
-> zgodnie z [BUILD.md](BUILD.md).
-
 ## Wymagania
 
 - Windows 10 (22H2) lub Windows 11, 64-bit.
