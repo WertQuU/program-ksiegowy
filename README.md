@@ -61,7 +61,10 @@ ksiąg — kopiować, modyfikować i publikować na tej samej licencji. **Sprzed
 i oferowanie go jako płatnej usługi są zabronione** bez odrębnej zgody licencjodawcy. Szczegóły:
 [LICENSE](LICENSE), skrót: [LICENSE.pl.md](LICENSE.pl.md).
 
-## Zastrzeżenie
+## Odpowiedzialność
 
-Program nie stanowi porady prawnej, podatkowej ani księgowej i nie zastępuje księgowego ani biegłego
-rewidenta. Odpowiedzialność za księgi ponosi kierownik jednostki (art. 4a ustawy o rachunkowości).
+Program jest udostępniany bez jakichkolwiek gwarancji. **Pełną odpowiedzialność za księgi rachunkowe,
+deklaracje, pliki JPK, faktury KSeF, sprawozdania finansowe i rozliczenia z urzędem skarbowym ponosi
+użytkownik** — w tym za weryfikację wyników przed ich wykorzystaniem. Autor programu nie odpowiada za
+zaległości podatkowe, odsetki, kary, sankcje ani inne szkody wynikające z korzystania z programu.
+Program nie stanowi porady prawnej, podatkowej ani księgowej. Szczegóły: § 6 pliku [LICENSE](LICENSE).

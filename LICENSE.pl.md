@@ -14,3 +14,7 @@ Licencjodawca: **Kacper Baca**. Pełny, wiążący tekst: [`LICENSE`](LICENSE) �
 | Usunięcie informacji o licencji i autorach | ❌ nie |
 
 Czynności zakazane wymagają odrębnej, pisemnej licencji komercyjnej od licencjodawcy.
+
+**Odpowiedzialność:** program jest udostępniany bez gwarancji. Za księgi, deklaracje, JPK, faktury KSeF,
+sprawozdania i rozliczenia z urzędem skarbowym odpowiada wyłącznie użytkownik; autor nie odpowiada za
+zaległości, odsetki, kary ani inne szkody (§ 6 licencji).

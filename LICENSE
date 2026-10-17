@@ -64,14 +64,36 @@ podlegają własnym licencjom i nie są objęte ograniczeniami z § 3.
 
 § 6. Wyłączenie gwarancji i odpowiedzialności
 1. Program jest udostępniany „taki, jaki jest”, bez jakichkolwiek gwarancji,
-   w tym przydatności do określonego celu i zgodności z przepisami prawa.
-2. W najszerszym zakresie dopuszczalnym przez prawo Licencjodawca nie
-   odpowiada za szkody wynikające z korzystania z Programu, w tym za błędy
-   w księgach rachunkowych, deklaracjach, plikach JPK, fakturach KSeF lub
-   sprawozdaniach finansowych.
-3. Program nie stanowi porady prawnej, podatkowej ani księgowej.
-   Odpowiedzialność za prowadzenie ksiąg ponosi kierownik jednostki
-   (art. 4a ustawy z dnia 29 września 1994 r. o rachunkowości).
+   wyraźnych lub dorozumianych, w tym gwarancji poprawności obliczeń,
+   przydatności do określonego celu oraz zgodności z przepisami prawa
+   rachunkowego i podatkowego. Odpowiedzialność z tytułu rękojmi jest
+   wyłączona.
+2. Licencjobiorca korzysta z Programu na własne ryzyko i ponosi wyłączną
+   odpowiedzialność za:
+   a) prowadzenie ksiąg rachunkowych, ewidencji, rejestrów VAT, deklaracji,
+      plików JPK, faktur (w tym wysyłanych do KSeF), zeznań podatkowych
+      i sprawozdań finansowych sporządzonych przy użyciu Programu;
+   b) weryfikację poprawności danych, obliczeń, klasyfikacji podatkowych
+      i wyników generowanych przez Program, przed ich wykorzystaniem lub
+      przekazaniem organom;
+   c) terminowe i prawidłowe rozliczenia z urzędem skarbowym, Zakładem
+      Ubezpieczeń Społecznych, Krajowym Rejestrem Sądowym i innymi organami;
+   d) wykonywanie i przechowywanie kopii zapasowych oraz zabezpieczenie
+      danych i dostępu do Programu.
+3. W najszerszym zakresie dopuszczalnym przez prawo Licencjodawca nie ponosi
+   odpowiedzialności za jakiekolwiek szkody wynikające z korzystania z
+   Programu lub niemożności korzystania z niego, w szczególności za:
+   zaległości podatkowe, odsetki za zwłokę, kary i grzywny (w tym w sprawach
+   karnych skarbowych), sankcje administracyjne, decyzje organów, koszty
+   korekt i postępowań, utratę danych, utracone korzyści oraz szkody
+   wynikające z błędów Programu lub z jego niezgodności ze zmienionymi
+   przepisami albo strukturami plików urzędowych.
+4. Program nie stanowi porady prawnej, podatkowej ani księgowej i nie
+   zastępuje księgowego, doradcy podatkowego ani biegłego rewidenta.
+   Odpowiedzialność za prowadzenie ksiąg rachunkowych ponosi kierownik
+   jednostki (art. 4a ustawy z dnia 29 września 1994 r. o rachunkowości),
+   a za rozliczenia podatkowe — podatnik.
+5. Korzystanie z Programu oznacza akceptację niniejszych warunków.
 
 § 7. Wygaśnięcie
 Naruszenie § 3 lub § 4 powoduje automatyczne wygaśnięcie licencji wobec
@@ -103,6 +125,10 @@ distribute, rent or lend them for a fee; offer them as a paid service
 charge for sublicensing or for copies (except actual media costs).
 
 Third-party components keep their own licenses. The Program is provided
-"AS IS" without warranty; it is not legal, tax or accounting advice. Breach of
+"AS IS" without any warranty. The user is solely responsible for the books,
+tax returns, JPK files, KSeF invoices and financial statements prepared with
+it and for verifying all results; to the fullest extent permitted by law the
+Licensor is not liable for any damages, including tax arrears, interest,
+penalties or fines. It is not legal, tax or accounting advice. Breach of
 the restrictions terminates the license for the breaching party. Polish law
 applies.
