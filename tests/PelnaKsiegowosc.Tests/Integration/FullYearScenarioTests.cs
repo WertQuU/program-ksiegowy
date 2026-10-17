@@ -26,7 +26,7 @@ using PelnaKsiegowosc.Tests.Modules;
 
 namespace PelnaKsiegowosc.Tests.Integration;
 
-/// <summary>Scenariusz pełnego roku obrotowego PSA: od objęcia akcji po bilans otwarcia kolejnego roku.</summary>
+/// <summary>Scenariusz pełnego roku obrotowego P.S.A.: od objęcia akcji po bilans otwarcia kolejnego roku.</summary>
 public class FullYearScenarioTests
 {
     internal static async Task<TestBooks> BuildFullYearAsync(bool closeYear)

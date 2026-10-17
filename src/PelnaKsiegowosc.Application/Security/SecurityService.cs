@@ -163,7 +163,7 @@ public sealed class SecurityService
         user.MfaSecretProtected = _protector.Protect(secret, "mfa:" + user.Id);
         user.MfaEnabled = false;
         await _db.SaveChangesAsync(ct);
-        return (Totp.ToBase32(secret), Totp.ProvisioningUri("Pełna Księgowość PSA", user.Login, secret));
+        return (Totp.ToBase32(secret), Totp.ProvisioningUri("Pełna Księgowość P.S.A.", user.Login, secret));
     }
 
     public async Task ConfirmMfaAsync(ICurrentUser actor, string code, CancellationToken ct = default)

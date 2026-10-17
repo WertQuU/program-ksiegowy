@@ -13,7 +13,7 @@ using PelnaKsiegowosc.Domain.Security;
 namespace PelnaKsiegowosc.Tests.Infrastructure;
 
 /// <summary>
-/// Środowisko testowe: plik SQLite z pełnymi migracjami (w tym wyzwalaczami), skonfigurowana PSA,
+/// Środowisko testowe: plik SQLite z pełnymi migracjami (w tym wyzwalaczami), skonfigurowana P.S.A.,
 /// rok 2026, zatwierdzony plan kont z szablonu i zatwierdzona polityka rachunkowości.
 /// </summary>
 public sealed class TestBooks : IAsyncDisposable
@@ -57,7 +57,7 @@ public sealed class TestBooks : IAsyncDisposable
         Company = await setup.CreateCompanyAsync(sys, new Company
         {
             FullName = "Testowa Prosta Spółka Akcyjna",
-            ShortName = "Testowa PSA",
+            ShortName = "Testowa P.S.A.",
             Nip = ValidNip,
             Krs = "0000123456",
             Street = "ul. Przykładowa",

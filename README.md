@@ -1,8 +1,8 @@
-# Pełna Księgowość PSA
+# Pełna Księgowość P.S.A.
 
 Desktopowa aplikacja Windows do prowadzenia **pełnej księgowości (ksiąg rachunkowych) polskiej prostej spółki
-akcyjnej (PSA)** — zgodnie z ustawą o rachunkowości, z modułami VAT/JPK, CIT, KSeF, środków trwałych oraz
-kapitału i akcji PSA. Działa lokalnie (SQLite) bez Internetu; opcjonalnie z serwerem PostgreSQL i kopiami
+akcyjnej (P.S.A.)** — zgodnie z ustawą o rachunkowości, z modułami VAT/JPK, CIT, KSeF, środków trwałych oraz
+kapitału i akcji P.S.A. Działa lokalnie (SQLite) bez Internetu; opcjonalnie z serwerem PostgreSQL i kopiami
 w OVHcloud Object Storage.
 
 ## Najważniejsze cechy
@@ -14,7 +14,7 @@ w OVHcloud Object Storage.
   i automatyczny bilans otwarcia z przeniesieniem rozrachunków.
 - Plan kont z wersjonowaniem per rok, rozrachunki per kontrahent, bank (CSV, MT940) z dopasowaniem płatności.
 - Rejestry VAT i deklaracja, CIT (zaliczki, uzgodnienie wyniku bilansowego z podatkowym), środki trwałe
-  (amortyzacja bilansowa i podatkowa osobno), zdarzenia kapitałowe PSA z wymogiem potwierdzenia dokumentów.
+  (amortyzacja bilansowa i podatkowa osobno), zdarzenia kapitałowe P.S.A. z wymogiem potwierdzenia dokumentów.
 - Raporty z rzeczywistych zapisów: dziennik, księga główna, ZOiS, bilans, RZiS, rejestry VAT, rozrachunki,
   środki trwałe, uzgodnienia, raport zmian, raport integralności — eksport do PDF, XLSX i CSV.
 
@@ -47,7 +47,7 @@ Wymagany .NET SDK 10 — szczegóły w [docs/BUILD.md](docs/BUILD.md).
 | Dokumenty, sprzedaż, zakupy, korekty, załączniki | ✅ zaimplementowane, przetestowane technicznie |
 | Bank i kasa (CSV, MT940, dopasowanie, uzgodnienie) | ✅ zaimplementowane; wymagają testów na rzeczywistych wyciągach |
 | VAT (rejestry, deklaracja, rozliczenie) | ✅ zaimplementowane; wymagają weryfikacji księgowej |
-| CIT, środki trwałe, kapitał PSA | ✅ zaimplementowane; wymagają weryfikacji księgowej/prawnej |
+| CIT, środki trwałe, kapitał P.S.A. | ✅ zaimplementowane; wymagają weryfikacji księgowej/prawnej |
 | Raporty, bilans, RZiS, eksport PDF/XLSX/CSV | ✅ zaimplementowane |
 | Kopie zapasowe szyfrowane, odtwarzanie, PostgreSQL, migracja SQLite → PostgreSQL | ✅ zaimplementowane, przetestowane technicznie |
 | OVHcloud Object Storage (S3) | ✅ zaimplementowane; przetestowane na serwerze zgodnym z S3, wymaga testu na koncie OVHcloud |

@@ -1,10 +1,10 @@
 # Licencja — wyjaśnienie w skrócie
 
-Licencjodawca: **Kacper Baca**. Pełny, wiążący tekst: [`LICENSE`](LICENSE) — „Licencja Pełna Księgowość PSA — użytkowanie bez prawa sprzedaży”, wersja 1.0.
+Licencjodawca: **Kacper Baca**. Pełny, wiążący tekst: [`LICENSE`](LICENSE) — „Licencja Pełna Księgowość P.S.A. — użytkowanie bez prawa sprzedaży”, wersja 1.0.
 
 | Czynność | Dozwolona? |
 |---|---|
-| Używanie programu prywatnie i w firmie (np. księgowość własnej PSA) | ✅ tak, bezpłatnie |
+| Używanie programu prywatnie i w firmie (np. księgowość własnej P.S.A.) | ✅ tak, bezpłatnie |
 | Używanie przez biuro rachunkowe do obsługi klientów (płatna usługa księgowa) | ✅ tak — klient nie może płacić za sam program |
 | Przeglądanie, kopiowanie, modyfikowanie kodu | ✅ tak |
 | Publikowanie kodu i zmodyfikowanych wersji (bezpłatnie, na tej samej licencji, z kodem źródłowym) | ✅ tak |

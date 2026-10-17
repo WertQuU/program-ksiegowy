@@ -61,7 +61,7 @@ dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release `
 ```
 
 Wynik: `artifacts/PelnaKsiegowosc-<wersja>-x64.msi`. Instalator instaluje program w
-`C:\Program Files\Pełna Księgowość PSA`, tworzy skrót w menu Start i obsługuje aktualizację (MajorUpgrade).
+`C:\Program Files\PelnaKsiegowosc`, tworzy skrót w menu Start i obsługuje aktualizację (MajorUpgrade).
 
 ## 6. Podpisanie cyfrowe
 
@@ -92,7 +92,7 @@ Program stosuje migracje automatycznie przy starcie (po wykonaniu kopii zapasowe
 | `PelnaKsiegowosc.Domain` | encje i reguły księgowe/podatkowe (bez zależności od bazy i UI) |
 | `PelnaKsiegowosc.Data` | EF Core, konfiguracja modelu, profile połączeń, wyzwalacze niezmienności |
 | `PelnaKsiegowosc.Migrations.Sqlite` / `.PostgreSql` | migracje schematu dla każdego silnika |
-| `PelnaKsiegowosc.Application` | silnik księgowy i moduły (dokumenty, bank, VAT, CIT, ŚT, kapitał PSA, raporty) |
+| `PelnaKsiegowosc.Application` | silnik księgowy i moduły (dokumenty, bank, VAT, CIT, ŚT, kapitał P.S.A., raporty) |
 | `PelnaKsiegowosc.Infrastructure` | eksport PDF/XLSX/CSV, kopie zapasowe, S3, sekrety, KSeF, JPK |
 | `PelnaKsiegowosc.Presentation` | modele widoków (MVVM) — testowalne bez Windows |
 | `PelnaKsiegowosc.Cli` | narzędzie wiersza poleceń (backup, odtwarzanie, kontrola integralności) |

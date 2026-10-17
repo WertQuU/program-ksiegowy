@@ -183,7 +183,7 @@ public sealed class PdfReportExporter : IReportExporter
         header.Format.Font.Size = 7;
         var footer = section.Footers.Primary.AddParagraph();
         footer.Format.Font.Size = 7;
-        footer.AddText($"Wygenerowano {r.GeneratedAtUtc.ToPlDateTime()} • Pełna Księgowość PSA • strona ");
+        footer.AddText($"Wygenerowano {r.GeneratedAtUtc.ToPlDateTime()} • Pełna Księgowość P.S.A. • strona ");
         footer.AddPageField();
         footer.AddText(" z ");
         footer.AddNumPagesField();

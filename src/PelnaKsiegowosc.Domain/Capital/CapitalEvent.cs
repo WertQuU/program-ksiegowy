@@ -4,7 +4,7 @@ namespace PelnaKsiegowosc.Domain.Capital;
 
 /// <summary>
 /// Moduł nie zastępuje rejestru akcjonariuszy prowadzonego przez podmiot uprawniony (art. 300^31 KSH)
-/// ani dokumentów korporacyjnych. Służy wyłącznie do ewidencji księgowej zdarzeń kapitałowych PSA.
+/// ani dokumentów korporacyjnych. Służy wyłącznie do ewidencji księgowej zdarzeń kapitałowych P.S.A.
 /// </summary>
 public class Shareholder : CompanyEntity
 {

@@ -47,7 +47,7 @@ public enum CorrectionMethod
     StornoCzarne
 }
 
-/// <summary>Jednostka (spółka). Aplikacja obsługuje obecnie jedną PSA; model jest przygotowany na wiele jednostek.</summary>
+/// <summary>Jednostka (spółka). Aplikacja obsługuje obecnie jedną P.S.A.; model jest przygotowany na wiele jednostek.</summary>
 public class Company : Entity
 {
     public string FullName { get; set; } = "";
@@ -79,7 +79,7 @@ public class Company : Entity
     /// <summary>Status małego podatnika CIT (art. 4a pkt 10) — deklarowany przez użytkownika na dany rok.</summary>
     public bool IsSmallCitTaxpayer { get; set; }
 
-    /// <summary>Data rejestracji w KRS (dla PSA ma znaczenie m.in. dla terminu wniesienia wkładów).</summary>
+    /// <summary>Data rejestracji w KRS (dla P.S.A. ma znaczenie m.in. dla terminu wniesienia wkładów).</summary>
     public DateOnly? RegistrationDate { get; set; }
 
     /// <summary>Konto bankowe do dokumentów (IBAN).</summary>
@@ -93,13 +93,12 @@ public class Company : Entity
         var r = new ValidationResult();
         if (string.IsNullOrWhiteSpace(FullName)) r.Error("Pełna nazwa spółki jest wymagana.");
         else if (!FullName.Contains("prosta spółka akcyjna", StringComparison.OrdinalIgnoreCase) &&
-                 !FullName.Contains("P.S.A.", StringComparison.OrdinalIgnoreCase) &&
-                 !FullName.Contains(" PSA", StringComparison.Ordinal))
-            r.Warning("Firma PSA powinna zawierać oznaczenie „prosta spółka akcyjna” lub skrót „P.S.A.” (art. 300^7 KSH — do weryfikacji prawnej).");
+                 !FullName.Contains("P.S.A.", StringComparison.OrdinalIgnoreCase))
+            r.Warning("Firma P.S.A. powinna zawierać oznaczenie „prosta spółka akcyjna” lub skrót „P.S.A.” (art. 300^7 KSH — do weryfikacji prawnej).");
         if (!Identifiers.IsValidNip(Nip)) r.Error("NIP spółki jest nieprawidłowy (błędna suma kontrolna lub format).");
         if (!string.IsNullOrWhiteSpace(Regon) && !Identifiers.IsValidRegon(Regon)) r.Error("REGON jest nieprawidłowy.");
         if (!string.IsNullOrWhiteSpace(Krs) && !Identifiers.IsValidKrs(Krs)) r.Error("Numer KRS musi składać się z 10 cyfr.");
-        if (string.IsNullOrWhiteSpace(Krs)) r.Warning("Brak numeru KRS — PSA podlega wpisowi do rejestru przedsiębiorców KRS.");
+        if (string.IsNullOrWhiteSpace(Krs)) r.Warning("Brak numeru KRS — P.S.A. podlega wpisowi do rejestru przedsiębiorców KRS.");
         if (string.IsNullOrWhiteSpace(City) || string.IsNullOrWhiteSpace(Street)) r.Error("Adres siedziby jest niekompletny.");
         if (Country == "PL" && !Identifiers.IsValidPostalCode(PostalCode)) r.Error("Kod pocztowy musi mieć format 00-000.");
         if (!string.IsNullOrWhiteSpace(TaxOfficeCode) && (TaxOfficeCode.Length != 4 || !TaxOfficeCode.All(char.IsDigit)))

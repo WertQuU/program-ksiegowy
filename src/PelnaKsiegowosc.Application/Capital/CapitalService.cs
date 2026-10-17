@@ -15,7 +15,7 @@ using PelnaKsiegowosc.Domain.Settlements;
 namespace PelnaKsiegowosc.Application.Capital;
 
 /// <summary>
-/// Ewidencja księgowa zdarzeń kapitałowych PSA. Zdarzenie księguje się dopiero po potwierdzeniu dokumentów
+/// Ewidencja księgowa zdarzeń kapitałowych P.S.A. Zdarzenie księguje się dopiero po potwierdzeniu dokumentów
 /// korporacyjnych przez osobę uprawnioną (rola Zarząd / Główny księgowy) — dane wprowadzone przez użytkownika
 /// nie są automatycznie podstawą zapisu. Moduł nie zastępuje rejestru akcjonariuszy (art. 300^31 KSH).
 /// </summary>

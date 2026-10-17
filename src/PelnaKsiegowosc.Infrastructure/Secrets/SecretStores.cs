@@ -56,7 +56,7 @@ public sealed class WindowsCredentialSecretStore : ISecretStore
                 CredentialBlob = ptr,
                 Persist = CredPersistLocalMachine,
                 UserName = Environment.UserName,
-                Comment = "Pełna Księgowość PSA"
+                Comment = "Pełna Księgowość P.S.A."
             };
             if (!CredWrite(ref cred, 0)) throw new Win32Exception(Marshal.GetLastWin32Error(), "Zapis sekretu w Menedżerze poświadczeń nie powiódł się.");
         }
