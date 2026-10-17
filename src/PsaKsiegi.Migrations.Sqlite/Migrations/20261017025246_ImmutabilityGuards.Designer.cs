@@ -11,7 +11,7 @@ using PsaKsiegi.Data;
 namespace PsaKsiegi.Migrations.Sqlite.Migrations
 {
     [DbContext(typeof(KsiegiDbContext))]
-    [Migration("20261017023351_ImmutabilityGuards")]
+    [Migration("20261017025246_ImmutabilityGuards")]
     partial class ImmutabilityGuards
     {
         /// <inheritdoc />
@@ -23,7 +23,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Accounts.Account", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BalanceCreditLine")
@@ -109,7 +108,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Accounts.ChartOfAccounts", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateOnly?>("ApprovedOn")
@@ -148,7 +146,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.AppSetting", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("CompanyId")
@@ -178,7 +175,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Action")
@@ -243,7 +239,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.BackupRecord", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("ArchiveId")
@@ -299,7 +294,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.IntegrationLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("AtUtc")
@@ -345,7 +339,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyAccount", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("BankName")
@@ -394,7 +387,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyStatement", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("ClosingBalance")
@@ -454,7 +446,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Amount")
@@ -537,7 +528,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Capital.CapitalEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AgreementReference")
@@ -561,6 +551,14 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CreditAccountNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DebitAccountNumber")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Description")
@@ -641,7 +639,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Capital.Shareholder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")
@@ -674,7 +671,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Cit.CitAdjustment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Amount")
@@ -720,7 +716,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Cit.CitAdvance", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("AdvanceDue")
@@ -798,7 +793,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.AccountingPolicy", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ApprovedBy")
@@ -874,7 +868,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.Company", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ApartmentNumber")
@@ -999,7 +992,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.ResponsiblePerson", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")
@@ -1045,7 +1037,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Counterparties.Counterparty", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ApartmentNumber")
@@ -1148,7 +1139,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.Attachment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ArchivedToCloudAtUtc")
@@ -1205,7 +1195,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.Document", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ApprovedAtUtc")
@@ -1280,6 +1269,9 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("ExcludedFromVatRegister")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("ExternalNumber")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -1298,8 +1290,16 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
                     b.Property<Guid?>("JournalEntryId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("JpkDocumentType")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("JpkMarker")
                         .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("JpkProcedures")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Kind")
@@ -1384,7 +1384,15 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("VatDeductionConfirmed")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateOnly?>("VatPeriod")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("VatTransactionType")
+                        .IsRequired()
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
@@ -1406,7 +1414,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentHistory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Action")
@@ -1440,7 +1447,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("AccountId")
@@ -1505,7 +1511,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentPostingLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("AccountId")
@@ -1553,7 +1558,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentVatLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("DeductibleVatPln")
@@ -1601,7 +1605,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.NumberSequence", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")
@@ -1630,7 +1633,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.DepreciationCharge", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("BookAmount")
@@ -1674,7 +1676,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.DepreciationRun", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")
@@ -1719,7 +1720,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.FixedAsset", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("AccumulatedDepreciationAccountNumber")
@@ -1850,7 +1850,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.FixedAssetOperation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("BookValueChange")
@@ -1902,7 +1901,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalDefinition", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Code")
@@ -1932,7 +1930,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")
@@ -2065,7 +2062,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("AccountId")
@@ -2120,7 +2116,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.AccountingPeriod", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ClosedAtUtc")
@@ -2163,7 +2158,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.FiscalYear", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ClosedAtUtc")
@@ -2211,7 +2205,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.PeriodStatusChange", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("AtUtc")
@@ -2253,7 +2246,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Security.RecoveryCode", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("CodeHash")
@@ -2280,7 +2272,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Security.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -2359,7 +2350,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Settlements.OpenItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("AccountId")
@@ -2442,7 +2432,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Settlements.SettlementAllocation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Amount")
@@ -2501,7 +2490,6 @@ namespace PsaKsiegi.Migrations.Sqlite.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Vat.VatRegisterEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("CompanyId")

@@ -23,6 +23,7 @@ public static class InvoiceCalculator
             if (string.IsNullOrWhiteSpace(l.Name)) throw new DomainException($"Pozycja {l.LineNo}: nazwa towaru/usługi jest wymagana.");
             if (l.Quantity == 0) throw new DomainException($"Pozycja {l.LineNo}: ilość nie może być zerowa.");
             if (!doc.IsCorrection && l.Quantity < 0) throw new DomainException($"Pozycja {l.LineNo}: ilość ujemna dopuszczalna jest tylko w korekcie.");
+            if (!doc.IsCorrection && l.UnitNetPrice < 0) throw new DomainException($"Pozycja {l.LineNo}: cena ujemna dopuszczalna jest tylko w korekcie.");
             var vr = VatRules.Get(l.VatRateCode, date);
             l.NetAmount = Money.Round(l.Quantity * l.UnitNetPrice);
             l.VatAmount = VatRules.TaxFromNet(l.NetAmount, vr);

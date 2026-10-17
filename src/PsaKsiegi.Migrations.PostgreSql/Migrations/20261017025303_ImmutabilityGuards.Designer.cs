@@ -12,8 +12,8 @@ using PsaKsiegi.Data;
 namespace PsaKsiegi.Migrations.PostgreSql.Migrations
 {
     [DbContext(typeof(KsiegiDbContext))]
-    [Migration("20261017023359_Initial")]
-    partial class Initial
+    [Migration("20261017025303_ImmutabilityGuards")]
+    partial class ImmutabilityGuards
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -28,7 +28,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Accounts.Account", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("BalanceCreditLine")
@@ -114,7 +113,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Accounts.ChartOfAccounts", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateOnly?>("ApprovedOn")
@@ -153,7 +151,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.AppSetting", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("CompanyId")
@@ -183,7 +180,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.AuditEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Action")
@@ -248,7 +244,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.BackupRecord", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("ArchiveId")
@@ -304,7 +299,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Audit.IntegrationLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("AtUtc")
@@ -350,7 +344,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyAccount", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("BankName")
@@ -399,7 +392,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyStatement", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal?>("ClosingBalance")
@@ -459,7 +451,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Banking.MoneyTransaction", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -542,7 +533,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Capital.CapitalEvent", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("AgreementReference")
@@ -567,6 +557,14 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
 
                     b.Property<Guid>("CreatedByUserId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("CreditAccountNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("DebitAccountNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -646,7 +644,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Capital.Shareholder", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -679,7 +676,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Cit.CitAdjustment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -725,7 +721,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Cit.CitAdvance", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("AdvanceDue")
@@ -803,7 +798,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.AccountingPolicy", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ApprovedBy")
@@ -879,7 +873,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.Company", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ApartmentNumber")
@@ -1004,7 +997,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Companies.ResponsiblePerson", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -1050,7 +1042,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Counterparties.Counterparty", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("ApartmentNumber")
@@ -1153,7 +1144,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.Attachment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ArchivedToCloudAtUtc")
@@ -1210,7 +1200,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.Document", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ApprovedAtUtc")
@@ -1285,6 +1274,9 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("ExcludedFromVatRegister")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("ExternalNumber")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -1303,9 +1295,17 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
                     b.Property<Guid?>("JournalEntryId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("JpkDocumentType")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("JpkMarker")
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<string>("JpkProcedures")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Kind")
                         .IsRequired()
@@ -1389,8 +1389,16 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<bool>("VatDeductionConfirmed")
+                        .HasColumnType("boolean");
+
                     b.Property<DateOnly?>("VatPeriod")
                         .HasColumnType("date");
+
+                    b.Property<string>("VatTransactionType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.HasKey("Id");
 
@@ -1411,7 +1419,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentHistory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Action")
@@ -1445,7 +1452,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("AccountId")
@@ -1510,7 +1516,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentPostingLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AccountId")
@@ -1558,7 +1563,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.DocumentVatLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("DeductibleVatPln")
@@ -1606,7 +1610,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Documents.NumberSequence", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -1635,7 +1638,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.DepreciationCharge", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("BookAmount")
@@ -1679,7 +1681,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.DepreciationRun", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -1724,7 +1725,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.FixedAsset", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("AccumulatedDepreciationAccountNumber")
@@ -1855,7 +1855,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.FixedAssets.FixedAssetOperation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("BookValueChange")
@@ -1907,7 +1906,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalDefinition", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Code")
@@ -1937,7 +1935,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")
@@ -2070,7 +2067,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Ledger.JournalLine", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AccountId")
@@ -2125,7 +2121,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.AccountingPeriod", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ClosedAtUtc")
@@ -2168,7 +2163,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.FiscalYear", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ClosedAtUtc")
@@ -2216,7 +2210,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Periods.PeriodStatusChange", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("AtUtc")
@@ -2258,7 +2251,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Security.RecoveryCode", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("CodeHash")
@@ -2285,7 +2277,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Security.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAtUtc")
@@ -2364,7 +2355,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Settlements.OpenItem", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("AccountId")
@@ -2447,7 +2437,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Settlements.SettlementAllocation", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
@@ -2506,7 +2495,6 @@ namespace PsaKsiegi.Migrations.PostgreSql.Migrations
             modelBuilder.Entity("PsaKsiegi.Domain.Vat.VatRegisterEntry", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CompanyId")

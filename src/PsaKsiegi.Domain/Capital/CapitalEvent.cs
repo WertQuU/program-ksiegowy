@@ -70,6 +70,10 @@ public class CapitalEvent : CompanyEntity
     /// <summary>Podatek pobierany przez płatnika (np. zryczałtowany podatek od dywidendy).</summary>
     public decimal WithholdingTaxAmount { get; set; }
     public string Description { get; set; } = "";
+    /// <summary>Konto Wn wskazane przez użytkownika (np. składnik wniesiony aportem, kapitał, z którego następuje przeksięgowanie).</summary>
+    public string? DebitAccountNumber { get; set; }
+    /// <summary>Konto Ma wskazane przez użytkownika (np. przy obniżeniu kapitału).</summary>
+    public string? CreditAccountNumber { get; set; }
 
     public string? ResolutionReference { get; set; }
     public DateOnly? ResolutionDate { get; set; }

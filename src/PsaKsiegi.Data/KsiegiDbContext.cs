@@ -77,6 +77,11 @@ public class KsiegiDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder m)
     {
+        // Identyfikatory GUID (v7) nadaje aplikacja — nowe obiekty podrzędne dodane do kolekcji są wstawiane (INSERT),
+        // a identyfikatory pozostają identyczne po migracji między silnikami baz danych.
+        foreach (var et in m.Model.GetEntityTypes().Where(t => typeof(Domain.Common.Entity).IsAssignableFrom(t.ClrType)))
+            m.Entity(et.ClrType).Property(nameof(Domain.Common.Entity.Id)).ValueGeneratedNever();
+
         m.Entity<Company>(e =>
         {
             e.Property(x => x.FullName).HasMaxLength(512);

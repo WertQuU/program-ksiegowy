@@ -140,6 +140,15 @@ public class Document : CompanyEntity
 
     /// <summary>Okres rozliczenia VAT (pierwszy dzień miesiąca), jeżeli dokument wpływa na VAT.</summary>
     public DateOnly? VatPeriod { get; set; }
+    public Vat.VatTransactionType VatTransactionType { get; set; } = Vat.VatTransactionType.Krajowa;
+    /// <summary>Zakup: świadome potwierdzenie przez użytkownika prawa (i zakresu) odliczenia VAT — bez niego dokument nie może zostać zatwierdzony.</summary>
+    public bool VatDeductionConfirmed { get; set; }
+    /// <summary>Oznaczenia procedur JPK (np. „MPP”, „TP”), rozdzielone przecinkami.</summary>
+    public string? JpkProcedures { get; set; }
+    /// <summary>Oznaczenie typu dokumentu w JPK (np. „RO”, „WEW”, „FP”, „MK”, „VAT_RR”).</summary>
+    public string? JpkDocumentType { get; set; }
+    /// <summary>Czy dokument nie podlega ewidencji VAT (np. faktura od podatnika zwolnionego — tylko koszt).</summary>
+    public bool ExcludedFromVatRegister { get; set; }
 
     public Guid? JournalEntryId { get; set; }
     public Guid CreatedByUserId { get; set; }
