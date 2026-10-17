@@ -1,5 +1,12 @@
 <Project>
+  <PropertyGroup>
+    <!-- przypinanie wersji zależności przechodnich (np. łatki bezpieczeństwa) -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <!-- UWAGA LICENCYJNA: SixLabors.Fonts 1.x = Apache-2.0; wersje 2.x mają licencję „Six Labors Split License” — nie podnosić bez analizy. -->
+    <PackageVersion Include="SixLabors.Fonts" Version="1.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
@@ -11,7 +18,8 @@
     <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="10.0.13" />
     <PackageVersion Include="AWSSDK.S3" Version="4.0.104.4" />
     <PackageVersion Include="ClosedXML" Version="0.105.1" />
-    <PackageVersion Include="PDFsharp-MigraDoc" Version="6.5.0" />
+    <!-- UWAGA LICENCYJNA: PDFsharp 6.2.4 = MIT; wersja 6.5.0 przeszła na AGPL-3.0 z kontrolą licencji — nie podnosić bez analizy. -->
+    <PackageVersion Include="PDFsharp-MigraDoc" Version="6.2.4" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />

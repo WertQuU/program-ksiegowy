@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PelnaKsiegowosc.Infrastructure</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PelnaKsiegowosc.Application\PelnaKsiegowosc.Application.csproj" />
+    <ProjectReference Include="..\PelnaKsiegowosc.Migrations.Sqlite\PelnaKsiegowosc.Migrations.Sqlite.csproj" />
+    <ProjectReference Include="..\PelnaKsiegowosc.Migrations.PostgreSql\PelnaKsiegowosc.Migrations.PostgreSql.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="PDFsharp-MigraDoc" />
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\schemas\**\*" LinkBase="schemas" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="PelnaKsiegowosc.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,64 @@
+# Pełna Księgowość PSA
+
+Desktopowa aplikacja Windows do prowadzenia **pełnej księgowości (ksiąg rachunkowych) polskiej prostej spółki
+akcyjnej (PSA)** — zgodnie z ustawą o rachunkowości, z modułami VAT/JPK, CIT, KSeF, środków trwałych oraz
+kapitału i akcji PSA. Działa lokalnie (SQLite) bez Internetu; opcjonalnie z serwerem PostgreSQL i kopiami
+w OVHcloud Object Storage.
+
+> **Stan projektu: w budowie (wersja 0.9, przedprodukcyjna).** Silnik księgowy i moduły działają i są pokryte
+> testami (93 testy, w tym scenariusz pełnego roku obrotowego). Interfejs okienkowy (WPF) i instalator są
+> w przygotowaniu — patrz [Stan implementacji](#stan-implementacji). Program **nie jest jeszcze gotowy do
+> prowadzenia rzeczywistych ksiąg**.
+
+## Najważniejsze cechy
+
+- Podwójny zapis Wn/Ma z kontrolą bilansowania, kwoty wyłącznie `decimal`, jawne zaokrąglenia.
+- Zapisy zaksięgowane są niemodyfikowalne (logika + wyzwalacze bazy), korekty tylko przez storno i zapis
+  korygujący; ciągła numeracja dziennika i łańcuch skrótów SHA-256 wykrywający manipulacje.
+- Kontrola okresów (lista kontrolna przed zamknięciem, kontrolowane ponowne otwarcie), zamknięcie roku
+  i automatyczny bilans otwarcia z przeniesieniem rozrachunków.
+- Plan kont z wersjonowaniem per rok, rozrachunki per kontrahent, bank (CSV, MT940) z dopasowaniem płatności.
+- Rejestry VAT i deklaracja, CIT (zaliczki, uzgodnienie wyniku bilansowego z podatkowym), środki trwałe
+  (amortyzacja bilansowa i podatkowa osobno), zdarzenia kapitałowe PSA z wymogiem potwierdzenia dokumentów.
+- Raporty z rzeczywistych zapisów: dziennik, księga główna, ZOiS, bilans, RZiS, rejestry VAT, rozrachunki,
+  środki trwałe, uzgodnienia, raport zmian, raport integralności — eksport do PDF, XLSX i CSV.
+
+## Dokumentacja
+
+| Dokument | Treść |
+|---|---|
+| [docs/BUILD.md](docs/BUILD.md) | Kompilacja ze źródeł, testy, budowanie pliku `.exe` i instalatora |
+| [docs/INSTALL.md](docs/INSTALL.md) | Instalacja u użytkownika końcowego, aktualizacja, odinstalowanie |
+| [LICENSE](LICENSE) / [LICENSE.pl.md](LICENSE.pl.md) | Licencja MIT i zastrzeżenia |
+| [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) | Licencje bibliotek zewnętrznych |
+| [schemas/README.md](schemas/README.md) | Oficjalne schematy XSD dołączone do projektu |
+
+## Szybki start dla programisty
+
+```bash
+git clone <adres-repozytorium>
+cd <katalog-repozytorium>
+dotnet test PelnaKsiegowosc.sln
+```
+
+Wymagany .NET SDK 10 — szczegóły w [docs/BUILD.md](docs/BUILD.md).
+
+## Stan implementacji
+
+| Obszar | Stan |
+|---|---|
+| Silnik księgowy (dziennik, KG, storno, okresy, zamknięcie roku, BO) | ✅ zaimplementowany, przetestowany technicznie |
+| Dokumenty, sprzedaż, zakupy, korekty, załączniki | ✅ zaimplementowane, przetestowane technicznie |
+| Bank i kasa (CSV, MT940, dopasowanie, uzgodnienie) | ✅ zaimplementowane; wymagają testów na rzeczywistych wyciągach |
+| VAT (rejestry, deklaracja, rozliczenie) | ✅ zaimplementowane; wymagają weryfikacji księgowej |
+| CIT, środki trwałe, kapitał PSA | ✅ zaimplementowane; wymagają weryfikacji księgowej/prawnej |
+| Raporty, bilans, RZiS, eksport PDF/XLSX/CSV | ✅ zaimplementowane |
+| Backup szyfrowany, OVHcloud S3, PostgreSQL, migracja baz | 🔧 w trakcie |
+| KSeF (FA(3)), JPK_V7M(3), e-Sprawozdanie | 🔧 w trakcie |
+| Interfejs WPF, kreator pierwszego uruchomienia | 🔧 w trakcie |
+| Instalator MSI / pakiet przenośny `.exe` | 🔧 w trakcie (procedura opisana w docs/BUILD.md) |
+
+## Zastrzeżenie
+
+Program nie stanowi porady prawnej, podatkowej ani księgowej i nie zastępuje księgowego ani biegłego
+rewidenta. Odpowiedzialność za księgi ponosi kierownik jednostki (art. 4a ustawy o rachunkowości).
