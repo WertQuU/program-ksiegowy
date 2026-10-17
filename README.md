@@ -49,10 +49,13 @@ Wymagany .NET SDK 10 — szczegóły w [docs/BUILD.md](docs/BUILD.md).
 | VAT (rejestry, deklaracja, rozliczenie) | ✅ zaimplementowane; wymagają weryfikacji księgowej |
 | CIT, środki trwałe, kapitał PSA | ✅ zaimplementowane; wymagają weryfikacji księgowej/prawnej |
 | Raporty, bilans, RZiS, eksport PDF/XLSX/CSV | ✅ zaimplementowane |
-| Backup szyfrowany, OVHcloud S3, PostgreSQL, migracja baz | 🔧 w trakcie |
-| KSeF (FA(3)), JPK_V7M(3), e-Sprawozdanie | 🔧 w trakcie |
-| Interfejs WPF, kreator pierwszego uruchomienia | 🔧 w trakcie |
-| Instalator MSI / pakiet przenośny `.exe` | 🔧 w trakcie (procedura opisana w docs/BUILD.md) |
+| Kopie zapasowe szyfrowane, odtwarzanie, PostgreSQL, migracja SQLite → PostgreSQL | ✅ zaimplementowane, przetestowane technicznie |
+| OVHcloud Object Storage (S3) | ✅ zaimplementowane; przetestowane na serwerze zgodnym z S3, wymaga testu na koncie OVHcloud |
+| KSeF 2.0 (faktury FA(3), wysyłka, pobieranie zakupów) | 🔧 kod gotowy, testy w trakcie; wymaga testu w środowisku testowym KSeF |
+| JPK_V7M(3), e-Sprawozdanie finansowe | 🔧 generatory wstępne — bez oficjalnego XSD pliki mają status „niezwalidowany” |
+| Użytkownicy, role, MFA, dziennik audytowy | ✅ zaimplementowane (logika); testy częściowe, brak ekranów |
+| Interfejs WPF, kreator pierwszego uruchomienia | ⏳ nierozpoczęte |
+| Instalator MSI / pakiet przenośny `.exe` | ⏳ nierozpoczęte (procedura opisana w docs/BUILD.md) |
 
 ## Licencja
 
