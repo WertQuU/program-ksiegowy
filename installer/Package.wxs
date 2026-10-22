@@ -19,17 +19,18 @@
 
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="PelnaKsiegowosc">
-        <Files Include="$(var.AppPublishDir)\**" />
+        <Component Id="ProgramGlowny" Guid="2E4C7B90-5A1F-4C3D-8E62-9B0D1F7A4C55">
+          <File Id="PelnaKsiegowoscExe" Source="$(var.AppPublishDir)\PelnaKsiegowosc.exe" KeyPath="yes">
+            <Shortcut Id="SkrotProgramu" Directory="ProgramMenuFolder" Name="Pełna Księgowość" Description="Program do prowadzenia ksiąg rachunkowych"
+                      WorkingDirectory="INSTALLFOLDER" Icon="ikona.ico" Advertise="no" />
+          </File>
+        </Component>
+        <Files Include="$(var.AppPublishDir)\**">
+          <Exclude Files="$(var.AppPublishDir)\PelnaKsiegowosc.exe" />
+        </Files>
       </Directory>
     </StandardDirectory>
-
-    <StandardDirectory Id="ProgramMenuFolder">
-      <Component Id="SkrotMenuStart" Guid="2E4C7B90-5A1F-4C3D-8E62-9B0D1F7A4C55">
-        <Shortcut Id="SkrotProgramu" Name="Pełna Księgowość" Description="Program do prowadzenia ksiąg rachunkowych"
-                  Target="[INSTALLFOLDER]PelnaKsiegowosc.exe" WorkingDirectory="INSTALLFOLDER" Icon="ikona.ico" />
-        <RegistryValue Root="HKLM" Key="Software\PelnaKsiegowosc" Name="Zainstalowano" Type="integer" Value="1" KeyPath="yes" />
-      </Component>
-    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder" />
 
     <WixVariable Id="WixUILicenseRtf" Value="Licencja.rtf" />
     <ui:WixUI Id="WixUI_Minimal" />
