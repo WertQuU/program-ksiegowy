@@ -24,7 +24,7 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
 
     [ObservableProperty] private string _code = "";
     [ObservableProperty] private string _name = "";
-    [ObservableProperty] private Choice<CounterpartyKind> _kind = Choices.Of<CounterpartyKind>()[0];
+    [ObservableProperty] private Choice<CounterpartyKind> _kind = KindChoices[0];
     [ObservableProperty] private string _nip = "";
     [ObservableProperty] private string _vatEu = "";
     [ObservableProperty] private string _country = "PL";
@@ -42,7 +42,11 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
     [ObservableProperty] private bool _active = true;
     [ObservableProperty] private string _notes = "";
     [ObservableProperty] private string _formHeader = "Nowy kontrahent";
-    public List<Choice<CounterpartyKind>> Kinds { get; } = Choices.Of<CounterpartyKind>();
+    private static readonly List<Choice<CounterpartyKind>> KindChoices = Enum.GetValues<CounterpartyKind>()
+        .Select(k => new Choice<CounterpartyKind>(k, KindName(k))).ToList();
+    public List<Choice<CounterpartyKind>> Kinds => KindChoices;
+
+    public static string KindName(CounterpartyKind k) => k == CounterpartyKind.Akcjonariusz ? "Wspólnik / akcjonariusz / właściciel" : Display.Enum(k);
 
     [ObservableProperty] private TableData _openItems = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedOpenItem;
@@ -89,7 +93,7 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
         }
         var t = new TableData(new TableColumn("Kod", Width: 0.6), new TableColumn("Nazwa", Width: 2.5), new TableColumn("NIP", Width: 1), new TableColumn("Kraj", Width: 0.4),
             new TableColumn("Adres", Width: 2.2), new TableColumn("Rodzaj", Width: 1), new TableColumn("Termin (dni)", ColumnKind.Integer, 0.6), new TableColumn("Aktywny", Width: 0.5));
-        foreach (var c in list) t.Add(c.Id, c.Code, c.Name, c.Nip ?? c.VatEuNumber, c.CountryCode, c.AddressLine, c.Kind, c.DefaultPaymentDays, c.IsActive);
+        foreach (var c in list) t.Add(c.Id, c.Code, c.Name, c.Nip ?? c.VatEuNumber, c.CountryCode, c.AddressLine, KindName(c.Kind), c.DefaultPaymentDays, c.IsActive);
         List = t;
     }
 
