@@ -353,7 +353,7 @@ public sealed class LedgerService
     public async Task EnsureReadyForPostingAsync(Guid chartId, CancellationToken ct = default)
     {
         var policy = await _db.AccountingPolicies.Where(p => p.CompanyId == _user.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync(ct);
-        if (policy is null) throw new DomainException("Brak polityki rachunkowości — księgowanie zablokowane. Uzupełnij i zatwierdź politykę (Spółka → Polityka rachunkowości).");
+        if (policy is null) throw new DomainException("Brak polityki rachunkowości — księgowanie zablokowane. Uzupełnij i zatwierdź politykę (Jednostka i polityka → Polityka rachunkowości).");
         var pv = policy.Validate();
         if (!pv.IsValid) throw new DomainException("Księgowanie zablokowane — polityka rachunkowości jest niekompletna:" + Environment.NewLine + string.Join(Environment.NewLine, pv.Errors));
         var chart = await _db.Charts.FirstAsync(c => c.Id == chartId, ct);

@@ -131,7 +131,7 @@ public sealed class DocumentService
         if (input.Currency.Length != 3) throw new DomainException("Kod waluty musi mieć 3 litery (ISO 4217).");
         if (doc.IsPurchase && string.IsNullOrWhiteSpace(input.ExternalNumber)) throw new DomainException("Podaj numer dokumentu dostawcy.");
         if (doc.IsSales && company.VatStatus == VatStatus.ZwolnionyPodmiotowo && input.Lines.Any(l => l.VatRateCode != "zw"))
-            throw new DomainException("Spółka zwolniona podmiotowo z VAT — dopuszczalna wyłącznie stawka „zw” (z podaniem podstawy zwolnienia).");
+            throw new DomainException("Jednostka zwolniona podmiotowo z VAT — dopuszczalna wyłącznie stawka „zw” (z podaniem podstawy zwolnienia).");
 
         doc.CounterpartyId = cp.Id;
         doc.CounterpartyName = cp.Name;

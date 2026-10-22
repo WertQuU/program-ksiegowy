@@ -10,7 +10,7 @@ public abstract class Entity
     public Guid Id { get; set; } = Guid.CreateVersion7();
 }
 
-/// <summary>Encja przypisana do jednostki (spółki). Przygotowanie pod obsługę wielu jednostek.</summary>
+/// <summary>Encja przypisana do jednostki. Przygotowanie pod obsługę wielu jednostek.</summary>
 public abstract class CompanyEntity : Entity
 {
     public Guid CompanyId { get; set; }

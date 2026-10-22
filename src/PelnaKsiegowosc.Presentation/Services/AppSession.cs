@@ -17,7 +17,7 @@ namespace PelnaKsiegowosc.Presentation.Services;
 public sealed record OpenResult(bool Success, string? Error, string? PreMigrationBackup);
 
 /// <summary>
-/// Stan uruchomionego programu: ścieżki, konfiguracja stanowiska, magazyn sekretów, aktywna baza, bieżąca spółka i rok.
+/// Stan uruchomionego programu: ścieżki, konfiguracja stanowiska, magazyn sekretów, aktywna baza, bieżąca jednostka i rok.
 /// Każda operacja otwiera krótko żyjący kontekst bazy (<see cref="OpenDb"/>), więc ekrany zawsze widzą aktualne dane.
 /// </summary>
 public sealed class AppSession
@@ -43,7 +43,7 @@ public sealed class AppSession
     public IReadOnlyList<FiscalYear> Years { get; private set; } = Array.Empty<FiscalYear>();
     public FiscalYear? Year { get; private set; }
 
-    public Guid CompanyId => Company?.Id ?? throw new DomainException("Nie skonfigurowano spółki — uruchom kreator pierwszego uruchomienia.");
+    public Guid CompanyId => Company?.Id ?? throw new DomainException("Nie skonfigurowano jednostki — uruchom kreator pierwszego uruchomienia.");
     public FiscalYear CurrentYear => Year ?? throw new DomainException("Brak roku obrotowego.");
 
     public event EventHandler? ContextChanged;
@@ -97,7 +97,7 @@ public sealed class AppSession
         return target;
     }
 
-    /// <summary>Odczyt spółki i lat obrotowych; wybór roku: dotychczas wybrany, pierwszy otwarty albo ostatni.</summary>
+    /// <summary>Odczyt jednostki i lat obrotowych; wybór roku: dotychczas wybrany, pierwszy otwarty albo ostatni.</summary>
     public async Task RefreshAsync(CancellationToken ct = default)
     {
         await using var db = OpenDb();

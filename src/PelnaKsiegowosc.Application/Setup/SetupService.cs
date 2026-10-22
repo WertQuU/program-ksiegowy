@@ -12,7 +12,7 @@ using PelnaKsiegowosc.Domain.Security;
 
 namespace PelnaKsiegowosc.Application.Setup;
 
-/// <summary>Kroki kreatora pierwszego uruchomienia: spółka, rok obrotowy, plan kont, dzienniki, polityka rachunkowości.</summary>
+/// <summary>Kroki kreatora pierwszego uruchomienia: jednostka, rok obrotowy, plan kont, dzienniki, polityka rachunkowości.</summary>
 public sealed class SetupService
 {
     public static readonly (string Code, string Name)[] DefaultJournals =

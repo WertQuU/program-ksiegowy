@@ -17,10 +17,10 @@ public static class SelfTestScenario
 {
     public const string TestNip = "5260250274";
 
-    public static (AppSession session, AutomaticDialogService dialogs) CreateSession(string root)
+    public static (AppSession session, AutomaticDialogService dialogs) CreateSession(string root, ISecretStore? secrets = null)
     {
         var paths = new AppPaths(root);
-        var session = new AppSession(paths, AppConfig.LoadOrCreate(paths), new InMemorySecretStore(), new SystemClock());
+        var session = new AppSession(paths, AppConfig.LoadOrCreate(paths), secrets ?? new InMemorySecretStore(), new SystemClock());
         return (session, new AutomaticDialogService());
     }
 

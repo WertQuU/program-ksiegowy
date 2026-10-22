@@ -79,7 +79,7 @@ public sealed class BackupService
         var staging = Path.Combine(_tempRoot, "kopia-" + archiveId.ToString("N"));
         var zipPath = staging + ".zip";
         Directory.CreateDirectory(options.TargetDirectory);
-        var finalName = $"kopia-{SystemClock.ToWarsaw(_clock.UtcNow):yyyyMMdd-HHmmss}-{archiveId.ToString("N")[..8]}{Extension}";
+        var finalName = $"kopia-{SystemClock.ToWarsaw(_clock.UtcNow):yyyyMMdd-HHmmss}-{archiveId.ToString("N")[^8..]}{Extension}";
         var finalPath = Path.Combine(options.TargetDirectory, finalName);
         var partial = finalPath + ".partial";
         var record = new BackupRecord { ArchiveId = archiveId, CreatedAtUtc = _clock.UtcNow, FileName = finalName, Target = options.TargetDirectory, Encrypted = true, Status = "W TOKU" };

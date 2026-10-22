@@ -141,6 +141,7 @@ public sealed partial class LedgerViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var svc = new LedgerService(db, Session.User, Session.Clock);
         var entry = _editedDraftId is { } id ? await svc.PostAsync((await svc.UpdateDraftAsync(id, input)).Id) : await svc.CreateAndPostAsync(input);
+        await db.SaveChangesAsync();
         EditorVisible = false;
         StatusMessage = $"Zaksięgowano: {entry.JournalNumber}";
     }, "Zapis zaksięgowany.");

@@ -42,9 +42,11 @@ public static class JpkV7Builder
     {
         var ns = JpkV7Rules.Ns;
         var warnings = new List<string>();
-        if (string.IsNullOrWhiteSpace(company.TaxOfficeCode)) throw new DomainException("Uzupełnij kod urzędu skarbowego w danych spółki (wymagany w nagłówku JPK).");
-        if (company.VatPeriod != VatSettlementPeriod.Miesieczny) throw new DomainException("Spółka rozlicza VAT kwartalnie — JPK_V7K nie jest jeszcze obsługiwany.");
-        if (string.IsNullOrWhiteSpace(company.Email)) warnings.Add("Brak adresu e-mail spółki — pole wymagane w Podmiot1.");
+        if (string.IsNullOrWhiteSpace(company.TaxOfficeCode)) throw new DomainException("Uzupełnij kod urzędu skarbowego w danych jednostki (wymagany w nagłówku JPK).");
+        if (company.VatPeriod != VatSettlementPeriod.Miesieczny) throw new DomainException("Jednostka rozlicza VAT kwartalnie — JPK_V7K nie jest jeszcze obsługiwany.");
+        if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej)
+            throw new DomainException("Dla osoby fizycznej JPK wymaga sekcji OsobaFizyczna (imię, nazwisko, data urodzenia) — ten wariant nie jest jeszcze obsługiwany.");
+        if (string.IsNullOrWhiteSpace(company.Email)) warnings.Add("Brak adresu e-mail jednostki — pole wymagane w Podmiot1.");
         warnings.AddRange(declaration.Warnings);
 
         XElement E(string n, object? v) => new(ns + n, v);
