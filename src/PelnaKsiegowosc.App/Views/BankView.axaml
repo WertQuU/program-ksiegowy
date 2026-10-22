@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.BankView"
+             x:DataType="s:BankViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <ComboBox ItemsSource="{Binding MoneyAccounts}" SelectedItem="{Binding MoneyAccount}" MinWidth="360" />
+      <CheckBox Content="Tylko nierozliczone" IsChecked="{Binding OnlyOpen}" />
+      <Button Content="Import MT940…" Command="{Binding ImportMt940Command}" />
+      <Button Content="Import CSV…" Command="{Binding ImportCsvCommand}" />
+      <TextBlock Text="CSV: separator" /><TextBox Text="{Binding CsvSeparator}" MinWidth="40" />
+      <TextBlock Text="format daty" /><TextBox Text="{Binding CsvDateFormat}" MinWidth="100" />
+      <TextBlock Text="kolumny" /><TextBox Text="{Binding CsvColumns}" MinWidth="110" ToolTip.Tip="data;kwota;kontrahent;rachunek;tytuł;referencja (numeracja od 0)" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Dopasuj do zaznaczonego rozrachunku" Command="{Binding MatchSuggestionCommand}" />
+      <TextBox Text="{Binding OffsetAccount}" Watermark="konto przeciwstawne (np. 751-03)" />
+      <Button Content="Przypisz konto przeciwstawne" Command="{Binding MatchToAccountCommand}" />
+      <TextBox Text="{Binding ExchangeRate}" Watermark="kurs (walutowe)" MinWidth="90" />
+      <Button Content="Zaksięguj operację" Command="{Binding PostCommand}" />
+      <Button Content="Zaksięguj wszystkie dopasowane" Command="{Binding PostAllMatchedCommand}" />
+      <Button Content="Pomiń…" Command="{Binding SkipCommand}" />
+    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Nowy rachunek / kasa, operacja kasowa" Margin="0,0,0,8">
+      <StackPanel Spacing="6">
+        <WrapPanel Classes="toolbar">
+          <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding NewKind}" MinWidth="160" />
+          <TextBox Text="{Binding NewName}" Watermark="nazwa" />
+          <TextBox Text="{Binding NewLedgerAccount}" Watermark="konto księgowe" />
+          <TextBox Text="{Binding NewIban}" Watermark="IBAN" MinWidth="260" />
+          <TextBox Text="{Binding NewCurrency}" MinWidth="60" />
+          <Button Content="Utwórz" Command="{Binding CreateAccountCommand}" />
+        </WrapPanel>
+        <WrapPanel Classes="toolbar">
+          <TextBlock Text="Operacja kasowa (dla kasy):" />
+          <TextBox Text="{Binding CashDate}" Watermark="data" />
+          <TextBox Text="{Binding CashAmount}" Watermark="kwota (+ KP / − KW)" />
+          <TextBox Text="{Binding CashTitle}" Watermark="tytuł" MinWidth="240" />
+          <ComboBox ItemsSource="{Binding Counterparties}" SelectedItem="{Binding CashCounterparty}" MinWidth="240" />
+          <Button Content="Dodaj" Command="{Binding AddCashOperationCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Expander>
+    <Grid RowDefinitions="2*,6,*">
+      <c:TableView Table="{Binding Transactions}" SelectedRow="{Binding Selected}" />
+      <DockPanel Grid.Row="2">
+        <TextBlock DockPanel.Dock="Top" Text="Propozycje dopasowania do rozrachunków" Classes="h2" Margin="0,0,0,4" />
+        <c:TableView Table="{Binding Suggestions}" SelectedRow="{Binding SelectedSuggestion}" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

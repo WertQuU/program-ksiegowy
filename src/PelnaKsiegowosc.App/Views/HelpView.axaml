@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.HelpView"
+             x:DataType="s:HelpViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="O programie">
+        <DockPanel>
+          <SelectableTextBlock DockPanel.Dock="Top" Text="{Binding About}" TextWrapping="Wrap" Margin="0,0,0,10" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <Button Content="Pełna kontrola integralności" Command="{Binding RunIntegrityCheckCommand}" />
+            <Button Content="Otwórz katalog logów" Command="{Binding OpenLogsCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Integrity}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Licencja">
+        <TextBox Text="{Binding LicenseText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

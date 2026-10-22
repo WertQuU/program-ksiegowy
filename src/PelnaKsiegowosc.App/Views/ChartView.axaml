@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.ChartView"
+             x:DataType="s:ChartViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding ChartInfo}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBox Text="{Binding Filter}" Watermark="Filtr: numer lub nazwa" />
+      <Button Content="Filtruj" Command="{Binding ApplyFilterCommand}" />
+      <Button Content="Utwórz z szablonu" Command="{Binding CreateFromTemplateCommand}" />
+      <Button Content="Kontrola planu" Command="{Binding ValidateCommand}" />
+      <Button Content="Zatwierdź plan kont" Command="{Binding ApproveCommand}" />
+      <Button Content="Eksport CSV…" Command="{Binding ExportCsvCommand}" />
+      <Button Content="Import kont z CSV…" Command="{Binding ImportCsvCommand}" />
+    </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="panel">
+      <StackPanel>
+        <Grid Classes="form" ColumnDefinitions="110,140,90,*,90,220" RowDefinitions="Auto,Auto">
+          <TextBlock Text="Numer" /><TextBox Grid.Column="1" Text="{Binding Number}" />
+          <TextBlock Grid.Column="2" Text="Nazwa" /><TextBox Grid.Column="3" Text="{Binding Name}" />
+          <TextBlock Grid.Column="4" Text="Typ" /><ComboBox Grid.Column="5" ItemsSource="{Binding Types}" SelectedItem="{Binding Type}" />
+          <TextBlock Grid.Row="1" Text="Bilans Wn / Ma" />
+          <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,*"><TextBox Text="{Binding BalanceDebitLine}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding BalanceCreditLine}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="RZiS" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding ProfitLossLine}" Watermark="np. R.B.III" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="CIT" /><ComboBox Grid.Row="1" Grid.Column="5" ItemsSource="{Binding CitClasses}" SelectedItem="{Binding Cit}" />
+        </Grid>
+        <WrapPanel Classes="toolbar">
+          <CheckBox Content="Konto rozrachunkowe" IsChecked="{Binding Settlement}" />
+          <CheckBox Content="Aktywne" IsChecked="{Binding IsActive}" />
+          <Button Content="Dodaj konto" Command="{Binding AddAccountCommand}" />
+          <Button Content="Zapisz zmiany zaznaczonego" Command="{Binding UpdateAccountCommand}" />
+          <Button Content="Usuń zaznaczone" Command="{Binding DeleteAccountCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+    <c:TableView Table="{Binding Accounts}" SelectedRow="{Binding Selected}" />
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,51 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.CapitalView"
+             x:DataType="s:CapitalViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding FormInfo}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBox Text="{Binding OwnerName}" Watermark="nazwa / imię i nazwisko właściciela" MinWidth="260" />
+      <TextBox Text="{Binding OwnerIdentifier}" Watermark="NIP / PESEL / KRS" />
+      <CheckBox Content="Osoba prawna" IsChecked="{Binding OwnerLegalPerson}" />
+      <Button Content="Dodaj właściciela" Command="{Binding AddOwnerCommand}" />
+    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Nowe zdarzenie kapitałowe" Margin="0,0,0,6">
+      <StackPanel>
+        <Grid Classes="form" ColumnDefinitions="170,*,170,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="Zdarzenie" /><ComboBox Grid.Column="1" Grid.ColumnSpan="3" ItemsSource="{Binding EventTypes}" SelectedItem="{Binding EventType}" />
+          <TextBlock Grid.Column="4" Text="Data" /><TextBox Grid.Column="5" Text="{Binding EventDate}" />
+          <TextBlock Grid.Row="1" Text="Właściciel" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding OwnerChoices}" SelectedItem="{Binding EventOwner}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="Seria / liczba akcji, udziałów" />
+          <Grid Grid.Row="1" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding ShareSeries}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding ShareCount}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Kwota ogółem" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding TotalAmount}" />
+          <TextBlock Grid.Row="2" Text="Na kapitał podstawowy" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ShareCapitalAmount}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="Na kapitał zapasowy" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding SupplementaryAmount}" />
+          <TextBlock Grid.Row="2" Grid.Column="4" Text="Podatek pobrany (płatnik)" /><TextBox Grid.Row="2" Grid.Column="5" Text="{Binding WithholdingTax}" />
+          <TextBlock Grid.Row="3" Text="Konto Wn / Ma (opcjonalnie)" />
+          <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,*"><TextBox Text="{Binding DebitAccount}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding CreditAccount}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="3" Grid.Column="2" Text="Opis" /><TextBox Grid.Row="3" Grid.Column="3" Grid.ColumnSpan="3" Text="{Binding Description}" />
+          <TextBlock Grid.Row="4" Text="Uchwała / data" />
+          <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,100"><TextBox Text="{Binding Resolution}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding ResolutionDate}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="4" Grid.Column="2" Text="Umowa / oświadczenie" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Agreement}" />
+          <TextBlock Grid.Row="4" Grid.Column="4" Text="Wpis do KRS" /><TextBox Grid.Row="4" Grid.Column="5" Text="{Binding KrsEntry}" />
+          <CheckBox Grid.Row="5" Grid.ColumnSpan="5" IsChecked="{Binding PayoutConfirmed}" Content="{Binding PayoutRule}" />
+          <Button Grid.Row="5" Grid.Column="5" Content="Zapisz zdarzenie" Command="{Binding CreateEventCommand}" />
+        </Grid>
+      </StackPanel>
+    </Expander>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Potwierdź dokumenty zaznaczonego" Command="{Binding ConfirmDocumentsCommand}" />
+      <Button Content="Zaksięguj zaznaczone" Command="{Binding PostEventCommand}" />
+    </WrapPanel>
+    <TabControl>
+      <TabItem Header="Zdarzenia"><c:TableView Table="{Binding Events}" SelectedRow="{Binding SelectedEvent}" /></TabItem>
+      <TabItem Header="Właściciele"><c:TableView Table="{Binding Owners}" /></TabItem>
+      <TabItem Header="Kapitały (salda)"><c:TableView Table="{Binding Summary}" /></TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

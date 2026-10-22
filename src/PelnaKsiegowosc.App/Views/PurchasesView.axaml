@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.PurchasesView"
+             x:DataType="s:PurchasesViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Zarejestruj fakturę" Command="{Binding NewCommand}" />
+      <Button Content="Edytuj roboczą" Command="{Binding EditCommand}" />
+      <Button Content="Zarejestruj korektę" Command="{Binding NewCorrectionCommand}" />
+      <TextBox Text="{Binding Search}" Watermark="Szukaj (numer, kontrahent, opis)" />
+      <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
+      <CheckBox Content="Tylko bieżący rok" IsChecked="{Binding OnlyCurrentYear}" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBlock Text="Odliczenie VAT %:" /><TextBox Text="{Binding DeductionPercent}" MinWidth="70" />
+      <CheckBox Content="Środek trwały" IsChecked="{Binding DeductionFixedAsset}" />
+      <TextBox Text="{Binding DeductionPeriod}" Watermark="okres mm.rrrr (domyślny)" />
+      <Button Content="Potwierdź odliczenie VAT" Command="{Binding ConfirmDeductionCommand}" />
+      <TextBlock Text="KSeF od–do:" /><TextBox Text="{Binding KsefFrom}" Watermark="dd.mm.rrrr" /><TextBox Text="{Binding KsefTo}" Watermark="dd.mm.rrrr" />
+      <Button Content="Pobierz faktury z KSeF" Command="{Binding ImportFromKsefCommand}" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Szczegóły" Command="{Binding DetailsCommand}" />
+      <Button Content="Zatwierdź" Command="{Binding ApproveCommand}" />
+      <Button Content="Cofnij zatwierdzenie…" Command="{Binding UnapproveCommand}" />
+      <Button Content="Proponuj dekretację" Command="{Binding ProposePostingCommand}" />
+      <Button Content="Zaksięguj" Command="{Binding PostCommand}" />
+      <Button Content="Anuluj dokument…" Command="{Binding CancelDocumentCommand}" />
+      <Button Content="Dodaj załącznik…" Command="{Binding AddAttachmentCommand}" />
+      <Button Content="Zapisz załącznik…" Command="{Binding SaveAttachmentCommand}" />
+    </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding EditorVisible}">
+      <ScrollViewer MaxHeight="520">
+      <StackPanel>
+        <TextBlock Text="{Binding Editor.Header}" Classes="h2" Margin="0,0,0,6" />
+        <Grid Classes="form" ColumnDefinitions="150,*,170,*,150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="Kontrahent" /><ComboBox Grid.Column="1" Grid.ColumnSpan="3" ItemsSource="{Binding Editor.Counterparties}" SelectedItem="{Binding Editor.Counterparty}" />
+          <TextBlock Grid.Column="4" Text="Rodzaj" /><ComboBox Grid.Column="5" ItemsSource="{Binding Editor.Kinds}" SelectedItem="{Binding Editor.Kind}" />
+          <TextBlock Grid.Row="1" Text="Data wystawienia" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Editor.IssueDate}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="Numer faktury dostawcy" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Editor.ExternalNumber}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="Data wpływu" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Editor.ReceiptDate}" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Data sprzedaży/dostawy" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding Editor.OperationDate}" />
+          <TextBlock Grid.Row="2" Text="Termin płatności" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Editor.DueDate}" />
+          <TextBlock Grid.Row="2" Grid.Column="4" Text="Forma płatności" /><ComboBox Grid.Row="2" Grid.Column="5" ItemsSource="{Binding Editor.PaymentMethods}" SelectedItem="{Binding Editor.PaymentMethod}" />
+          <TextBlock Grid.Row="3" Text="Waluta / kurs" />
+          <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="70,*"><TextBox Text="{Binding Editor.Currency}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Editor.ExchangeRate}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="3" Grid.Column="2" Text="Tabela NBP / data kursu" />
+          <Grid Grid.Row="3" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding Editor.ExchangeRateTable}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Editor.ExchangeRateDate}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="3" Grid.Column="4" Text="Rodzaj transakcji VAT" /><ComboBox Grid.Row="3" Grid.Column="5" ItemsSource="{Binding Editor.TransactionTypes}" SelectedItem="{Binding Editor.TransactionType}" />
+          <TextBlock Grid.Row="4" Text="Opis" /><TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Editor.Description}" />
+          <TextBlock Grid.Row="4" Grid.Column="4" Text="Procedury / typ JPK" />
+          <Grid Grid.Row="4" Grid.Column="5" ColumnDefinitions="*,*"><TextBox Text="{Binding Editor.JpkProcedures}" Watermark="np. MPP" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Editor.JpkDocumentType}" Watermark="np. WEW" Margin="0,2,12,2" /></Grid>
+        </Grid>
+        <CheckBox Content="Mechanizm podzielonej płatności" IsChecked="{Binding Editor.SplitPayment}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CorrectionMode}" Margin="0,6">
+          <TextBlock Text="Przyczyna korekty:" VerticalAlignment="Center" /><TextBox Text="{Binding CorrectionReason}" Width="500" />
+        </StackPanel>
+        <DataGrid ItemsSource="{Binding Editor.Lines}" SelectedItem="{Binding Editor.SelectedLine}" AutoGenerateColumns="False" CanUserSortColumns="False" MinHeight="140" MaxHeight="300" Margin="0,6,0,0">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Nazwa towaru / usługi" Binding="{ReflectionBinding Name}" Width="*" />
+            <DataGridTextColumn Header="Ilość" Binding="{ReflectionBinding Quantity}" Width="80" />
+            <DataGridTextColumn Header="J.m." Binding="{ReflectionBinding Unit}" Width="70" />
+            <DataGridTextColumn Header="Cena netto" Binding="{ReflectionBinding UnitNetPrice}" Width="120" />
+            <DataGridTemplateColumn Header="Stawka VAT" Width="120">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:InvoiceLineRow">
+                  <ComboBox ItemsSource="{x:Static vm:InvoiceLineRow.RateCodes}" SelectedItem="{Binding VatRate}" HorizontalAlignment="Stretch" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Konto" Binding="{ReflectionBinding AccountNumber}" Width="100" />
+            <DataGridTextColumn Header="GTU" Binding="{ReflectionBinding Gtu}" Width="70" />
+          </DataGrid.Columns>
+        </DataGrid>
+        <WrapPanel Classes="toolbar" Margin="0,6,0,0">
+          <Button Content="Dodaj pozycję" Command="{Binding Editor.AddLineCommand}" />
+          <Button Content="Usuń pozycję" Command="{Binding Editor.RemoveLineCommand}" />
+          <Button Content="Zapisz (roboczy)" Command="{Binding SaveCommand}" />
+          <Button Content="Zamknij" Command="{Binding CloseEditorCommand}" />
+        </WrapPanel>
+      </StackPanel>
+      </ScrollViewer>
+    </Border>
+    <c:TableView Table="{Binding Documents}" SelectedRow="{Binding Selected}" />
+  </DockPanel>
+</UserControl>

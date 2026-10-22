@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.VatView"
+             x:DataType="s:VatViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBlock Text="Okres (mm.rrrr):" /><TextBox Text="{Binding Period}" MinWidth="90" />
+      <TextBlock Text="Nadwyżka z poprzedniej deklaracji:" /><TextBox Text="{Binding CarriedForward}" Watermark="automatycznie" />
+      <Button Content="Pokaż" Command="{Binding ShowPeriodCommand}" />
+      <Button Content="Kontrola rejestrów" Command="{Binding ValidateCommand}" />
+      <TextBlock Text="Zwrot:" /><TextBox Text="{Binding RefundRequested}" MinWidth="90" />
+      <Button Content="Zaksięguj rozliczenie VAT" Command="{Binding PostSettlementCommand}" />
+      <CheckBox Content="Korekta JPK" IsChecked="{Binding Correction}" />
+      <Button Content="Generuj JPK_V7M…" Command="{Binding GenerateJpkCommand}" />
+    </WrapPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" Classes="info" />
+    <TabControl>
+      <TabItem Header="Rejestr sprzedaży"><c:TableView Table="{Binding Sales}" /></TabItem>
+      <TabItem Header="Rejestr zakupów"><c:TableView Table="{Binding Purchases}" /></TabItem>
+      <TabItem Header="Deklaracja (pola)"><c:TableView Table="{Binding Declaration}" /></TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

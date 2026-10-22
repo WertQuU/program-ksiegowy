@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.ArchiveView"
+             x:DataType="s:ArchiveViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="Załączniki">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <Button Content="Kontrola sum SHA-256" Command="{Binding VerifyAttachmentsCommand}" />
+            <Button Content="Zapisz zaznaczony…" Command="{Binding SaveAttachmentCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Attachments}" SelectedRow="{Binding SelectedAttachment}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Dziennik zdarzeń (audyt)">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding AuditFilter}" Watermark="czynność lub obiekt" />
+            <Button Content="Filtruj" Command="{Binding FilterAuditCommand}" />
+            <Button Content="Kontrola łańcucha skrótów" Command="{Binding VerifyAuditChainCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Audit}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Lata zamknięte">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="info" Text="Księgi przechowuje się co najmniej 5 lat od początku roku następującego po roku obrotowym (art. 74 ust. 2 UoR); zatwierdzone sprawozdania finansowe — trwale. Dokumentację podatkową — do upływu przedawnienia." />
+          <c:TableView Table="{Binding ClosedYears}" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

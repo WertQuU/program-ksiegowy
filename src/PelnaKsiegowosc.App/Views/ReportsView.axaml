@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.ReportsView"
+             x:DataType="s:ReportsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <ComboBox ItemsSource="{Binding Reports}" SelectedItem="{Binding Report}" MinWidth="360" />
+      <TextBlock Text="Od:" /><TextBox Text="{Binding From}" MinWidth="100" />
+      <TextBlock Text="Do / na dzień:" /><TextBox Text="{Binding To}" MinWidth="100" />
+      <TextBox Text="{Binding Account}" Watermark="konto (księga główna)" MinWidth="120" />
+      <CheckBox Content="Tylko przeterminowane" IsChecked="{Binding OverdueOnly}" />
+      <Button Content="Generuj" Command="{Binding GenerateCommand}" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Eksport PDF…" Command="{Binding ExportPdfCommand}" />
+      <Button Content="Eksport XLSX…" Command="{Binding ExportXlsxCommand}" />
+      <Button Content="Eksport CSV…" Command="{Binding ExportCsvCommand}" />
+      <Button Content="Sprawozdanie finansowe XML…" Command="{Binding FinancialStatementXmlCommand}" />
+    </WrapPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding ReportHeader}" Classes="h2" />
+    <c:TableView Table="{Binding Preview}" />
+  </DockPanel>
+</UserControl>

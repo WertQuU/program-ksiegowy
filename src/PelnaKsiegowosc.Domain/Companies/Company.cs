@@ -295,7 +295,7 @@ public class AccountingPolicy : CompanyEntity
             r.Error("Treść polityki rachunkowości jest pusta lub zbyt krótka — wymagana dokumentacja zasad (art. 10 ust. 1 UoR).");
         if (!ApprovedByManagement)
             r.Error("Polityka rachunkowości nie została zatwierdzona przez kierownika jednostki (art. 10 ust. 2 UoR).");
-        if (Content.Contains("[DO UZUPEŁNIENIA]", StringComparison.OrdinalIgnoreCase))
+        if (Content.Contains("[DO UZUPEŁNIENIA", StringComparison.OrdinalIgnoreCase))
             r.Error("Polityka rachunkowości zawiera niewypełnione pola oznaczone [DO UZUPEŁNIENIA].");
         if (ProfitAndLossVariant == ProfitAndLossVariant.Kalkulacyjny)
             r.Warning("Wariant kalkulacyjny RZiS nie jest jeszcze obsługiwany przez raporty aplikacji.");

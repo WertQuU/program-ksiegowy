@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.BackupsView"
+             x:DataType="s:BackupsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding KeyInfo}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Wykonaj kopię teraz" Command="{Binding BackupNowCommand}" />
+      <Button Content="Weryfikuj zaznaczoną" Command="{Binding VerifyCommand}" />
+      <Button Content="Odtwórz zaznaczoną…" Command="{Binding RestoreCommand}" />
+      <Button Content="Wygeneruj nowy klucz…" Command="{Binding GenerateKeyCommand}" />
+      <Button Content="Wprowadź klucz odzyskiwania…" Command="{Binding EnterRecoveryKeyCommand}" />
+    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Ustawienia kopii" Margin="0,0,0,6">
+      <WrapPanel Classes="toolbar">
+        <CheckBox Content="Kopie automatyczne" IsChecked="{Binding Automatic}" />
+        <TextBlock Text="co (godz.)" /><TextBox Text="{Binding IntervalHours}" MinWidth="60" />
+        <CheckBox Content="Przy zamknięciu programu" IsChecked="{Binding OnExit}" />
+        <TextBlock Text="Zachowuj lokalnie" /><TextBox Text="{Binding Retain}" MinWidth="60" />
+        <CheckBox Content="Z załącznikami" IsChecked="{Binding IncludeAttachments}" />
+        <CheckBox Content="Wysyłaj do Object Storage" IsChecked="{Binding Upload}" />
+        <TextBox Text="{Binding Directory}" MinWidth="320" />
+        <Button Content="Katalog…" Command="{Binding PickDirectoryCommand}" />
+        <Button Content="Zapisz ustawienia" Command="{Binding SaveSettingsCommand}" />
+      </WrapPanel>
+    </Expander>
+    <TabControl>
+      <TabItem Header="Kopie lokalne"><c:TableView Table="{Binding Local}" SelectedRow="{Binding SelectedLocal}" /></TabItem>
+      <TabItem Header="Kopie w Object Storage">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <Button Content="Pobierz listę" Command="{Binding ListRemoteCommand}" />
+            <Button Content="Pobierz zaznaczoną" Command="{Binding DownloadRemoteCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Remote}" SelectedRow="{Binding SelectedRemote}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Historia"><c:TableView Table="{Binding History}" /></TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

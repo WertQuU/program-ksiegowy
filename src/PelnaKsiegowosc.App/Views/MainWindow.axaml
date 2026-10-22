@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+        x:Class="PelnaKsiegowosc.App.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="{Binding Title}" Width="1360" Height="860" MinWidth="900" MinHeight="600"
+        Icon="avares://PelnaKsiegowosc/Assets/ikona.ico"
+        WindowStartupLocation="CenterScreen">
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Background="#174e8c" Padding="12,8">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <StackPanel>
+          <TextBlock Text="{Binding Title}" Foreground="White" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="{Binding CompanyLine}" Foreground="#dbe7f5" />
+        </StackPanel>
+        <ComboBox Grid.Column="1" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" MinWidth="230" VerticalAlignment="Center" Margin="0,0,8,0" />
+        <Button Grid.Column="2" Content="Odśwież" Command="{Binding RefreshCommand}" VerticalAlignment="Center" />
+      </Grid>
+    </Border>
+    <Border DockPanel.Dock="Top" Background="#fff4ce" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="#6b4e00" />
+    </Border>
+    <Border DockPanel.Dock="Bottom" Background="#eef1f4" Padding="12,4">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="{Binding Footer}" Foreground="#333" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="1" Text="{Binding SelectedSection.StatusMessage}" Foreground="#174e8c" FontWeight="SemiBold" Margin="12,0,0,0" />
+      </Grid>
+    </Border>
+    <ListBox DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" Background="#f6f8fa">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:SectionViewModel">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding Icon}" Width="22" TextAlignment="Center" />
+            <TextBlock Text="{Binding Title}" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <Grid RowDefinitions="Auto,*">
+      <ProgressBar IsIndeterminate="True" Height="3" IsVisible="{Binding SelectedSection.IsBusy}" />
+      <ContentControl Grid.Row="1" Content="{Binding SelectedSection}" Margin="16,12,16,8" />
+    </Grid>
+  </DockPanel>
+</Window>

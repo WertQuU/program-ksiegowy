@@ -1,0 +1,144 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:w="using:PelnaKsiegowosc.Presentation.ViewModels.Wizard"
+        xmlns:c="using:PelnaKsiegowosc.App.Controls"
+        x:Class="PelnaKsiegowosc.App.Views.WizardWindow"
+        x:DataType="w:SetupWizardViewModel"
+        Title="Pełna Księgowość — pierwsze uruchomienie" Width="980" Height="760" MinWidth="760" MinHeight="560"
+        Icon="avares://PelnaKsiegowosc/Assets/ikona.ico"
+        WindowStartupLocation="CenterScreen">
+  <DockPanel Margin="20">
+    <StackPanel DockPanel.Dock="Top">
+      <TextBlock Text="{Binding StepNumber}" Foreground="#666" />
+      <TextBlock Text="{Binding StepTitle}" Classes="h1" />
+    </StackPanel>
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+      <TextBlock Text="{Binding StatusMessage}" Foreground="#174e8c" VerticalAlignment="Center" TextWrapping="Wrap" />
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+        <Button Content="Wstecz" Command="{Binding BackCommand}" IsEnabled="{Binding CanGoBack}" />
+        <Button Content="Dalej" Command="{Binding NextCommand}" IsVisible="{Binding !IsLastStep}" IsDefault="True" />
+        <Button Content="Utwórz księgi / Zakończ" Command="{Binding FinishCommand}" IsVisible="{Binding IsLastStep}" />
+      </StackPanel>
+    </Grid>
+    <ProgressBar DockPanel.Dock="Bottom" IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" />
+
+    <Panel>
+      <!-- 1. Warunki licencji -->
+      <DockPanel IsVisible="{Binding IsTerms}">
+        <TextBlock DockPanel.Dock="Top" Classes="info"
+                   Text="Program jest udostępniany nieodpłatnie na warunkach poniższej licencji. Przeczytaj ją — w szczególności § 6: za księgi, deklaracje, pliki JPK, faktury KSeF i sprawozdania odpowiada użytkownik, a program nie zastępuje księgowego ani doradcy podatkowego." />
+        <CheckBox DockPanel.Dock="Bottom" IsChecked="{Binding TermsAccepted}" Margin="0,8,0,0"
+                  Content="Przeczytałem/am i akceptuję warunki licencji, w tym wyłączenie odpowiedzialności autora (§ 6)." />
+        <TextBox Text="{Binding TermsText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" />
+      </DockPanel>
+
+      <!-- 2. Baza -->
+      <ScrollViewer IsVisible="{Binding IsDatabase}">
+        <StackPanel Spacing="6">
+          <TextBlock Classes="info" Text="Księgi mogą być przechowywane lokalnie (plik bazy na tym komputerze — praca bez internetu) albo na serwerze PostgreSQL (praca wielu stanowisk). Program nigdy nie przełącza się samoczynnie między bazami." />
+                    <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
+            <TextBlock Text="Plik bazy" />
+            <TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />
+            <Button Grid.Column="2" Content="Wybierz…" Command="{Binding PickSqliteCommand}" />
+          </Grid>
+          <CheckBox Content="Serwer PostgreSQL (zamiast lokalnej bazy SQLite na tym komputerze)" IsChecked="{Binding Database.UsePostgres}" />
+          <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
+            <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
+            <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />
+            <TextBlock Grid.Row="2" Text="Nazwa bazy" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Database.Database}" />
+            <TextBlock Grid.Row="3" Text="Użytkownik" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Database.Username}" />
+            <TextBlock Grid.Row="4" Text="Hasło" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Database.Password}" PasswordChar="•" />
+            <TextBlock Grid.Row="5" Text="Szyfrowanie TLS" /><ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Database.SslModes}" SelectedItem="{Binding Database.SslMode}" />
+            <TextBlock Grid.Row="6" Text="Certyfikat CA (opcjonalnie)" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Database.RootCertificate}" />
+            <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
+          </Grid>
+          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji." IsVisible="{Binding Database.UsePostgres}" />
+          <Button Content="Sprawdź połączenie" Command="{Binding TestDatabaseCommand}" />
+          <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
+        </StackPanel>
+      </ScrollViewer>
+
+      <!-- 3. Jednostka -->
+      <ScrollViewer IsVisible="{Binding IsCompany}">
+        <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="Forma prawna" /><ComboBox Grid.Column="1" ItemsSource="{Binding Company.LegalFormChoices}" SelectedItem="{Binding Company.LegalForm}" />
+          <TextBlock Grid.Column="2" Text="NIP" /><TextBox Grid.Column="3" Text="{Binding Company.Nip}" />
+          <TextBlock Grid.Row="1" Text="Pełna nazwa (firma)" /><TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Company.FullName}" />
+          <TextBlock Grid.Row="2" Text="Nazwa skrócona" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Company.ShortName}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="REGON" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Company.Regon}" />
+          <TextBlock Grid.Row="3" Text="KRS" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Company.Krs}" />
+          <TextBlock Grid.Row="3" Grid.Column="2" Text="Sąd rejestrowy" /><TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Company.RegistryCourt}" />
+          <TextBlock Grid.Row="4" Text="Ulica" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Company.Street}" />
+          <TextBlock Grid.Row="4" Grid.Column="2" Text="Nr budynku / lokalu" />
+          <Grid Grid.Row="4" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding Company.BuildingNumber}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Company.ApartmentNumber}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="5" Text="Kod pocztowy" /><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Company.PostalCode}" />
+          <TextBlock Grid.Row="5" Grid.Column="2" Text="Miejscowość" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Company.City}" />
+          <TextBlock Grid.Row="6" Text="Kod urzędu skarbowego" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Company.TaxOfficeCode}" />
+          <TextBlock Grid.Row="6" Grid.Column="2" Text="Rachunek bankowy" /><TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Company.BankIban}" />
+          <TextBlock Grid.Row="7" Text="Status VAT" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Company.VatStatuses}" SelectedItem="{Binding Company.VatStatus}" />
+          <TextBlock Grid.Row="7" Grid.Column="2" Text="Okres rozliczeń VAT" /><ComboBox Grid.Row="7" Grid.Column="3" ItemsSource="{Binding Company.VatPeriods}" SelectedItem="{Binding Company.VatPeriod}" />
+          <TextBlock Grid.Row="8" Text="Zaliczki CIT" /><ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding Company.CitMethods}" SelectedItem="{Binding Company.CitMethod}" />
+          <CheckBox Grid.Row="8" Grid.Column="2" Grid.ColumnSpan="2" Content="Mały podatnik CIT w tym roku" IsChecked="{Binding Company.IsSmallCitTaxpayer}" />
+          <TextBlock Grid.Row="9" Text="E-mail / telefon" />
+          <Grid Grid.Row="9" Grid.Column="1" ColumnDefinitions="*,*"><TextBox Text="{Binding Company.Email}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Company.Phone}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="9" Grid.Column="2" Text="Data rejestracji" /><TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Company.RegistrationDate}" Watermark="dd.mm.rrrr" />
+          <TextBlock Grid.Row="10" Grid.ColumnSpan="4" Classes="info" Text="Dla spółek jawnych, partnerskich, cywilnych i działalności osób fizycznych podatek dochodowy rozliczają wspólnicy/właściciel (PIT) — moduł CIT będzie wtedy niedostępny." />
+        </Grid>
+      </ScrollViewer>
+
+      <!-- 4. Rok obrotowy -->
+      <StackPanel IsVisible="{Binding IsYear}" Spacing="6">
+        <TextBlock Classes="info" Text="Rok obrotowy to zwykle rok kalendarzowy. Pierwszy rok może być krótszy albo — przy rozpoczęciu działalności w drugiej połowie roku — dłuższy (do 24 miesięcy, art. 3 ust. 1 pkt 9 UoR)." />
+        <Grid Classes="form" ColumnDefinitions="210,200" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="Początek" /><TextBox Grid.Column="1" Text="{Binding YearStart}" Watermark="dd.mm.rrrr" />
+          <TextBlock Grid.Row="1" Text="Koniec" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding YearEnd}" Watermark="dd.mm.rrrr" />
+          <CheckBox Grid.Row="2" Grid.Column="1" Content="Pierwszy rok działalności" IsChecked="{Binding IsFirstYear}" />
+        </Grid>
+      </StackPanel>
+
+      <!-- 5. Plan kont -->
+      <StackPanel IsVisible="{Binding IsChart}" Spacing="6">
+        <TextBlock Classes="info" Text="{Binding ChartInfo}" />
+        <CheckBox Content="Zatwierdź plan kont teraz (bez zatwierdzenia księgowanie jest zablokowane)" IsChecked="{Binding ApproveChart}" />
+      </StackPanel>
+
+      <!-- 6. Polityka -->
+      <DockPanel IsVisible="{Binding IsPolicy}">
+        <TextBlock DockPanel.Dock="Top" Classes="info" Text="Szablon zasad (polityki) rachunkowości — dostosuj go do jednostki. Pola [DO UZUPEŁNIENIA…] muszą zostać wypełnione przed zatwierdzeniem przez kierownika jednostki. Możesz zrobić to później w sekcji „Jednostka i polityka”." />
+        <Grid DockPanel.Dock="Bottom" Classes="form" ColumnDefinitions="Auto,*" Margin="0,8,0,0">
+          <CheckBox Content="Zatwierdź politykę teraz — zatwierdza:" IsChecked="{Binding ApprovePolicy}" />
+          <TextBox Grid.Column="1" Text="{Binding PolicyApprovedBy}" Watermark="imię, nazwisko, funkcja" />
+        </Grid>
+        <TextBox Text="{Binding PolicyContent}" AcceptsReturn="True" TextWrapping="Wrap" />
+      </DockPanel>
+
+      <!-- 7. Kierownik jednostki -->
+      <StackPanel IsVisible="{Binding IsPerson}" Spacing="6">
+        <TextBlock Classes="info" Text="Kierownik jednostki odpowiada za prowadzenie ksiąg rachunkowych (art. 4a UoR). Kolejne osoby (np. główny księgowy) dodasz w sekcji „Jednostka i polityka”." />
+        <Grid Classes="form" ColumnDefinitions="210,300" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding ManagerFirstName}" />
+          <TextBlock Grid.Row="1" Text="Nazwisko" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ManagerLastName}" />
+          <TextBlock Grid.Row="2" Text="Funkcja" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding ManagerRoles}" SelectedItem="{Binding ManagerRole}" />
+        </Grid>
+      </StackPanel>
+
+      <!-- 8. Kopie -->
+      <StackPanel IsVisible="{Binding IsBackup}" Spacing="8">
+        <TextBlock Classes="info" Text="Kopie zapasowe są szyfrowane (AES-256-GCM). Klucz kopii jest przechowywany w magazynie haseł systemu, a klucz odzyskiwania musisz zapisać poza komputerem — bez niego nie odtworzysz kopii po awarii. Kopie w chmurze (OVHcloud Object Storage) skonfigurujesz w sekcji „Integracje”." />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button Content="Wygeneruj nowy klucz kopii" Command="{Binding GenerateKeyCommand}" />
+          <Button Content="Mam już klucz odzyskiwania…" Command="{Binding EnterKeyCommand}" />
+        </StackPanel>
+        <TextBox Text="{Binding RecoveryKey, Mode=OneWay}" IsReadOnly="True" FontSize="18" FontFamily="Cascadia Mono,Consolas,DejaVu Sans Mono,monospace" TextWrapping="Wrap" Watermark="(klucz odzyskiwania pojawi się tutaj)" />
+        <CheckBox Content="Zapisałem/am klucz odzyskiwania w bezpiecznym miejscu poza komputerem" IsChecked="{Binding RecoveryKeySaved}" />
+        <CheckBox Content="Skonfiguruję kopie zapasowe później (niezalecane)" IsChecked="{Binding SkipBackupKey}" />
+      </StackPanel>
+
+      <!-- 9. Podsumowanie -->
+      <DockPanel IsVisible="{Binding IsSummary}">
+        <SelectableTextBlock DockPanel.Dock="Top" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,10" />
+        <c:TableView Table="{Binding Readiness}" />
+      </DockPanel>
+    </Panel>
+  </DockPanel>
+</Window>

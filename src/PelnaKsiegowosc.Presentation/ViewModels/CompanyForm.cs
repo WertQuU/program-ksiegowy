@@ -3,7 +3,7 @@ using PelnaKsiegowosc.Domain.Companies;
 
 namespace PelnaKsiegowosc.Presentation.ViewModels;
 
-/// <summary>Formularz danych spółki — wspólny dla kreatora i sekcji „Spółka i polityka”.</summary>
+/// <summary>Formularz danych jednostki — wspólny dla kreatora i sekcji „Jednostka i polityka”.</summary>
 public sealed partial class CompanyForm : ObservableObject
 {
     [ObservableProperty] private string _fullName = "";
@@ -25,9 +25,15 @@ public sealed partial class CompanyForm : ObservableObject
     [ObservableProperty] private string? _invoiceFooter;
     [ObservableProperty] private string? _registrationDate;
     [ObservableProperty] private bool _isSmallCitTaxpayer;
+    [ObservableProperty] private Choice<LegalForm> _legalForm = LegalForms_[0];
     [ObservableProperty] private Choice<VatStatus> _vatStatus = Choices.Of<VatStatus>()[0];
     [ObservableProperty] private Choice<VatSettlementPeriod> _vatPeriod = Choices.Of<VatSettlementPeriod>()[0];
     [ObservableProperty] private Choice<CitAdvanceMethod> _citMethod = Choices.Of<CitAdvanceMethod>()[0];
+
+    private static readonly List<Choice<LegalForm>> LegalForms_ =
+        Enum.GetValues<LegalForm>().Select(f => new Choice<LegalForm>(f, LegalForms.Name(f))).ToList();
+
+    public List<Choice<LegalForm>> LegalFormChoices => LegalForms_;
 
     public List<Choice<VatStatus>> VatStatuses { get; } = Choices.Of<VatStatus>();
     public List<Choice<VatSettlementPeriod>> VatPeriods { get; } = Choices.Of<VatSettlementPeriod>();
@@ -39,6 +45,7 @@ public sealed partial class CompanyForm : ObservableObject
         Street = c.Street; BuildingNumber = c.BuildingNumber; ApartmentNumber = c.ApartmentNumber; PostalCode = c.PostalCode; City = c.City;
         Voivodeship = c.Voivodeship; Email = c.Email; Phone = c.Phone; TaxOfficeCode = c.TaxOfficeCode; BankIban = c.DefaultBankAccountIban;
         InvoiceFooter = c.InvoiceFooter; RegistrationDate = c.RegistrationDate?.ToString("dd.MM.yyyy"); IsSmallCitTaxpayer = c.IsSmallCitTaxpayer;
+        LegalForm = LegalFormChoices.First(x => x.Value == c.LegalForm);
         VatStatus = VatStatuses.First(x => x.Value == c.VatStatus);
         VatPeriod = VatPeriods.First(x => x.Value == c.VatPeriod);
         CitMethod = CitMethods.First(x => x.Value == c.CitAdvanceMethod);
@@ -55,6 +62,7 @@ public sealed partial class CompanyForm : ObservableObject
             c.FunctionalCurrency = existing.FunctionalCurrency;
             c.Country = existing.Country;
         }
+        c.LegalForm = LegalForm.Value;
         c.FullName = FullName.Trim();
         c.ShortName = string.IsNullOrWhiteSpace(ShortName) ? FullName.Trim() : ShortName.Trim();
         c.Nip = Nip.Trim();

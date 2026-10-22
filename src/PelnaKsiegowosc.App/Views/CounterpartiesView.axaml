@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.CounterpartiesView"
+             x:DataType="s:CounterpartiesViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBox Text="{Binding Search}" Watermark="Szukaj (nazwa, kod, NIP)" />
+      <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
+      <CheckBox Content="Pokaż nieaktywnych" IsChecked="{Binding ShowInactive}" />
+      <Button Content="Nowy kontrahent" Command="{Binding NewCommand}" />
+      <Button Content="Zapisz" Command="{Binding SaveCommand}" />
+    </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="panel">
+      <StackPanel>
+        <TextBlock Text="{Binding FormHeader}" Classes="h2" Margin="0,0,0,6" />
+        <Grid Classes="form" ColumnDefinitions="110,*,110,*,110,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+          <TextBlock Text="Kod" /><TextBox Grid.Column="1" Text="{Binding Code}" />
+          <TextBlock Grid.Column="2" Text="Nazwa" /><TextBox Grid.Column="3" Grid.ColumnSpan="3" Text="{Binding Name}" />
+          <TextBlock Grid.Row="1" Text="Rodzaj" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="NIP" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Nip}" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Kraj / VAT UE" />
+          <Grid Grid.Row="1" Grid.Column="5" ColumnDefinitions="60,*"><TextBox Text="{Binding Country}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding VatEu}" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="2" Text="Ulica" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Street}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="Nr / lokal, kod, miasto" />
+          <Grid Grid.Row="2" Grid.Column="3" ColumnDefinitions="*,*,90,2*"><TextBox Text="{Binding Building}" Watermark="nr" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Apartment}" Watermark="lok." Margin="0,2,4,2" /><TextBox Grid.Column="2" Text="{Binding PostalCode}" Watermark="00-000" Margin="0,2,4,2" /><TextBox Grid.Column="3" Text="{Binding City}" Watermark="miejscowość" Margin="0,2,12,2" /></Grid>
+          <TextBlock Grid.Row="2" Grid.Column="4" Text="REGON" /><TextBox Grid.Row="2" Grid.Column="5" Text="{Binding Regon}" />
+          <TextBlock Grid.Row="3" Text="E-mail" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Email}" />
+          <TextBlock Grid.Row="3" Grid.Column="2" Text="Telefon" /><TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Phone}" />
+          <TextBlock Grid.Row="3" Grid.Column="4" Text="Rachunek" /><TextBox Grid.Row="3" Grid.Column="5" Text="{Binding Iban}" />
+          <TextBlock Grid.Row="4" Text="Termin (dni)" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PaymentDays}" />
+          <TextBlock Grid.Row="4" Grid.Column="2" Text="Uwagi" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding Notes}" />
+          <StackPanel Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8">
+            <CheckBox Content="Podmiot powiązany" IsChecked="{Binding RelatedParty}" /><CheckBox Content="Aktywny" IsChecked="{Binding Active}" />
+          </StackPanel>
+        </Grid>
+      </StackPanel>
+    </Border>
+    <TabControl>
+      <TabItem Header="Lista kontrahentów"><c:TableView Table="{Binding List}" SelectedRow="{Binding Selected}" /></TabItem>
+      <TabItem Header="Rozrachunki zaznaczonego">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Kompensata: kwota" /><TextBox Text="{Binding CompensationAmount}" />
+            <TextBox Text="{Binding CompensationNote}" Watermark="numer noty kompensacyjnej" />
+            <Button Content="Kompensuj zaznaczoną należność z najstarszym zobowiązaniem" Command="{Binding CompensateCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding OpenItems}" SelectedRow="{Binding SelectedOpenItem}" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

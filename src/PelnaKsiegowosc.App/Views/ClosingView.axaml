@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.ClosingView"
+             x:DataType="s:ClosingViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding YearInfo}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Lista kontrolna okresu" Command="{Binding CheckCommand}" />
+      <Button Content="Zamknij okres" Command="{Binding ClosePeriodCommand}" />
+      <Button Content="Otwórz ponownie…" Command="{Binding ReopenPeriodCommand}" />
+      <Button Content="Podgląd zamknięcia roku" Command="{Binding PreviewYearCloseCommand}" />
+      <Button Content="Zamknij rok obrotowy…" Command="{Binding CloseYearCommand}" />
+    </WrapPanel>
+    <Grid ColumnDefinitions="*,12,1.4*">
+      <c:TableView Table="{Binding Periods}" SelectedRow="{Binding SelectedPeriod}" />
+      <DockPanel Grid.Column="2">
+        <TextBlock DockPanel.Dock="Top" Text="Lista kontrolna" Classes="h2" Margin="0,0,0,4" />
+        <c:TableView Table="{Binding Checklist}" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,63 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.LedgerView"
+             x:DataType="s:LedgerViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <CheckBox Content="Bufor" IsChecked="{Binding ShowBuffer}" />
+      <CheckBox Content="Zaksięgowane" IsChecked="{Binding ShowPosted}" />
+      <Button Content="Odśwież" Command="{Binding LoadCommand}" />
+      <Button Content="Szczegóły" Command="{Binding DetailsCommand}" />
+      <Button Content="Nowy zapis" Command="{Binding NewEntryCommand}" />
+      <Button Content="Edytuj z bufora" Command="{Binding EditDraftCommand}" />
+      <Button Content="Zaksięguj z bufora" Command="{Binding PostDraftCommand}" />
+      <Button Content="Usuń z bufora" Command="{Binding DeleteDraftCommand}" />
+      <Button Content="Storno…" Command="{Binding ReverseCommand}" />
+    </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding EditorVisible}">
+      <StackPanel>
+        <TextBlock Text="Zapis księgowy" Classes="h2" Margin="0,0,0,6" />
+        <Grid Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="Dziennik" /><ComboBox Grid.Column="1" ItemsSource="{Binding JournalCodes}" SelectedItem="{Binding JournalCode}" />
+          <TextBlock Grid.Column="2" Text="Rodzaj dowodu" /><TextBox Grid.Column="3" Text="{Binding DocumentType}" />
+          <TextBlock Grid.Column="4" Text="Numer dowodu" /><TextBox Grid.Column="5" Text="{Binding DocumentNumber}" />
+          <TextBlock Grid.Row="1" Text="Data operacji" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding OperationDate}" />
+          <TextBlock Grid.Row="1" Grid.Column="2" Text="Data dowodu" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding DocumentDate}" />
+          <TextBlock Grid.Row="1" Grid.Column="4" Text="Data księgowania" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding PostingDate}" />
+          <TextBlock Grid.Row="2" Text="Opis operacji" /><TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="5" Text="{Binding Description}" />
+        </Grid>
+        <DataGrid ItemsSource="{Binding Lines.Lines}" SelectedItem="{Binding Lines.SelectedLine}" AutoGenerateColumns="False" CanUserSortColumns="False" MinHeight="140" MaxHeight="320">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Konto" Binding="{ReflectionBinding Account}" Width="130" />
+              <DataGridTextColumn Header="Wn" Binding="{ReflectionBinding Debit}" Width="130" />
+              <DataGridTextColumn Header="Ma" Binding="{ReflectionBinding Credit}" Width="130" />
+              <DataGridTemplateColumn Header="Kontrahent" Width="260">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:PostingLineRow">
+                    <ComboBox ItemsSource="{Binding $parent[DataGrid].((s:LedgerViewModel)DataContext).Lines.Counterparties}" SelectedItem="{Binding Counterparty}" HorizontalAlignment="Stretch" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Header="Opis" Binding="{ReflectionBinding Description}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <WrapPanel Classes="toolbar" Margin="0,6,0,0">
+            <Button Content="Dodaj pozycję" Command="{Binding Lines.AddLineCommand}" />
+            <Button Content="Usuń pozycję" Command="{Binding Lines.RemoveLineCommand}" />
+            <Button Content="Przelicz sumy" Command="{Binding Lines.RecalculateCommand}" />
+            <TextBlock Text="{Binding Lines.Totals}" />
+          </WrapPanel>
+        <WrapPanel Classes="toolbar">
+          <Button Content="Zapisz w buforze" Command="{Binding SaveDraftCommand}" />
+          <Button Content="Zaksięguj" Command="{Binding SaveAndPostCommand}" />
+          <Button Content="Zamknij" Command="{Binding CloseEditorCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+    <c:TableView Table="{Binding Entries}" SelectedRow="{Binding Selected}" />
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,33 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.CitView"
+             x:DataType="s:CitViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Applicability}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBlock Text="Narastająco do okresu nr:" /><TextBox Text="{Binding UptoPeriod}" MinWidth="60" />
+      <Button Content="Przelicz" Command="{Binding RecalculateCommand}" />
+      <Button Content="Zapisz wyliczenie zaliczki" Command="{Binding ComputeAdvanceCommand}" IsEnabled="{Binding IsApplicable}" />
+      <Button Content="Zatwierdź zaznaczoną zaliczkę" Command="{Binding ApproveAdvanceCommand}" IsEnabled="{Binding IsApplicable}" />
+    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Korekta wyniku podatkowego" Margin="0,0,0,8">
+      <WrapPanel Classes="toolbar">
+        <ComboBox ItemsSource="{Binding AdjustmentTypes}" SelectedItem="{Binding AdjustmentType}" MinWidth="220" />
+        <TextBox Text="{Binding AdjustmentPeriod}" Watermark="od okresu nr" MinWidth="80" />
+        <TextBox Text="{Binding AdjustmentAmount}" Watermark="kwota" />
+        <TextBox Text="{Binding AdjustmentDescription}" Watermark="opis" MinWidth="240" />
+        <TextBox Text="{Binding AdjustmentBasis}" Watermark="podstawa prawna" MinWidth="180" />
+        <Button Content="Dodaj korektę" Command="{Binding AddAdjustmentCommand}" />
+      </WrapPanel>
+    </Expander>
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Warnings}" Classes="info" Foreground="#8a5300" />
+    <TabControl>
+      <TabItem Header="Uzgodnienie wyniku"><c:TableView Table="{Binding Reconciliation}" /></TabItem>
+      <TabItem Header="Zaliczki"><c:TableView Table="{Binding Advances}" SelectedRow="{Binding SelectedAdvance}" /></TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

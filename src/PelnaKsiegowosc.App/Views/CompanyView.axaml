@@ -1,0 +1,81 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.CompanyView"
+             x:DataType="s:CompanyViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="Dane jednostki">
+        <ScrollViewer>
+          <StackPanel>
+            <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Text="Forma prawna" /><ComboBox Grid.Column="1" ItemsSource="{Binding Form.LegalFormChoices}" SelectedItem="{Binding Form.LegalForm}" />
+              <TextBlock Grid.Column="2" Text="NIP" /><TextBox Grid.Column="3" Text="{Binding Form.Nip}" />
+              <TextBlock Grid.Row="1" Text="Pełna nazwa (firma)" /><TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Form.FullName}" />
+              <TextBlock Grid.Row="2" Text="Nazwa skrócona" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Form.ShortName}" />
+              <TextBlock Grid.Row="2" Grid.Column="2" Text="REGON" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Form.Regon}" />
+              <TextBlock Grid.Row="3" Text="KRS" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Form.Krs}" />
+              <TextBlock Grid.Row="3" Grid.Column="2" Text="Sąd rejestrowy" /><TextBox Grid.Row="3" Grid.Column="3" Text="{Binding Form.RegistryCourt}" />
+              <TextBlock Grid.Row="4" Text="Ulica" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Form.Street}" />
+              <TextBlock Grid.Row="4" Grid.Column="2" Text="Nr budynku / lokalu" />
+              <Grid Grid.Row="4" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding Form.BuildingNumber}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Form.ApartmentNumber}" Margin="0,2,12,2" /></Grid>
+              <TextBlock Grid.Row="5" Text="Kod pocztowy" /><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding Form.PostalCode}" />
+              <TextBlock Grid.Row="5" Grid.Column="2" Text="Miejscowość" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding Form.City}" />
+              <TextBlock Grid.Row="6" Text="Kod urzędu skarbowego" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Form.TaxOfficeCode}" />
+              <TextBlock Grid.Row="6" Grid.Column="2" Text="Rachunek bankowy" /><TextBox Grid.Row="6" Grid.Column="3" Text="{Binding Form.BankIban}" />
+              <TextBlock Grid.Row="7" Text="Status VAT" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Form.VatStatuses}" SelectedItem="{Binding Form.VatStatus}" />
+              <TextBlock Grid.Row="7" Grid.Column="2" Text="Okres rozliczeń VAT" /><ComboBox Grid.Row="7" Grid.Column="3" ItemsSource="{Binding Form.VatPeriods}" SelectedItem="{Binding Form.VatPeriod}" />
+              <TextBlock Grid.Row="8" Text="Zaliczki CIT" /><ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding Form.CitMethods}" SelectedItem="{Binding Form.CitMethod}" />
+              <CheckBox Grid.Row="8" Grid.Column="2" Grid.ColumnSpan="2" Content="Mały podatnik CIT" IsChecked="{Binding Form.IsSmallCitTaxpayer}" />
+              <TextBlock Grid.Row="9" Text="E-mail / telefon" />
+              <Grid Grid.Row="9" Grid.Column="1" ColumnDefinitions="*,*"><TextBox Text="{Binding Form.Email}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Form.Phone}" Margin="0,2,12,2" /></Grid>
+              <TextBlock Grid.Row="9" Grid.Column="2" Text="Data rejestracji" /><TextBox Grid.Row="9" Grid.Column="3" Text="{Binding Form.RegistrationDate}" Watermark="dd.mm.rrrr" />
+              <TextBlock Grid.Row="10" Text="Stopka faktury" /><TextBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Form.InvoiceFooter}" />
+            </Grid>
+            <WrapPanel Classes="toolbar" Margin="0,8,0,0"><Button Content="Zapisz dane jednostki" Command="{Binding SaveCompanyCommand}" /></WrapPanel>
+            <TextBlock Text="{Binding ValidationText}" Classes="info" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Osoby odpowiedzialne">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding PersonFirstName}" Watermark="Imię" />
+            <TextBox Text="{Binding PersonLastName}" Watermark="Nazwisko" />
+            <ComboBox ItemsSource="{Binding PersonRoles}" SelectedItem="{Binding PersonRole}" />
+            <CheckBox Content="Podpisuje sprawozdanie" IsChecked="{Binding PersonSigns}" />
+            <Button Content="Dodaj" Command="{Binding AddPersonCommand}" />
+            <Button Content="Usuń zaznaczoną" Command="{Binding RemovePersonCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Persons}" SelectedRow="{Binding SelectedPerson}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Polityka rachunkowości">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{Binding PolicyInfo}" Classes="info" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Korekty:" /><ComboBox ItemsSource="{Binding CorrectionMethods}" SelectedItem="{Binding CorrectionMethod}" />
+            <TextBlock Text="Próg niskiej wartości ŚT:" /><TextBox Text="{Binding LowValueThreshold}" />
+            <CheckBox Content="Jednostka mała" IsChecked="{Binding IsSmallEntity}" />
+            <CheckBox Content="Jednostka mikro" IsChecked="{Binding IsMicroEntity}" />
+          </WrapPanel>
+          <WrapPanel DockPanel.Dock="Bottom" Classes="toolbar" Margin="0,8,0,0">
+            <Button Content="Zapisz politykę" Command="{Binding SavePolicyCommand}" />
+            <Button Content="Zatwierdź (kierownik jednostki)…" Command="{Binding ApprovePolicyCommand}" />
+            <Button Content="Nowa wersja z szablonu" Command="{Binding NewPolicyFromTemplateCommand}" />
+          </WrapPanel>
+          <TextBox Text="{Binding PolicyContent}" AcceptsReturn="True" TextWrapping="Wrap" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Lata obrotowe">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar"><Button Content="Utwórz kolejny rok obrotowy" Command="{Binding AddNextYearCommand}" /></WrapPanel>
+          <c:TableView Table="{Binding Years}" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

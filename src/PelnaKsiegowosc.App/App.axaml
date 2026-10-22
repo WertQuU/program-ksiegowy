@@ -1,0 +1,98 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:v="using:PelnaKsiegowosc.App.Views"
+             x:Class="PelnaKsiegowosc.App.App"
+             RequestedThemeVariant="Light">
+  <Application.DataTemplates>
+    <DataTemplate DataType="s:DashboardViewModel"><v:DashboardView /></DataTemplate>
+    <DataTemplate DataType="s:CompanyViewModel"><v:CompanyView /></DataTemplate>
+    <DataTemplate DataType="s:DocumentsViewModel"><v:DocumentsView /></DataTemplate>
+    <DataTemplate DataType="s:SalesViewModel"><v:SalesView /></DataTemplate>
+    <DataTemplate DataType="s:PurchasesViewModel"><v:PurchasesView /></DataTemplate>
+    <DataTemplate DataType="s:LedgerViewModel"><v:LedgerView /></DataTemplate>
+    <DataTemplate DataType="s:ChartViewModel"><v:ChartView /></DataTemplate>
+    <DataTemplate DataType="s:CounterpartiesViewModel"><v:CounterpartiesView /></DataTemplate>
+    <DataTemplate DataType="s:BankViewModel"><v:BankView /></DataTemplate>
+    <DataTemplate DataType="s:VatViewModel"><v:VatView /></DataTemplate>
+    <DataTemplate DataType="s:CitViewModel"><v:CitView /></DataTemplate>
+    <DataTemplate DataType="s:FixedAssetsViewModel"><v:FixedAssetsView /></DataTemplate>
+    <DataTemplate DataType="s:CapitalViewModel"><v:CapitalView /></DataTemplate>
+    <DataTemplate DataType="s:ReportsViewModel"><v:ReportsView /></DataTemplate>
+    <DataTemplate DataType="s:ClosingViewModel"><v:ClosingView /></DataTemplate>
+    <DataTemplate DataType="s:ArchiveViewModel"><v:ArchiveView /></DataTemplate>
+    <DataTemplate DataType="s:BackupsViewModel"><v:BackupsView /></DataTemplate>
+    <DataTemplate DataType="s:IntegrationsViewModel"><v:IntegrationsView /></DataTemplate>
+    <DataTemplate DataType="s:SettingsViewModel"><v:SettingsView /></DataTemplate>
+    <DataTemplate DataType="s:HelpViewModel"><v:HelpView /></DataTemplate>
+  </Application.DataTemplates>
+
+  <Application.Styles>
+    <FluentTheme />
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <Style Selector="TextBlock.h1">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="TextBlock.h2">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Margin" Value="0,12,0,6" />
+    </Style>
+    <Style Selector="TextBlock.info">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Foreground" Value="#444" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style Selector="TextBlock.label">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > Button">
+      <Setter Property="Margin" Value="0,0,6,6" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > CheckBox">
+      <Setter Property="Margin" Value="6,0,6,6" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > TextBox">
+      <Setter Property="Margin" Value="0,0,6,6" />
+      <Setter Property="MinWidth" Value="140" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > ComboBox">
+      <Setter Property="Margin" Value="0,0,6,6" />
+      <Setter Property="MinWidth" Value="200" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="4,0,6,6" />
+    </Style>
+    <Style Selector="Grid.form > TextBox">
+      <Setter Property="Margin" Value="0,2,12,2" />
+    </Style>
+    <Style Selector="Grid.form > ComboBox">
+      <Setter Property="Margin" Value="0,2,12,2" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Grid.form > TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,2,8,2" />
+    </Style>
+    <Style Selector="Grid.form > CheckBox">
+      <Setter Property="Margin" Value="0,2,12,2" />
+    </Style>
+    <Style Selector="TabItem">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="MinHeight" Value="36" />
+      <Setter Property="Padding" Value="10,4" />
+    </Style>
+    <Style Selector="Border.panel">
+      <Setter Property="BorderBrush" Value="#d0d7de" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="Background" Value="#fbfcfd" />
+    </Style>
+  </Application.Styles>
+</Application>

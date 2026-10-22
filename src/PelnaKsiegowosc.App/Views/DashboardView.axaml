@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.DashboardView"
+             x:DataType="s:DashboardViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Odśwież" Command="{Binding LoadCommand}" />
+      <Button Content="Wykonaj kopię zapasową teraz" Command="{Binding BackupNowCommand}" />
+    </WrapPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding BackupInfo}" Classes="info" />
+    <Grid ColumnDefinitions="*,12,*">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Gotowość ksiąg" Classes="h2" />
+        <c:TableView Table="{Binding Readiness}" />
+      </DockPanel>
+      <DockPanel Grid.Column="2">
+        <TextBlock DockPanel.Dock="Top" Text="Stan bieżący" Classes="h2" />
+        <c:TableView Table="{Binding Summary}" />
+      </DockPanel>
+    </Grid>
+  </DockPanel>
+</UserControl>

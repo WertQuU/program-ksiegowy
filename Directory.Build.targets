@@ -1,0 +1,4 @@
+<Project>
+  <!-- Wyłączenie statystyk kompilacji wysyłanych przez Avalonia.BuildServices (bez telemetrii w procesie budowania). -->
+  <Target Name="AvaloniaStats" />
+</Project>

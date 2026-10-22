@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.FixedAssetsView"
+             x:DataType="s:FixedAssetsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBlock Text="Amortyzacja za (mm.rrrr):" /><TextBox Text="{Binding DepreciationMonth}" MinWidth="90" />
+      <Button Content="Nalicz i zaksięguj amortyzację" Command="{Binding RunDepreciationCommand}" />
+      <Button Content="Odśwież" Command="{Binding LoadCommand}" />
+    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Przyjęcie środka trwałego (OT)" Margin="0,0,0,6">
+      <Grid Classes="form" ColumnDefinitions="150,*,150,*,150,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+        <TextBlock Text="Nr inwentarzowy" /><TextBox Grid.Column="1" Text="{Binding InventoryNumber}" />
+        <TextBlock Grid.Column="2" Text="Nazwa" /><TextBox Grid.Column="3" Grid.ColumnSpan="3" Text="{Binding Name}" />
+        <TextBlock Grid.Row="1" Text="Kategoria" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding Categories}" SelectedItem="{Binding Category}" />
+        <TextBlock Grid.Row="1" Grid.Column="2" Text="Symbol KŚT" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Kst}" />
+        <TextBlock Grid.Row="1" Grid.Column="4" Text="Miejsce" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding Location}" />
+        <TextBlock Grid.Row="2" Text="Data nabycia" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding AcquisitionDate}" />
+        <TextBlock Grid.Row="2" Grid.Column="2" Text="Przyjęty do używania" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding ServiceDate}" />
+        <TextBlock Grid.Row="2" Grid.Column="4" Text="Wartość bilansowa / podatkowa" />
+        <Grid Grid.Row="2" Grid.Column="5" ColumnDefinitions="*,*"><TextBox Text="{Binding ValueBook}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding ValueTax}" Watermark="= bilansowa" Margin="0,2,12,2" /></Grid>
+        <TextBlock Grid.Row="3" Text="Metoda bilansowa / stawka %" />
+        <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,70"><ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding BookMethod}" HorizontalAlignment="Stretch" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding BookRate}" Margin="0,2,12,2" /></Grid>
+        <TextBlock Grid.Row="3" Grid.Column="2" Text="Metoda podatkowa / stawka %" />
+        <Grid Grid.Row="3" Grid.Column="3" ColumnDefinitions="*,70"><ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding TaxMethod}" HorizontalAlignment="Stretch" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding TaxRate}" Margin="0,2,12,2" /></Grid>
+        <TextBlock Grid.Row="3" Grid.Column="4" Text="Wsp. degresywny / % NKUP" />
+        <Grid Grid.Row="3" Grid.Column="5" ColumnDefinitions="*,*"><TextBox Text="{Binding TaxFactor}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding NonDeductiblePercent}" Margin="0,2,12,2" /></Grid>
+        <TextBlock Grid.Row="4" Text="Konta: ŚT / umorzenie / koszty" />
+        <Grid Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="3" ColumnDefinitions="*,*,*"><TextBox Text="{Binding AssetAccount}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding AccumulatedAccount}" Margin="0,2,4,2" /><TextBox Grid.Column="2" Text="{Binding ExpenseAccount}" Margin="0,2,12,2" /></Grid>
+        <TextBlock Grid.Row="4" Grid.Column="4" Text="Konto przeciwstawne OT" /><TextBox Grid.Row="4" Grid.Column="5" Text="{Binding OffsetAccount}" Watermark="np. 080 lub 202 (puste = bez zapisu)" />
+        <TextBlock Grid.Row="5" Text="Dostawca" /><ComboBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="3" ItemsSource="{Binding Counterparties}" SelectedItem="{Binding Supplier}" />
+        <Button Grid.Row="5" Grid.Column="5" Content="Przyjmij do ewidencji" Command="{Binding RegisterCommand}" />
+      </Grid>
+    </Expander>
+    <Expander DockPanel.Dock="Top" Header="Operacje na zaznaczonym: ulepszenie, likwidacja, sprzedaż" Margin="0,0,0,6">
+      <WrapPanel Classes="toolbar">
+        <TextBox Text="{Binding OperationDate}" Watermark="data" />
+        <TextBox Text="{Binding ImprovementAmount}" Watermark="kwota ulepszenia" />
+        <TextBox Text="{Binding ImprovementOffset}" Watermark="konto przeciwstawne" />
+        <TextBox Text="{Binding OperationReason}" Watermark="opis / podstawa" MinWidth="260" />
+        <Button Content="Ulepszenie" Command="{Binding ImproveCommand}" />
+        <Button Content="Likwidacja" Command="{Binding DisposeAssetCommand}" />
+        <Button Content="Sprzedaż" Command="{Binding SellAssetCommand}" />
+      </WrapPanel>
+    </Expander>
+    <c:TableView Table="{Binding Assets}" SelectedRow="{Binding Selected}" />
+  </DockPanel>
+</UserControl>

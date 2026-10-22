@@ -1,0 +1,53 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.IntegrationsView"
+             x:DataType="s:IntegrationsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="OVHcloud Object Storage (S3)">
+        <ScrollViewer>
+          <StackPanel>
+            <TextBlock Text="{Binding S3Info}" Classes="info" />
+            <Grid Classes="form" ColumnDefinitions="200,*,160,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+              <CheckBox Grid.ColumnSpan="2" Content="Włącz Object Storage" IsChecked="{Binding S3Enabled}" />
+              <TextBlock Grid.Row="1" Text="Endpoint" /><AutoCompleteBox Grid.Row="1" Grid.Column="1" Text="{Binding Endpoint}" ItemsSource="{Binding EndpointHints}" FilterMode="Contains" Margin="0,2,12,2" />
+              <TextBlock Grid.Row="1" Grid.Column="2" Text="Region" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Region}" />
+              <TextBlock Grid.Row="2" Text="Bucket" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Bucket}" />
+              <TextBlock Grid.Row="2" Grid.Column="2" Text="Prefiks" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Prefix}" />
+              <TextBlock Grid.Row="3" Text="Access Key" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding AccessKey}" Watermark="(bez zmian)" />
+              <TextBlock Grid.Row="3" Grid.Column="2" Text="Secret Key" /><TextBox Grid.Row="3" Grid.Column="3" Text="{Binding SecretKey}" PasswordChar="•" Watermark="(bez zmian)" />
+              <StackPanel Grid.Row="4" Grid.ColumnSpan="4" Orientation="Horizontal" Spacing="12">
+                <CheckBox Content="Adresowanie path-style" IsChecked="{Binding PathStyle}" />
+                <CheckBox Content="Szyfrowanie po stronie serwera (SSE)" IsChecked="{Binding Sse}" />
+                <TextBlock Text="Zachowuj kopii zdalnych:" VerticalAlignment="Center" /><TextBox Text="{Binding RetainRemote}" MinWidth="60" />
+              </StackPanel>
+            </Grid>
+            <WrapPanel Classes="toolbar" Margin="0,8,0,0">
+              <Button Content="Zapisz" Command="{Binding SaveS3Command}" />
+              <Button Content="Testuj połączenie (zapis, odczyt, usunięcie)" Command="{Binding TestS3Command}" />
+            </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="KSeF">
+        <StackPanel>
+          <TextBlock Text="{Binding KsefInfo}" Classes="info" />
+          <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto">
+            <CheckBox Grid.ColumnSpan="2" Content="Włącz integrację z KSeF" IsChecked="{Binding KsefEnabled}" />
+            <TextBlock Grid.Row="1" Text="Środowisko" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding KsefEnvironments}" SelectedItem="{Binding KsefEnvironment}" />
+            <TextBlock Grid.Row="2" Text="Token KSeF" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding KsefToken}" PasswordChar="•" Watermark="(bez zmian)" />
+          </Grid>
+          <WrapPanel Classes="toolbar" Margin="0,8,0,0">
+            <Button Content="Zapisz" Command="{Binding SaveKsefCommand}" />
+            <Button Content="Testuj uwierzytelnienie" Command="{Binding TestKsefCommand}" />
+          </WrapPanel>
+        </StackPanel>
+      </TabItem>
+      <TabItem Header="Dziennik integracji"><c:TableView Table="{Binding Log}" /></TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

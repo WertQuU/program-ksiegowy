@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.SettingsView"
+             x:DataType="s:SettingsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding ActiveInfo}" Classes="info" />
+    <ScrollViewer>
+      <StackPanel>
+        <TextBlock Text="Baza danych" Classes="h2" />
+                <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
+          <TextBlock Text="Plik bazy" /><TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />
+          <Button Grid.Column="2" Content="Wybierz…" Command="{Binding PickSqliteCommand}" />
+        </Grid>
+        <CheckBox Content="Serwer PostgreSQL (zamiast lokalnej bazy SQLite na tym komputerze)" IsChecked="{Binding Database.UsePostgres}" />
+        <Grid Classes="form" ColumnDefinitions="200,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
+          <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
+          <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />
+          <TextBlock Grid.Row="2" Text="Nazwa bazy" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Database.Database}" />
+          <TextBlock Grid.Row="3" Text="Użytkownik" /><TextBox Grid.Row="3" Grid.Column="1" Text="{Binding Database.Username}" />
+          <TextBlock Grid.Row="4" Text="Hasło" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Database.Password}" PasswordChar="•" Watermark="(bez zmian)" />
+          <TextBlock Grid.Row="5" Text="Szyfrowanie TLS" /><ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding Database.SslModes}" SelectedItem="{Binding Database.SslMode}" />
+          <TextBlock Grid.Row="6" Text="Certyfikat CA" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Database.RootCertificate}" />
+          <Button Grid.Row="6" Grid.Column="2" Content="Wybierz…" Command="{Binding PickCertificateCommand}" />
+          <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
+        </Grid>
+        <WrapPanel Classes="toolbar" Margin="0,8,0,0">
+          <Button Content="Testuj połączenie" Command="{Binding TestDatabaseCommand}" />
+          <Button Content="Używaj tej bazy (po ponownym uruchomieniu)" Command="{Binding UseDatabaseCommand}" />
+          <Button Content="Migruj dane do tej bazy…" Command="{Binding MigrateCommand}" />
+        </WrapPanel>
+        <WrapPanel Classes="toolbar">
+          <TextBlock Text="Poprzednie bazy:" /><ComboBox ItemsSource="{Binding OtherProfiles}" SelectedItem="{Binding OtherProfile}" MinWidth="360" />
+          <Button Content="Wróć do wybranej" Command="{Binding RestoreOtherProfileCommand}" />
+        </WrapPanel>
+        <TextBlock Text="Załączniki" Classes="h2" />
+        <WrapPanel Classes="toolbar">
+          <TextBox Text="{Binding AttachmentsDirectory}" MinWidth="420" />
+          <Button Content="Zapisz katalog załączników" Command="{Binding SaveAttachmentsDirectoryCommand}" />
+        </WrapPanel>
+        <TextBlock Text="Stanowisko" Classes="h2" />
+        <SelectableTextBlock Text="{Binding PathsInfo}" TextWrapping="Wrap" />
+        <WrapPanel Classes="toolbar" Margin="0,6,0,0"><Button Content="Otwórz katalog danych" Command="{Binding OpenDataFolderCommand}" /></WrapPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.DocumentsView"
+             x:DataType="s:DocumentsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <ComboBox ItemsSource="{Binding KindFilters}" SelectedItem="{Binding KindFilter}" />
+      <ComboBox ItemsSource="{Binding StatusFilters}" SelectedItem="{Binding StatusFilter}" />
+      <TextBox Text="{Binding Search}" Watermark="Szukaj (numer, kontrahent, opis)" />
+      <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
+      <CheckBox Content="Tylko bieżący rok" IsChecked="{Binding OnlyCurrentYear}" />
+      <Button Content="Nowy dokument z dekretacją…" Command="{Binding NewGeneralCommand}" />
+    </WrapPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Szczegóły" Command="{Binding DetailsCommand}" />
+      <Button Content="Zatwierdź" Command="{Binding ApproveCommand}" />
+      <Button Content="Cofnij zatwierdzenie…" Command="{Binding UnapproveCommand}" />
+      <Button Content="Proponuj dekretację" Command="{Binding ProposePostingCommand}" />
+      <Button Content="Zaksięguj" Command="{Binding PostCommand}" />
+      <Button Content="Anuluj dokument…" Command="{Binding CancelDocumentCommand}" />
+      <Button Content="Dodaj załącznik…" Command="{Binding AddAttachmentCommand}" />
+      <Button Content="Zapisz załącznik…" Command="{Binding SaveAttachmentCommand}" />
+    </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding EditorVisible}">
+      <StackPanel>
+        <TextBlock Text="Nowy dokument (polecenie księgowania, nota, dokument wewnętrzny)" Classes="h2" Margin="0,0,0,6" />
+        <Grid Classes="form" ColumnDefinitions="140,*,140,*" RowDefinitions="Auto,Auto,Auto">
+          <TextBlock Text="Rodzaj" /><ComboBox Grid.Column="1" ItemsSource="{Binding GeneralKinds}" SelectedItem="{Binding GeneralKind}" />
+          <TextBlock Grid.Column="2" Text="Data" /><TextBox Grid.Column="3" Text="{Binding GeneralDate}" />
+          <TextBlock Grid.Row="1" Text="Opis operacji" /><TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding GeneralDescription}" />
+          <TextBlock Grid.Row="2" Text="Kontrahent" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding Lines.Counterparties}" SelectedItem="{Binding GeneralCounterparty}" />
+          <TextBlock Grid.Row="2" Grid.Column="2" Text="Numer obcy" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding GeneralExternalNumber}" />
+        </Grid>
+        <DataGrid ItemsSource="{Binding Lines.Lines}" SelectedItem="{Binding Lines.SelectedLine}" AutoGenerateColumns="False" CanUserSortColumns="False" MinHeight="140" MaxHeight="320">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="Konto" Binding="{ReflectionBinding Account}" Width="130" />
+              <DataGridTextColumn Header="Wn" Binding="{ReflectionBinding Debit}" Width="130" />
+              <DataGridTextColumn Header="Ma" Binding="{ReflectionBinding Credit}" Width="130" />
+              <DataGridTemplateColumn Header="Kontrahent" Width="260">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate x:DataType="vm:PostingLineRow">
+                    <ComboBox ItemsSource="{Binding $parent[DataGrid].((s:DocumentsViewModel)DataContext).Lines.Counterparties}" SelectedItem="{Binding Counterparty}" HorizontalAlignment="Stretch" />
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTextColumn Header="Opis" Binding="{ReflectionBinding Description}" Width="*" />
+            </DataGrid.Columns>
+          </DataGrid>
+          <WrapPanel Classes="toolbar" Margin="0,6,0,0">
+            <Button Content="Dodaj pozycję" Command="{Binding Lines.AddLineCommand}" />
+            <Button Content="Usuń pozycję" Command="{Binding Lines.RemoveLineCommand}" />
+            <Button Content="Przelicz sumy" Command="{Binding Lines.RecalculateCommand}" />
+            <TextBlock Text="{Binding Lines.Totals}" />
+          </WrapPanel>
+        <WrapPanel Classes="toolbar">
+          <Button Content="Zapisz dokument" Command="{Binding SaveGeneralCommand}" />
+          <Button Content="Zamknij" Command="{Binding CloseEditorCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+    <c:TableView Table="{Binding Documents}" SelectedRow="{Binding Selected}" />
+  </DockPanel>
+</UserControl>
