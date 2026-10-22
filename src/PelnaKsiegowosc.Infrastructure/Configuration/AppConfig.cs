@@ -6,7 +6,7 @@ namespace PelnaKsiegowosc.Infrastructure.Configuration;
 
 /// <summary>
 /// Ścieżki danych użytkownika. Dane NIGDY nie są zapisywane w katalogu instalacyjnym programu.
-/// Domyślnie: %LOCALAPPDATA%\PelnaKsiegowosc (Windows) lub ~/.local/share/PelnaKsiegowosc (inne systemy — testy/rozwój).
+/// Domyślnie: %LOCALAPPDATA%\PelnaKsiegowosc (Windows) lub ~/.local/share/PelnaKsiegowosc (Linux).
 /// </summary>
 public sealed class AppPaths
 {
@@ -98,6 +98,9 @@ public sealed class AppConfig
     public KsefSettings Ksef { get; set; } = new();
     public string? AttachmentsDirectory { get; set; }
     public bool SetupCompleted { get; set; }
+    /// <summary>Wersja zaakceptowanych warunków licencji i chwila akceptacji (zapisywane też w bazie i dzienniku audytu).</summary>
+    public string? TermsAcceptedVersion { get; set; }
+    public DateTime? TermsAcceptedUtc { get; set; }
 
     public static AppConfig LoadOrCreate(AppPaths paths)
     {

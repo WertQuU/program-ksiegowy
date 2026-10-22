@@ -3,10 +3,119 @@ using PelnaKsiegowosc.Domain.Validation;
 
 namespace PelnaKsiegowosc.Domain.Companies;
 
+/// <summary>Forma prawna jednostki prowadzącej księgi rachunkowe (art. 2 ust. 1 UoR).</summary>
 public enum LegalForm
 {
-    /// <summary>Prosta spółka akcyjna (art. 300^1 i n. KSH).</summary>
-    ProstaSpolkaAkcyjna
+    SpolkaZOgraniczonaOdpowiedzialnoscia,
+    ProstaSpolkaAkcyjna,
+    SpolkaAkcyjna,
+    SpolkaKomandytowoAkcyjna,
+    SpolkaKomandytowa,
+    SpolkaJawna,
+    SpolkaPartnerska,
+    SpolkaCywilna,
+    /// <summary>Osoba fizyczna prowadząca działalność gospodarczą — księgi rachunkowe (art. 2 ust. 1 pkt 2 UoR).</summary>
+    DzialalnoscGospodarczaOsobyFizycznej,
+    Fundacja,
+    Stowarzyszenie,
+    Spoldzielnia,
+    Inna
+}
+
+/// <summary>Cechy formy prawnej wykorzystywane w walidacji, planie kont, module kapitałów i podatku dochodowym.</summary>
+public static class LegalForms
+{
+    public static string Name(LegalForm f) => f switch
+    {
+        LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia => "spółka z ograniczoną odpowiedzialnością",
+        LegalForm.ProstaSpolkaAkcyjna => "prosta spółka akcyjna",
+        LegalForm.SpolkaAkcyjna => "spółka akcyjna",
+        LegalForm.SpolkaKomandytowoAkcyjna => "spółka komandytowo-akcyjna",
+        LegalForm.SpolkaKomandytowa => "spółka komandytowa",
+        LegalForm.SpolkaJawna => "spółka jawna",
+        LegalForm.SpolkaPartnerska => "spółka partnerska",
+        LegalForm.SpolkaCywilna => "spółka cywilna",
+        LegalForm.DzialalnoscGospodarczaOsobyFizycznej => "działalność gospodarcza osoby fizycznej",
+        LegalForm.Fundacja => "fundacja",
+        LegalForm.Stowarzyszenie => "stowarzyszenie",
+        LegalForm.Spoldzielnia => "spółdzielnia",
+        _ => "inna jednostka"
+    };
+
+    /// <summary>Oznaczenia formy prawnej w firmie (nazwie) spółki handlowej — pełne i skrócone.</summary>
+    public static IReadOnlyList<string> Designations(LegalForm f) => f switch
+    {
+        LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia => new[] { "spółka z ograniczoną odpowiedzialnością", "sp. z o.o.", "spółka z o.o." },
+        LegalForm.ProstaSpolkaAkcyjna => new[] { "prosta spółka akcyjna", "P.S.A." },
+        LegalForm.SpolkaAkcyjna => new[] { "spółka akcyjna", "S.A." },
+        LegalForm.SpolkaKomandytowoAkcyjna => new[] { "spółka komandytowo-akcyjna", "S.K.A." },
+        LegalForm.SpolkaKomandytowa => new[] { "spółka komandytowa", "sp.k." },
+        LegalForm.SpolkaJawna => new[] { "spółka jawna", "sp.j." },
+        LegalForm.SpolkaPartnerska => new[] { "spółka partnerska", "sp.p.", "i partner", "i partnerzy" },
+        _ => Array.Empty<string>()
+    };
+
+    /// <summary>Czy jednostka podlega wpisowi do rejestru przedsiębiorców lub stowarzyszeń KRS.</summary>
+    public static bool RequiresKrs(LegalForm f) => f is not (LegalForm.SpolkaCywilna or LegalForm.DzialalnoscGospodarczaOsobyFizycznej or LegalForm.Inna);
+
+    /// <summary>
+    /// Czy jednostka jest podatnikiem CIT (art. 1 ustawy o CIT). Spółki jawne, partnerskie, cywilne i osoby fizyczne
+    /// nie są — podatek dochodowy rozliczają wspólnicy/właściciel (PIT). Spółka jawna może w szczególnych przypadkach
+    /// stać się podatnikiem CIT (art. 1 ust. 3 pkt 1a) — wymaga oceny i nie jest obsługiwane automatycznie.
+    /// </summary>
+    public static bool IsCitTaxpayer(LegalForm f) => f is not (LegalForm.SpolkaJawna or LegalForm.SpolkaPartnerska or LegalForm.SpolkaCywilna or LegalForm.DzialalnoscGospodarczaOsobyFizycznej);
+
+    /// <summary>Nazwa kapitału (funduszu) podstawowego — konto 801 i pozycja A.I pasywów.</summary>
+    public static string ShareCapitalName(LegalForm f) => f switch
+    {
+        LegalForm.ProstaSpolkaAkcyjna => "Kapitał akcyjny",
+        LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia or LegalForm.SpolkaAkcyjna or LegalForm.SpolkaKomandytowoAkcyjna => "Kapitał zakładowy",
+        LegalForm.Spoldzielnia => "Fundusz udziałowy",
+        LegalForm.Fundacja => "Fundusz założycielski",
+        LegalForm.Stowarzyszenie => "Fundusz statutowy",
+        LegalForm.DzialalnoscGospodarczaOsobyFizycznej => "Kapitał właściciela",
+        LegalForm.Inna => "Kapitał (fundusz) podstawowy",
+        _ => "Kapitał wspólników"
+    };
+
+    /// <summary>Określenie osoby posiadającej udział w kapitale (akcjonariusz, wspólnik, członek, fundator, właściciel).</summary>
+    public static string OwnerName(LegalForm f) => f switch
+    {
+        LegalForm.ProstaSpolkaAkcyjna or LegalForm.SpolkaAkcyjna => "akcjonariusz",
+        LegalForm.SpolkaKomandytowoAkcyjna => "akcjonariusz / komplementariusz",
+        LegalForm.Spoldzielnia => "członek",
+        LegalForm.Fundacja => "fundator",
+        LegalForm.Stowarzyszenie => "członek",
+        LegalForm.DzialalnoscGospodarczaOsobyFizycznej => "właściciel",
+        _ => "wspólnik"
+    };
+
+    /// <summary>Jednostka tytułów uczestnictwa w kapitale (akcje, udziały) — null, gdy forma ich nie przewiduje.</summary>
+    public static string? SharesName(LegalForm f) => f switch
+    {
+        LegalForm.ProstaSpolkaAkcyjna or LegalForm.SpolkaAkcyjna or LegalForm.SpolkaKomandytowoAkcyjna => "akcje",
+        LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia or LegalForm.Spoldzielnia => "udziały",
+        _ => null
+    };
+
+    /// <summary>Organ będący kierownikiem jednostki (art. 3 ust. 1 pkt 6 UoR).</summary>
+    public static string ManagementBody(LegalForm f) => f switch
+    {
+        LegalForm.ProstaSpolkaAkcyjna => "zarząd albo rada dyrektorów",
+        LegalForm.SpolkaJawna or LegalForm.SpolkaPartnerska or LegalForm.SpolkaCywilna => "wspólnicy prowadzący sprawy spółki",
+        LegalForm.SpolkaKomandytowa or LegalForm.SpolkaKomandytowoAkcyjna => "komplementariusze prowadzący sprawy spółki",
+        LegalForm.DzialalnoscGospodarczaOsobyFizycznej => "osoba fizyczna prowadząca działalność",
+        _ => "zarząd"
+    };
+
+    /// <summary>Podstawa prawna ograniczeń wypłat na rzecz wspólników/akcjonariuszy — do opisu wymaganych potwierdzeń.</summary>
+    public static string PayoutRule(LegalForm f) => f switch
+    {
+        LegalForm.ProstaSpolkaAkcyjna => "test wypłacalności (art. 300^15 KSH) — wypłata nie może prowadzić do utraty zdolności do wykonywania wymagalnych zobowiązań",
+        LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia => "ograniczenia wypłat z art. 191–195 KSH (m.in. limit kwoty przeznaczonej do podziału)",
+        LegalForm.SpolkaAkcyjna or LegalForm.SpolkaKomandytowoAkcyjna => "ograniczenia wypłat z art. 344 i 347–349 KSH",
+        _ => "zgodność wypłaty z umową/statutem i przepisami właściwymi dla formy prawnej"
+    };
 }
 
 public enum VatStatus
@@ -47,12 +156,12 @@ public enum CorrectionMethod
     StornoCzarne
 }
 
-/// <summary>Jednostka (spółka). Aplikacja obsługuje obecnie jedną P.S.A.; model jest przygotowany na wiele jednostek.</summary>
+/// <summary>Jednostka prowadząca księgi rachunkowe. Interfejs obsługuje obecnie jedną jednostkę w bazie; model jest przygotowany na wiele jednostek.</summary>
 public class Company : Entity
 {
     public string FullName { get; set; } = "";
     public string ShortName { get; set; } = "";
-    public LegalForm LegalForm { get; set; } = LegalForm.ProstaSpolkaAkcyjna;
+    public LegalForm LegalForm { get; set; } = LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia;
     public string Nip { get; set; } = "";
     public string? Regon { get; set; }
     public string? Krs { get; set; }
@@ -79,7 +188,7 @@ public class Company : Entity
     /// <summary>Status małego podatnika CIT (art. 4a pkt 10) — deklarowany przez użytkownika na dany rok.</summary>
     public bool IsSmallCitTaxpayer { get; set; }
 
-    /// <summary>Data rejestracji w KRS (dla P.S.A. ma znaczenie m.in. dla terminu wniesienia wkładów).</summary>
+    /// <summary>Data rejestracji w KRS (lub rozpoczęcia działalności, gdy jednostka nie podlega wpisowi).</summary>
     public DateOnly? RegistrationDate { get; set; }
 
     /// <summary>Konto bankowe do dokumentów (IBAN).</summary>
@@ -91,14 +200,15 @@ public class Company : Entity
     public ValidationResult Validate()
     {
         var r = new ValidationResult();
-        if (string.IsNullOrWhiteSpace(FullName)) r.Error("Pełna nazwa spółki jest wymagana.");
-        else if (!FullName.Contains("prosta spółka akcyjna", StringComparison.OrdinalIgnoreCase) &&
-                 !FullName.Contains("P.S.A.", StringComparison.OrdinalIgnoreCase))
-            r.Warning("Firma P.S.A. powinna zawierać oznaczenie „prosta spółka akcyjna” lub skrót „P.S.A.” (art. 300^7 KSH — do weryfikacji prawnej).");
-        if (!Identifiers.IsValidNip(Nip)) r.Error("NIP spółki jest nieprawidłowy (błędna suma kontrolna lub format).");
+        if (string.IsNullOrWhiteSpace(FullName)) r.Error("Pełna nazwa jednostki jest wymagana.");
+        else if (LegalForms.Designations(LegalForm) is { Count: > 0 } designations &&
+                 !designations.Any(d => FullName.Contains(d, StringComparison.OrdinalIgnoreCase)))
+            r.Warning($"Firma spółki powinna zawierać oznaczenie formy prawnej („{designations[0]}” lub „{designations[1]}”) — do weryfikacji z umową spółki i KRS.");
+        if (!Identifiers.IsValidNip(Nip)) r.Error("NIP jest nieprawidłowy (błędna suma kontrolna lub format).");
         if (!string.IsNullOrWhiteSpace(Regon) && !Identifiers.IsValidRegon(Regon)) r.Error("REGON jest nieprawidłowy.");
         if (!string.IsNullOrWhiteSpace(Krs) && !Identifiers.IsValidKrs(Krs)) r.Error("Numer KRS musi składać się z 10 cyfr.");
-        if (string.IsNullOrWhiteSpace(Krs)) r.Warning("Brak numeru KRS — P.S.A. podlega wpisowi do rejestru przedsiębiorców KRS.");
+        if (string.IsNullOrWhiteSpace(Krs) && LegalForms.RequiresKrs(LegalForm))
+            r.Warning($"Brak numeru KRS — {LegalForms.Name(LegalForm)} podlega wpisowi do Krajowego Rejestru Sądowego.");
         if (string.IsNullOrWhiteSpace(City) || string.IsNullOrWhiteSpace(Street)) r.Error("Adres siedziby jest niekompletny.");
         if (Country == "PL" && !Identifiers.IsValidPostalCode(PostalCode)) r.Error("Kod pocztowy musi mieć format 00-000.");
         if (!string.IsNullOrWhiteSpace(TaxOfficeCode) && (TaxOfficeCode.Length != 4 || !TaxOfficeCode.All(char.IsDigit)))

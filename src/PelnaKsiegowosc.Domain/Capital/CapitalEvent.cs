@@ -3,8 +3,9 @@ using PelnaKsiegowosc.Domain.Common;
 namespace PelnaKsiegowosc.Domain.Capital;
 
 /// <summary>
-/// Moduł nie zastępuje rejestru akcjonariuszy prowadzonego przez podmiot uprawniony (art. 300^31 KSH)
-/// ani dokumentów korporacyjnych. Służy wyłącznie do ewidencji księgowej zdarzeń kapitałowych P.S.A.
+/// Wspólnik, akcjonariusz, członek, fundator lub właściciel (zależnie od formy prawnej jednostki).
+/// Moduł nie zastępuje księgi udziałów, rejestru akcjonariuszy ani dokumentów korporacyjnych —
+/// służy wyłącznie do ewidencji księgowej zdarzeń kapitałowych.
 /// </summary>
 public class Shareholder : CompanyEntity
 {
@@ -19,7 +20,7 @@ public enum ContributionType
 {
     Pieniezny,
     Niepieniezny,
-    /// <summary>Świadczenie pracy lub usług (art. 300^2 § 2 KSH) — nie stanowi wkładu na kapitał akcyjny; ujęcie księgowe wymaga oceny.</summary>
+    /// <summary>Świadczenie pracy lub usług (np. w P.S.A. — art. 300^2 § 2 KSH, w spółce jawnej — art. 48 § 2 KSH) — nie jest wnoszone na kapitał podstawowy spółek kapitałowych; ujęcie księgowe wymaga oceny.</summary>
     PracaLubUslugi
 }
 
@@ -79,7 +80,7 @@ public class CapitalEvent : CompanyEntity
     public DateOnly? ResolutionDate { get; set; }
     public string? AgreementReference { get; set; }
     public string? KrsEntryReference { get; set; }
-    /// <summary>Potwierdzenie przeprowadzenia testu wypłacalności przed wypłatą na rzecz akcjonariuszy (art. 300^15 § 3 KSH — do weryfikacji prawnej).</summary>
+    /// <summary>Potwierdzenie dopuszczalności wypłaty na rzecz wspólników/akcjonariuszy (w P.S.A. — test wypłacalności, art. 300^15 KSH; w innych formach — ograniczenia właściwe dla formy, zob. <see cref="Companies.LegalForms.PayoutRule"/>).</summary>
     public bool SolvencyTestConfirmed { get; set; }
     public string? SolvencyTestNotes { get; set; }
 
@@ -94,41 +95,41 @@ public class CapitalEvent : CompanyEntity
         t is CapitalEventType.WyplataDywidendy or CapitalEventType.ZaliczkaNaPoczetDywidendy or CapitalEventType.ObnizenieKapitaluAkcyjnego;
 
     /// <summary>Lista dokumentów, które muszą zostać wskazane przed potwierdzeniem zdarzenia.</summary>
-    public IReadOnlyList<string> MissingDocuments()
+    public IReadOnlyList<string> MissingDocuments(Companies.LegalForm form)
     {
         var missing = new List<string>();
         switch (Type)
         {
             case CapitalEventType.ObjecieAkcjiWkladPieniezny:
             case CapitalEventType.ObjecieAkcjiWkladNiepieniezny:
-                if (string.IsNullOrWhiteSpace(AgreementReference)) missing.Add("umowa spółki / oświadczenie o objęciu akcji");
-                if (ShareCount is null or <= 0) missing.Add("liczba obejmowanych akcji");
-                if (ShareholderId is null) missing.Add("akcjonariusz");
+                if (string.IsNullOrWhiteSpace(AgreementReference)) missing.Add("umowa spółki / oświadczenie o objęciu akcji lub udziałów");
+                if (Companies.LegalForms.SharesName(form) is { } shares && ShareCount is null or <= 0) missing.Add($"liczba obejmowanych tytułów ({shares})");
+                if (ShareholderId is null) missing.Add(Companies.LegalForms.OwnerName(form));
                 if (Type == CapitalEventType.ObjecieAkcjiWkladNiepieniezny && string.IsNullOrWhiteSpace(Description))
                     missing.Add("opis i wycena wkładu niepieniężnego");
                 break;
             case CapitalEventType.PodwyzszenieKapitaluAkcyjnego:
             case CapitalEventType.ObnizenieKapitaluAkcyjnego:
-                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała walnego zgromadzenia");
-                if (string.IsNullOrWhiteSpace(KrsEntryReference)) missing.Add("wpis zmiany do KRS (sygnatura)");
+                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała organu właścicielskiego (zgromadzenia wspólników / walnego zgromadzenia) lub zgoda wspólników");
+                if (Companies.LegalForms.RequiresKrs(form) && string.IsNullOrWhiteSpace(KrsEntryReference)) missing.Add("wpis zmiany do KRS (sygnatura)");
                 break;
             case CapitalEventType.PodzialZysku:
             case CapitalEventType.PokrycieStraty:
             case CapitalEventType.UchwalenieDywidendy:
             case CapitalEventType.UtworzenieKapitaluRezerwowego:
             case CapitalEventType.PrzeniesienieNaKapitalZapasowy:
-                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała walnego zgromadzenia");
+                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała organu właścicielskiego (zgromadzenia wspólników / walnego zgromadzenia) lub zgoda wspólników");
                 break;
             case CapitalEventType.ZaliczkaNaPoczetDywidendy:
-                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała zarządu/rady dyrektorów oraz upoważnienie w umowie spółki");
+                if (string.IsNullOrWhiteSpace(ResolutionReference)) missing.Add("uchwała organu zarządzającego oraz upoważnienie w umowie spółki/statucie");
                 break;
             case CapitalEventType.PozyczkaOdAkcjonariusza:
                 if (string.IsNullOrWhiteSpace(AgreementReference)) missing.Add("umowa pożyczki");
-                if (ShareholderId is null) missing.Add("akcjonariusz");
+                if (ShareholderId is null) missing.Add(Companies.LegalForms.OwnerName(form));
                 break;
         }
         if (IsPayoutToShareholders(Type) && !SolvencyTestConfirmed)
-            missing.Add("potwierdzenie testu wypłacalności (wypłata nie może prowadzić do utraty zdolności do wykonywania wymagalnych zobowiązań)");
+            missing.Add("potwierdzenie dopuszczalności wypłaty: " + Companies.LegalForms.PayoutRule(form));
         if (TotalAmount <= 0 && ShareCapitalAmount <= 0) missing.Add("kwota zdarzenia");
         return missing;
     }

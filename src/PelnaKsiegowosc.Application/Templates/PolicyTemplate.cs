@@ -7,13 +7,13 @@ namespace PelnaKsiegowosc.Application.Templates;
 /// </summary>
 public static class PolicyTemplate
 {
-    public static string Build(string companyName, string fiscalYearDescription, string chartName, string softwareVersion) => $$"""
+    public static string Build(string companyName, string legalFormName, string managementBody, string fiscalYearDescription, string chartName, string softwareVersion) => $$"""
 # Zasady (polityka) rachunkowości
 
-**Jednostka:** {{companyName}} (prosta spółka akcyjna)
+**Jednostka:** {{companyName}} ({{legalFormName}})
 **Podstawa:** art. 10 ustawy z dnia 29 września 1994 r. o rachunkowości (UoR)
 **Obowiązuje od:** [DO UZUPEŁNIENIA]
-**Przyjęta zarządzeniem / uchwałą:** [DO UZUPEŁNIENIA — kierownik jednostki: zarząd albo rada dyrektorów P.S.A.]
+**Przyjęta zarządzeniem / uchwałą:** [DO UZUPEŁNIENIA — kierownik jednostki: {{managementBody}}]
 
 ## 1. Rok obrotowy i okresy sprawozdawcze (art. 10 ust. 1 pkt 1)
 
@@ -46,9 +46,9 @@ public static class PolicyTemplate
 
 ### Opis systemu informatycznego (art. 10 ust. 1 pkt 3 lit. c)
 
-- Program: Pełna Księgowość P.S.A., wersja {{softwareVersion}}; data rozpoczęcia eksploatacji: [DO UZUPEŁNIENIA].
+- Program: Pełna Księgowość, wersja {{softwareVersion}}; data rozpoczęcia eksploatacji: [DO UZUPEŁNIENIA].
 - Algorytmy i parametry: opisane w dokumentacji programu (ARCHITECTURE.md, ACCOUNTING_REQUIREMENTS.md) oraz w raporcie „Opis systemu informatycznego” generowanym przez program.
-- Ochrona danych: konta użytkowników z rolami, dziennik audytowy z łańcuchem skrótów, blokada zmian zapisów zaksięgowanych, szyfrowane kopie zapasowe.
+- Ochrona danych: dostęp przez konto użytkownika systemu operacyjnego (oraz konto serwera PostgreSQL w trybie serwerowym), dziennik audytowy z łańcuchem skrótów, blokada zmian zapisów zaksięgowanych, szyfrowane kopie zapasowe.
 - Zmiany wersji programu: rejestrowane w dzienniku audytowym (wersja aplikacji i schematu bazy).
 
 ## 4. Ochrona danych (art. 10 ust. 1 pkt 4, art. 71–76 UoR)

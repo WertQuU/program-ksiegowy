@@ -1,4 +1,5 @@
 using PelnaKsiegowosc.Domain.Accounts;
+using PelnaKsiegowosc.Domain.Companies;
 
 namespace PelnaKsiegowosc.Application.Templates;
 
@@ -13,14 +14,22 @@ public sealed record AccountTemplate(
     CitClassification Cit = CitClassification.NieDotyczy);
 
 /// <summary>
-/// Przykładowy plan kont dla P.S.A. (układ zbliżony do wzorcowego planu kont, koszty w układzie rodzajowym,
+/// Przykładowy plan kont jednostki prowadzącej pełną księgowość (układ zbliżony do wzorcowego planu kont, koszty w układzie rodzajowym,
 /// RZiS w wariancie porównawczym). Jest to PUNKT WYJŚCIA — plan kont jest elementem polityki rachunkowości
 /// (art. 10 ust. 1 pkt 3 UoR) i musi zostać dostosowany oraz zatwierdzony przez kierownika jednostki.
 /// Mapowanie na pozycje sprawozdania wymaga weryfikacji przez księgowego.
 /// </summary>
 public static class ChartTemplate
 {
-    public const string Name = "Przykładowy plan kont P.S.A. (wariant porównawczy) v1";
+    public const string Name = "Przykładowy plan kont (wariant porównawczy) v2";
+
+    /// <summary>Szablon dostosowany do formy prawnej: nazwa kapitału podstawowego (801) i konta podatku dochodowego (870).</summary>
+    public static IReadOnlyList<AccountTemplate> For(LegalForm form) => Accounts.Select(a => a.Number switch
+    {
+        "801" => a with { Name = LegalForms.ShareCapitalName(form) },
+        "870" when !LegalForms.IsCitTaxpayer(form) => a with { Name = "Podatek dochodowy i inne obowiązkowe obciążenia wyniku (jednostka niebędąca podatnikiem CIT — zwykle nieużywane)" },
+        _ => a
+    }).ToList();
 
     public static readonly IReadOnlyList<AccountTemplate> Accounts = new List<AccountTemplate>
     {
@@ -119,7 +128,7 @@ public static class ChartTemplate
         new("761-03", "Inne koszty operacyjne", AccountType.WynikoweKosztowe, ProfitLossLine: "R.E.III", Cit: CitClassification.DoAnalizy),
 
         // Zespół 8 — kapitały, fundusze, rezerwy, wynik
-        new("801", "Kapitał akcyjny (P.S.A.)", AccountType.Pasywne, BalanceCreditLine: "P.A.I"),
+        new("801", "Kapitał (fundusz) podstawowy", AccountType.Pasywne, BalanceCreditLine: "P.A.I"),
         new("802", "Kapitał zapasowy", AccountType.Pasywne, BalanceCreditLine: "P.A.II"),
         new("803", "Kapitał z aktualizacji wyceny", AccountType.Pasywne, BalanceCreditLine: "P.A.III"),
         new("804", "Pozostałe kapitały rezerwowe", AccountType.Pasywne, BalanceCreditLine: "P.A.IV"),

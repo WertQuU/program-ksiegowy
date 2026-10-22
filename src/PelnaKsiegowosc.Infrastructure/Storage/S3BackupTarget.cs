@@ -153,7 +153,7 @@ public sealed class S3BackupTarget : IBackupTarget, IDisposable
     public async Task<StorageTestResult> TestAsync(CancellationToken ct = default)
     {
         var key = Key($"test-polaczenia-{Guid.NewGuid():N}.txt");
-        var content = $"Pełna Księgowość P.S.A. — test {DateTime.UtcNow:O}";
+        var content = $"Pełna Księgowość — test {DateTime.UtcNow:O}";
         bool connected = false, write = false, read = false, delete = false;
         try
         {

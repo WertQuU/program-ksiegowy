@@ -147,12 +147,21 @@ public sealed class CitService
         return r;
     }
 
+    /// <summary>Jednostki transparentne podatkowo (spółka jawna, partnerska, cywilna, osoba fizyczna) nie są podatnikami CIT.</summary>
+    public static void EnsureCitTaxpayer(Company company)
+    {
+        if (!LegalForms.IsCitTaxpayer(company.LegalForm))
+            throw new DomainException($"Jednostka ({LegalForms.Name(company.LegalForm)}) nie jest podatnikiem CIT — podatek dochodowy od jej dochodu rozliczają wspólnicy/właściciel (PIT). " +
+                "Program nie wylicza zaliczek PIT; uzgodnienie wyniku bilansowego z podatkowym (raport) pozostaje dostępne pomocniczo.");
+    }
+
     /// <summary>Wyliczenie i zapis zaliczki za okres (narastająco od początku roku).</summary>
     public async Task<CitAdvance> ComputeAdvanceAsync(Guid fiscalYearId, int periodNumber, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCit);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
         var company = await _db.Companies.FirstAsync(c => c.Id == fy.CompanyId, ct);
+        EnsureCitTaxpayer(company);
         if (company.CitAdvanceMethod == CitAdvanceMethod.Kwartalne && periodNumber % 3 != 0)
             throw new DomainException("Przy zaliczkach kwartalnych wylicza się je za okres kończący kwartał (3, 6, 9, 12).");
         var rec = await ReconcileAsync(fiscalYearId, periodNumber, ct);

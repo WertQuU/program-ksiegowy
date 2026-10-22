@@ -56,7 +56,7 @@ public sealed class WindowsCredentialSecretStore : ISecretStore
                 CredentialBlob = ptr,
                 Persist = CredPersistLocalMachine,
                 UserName = Environment.UserName,
-                Comment = "Pełna Księgowość P.S.A."
+                Comment = "Pełna Księgowość"
             };
             if (!CredWrite(ref cred, 0)) throw new Win32Exception(Marshal.GetLastWin32Error(), "Zapis sekretu w Menedżerze poświadczeń nie powiódł się.");
         }
@@ -107,19 +107,21 @@ public sealed class WindowsCredentialSecretStore : ISecretStore
 }
 
 /// <summary>
-/// Magazyn plikowy wyłącznie na potrzeby rozwoju i testów na systemach innych niż Windows: sekrety szyfrowane AES-GCM
-/// kluczem z pliku o uprawnieniach 0600. NIE jest używany w wersji produkcyjnej dla Windows.
+/// Magazyn plikowy: sekrety szyfrowane AES-GCM kluczem z osobnego pliku; oba pliki z uprawnieniami 0600.
+/// Ochrona opiera się na uprawnieniach konta użytkownika systemu — stosowany na Linuksie, gdy usługa
+/// Secret Service (pęk kluczy GNOME/KDE) jest niedostępna.
 /// </summary>
-public sealed class DevelopmentFileSecretStore : ISecretStore
+public sealed class FileSecretStore : ISecretStore
 {
     private readonly string _file;
     private readonly byte[] _key;
 
-    public DevelopmentFileSecretStore(string directory)
+    public FileSecretStore(string directory)
     {
         Directory.CreateDirectory(directory);
-        _file = Path.Combine(directory, "sekrety.dev.bin");
-        var keyFile = Path.Combine(directory, "sekrety.dev.key");
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(directory, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        _file = Path.Combine(directory, "sekrety.bin");
+        var keyFile = Path.Combine(directory, "sekrety.key");
         if (!File.Exists(keyFile))
         {
             File.WriteAllBytes(keyFile, RandomNumberGenerator.GetBytes(32));
@@ -128,7 +130,7 @@ public sealed class DevelopmentFileSecretStore : ISecretStore
         _key = File.ReadAllBytes(keyFile);
     }
 
-    public string ProviderName => "Plik deweloperski (NIE do produkcji)";
+    public string ProviderName => "Plik zaszyfrowany w katalogu użytkownika (uprawnienia 0600)";
 
     private Dictionary<string, string> Load()
     {
@@ -140,8 +142,10 @@ public sealed class DevelopmentFileSecretStore : ISecretStore
     private void Save(Dictionary<string, string> d)
     {
         var p = new Application.Security.DataProtector(_key);
-        File.WriteAllText(_file, p.Protect(JsonSerializer.SerializeToUtf8Bytes(d), "secrets"));
-        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(_file, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        var tmp = _file + ".tmp";
+        File.WriteAllText(tmp, p.Protect(JsonSerializer.SerializeToUtf8Bytes(d), "secrets"));
+        if (!OperatingSystem.IsWindows()) File.SetUnixFileMode(tmp, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        File.Move(tmp, _file, true);
     }
 
     public string? Get(string key) => Load().TryGetValue(key, out var v) ? v : null;
@@ -149,8 +153,82 @@ public sealed class DevelopmentFileSecretStore : ISecretStore
     public void Delete(string key) { var d = Load(); if (d.Remove(key)) Save(d); }
 }
 
+/// <summary>
+/// Linux: usługa Secret Service (libsecret — pęk kluczy GNOME, KWallet) przez narzędzie <c>secret-tool</c>.
+/// Sekret przekazywany jest przez standardowe wejście, nigdy w argumentach wiersza poleceń.
+/// </summary>
+[SupportedOSPlatform("linux")]
+public sealed class LinuxSecretServiceStore : ISecretStore
+{
+    private const string Service = "PelnaKsiegowosc";
+
+    public string ProviderName => "Pęk kluczy systemu (Secret Service / libsecret)";
+
+    public string? Get(string key)
+    {
+        var (code, output, _) = Run(null, "lookup", "service", Service, "key", key);
+        return code == 0 ? output : null;
+    }
+
+    public void Set(string key, string secret)
+    {
+        var (code, _, err) = Run(secret, "store", "--label", $"Pełna Księgowość — {key}", "service", Service, "key", key);
+        if (code != 0) throw new InvalidOperationException("Zapis sekretu w pęku kluczy nie powiódł się: " + err.Trim());
+    }
+
+    public void Delete(string key) => Run(null, "clear", "service", Service, "key", key);
+
+    /// <summary>Sprawdza, czy <c>secret-tool</c> jest zainstalowany i pęk kluczy przyjmuje zapis (próba zapisu, odczytu i usunięcia).</summary>
+    public static bool IsAvailable()
+    {
+        try
+        {
+            var store = new LinuxSecretServiceStore();
+            var probe = "__test__" + Guid.NewGuid().ToString("N");
+            var value = Guid.NewGuid().ToString("N");
+            store.Set(probe, value);
+            var ok = store.Get(probe) == value;
+            store.Delete(probe);
+            return ok;
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or IOException)
+        {
+            return false;
+        }
+    }
+
+    private static (int code, string output, string error) Run(string? stdin, params string[] args)
+    {
+        var psi = new System.Diagnostics.ProcessStartInfo("secret-tool")
+        {
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+        foreach (var a in args) psi.ArgumentList.Add(a);
+        using var p = System.Diagnostics.Process.Start(psi) ?? throw new InvalidOperationException("Nie można uruchomić secret-tool.");
+        if (stdin is not null) p.StandardInput.Write(stdin);
+        p.StandardInput.Close();
+        var output = p.StandardOutput.ReadToEnd();
+        var error = p.StandardError.ReadToEnd();
+        if (!p.WaitForExit(15000))
+        {
+            p.Kill();
+            throw new InvalidOperationException("Przekroczono czas oczekiwania na pęk kluczy.");
+        }
+        return (p.ExitCode, output, error);
+    }
+}
+
 public static class SecretStoreFactory
 {
-    public static ISecretStore Create(Configuration.AppPaths paths) =>
-        OperatingSystem.IsWindows() ? new WindowsCredentialSecretStore() : new DevelopmentFileSecretStore(Path.Combine(paths.Root, "dev-sekrety"));
+    /// <summary>Windows: Menedżer poświadczeń. Linux: pęk kluczy (Secret Service), a gdy niedostępny — zaszyfrowany plik w katalogu danych.</summary>
+    public static ISecretStore Create(Configuration.AppPaths paths)
+    {
+        if (OperatingSystem.IsWindows()) return new WindowsCredentialSecretStore();
+        if (OperatingSystem.IsLinux() && Environment.GetEnvironmentVariable("PELNAKSIEGOWOSC_SECRETS") != "plik" && LinuxSecretServiceStore.IsAvailable())
+            return new LinuxSecretServiceStore();
+        return new FileSecretStore(Path.Combine(paths.Root, "Sekrety"));
+    }
 }

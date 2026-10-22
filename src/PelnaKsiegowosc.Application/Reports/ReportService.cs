@@ -423,7 +423,7 @@ public sealed class ReportService
         r.Columns.AddRange(new[] { new ReportColumn("Element", ColumnKind.Text, 1.5), new ReportColumn("Opis", ColumnKind.Text, 4) });
         var asm = typeof(ReportService).Assembly.GetName();
         var migrations = await _db.Database.GetAppliedMigrationsAsync(ct);
-        r.Add("Program", $"Pełna Księgowość P.S.A. {asm.Version}");
+        r.Add("Program", $"Pełna Księgowość {asm.Version}");
         r.Add("Wersja schematu bazy", migrations.LastOrDefault() ?? "brak");
         r.Add("Baza danych", databaseDescription);
         r.Add("Zbiory tworzące księgi", "Dziennik (tabela JournalEntries/JournalLines), księga główna i księgi pomocnicze (konta, rozrachunki OpenItems, ewidencja ŚT), zestawienia obrotów i sald (raport), rejestry VAT (VatRegister), dokumenty i załączniki (Documents, Attachments).");

@@ -15,9 +15,10 @@ using PelnaKsiegowosc.Domain.Settlements;
 namespace PelnaKsiegowosc.Application.Capital;
 
 /// <summary>
-/// Ewidencja księgowa zdarzeń kapitałowych P.S.A. Zdarzenie księguje się dopiero po potwierdzeniu dokumentów
-/// korporacyjnych przez osobę uprawnioną (rola Zarząd / Główny księgowy) — dane wprowadzone przez użytkownika
-/// nie są automatycznie podstawą zapisu. Moduł nie zastępuje rejestru akcjonariuszy (art. 300^31 KSH).
+/// Ewidencja księgowa zdarzeń kapitałowych (wkłady, zmiany kapitału podstawowego, podział wyniku, dywidendy i wypłaty
+/// zysku, pożyczki od wspólników). Zdarzenie księguje się dopiero po potwierdzeniu dokumentów korporacyjnych przez osobę
+/// uprawnioną — dane wprowadzone przez użytkownika nie są automatycznie podstawą zapisu. Moduł nie zastępuje księgi
+/// udziałów, rejestru akcjonariuszy ani dokumentów korporacyjnych.
 /// </summary>
 public sealed class CapitalService
 {
@@ -37,7 +38,7 @@ public sealed class CapitalService
     public async Task<Shareholder> AddShareholderAsync(string name, string? identifier, bool isLegalPerson, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCapital);
-        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Podaj nazwę/imię i nazwisko akcjonariusza.");
+        if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Podaj nazwę albo imię i nazwisko wspólnika/akcjonariusza.");
         var code = "A" + (await _db.Shareholders.CountAsync(s => s.CompanyId == _user.CompanyId, ct) + 1).ToString("000");
         var cp = new Counterparty
         {
@@ -53,7 +54,7 @@ public sealed class CapitalService
         _db.Counterparties.Add(cp);
         var sh = new Shareholder { CompanyId = _user.CompanyId, Name = name.Trim(), Identifier = identifier, IsLegalPerson = isLegalPerson, CounterpartyId = cp.Id };
         _db.Shareholders.Add(sh);
-        await _audit.AddAsync(_user, "AKCJONARIUSZ_DODANY", "Shareholder", sh.Id.ToString(), sh.Name, ct);
+        await _audit.AddAsync(_user, "WSPOLNIK_DODANY", "Shareholder", sh.Id.ToString(), sh.Name, ct);
         await _db.SaveChangesAsync(ct);
         return sh;
     }
@@ -71,9 +72,9 @@ public sealed class CapitalService
         {
             if (ev.TotalAmount == 0) ev.TotalAmount = ev.ShareCapitalAmount + ev.SupplementaryCapitalAmount;
             if (ev.TotalAmount != ev.ShareCapitalAmount + ev.SupplementaryCapitalAmount)
-                throw new DomainException("Wartość wkładu musi być równa sumie kwot na kapitał akcyjny i zapasowy.");
+                throw new DomainException("Wartość wkładu musi być równa sumie kwot na kapitał podstawowy i zapasowy.");
             if (ev.ContributionType == ContributionType.PracaLubUslugi)
-                throw new DomainException("Wkład w postaci świadczenia pracy lub usług nie jest wnoszony na kapitał akcyjny (art. 300^3 KSH) — jego ujęcie wymaga indywidualnej oceny księgowej (funkcja niezaimplementowana).");
+                throw new DomainException("Wkład w postaci świadczenia pracy lub usług nie jest wnoszony na kapitał podstawowy (np. P.S.A. — art. 300^3 KSH) — jego ujęcie wymaga indywidualnej oceny księgowej (funkcja niezaimplementowana).");
         }
         if (ev.WithholdingTaxAmount > ev.TotalAmount) throw new DomainException("Podatek pobrany nie może przekraczać kwoty wypłaty.");
         _db.CapitalEvents.Add(ev);
@@ -88,7 +89,8 @@ public sealed class CapitalService
         _user.Require(Permission.ConfirmCapitalDocuments);
         var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId && e.CompanyId == _user.CompanyId, ct);
         if (ev.Status != CapitalEventStatus.Roboczy) throw new DomainException("Zdarzenie nie jest w stanie roboczym.");
-        var missing = ev.MissingDocuments();
+        var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.LegalForm).FirstAsync(ct);
+        var missing = ev.MissingDocuments(form);
         if (missing.Count > 0) throw new DomainException("Brak wymaganych danych/dokumentów: " + string.Join("; ", missing));
         if (ev.CreatedByUserId == _user.UserId && !_user.Roles.Contains(Role.Zarzad) && !_user.Roles.Contains(Role.Administrator))
             throw new AccessDeniedException("Dokumenty zdarzenia kapitałowego potwierdza osoba inna niż wprowadzająca lub członek zarządu.");
@@ -96,7 +98,7 @@ public sealed class CapitalService
         ev.ConfirmedByUserId = _user.UserId;
         ev.ConfirmedAtUtc = _clock.UtcNow;
         await _audit.AddAsync(_user, "ZDARZENIE_KAPITALOWE_POTWIERDZONE", "CapitalEvent", ev.Id.ToString(),
-            $"{ev.Type}; uchwała {ev.ResolutionReference}; umowa {ev.AgreementReference}; KRS {ev.KrsEntryReference}; test wypłacalności: {ev.SolvencyTestConfirmed}", ct);
+            $"{ev.Type}; uchwała {ev.ResolutionReference}; umowa {ev.AgreementReference}; KRS {ev.KrsEntryReference}; dopuszczalność wypłaty potwierdzona: {ev.SolvencyTestConfirmed}", ct);
         await _db.SaveChangesAsync(ct);
     }
 
@@ -113,17 +115,17 @@ public sealed class CapitalService
 
         async Task<Guid?> OldestOpenItemAsync(string account, OpenItemSide side)
         {
-            if (cp is null) throw new DomainException("Zdarzenie wymaga wskazania akcjonariusza.");
+            if (cp is null) throw new DomainException("Zdarzenie wymaga wskazania wspólnika/akcjonariusza.");
             var item = await _db.OpenItems.Where(o => o.CompanyId == _user.CompanyId && o.CounterpartyId == cp && o.AccountNumber == account && o.Side == side && o.Status != OpenItemStatus.Rozliczona)
                 .OrderBy(o => o.DocumentDate).FirstOrDefaultAsync(ct);
-            return item?.Id ?? throw new DomainException($"Brak otwartego rozrachunku na koncie {account} dla akcjonariusza.");
+            return item?.Id ?? throw new DomainException($"Brak otwartego rozrachunku na koncie {account} dla wspólnika/akcjonariusza.");
         }
 
         switch (ev.Type)
         {
             case CapitalEventType.ObjecieAkcjiWkladPieniezny:
-                lines.Add(new(p.ShareContributionsDue, ev.TotalAmount, 0, cp, "Należny wkład na akcje"));
-                lines.Add(new(p.ShareCapital, 0, ev.ShareCapitalAmount, Description: "Kapitał akcyjny"));
+                lines.Add(new(p.ShareContributionsDue, ev.TotalAmount, 0, cp, "Należny wkład na kapitał"));
+                lines.Add(new(p.ShareCapital, 0, ev.ShareCapitalAmount, Description: "Kapitał podstawowy"));
                 if (ev.SupplementaryCapitalAmount > 0) lines.Add(new(p.SupplementaryCapital, 0, ev.SupplementaryCapitalAmount, Description: "Nadwyżka wkładu — kapitał zapasowy"));
                 break;
             case CapitalEventType.ObjecieAkcjiWkladNiepieniezny:
@@ -137,14 +139,14 @@ public sealed class CapitalService
                 lines.Add(new(p.ShareContributionsDue, 0, ev.TotalAmount, cp, "Wpłata wkładu", await OldestOpenItemAsync(p.ShareContributionsDue, OpenItemSide.Naleznosc)));
                 break;
             case CapitalEventType.PodwyzszenieKapitaluAkcyjnego:
-                lines.Add(new(ev.DebitAccountNumber ?? p.SupplementaryCapital, ev.ShareCapitalAmount, 0, Description: "Podwyższenie kapitału akcyjnego ze środków własnych"));
+                lines.Add(new(ev.DebitAccountNumber ?? p.SupplementaryCapital, ev.ShareCapitalAmount, 0, Description: "Podwyższenie kapitału podstawowego ze środków własnych"));
                 lines.Add(new(p.ShareCapital, 0, ev.ShareCapitalAmount));
                 break;
             case CapitalEventType.ObnizenieKapitaluAkcyjnego:
-                lines.Add(new(p.ShareCapital, ev.ShareCapitalAmount, 0, Description: "Obniżenie kapitału akcyjnego"));
+                lines.Add(new(p.ShareCapital, ev.ShareCapitalAmount, 0, Description: "Obniżenie kapitału podstawowego"));
                 lines.Add(ev.CreditAccountNumber is { } ca && ca != p.ShareholderOther
                     ? new(ca, 0, ev.ShareCapitalAmount)
-                    : new(p.ShareholderOther, 0, ev.ShareCapitalAmount, cp ?? throw new DomainException("Wypłata z obniżenia kapitału wymaga wskazania akcjonariusza.")));
+                    : new(p.ShareholderOther, 0, ev.ShareCapitalAmount, cp ?? throw new DomainException("Wypłata z obniżenia kapitału wymaga wskazania wspólnika/akcjonariusza.")));
                 break;
             case CapitalEventType.PrzeniesienieNaKapitalZapasowy:
             case CapitalEventType.PodzialZysku:
@@ -161,20 +163,20 @@ public sealed class CapitalService
                 break;
             case CapitalEventType.UchwalenieDywidendy:
                 lines.Add(new(p.RetainedEarnings, ev.TotalAmount, 0, Description: "Dywidenda uchwalona"));
-                lines.Add(new(p.DividendsPayable, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż akcjonariusza."), "Zobowiązanie z tytułu dywidendy"));
+                lines.Add(new(p.DividendsPayable, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż wspólnika/akcjonariusza."), "Zobowiązanie z tytułu dywidendy"));
                 break;
             case CapitalEventType.ZaliczkaNaPoczetDywidendy:
                 lines.Add(new(p.DividendAdvances, ev.TotalAmount, 0, Description: "Zaliczka na poczet dywidendy"));
-                lines.Add(new(p.DividendsPayable, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż akcjonariusza.")));
+                lines.Add(new(p.DividendsPayable, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż wspólnika/akcjonariusza.")));
                 break;
             case CapitalEventType.WyplataDywidendy:
                 lines.Add(new(p.DividendsPayable, ev.TotalAmount, 0, cp, "Wypłata dywidendy", await OldestOpenItemAsync(p.DividendsPayable, OpenItemSide.Zobowiazanie)));
                 lines.Add(new(ev.CreditAccountNumber ?? p.Bank, 0, ev.TotalAmount - ev.WithholdingTaxAmount, Description: "Wypłata netto"));
-                if (ev.WithholdingTaxAmount > 0) lines.Add(new(p.WithholdingTax, 0, ev.WithholdingTaxAmount, Description: "Zryczałtowany podatek od dywidendy (płatnik)"));
+                if (ev.WithholdingTaxAmount > 0) lines.Add(new(p.WithholdingTax, 0, ev.WithholdingTaxAmount, Description: "Zryczałtowany podatek od dywidendy/udziału w zysku (płatnik)"));
                 break;
             case CapitalEventType.PozyczkaOdAkcjonariusza:
                 lines.Add(new(ev.DebitAccountNumber ?? p.Bank, ev.TotalAmount, 0, Description: "Wpływ pożyczki"));
-                lines.Add(new(p.ShareholderLoans, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż akcjonariusza."), "Pożyczka od akcjonariusza"));
+                lines.Add(new(p.ShareholderLoans, 0, ev.TotalAmount, cp ?? throw new DomainException("Wskaż wspólnika/akcjonariusza."), "Pożyczka od wspólnika/akcjonariusza"));
                 break;
             case CapitalEventType.SplataPozyczkiAkcjonariusza:
                 lines.Add(new(p.ShareholderLoans, ev.TotalAmount, 0, cp, "Spłata pożyczki", await OldestOpenItemAsync(p.ShareholderLoans, OpenItemSide.Zobowiazanie)));

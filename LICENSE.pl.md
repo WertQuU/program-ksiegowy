@@ -1,6 +1,6 @@
 # Licencja — wyjaśnienie w skrócie
 
-Licencjodawca: **Kacper Baca**. Pełny, wiążący tekst: [`LICENSE`](LICENSE) — „Licencja Pełna Księgowość P.S.A. — użytkowanie bez prawa sprzedaży”, wersja 1.0.
+Licencjodawca: **Kacper Baca**. Pełny, wiążący tekst: [`LICENSE`](LICENSE) — „Licencja Pełna Księgowość — użytkowanie bez prawa sprzedaży”, wersja 1.0.
 
 | Czynność | Dozwolona? |
 |---|---|

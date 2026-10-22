@@ -45,7 +45,7 @@ public static class Fa3InvoiceBuilder
             E("KodFormularza", new XAttribute("kodSystemowy", SystemCode), new XAttribute("wersjaSchemy", SchemaVersion), FormValue),
             E("WariantFormularza", "3"),
             E("DataWytworzeniaFa", input.GeneratedUtc.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", Inv)),
-            E("SystemInfo", "Pełna Księgowość P.S.A."));
+            E("SystemInfo", "Pełna Księgowość"));
 
         var podmiot1 = E("Podmiot1",
             E("DaneIdentyfikacyjne", E("NIP", Identifiers.NormalizeNip(s.Nip)), E("Nazwa", Trunc(s.FullName, 512))),

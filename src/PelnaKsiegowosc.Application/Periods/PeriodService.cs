@@ -10,6 +10,7 @@ using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Accounts;
 using PelnaKsiegowosc.Domain.Banking;
 using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Documents;
 using PelnaKsiegowosc.Domain.FixedAssets;
 using PelnaKsiegowosc.Domain.Ledger;
@@ -120,7 +121,8 @@ public sealed class PeriodService
             cash is null ? "Brak konta kasy." : $"Saldo kasy: {Money.Format(cash.Balance)}"));
 
         // CIT
-        if (fy.Periods.Count > 0)
+        var citTaxpayer = await _db.Companies.Where(x => x.Id == fy.CompanyId).Select(x => x.LegalForm).FirstAsync(ct) is var lf && LegalForms.IsCitTaxpayer(lf);
+        if (citTaxpayer && fy.Periods.Count > 0)
         {
             var advance = await _db.CitAdvances.AnyAsync(a => a.FiscalYearId == fy.Id && a.PeriodNumber == period.Number, ct);
             c.Items.Add(new("CIT", "Zaliczka CIT wyliczona", advance, CheckSeverity.Informacja,
@@ -249,7 +251,8 @@ public sealed class PeriodService
         }
         lines.RemoveAll(l => l.Debit == 0 && l.Credit == 0);
         var taxAdvanceInfo = await _db.CitAdvances.AnyAsync(a => a.FiscalYearId == fy.Id, ct);
-        c.Items.Add(new("CIT", "Wyliczenia CIT za rok", taxAdvanceInfo, CheckSeverity.WymagaPotwierdzenia,
+        var form = await _db.Companies.Where(x => x.Id == fy.CompanyId).Select(x => x.LegalForm).FirstAsync(ct);
+        if (LegalForms.IsCitTaxpayer(form)) c.Items.Add(new("CIT", "Wyliczenia CIT za rok", taxAdvanceInfo, CheckSeverity.WymagaPotwierdzenia,
             taxAdvanceInfo ? "OK" : "Brak zapisanych wyliczeń CIT — sprawdź ujęcie podatku dochodowego (konto 870) przed zamknięciem."));
         return new YearClosePreview(c, resultCredit, lines);
     }

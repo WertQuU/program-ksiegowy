@@ -211,7 +211,7 @@ public class Document : CompanyEntity
         DocumentKind.PrzyjecieSrodkaTrwalego => "OT — przyjęcie środka trwałego",
         DocumentKind.LikwidacjaSrodkaTrwalego => "LT — likwidacja środka trwałego",
         DocumentKind.AmortyzacjaSrodkowTrwalych => "Amortyzacja środków trwałych",
-        DocumentKind.DokumentKapitalowy => "Dokument kapitałowy (P.S.A.)",
+        DocumentKind.DokumentKapitalowy => "Dokument kapitałowy",
         DocumentKind.RozliczenieZAkcjonariuszem => "Rozliczenie z akcjonariuszem",
         DocumentKind.DowodZastepczy => "Dowód zastępczy",
         _ => "Inny dowód"

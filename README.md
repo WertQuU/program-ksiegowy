@@ -1,4 +1,4 @@
-# Pełna Księgowość P.S.A.
+# Pełna Księgowość
 
 Desktopowa aplikacja Windows do prowadzenia **pełnej księgowości (ksiąg rachunkowych) polskiej prostej spółki
 akcyjnej (P.S.A.)** — zgodnie z ustawą o rachunkowości, z modułami VAT/JPK, CIT, KSeF, środków trwałych oraz

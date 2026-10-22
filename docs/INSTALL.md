@@ -14,7 +14,7 @@
 2. Sprawdź sumę kontrolną: w PowerShell `Get-FileHash .\PelnaKsiegowosc-<wersja>-x64.msi -Algorithm SHA256`
    i porównaj z wartością opublikowaną w opisie wydania.
 3. Uruchom instalator i postępuj zgodnie z instrukcjami (wymagane uprawnienia administratora).
-4. Uruchom „Pełna Księgowość P.S.A.” z menu Start. Przy pierwszym uruchomieniu otworzy się kreator konfiguracji.
+4. Uruchom „Pełna Księgowość” z menu Start. Przy pierwszym uruchomieniu otworzy się kreator konfiguracji.
 
 ## Wariant B — pakiet przenośny `.zip`
 
@@ -41,7 +41,7 @@
 
 ## Odinstalowanie
 
-„Ustawienia → Aplikacje → Pełna Księgowość P.S.A. → Odinstaluj”. Dane i kopie zapasowe **pozostają** na dysku
+„Ustawienia → Aplikacje → Pełna Księgowość → Odinstaluj”. Dane i kopie zapasowe **pozostają** na dysku
 (obowiązek przechowywania ksiąg — art. 74 ustawy o rachunkowości). Usuń je ręcznie dopiero po upływie
 wymaganych okresów przechowywania.
 

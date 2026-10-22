@@ -57,6 +57,7 @@ public sealed class TestBooks : IAsyncDisposable
         Company = await setup.CreateCompanyAsync(sys, new Company
         {
             FullName = "Testowa Prosta Spółka Akcyjna",
+            LegalForm = LegalForm.ProstaSpolkaAkcyjna,
             ShortName = "Testowa P.S.A.",
             Nip = ValidNip,
             Krs = "0000123456",

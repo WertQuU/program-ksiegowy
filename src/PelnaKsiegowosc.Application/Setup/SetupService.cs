@@ -37,7 +37,7 @@ public sealed class SetupService
     public async Task<Company> CreateCompanyAsync(ICurrentUser actor, Company company, CancellationToken ct = default)
     {
         if (await _db.Companies.AnyAsync(ct))
-            throw new DomainException("Spółka jest już skonfigurowana. Obsługa wielu jednostek nie jest jeszcze dostępna w interfejsie.");
+            throw new DomainException("Jednostka jest już skonfigurowana. Obsługa wielu jednostek w jednej bazie nie jest jeszcze dostępna w interfejsie.");
         company.Nip = Domain.Validation.Identifiers.NormalizeNip(company.Nip);
         company.Validate().ThrowIfInvalid();
         company.CreatedAtUtc = _clock.UtcNow;
@@ -103,7 +103,7 @@ public sealed class SetupService
             CompanyId = companyId,
             Version = last + 1,
             EffectiveFrom = fy?.StartDate ?? _clock.Today,
-            Content = PolicyTemplate.Build(company.FullName, fyDesc, chart?.Name ?? ChartTemplate.Name, typeof(SetupService).Assembly.GetName().Version?.ToString() ?? "?")
+            Content = PolicyTemplate.Build(company.FullName, LegalForms.Name(company.LegalForm), LegalForms.ManagementBody(company.LegalForm), fyDesc, chart?.Name ?? ChartTemplate.Name, typeof(SetupService).Assembly.GetName().Version?.ToString() ?? "?")
         };
         _db.AccountingPolicies.Add(policy);
         await _audit.AddAsync(actor, "POLITYKA_SZABLON", "AccountingPolicy", policy.Id.ToString(), $"wersja {policy.Version}", ct);
@@ -183,7 +183,7 @@ public sealed class SetupService
     {
         var r = new List<(string, bool, string)>();
         var company = await _db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
-        r.Add(("Dane spółki", company is not null && company.Validate().IsValid, company is null ? "Brak" : string.Join("; ", company.Validate().Errors.Concat(company.Validate().Warnings))));
+        r.Add(("Dane jednostki", company is not null && company.Validate().IsValid, company is null ? "Brak" : string.Join("; ", company.Validate().Errors.Concat(company.Validate().Warnings))));
         var fy = await _db.FiscalYears.Where(f => f.CompanyId == companyId && f.Status == FiscalYearStatus.Otwarty).OrderBy(f => f.StartDate).FirstOrDefaultAsync(ct);
         r.Add(("Otwarty rok obrotowy", fy is not null, fy?.Name ?? "Brak"));
         var chart = fy is null ? null : await _db.Charts.Where(c => c.FiscalYearId == fy.Id).OrderByDescending(c => c.Version).FirstOrDefaultAsync(ct);

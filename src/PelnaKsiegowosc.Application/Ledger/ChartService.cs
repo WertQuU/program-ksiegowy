@@ -6,6 +6,7 @@ using PelnaKsiegowosc.Application.Audit;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Accounts;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Ledger;
 using PelnaKsiegowosc.Domain.Reporting;
@@ -41,6 +42,11 @@ public sealed class ChartService
         _user.Require(Permission.ManageChartOfAccounts);
         if (await _db.Charts.AnyAsync(c => c.FiscalYearId == fiscalYearId, ct))
             throw new DomainException("Plan kont dla tego roku już istnieje.");
+        if (template is null)
+        {
+            var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => (LegalForm?)c.LegalForm).FirstOrDefaultAsync(ct);
+            template = ChartTemplate.For(form ?? LegalForm.Inna);
+        }
         var chart = new ChartOfAccounts
         {
             CompanyId = _user.CompanyId,
@@ -50,7 +56,7 @@ public sealed class ChartService
         };
         _db.Charts.Add(chart);
         var byNumber = new Dictionary<string, Account>();
-        foreach (var t in (template ?? ChartTemplate.Accounts).OrderBy(t => t.Number))
+        foreach (var t in template.OrderBy(t => t.Number))
         {
             Account.ValidateNumber(t.Number).ThrowIfInvalid();
             var parentNumber = t.Number.Contains('-') ? t.Number[..t.Number.LastIndexOf('-')] : null;

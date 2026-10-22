@@ -52,7 +52,7 @@ public static class JpkV7Builder
             new XElement(ns + "KodFormularza", new XAttribute("kodSystemowy", JpkV7Rules.SystemCode), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "JPK_VAT"),
             E("WariantFormularza", JpkV7Rules.Variant),
             E("DataWytworzeniaJPK", generatedUtc.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", Inv)),
-            E("NazwaSystemu", "Pełna Księgowość P.S.A."),
+            E("NazwaSystemu", "Pełna Księgowość"),
             new XElement(ns + "CelZlozenia", new XAttribute("poz", "P_7"), correction ? "2" : "1"),
             E("KodUrzedu", company.TaxOfficeCode),
             E("Rok", period.Year),
