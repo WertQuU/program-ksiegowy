@@ -1,6 +1,6 @@
 # Licencje komponentów zewnętrznych
 
-Wersje i licencje zweryfikowano 17.10.2026 na podstawie metadanych pakietów w nuget.org.
+Wersje i licencje zweryfikowano 22.10.2026 na podstawie metadanych pakietów w nuget.org.
 Wersje są zarządzane centralnie w `Directory.Packages.props` (z przypinaniem zależności przechodnich).
 
 Komponenty poniżej zachowują własne licencje; ograniczenia licencji projektu (zakaz sprzedaży, § 3 pliku `LICENSE`)
@@ -9,7 +9,12 @@ dotyczą wyłącznie kodu projektu „Pełna Księgowość”. Licencje MIT, Apa
 
 | Komponent | Wersja | Licencja | Zastosowanie |
 |---|---|---|---|
-| .NET Runtime / ASP.NET Core / WPF (Microsoft) | 10.0 | MIT | środowisko uruchomieniowe, interfejs Windows |
+| .NET Runtime (Microsoft) | 10.0 | MIT | środowisko uruchomieniowe |
+| Avalonia, Avalonia.Desktop, Avalonia.Themes.Fluent, Avalonia.Headless | 11.3.22 | MIT | interfejs okienkowy (Windows, Linux), kontrola uruchomienia bez monitora |
+| Avalonia.Controls.DataGrid | 11.3.13 | MIT | tabele w interfejsie |
+| Avalonia.Fonts.Inter (czcionka Inter) | 11.3.22 | MIT (pakiet) / SIL OFL 1.1 (czcionka) | czcionka interfejsu |
+| SkiaSharp, HarfBuzzSharp (zależności Avalonia) | 2.88.x / 8.3.x | MIT | renderowanie |
+| Tmds.DBus.Protocol (zależność Avalonia na Linuksie) | 0.21.x | MIT | integracja z pulpitem Linux |
 | Microsoft.EntityFrameworkCore (+ Sqlite, Relational, Design) | 10.0.13 | MIT | dostęp do bazy danych, migracje |
 | Microsoft.Data.Sqlite | 10.0.13 | MIT | sterownik SQLite |
 | SQLitePCLRaw (bundle_e_sqlite3) | 2.1.x | Apache-2.0 | natywna biblioteka SQLite |
@@ -22,10 +27,10 @@ dotyczą wyłącznie kodu projektu „Pełna Księgowość”. Licencje MIT, Apa
 | RBush.Signed | 4.0.0 | MIT | zależność ClosedXML |
 | SixLabors.Fonts | 1.0.0 | Apache-2.0 | zależność ClosedXML |
 | PDFsharp, PDFsharp-MigraDoc | 6.2.4 | MIT | eksport PDF |
-| CommunityToolkit.Mvvm | 8.4.2 | MIT | warstwa MVVM interfejsu |
+| CommunityToolkit.Mvvm | 8.4.2 | MIT | modele widoków (MVVM) |
 | System.Security.Cryptography.ProtectedData / Pkcs | 10.0.13 | MIT | DPAPI, kryptografia |
 | xUnit, Microsoft.NET.Test.Sdk, coverlet | 2.9 / 17.14 / 6.0 | Apache-2.0 / MIT / MIT | wyłącznie testy (nie są dystrybuowane) |
-| WiX Toolset (narzędzie budowania instalatora) | 5.x | MS-RL | wyłącznie budowanie MSI — instalator wynikowy nie jest objęty MS-RL |
+| WiX Toolset, WixToolset.UI.wixext (narzędzie budowania instalatora) | 5.0.2 | MS-RL | wyłącznie budowanie MSI — instalator wynikowy nie jest objęty MS-RL; wersje 6+ objęte dodatkową umową OSMF nie są używane |
 
 ## Dokumenty urzędowe
 

@@ -1,16 +1,18 @@
 # Kompilacja i budowanie wersji instalacyjnej
 
-## Wybrany format dystrybucji
+## Formaty dystrybucji
 
-Program jest dystrybuowany w dwóch postaciach — obie **nie wymagają instalowania .NET ani SDK** u użytkownika:
+Wszystkie pakiety zawierają środowisko .NET (publikacja *self-contained*) — u użytkownika nie trzeba instalować .NET:
 
-1. **Instalator `.msi`** (WiX Toolset 5) — zalecany: skrót w menu Start, odinstalowanie z „Aplikacje i funkcje”,
-   aktualizacje przez uruchomienie nowszego MSI.
-2. **Pakiet przenośny `.zip`** z plikiem `PelnaKsiegowosc.exe` (publikacja *self-contained* `win-x64`) —
-   rozpakuj i uruchom, bez uprawnień administratora.
+| System | Pakiet | Budowanie |
+|---|---|---|
+| Windows x64 | `PelnaKsiegowosc-<wersja>-x64.msi` (WiX 5) | tylko na Windows |
+| Windows x64 | `PelnaKsiegowosc-<wersja>-win-x64.zip` (przenośny) | Windows lub Linux |
+| Linux x64 | `pelnaksiegowosc_<wersja>_amd64.deb` | Linux (`dpkg-deb`) |
+| Linux x64 | `PelnaKsiegowosc-<wersja>-linux-x64.tar.gz` z `install.sh` | Linux |
 
-Dane użytkownika nigdy nie są zapisywane w katalogu programu, tylko w `%LOCALAPPDATA%\PelnaKsiegowosc`
-(lub w lokalizacji wskazanej w ustawieniach) — aktualizacja i odinstalowanie nie usuwają ksiąg.
+Interfejs jest napisany w Avalonia UI, więc ten sam kod działa na Windows i Linux. Dane użytkownika nigdy nie są
+zapisywane w katalogu programu — aktualizacja i odinstalowanie nie usuwają ksiąg.
 
 ## 1. Wymagania
 
@@ -18,60 +20,82 @@ Dane użytkownika nigdy nie są zapisywane w katalogu programu, tylko w `%LOCALA
 |---|---|---|
 | .NET SDK | 10.0.1xx (LTS) | https://dotnet.microsoft.com/download/dotnet/10.0 — `global.json` dopuszcza nowsze łatki 10.0 |
 | Git | dowolna aktualna | |
-| System do budowania `.exe`/`.msi` | Windows 10/11 x64 | WPF i WiX budują się na Windows; biblioteki i testy także na Linux/macOS |
-| WiX Toolset | 5.x | instalowany automatycznie jako pakiet NuGet `WixToolset.Sdk` podczas budowania MSI |
-| PostgreSQL (opcjonalnie) | 14+ | tylko do testów integracyjnych z serwerem |
+| WiX Toolset | 5.0.2 | pobierany automatycznie jako pakiet NuGet `WixToolset.Sdk` (tylko budowa MSI, tylko Windows) |
+| dpkg-deb | systemowy | tylko budowa `.deb` |
+| PostgreSQL (opcjonalnie) | 14+ | testy integracyjne z serwerem (`PK_TEST_PG`) |
 
 Sprawdzenie: `dotnet --version` powinno zwrócić `10.0.x`.
 
 ## 2. Pobranie kodu i przywrócenie pakietów
 
-```powershell
+```bash
 git clone <adres-repozytorium> PelnaKsiegowosc
 cd PelnaKsiegowosc
 dotnet restore PelnaKsiegowosc.sln
 dotnet tool restore        # narzędzie dotnet-ef (migracje)
 ```
 
-## 3. Kompilacja i testy
+## 3. Kompilacja, testy i uruchomienie
 
-```powershell
+```bash
 dotnet build PelnaKsiegowosc.sln -c Release
 dotnet test  PelnaKsiegowosc.sln -c Release
+dotnet run --project src/PelnaKsiegowosc.App          # program okienkowy
+dotnet run --project src/PelnaKsiegowosc.Cli -- pomoc # narzędzie wiersza poleceń
 ```
 
-## 4. Budowanie pakietu przenośnego (`.exe`)
+Testy integracyjne z PostgreSQL i S3 uruchamiają się po ustawieniu `PK_TEST_PG` (łańcuch połączenia z użytkownikiem
+z uprawnieniem CREATEDB) i `PK_TEST_S3_ENDPOINT` (np. lokalny `moto_server`); bez nich są pomijane. Szczegóły:
+[TEST_PLAN.md](TEST_PLAN.md).
+
+Kontrola uruchomienia bez okna (kreator na tymczasowej bazie, wszystkie ekrany, faktura → księgowanie, raport, kopia):
+
+```bash
+dotnet src/PelnaKsiegowosc.App/bin/Release/net10.0/PelnaKsiegowosc.dll --test-uruchomienia
+```
+
+## 4. Publikacja (pakiet przenośny)
+
+```bash
+# Windows (z Windows lub Linuksa)
+dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+dotnet publish src/PelnaKsiegowosc.Cli/PelnaKsiegowosc.Cli.csproj -c Release -r win-x64 --self-contained true -o artifacts/win-x64
+
+# Linux
+dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj -c Release -r linux-x64 --self-contained true -o artifacts/linux-x64
+dotnet publish src/PelnaKsiegowosc.Cli/PelnaKsiegowosc.Cli.csproj -c Release -r linux-x64 --self-contained true -o artifacts/linux-x64
+```
+
+Wynik: `PelnaKsiegowosc.exe`/`PelnaKsiegowosc` (program) i `pk-cli` w jednym katalogu (ok. 130 MB z runtime .NET).
+Pakiet `.zip` na Windows: `Compress-Archive artifacts/win-x64/* PelnaKsiegowosc-win-x64.zip`.
+
+## 5. Instalator `.msi` (Windows)
 
 ```powershell
-dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj `
-  -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=false -p:PublishReadyToRun=true `
-  -o artifacts/PelnaKsiegowosc-win-x64
-
-Compress-Archive artifacts/PelnaKsiegowosc-win-x64/* artifacts/PelnaKsiegowosc-win-x64.zip
+dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release -p:ProductVersion=0.9.0 "-p:AppPublishDir=$PWD/artifacts/win-x64" -o artifacts/msi
 ```
 
-Wynik: `artifacts/PelnaKsiegowosc-win-x64/PelnaKsiegowosc.exe` (ok. 150 MB z runtime .NET).
+Instalator instaluje program w `C:\Program Files\PelnaKsiegowosc`, pokazuje licencję (`installer/Licencja.rtf`,
+generowany z `LICENSE` skryptem `tools/licencja-rtf.py`), tworzy skrót w menu Start i obsługuje aktualizację
+(MajorUpgrade). WiX działa wyłącznie na Windows.
 
-## 5. Budowanie instalatora `.msi`
+## 6. Pakiety Linux (`.deb`, `.tar.gz`)
 
-```powershell
-dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release `
-  -p:PublishDir=..\artifacts\PelnaKsiegowosc-win-x64\
+```bash
+packaging/linux/build-packages.sh artifacts/linux-x64 0.9.0 artifacts/packages
 ```
 
-Wynik: `artifacts/PelnaKsiegowosc-<wersja>-x64.msi`. Instalator instaluje program w
-`C:\Program Files\PelnaKsiegowosc`, tworzy skrót w menu Start i obsługuje aktualizację (MajorUpgrade).
+## 7. Podpisanie cyfrowe i CI
 
-## 6. Podpisanie cyfrowe
+Niepodpisany `.exe`/`.msi` wywołuje ostrzeżenie SmartScreen. Do dystrybucji publicznej podpisz pliki certyfikatem
+Code Signing (`signtool sign /fd SHA256 /tr <serwer-znacznika-czasu> /td SHA256 ...`). Certyfikatów i haseł
+**nie umieszczaj w repozytorium** — w CI używaj zaszyfrowanych sekretów GitHub.
 
-Niepodpisany `.exe`/`.msi` wywołuje ostrzeżenie Windows SmartScreen. Do dystrybucji publicznej podpisz pliki
-certyfikatem Code Signing (np. przez `signtool sign /fd SHA256 /tr <serwer-znacznika-czasu> /td SHA256 ...`).
-Certyfikatów i haseł **nie umieszczaj w repozytorium** — w CI używaj zaszyfrowanych sekretów GitHub.
+`.github/workflows/ci.yml`: testy na Windows i Linux (na Linuksie z PostgreSQL i atrapą S3), publikacja,
+kontrola uruchomienia opublikowanych programów, budowa i próbna instalacja `.deb` oraz `.msi`. Wypchnięcie tagu
+`v<wersja>` (np. `v0.9.0`) tworzy wydanie z pakietami i plikiem `SHA256SUMS.txt`.
 
-## 7. Budowanie w GitHub Actions
-
-Plik `.github/workflows/ci.yml` uruchamia kompilację i testy przy każdym wypchnięciu zmian (Windows i Linux).
+Statystyki kompilacji wysyłane przez pakiet Avalonia.BuildServices są wyłączone w `Directory.Build.targets`.
 
 ## 8. Migracje bazy danych (dla programistów)
 
@@ -92,9 +116,10 @@ Program stosuje migracje automatycznie przy starcie (po wykonaniu kopii zapasowe
 | `PelnaKsiegowosc.Domain` | encje i reguły księgowe/podatkowe (bez zależności od bazy i UI) |
 | `PelnaKsiegowosc.Data` | EF Core, konfiguracja modelu, profile połączeń, wyzwalacze niezmienności |
 | `PelnaKsiegowosc.Migrations.Sqlite` / `.PostgreSql` | migracje schematu dla każdego silnika |
-| `PelnaKsiegowosc.Application` | silnik księgowy i moduły (dokumenty, bank, VAT, CIT, ŚT, kapitał P.S.A., raporty) |
+| `PelnaKsiegowosc.Application` | silnik księgowy i moduły (dokumenty, bank, VAT, CIT, ŚT, kapitały, raporty) |
 | `PelnaKsiegowosc.Infrastructure` | eksport PDF/XLSX/CSV, kopie zapasowe, S3, sekrety, KSeF, JPK |
-| `PelnaKsiegowosc.Presentation` | modele widoków (MVVM) — testowalne bez Windows |
-| `PelnaKsiegowosc.Cli` | narzędzie wiersza poleceń (backup, odtwarzanie, kontrola integralności) |
-| `PelnaKsiegowosc.App` | aplikacja WPF (Windows) — w przygotowaniu |
+| `PelnaKsiegowosc.Presentation` | modele widoków (MVVM), kreator, sesja programu — testowalne bez interfejsu |
+| `PelnaKsiegowosc.Cli` | narzędzie wiersza poleceń `pk-cli` (kopie, odtwarzanie, integralność, migracja) |
+| `PelnaKsiegowosc.App` | aplikacja okienkowa Avalonia (Windows i Linux) |
+| `installer/`, `packaging/linux/` | instalator MSI (WiX 5), pakiety deb i tar.gz |
 | `tests/PelnaKsiegowosc.Tests` | testy jednostkowe, integracyjne i scenariusze end-to-end |
