@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Pełna Księgowość
+GenericName=Program do pełnej księgowości
+Comment=Księgi rachunkowe, VAT, JPK, KSeF, środki trwałe, sprawozdania
+Exec=pelnaksiegowosc
+Icon=pelnaksiegowosc
+Terminal=false
+Categories=Office;Finance;
+Keywords=księgowość;księgi;VAT;JPK;KSeF;
+StartupWMClass=PelnaKsiegowosc

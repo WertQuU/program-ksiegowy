@@ -1,0 +1,37 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="Pełna Księgowość"
+           Manufacturer="Kacper Baca"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="6B1F3E2A-7C1D-4E57-9F0B-3D8A5C2E9B41"
+           Language="1045"
+           Codepage="1250"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Compressed="yes">
+    <SummaryInformation Description="Pełna Księgowość — program do prowadzenia ksiąg rachunkowych" />
+    <MajorUpgrade DowngradeErrorMessage="Zainstalowana jest nowsza wersja programu Pełna Księgowość." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="ikona.ico" SourceFile="..\src\PelnaKsiegowosc.App\Assets\ikona.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ikona.ico" />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/WertQuU/program-ksiegowy" />
+    <Property Id="ARPCOMMENTS" Value="Dane ksiąg są przechowywane w %LOCALAPPDATA%\PelnaKsiegowosc i nie są usuwane przy odinstalowaniu." />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="PelnaKsiegowosc">
+        <Files Include="$(var.AppPublishDir)\**" />
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="SkrotMenuStart" Guid="2E4C7B90-5A1F-4C3D-8E62-9B0D1F7A4C55">
+        <Shortcut Id="SkrotProgramu" Name="Pełna Księgowość" Description="Program do prowadzenia ksiąg rachunkowych"
+                  Target="[INSTALLFOLDER]PelnaKsiegowosc.exe" WorkingDirectory="INSTALLFOLDER" Icon="ikona.ico" />
+        <RegistryValue Root="HKLM" Key="Software\PelnaKsiegowosc" Name="Zainstalowano" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <WixVariable Id="WixUILicenseRtf" Value="Licencja.rtf" />
+    <ui:WixUI Id="WixUI_Minimal" />
+  </Package>
+</Wix>

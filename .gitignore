@@ -9,7 +9,7 @@ TestResults/
 *.db
 *.db-shm
 *.db-wal
-*.psabak
+*.pkbak
 publish/
 # Sekrety nigdy nie trafiają do repozytorium
 *.pfx

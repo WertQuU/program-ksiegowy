@@ -223,12 +223,15 @@ public sealed class LinuxSecretServiceStore : ISecretStore
 
 public static class SecretStoreFactory
 {
-    /// <summary>Windows: Menedżer poświadczeń. Linux: pęk kluczy (Secret Service), a gdy niedostępny — zaszyfrowany plik w katalogu danych.</summary>
+    /// <summary>
+    /// Windows: Menedżer poświadczeń. Linux: pęk kluczy (Secret Service), a gdy niedostępny — zaszyfrowany plik w katalogu danych.
+    /// Zmienna PELNAKSIEGOWOSC_SECRETS=plik wymusza magazyn plikowy (np. serwer bez pęku kluczy, testy).
+    /// </summary>
     public static ISecretStore Create(Configuration.AppPaths paths)
     {
-        if (OperatingSystem.IsWindows()) return new WindowsCredentialSecretStore();
-        if (OperatingSystem.IsLinux() && Environment.GetEnvironmentVariable("PELNAKSIEGOWOSC_SECRETS") != "plik" && LinuxSecretServiceStore.IsAvailable())
-            return new LinuxSecretServiceStore();
+        var file = Environment.GetEnvironmentVariable("PELNAKSIEGOWOSC_SECRETS") == "plik";
+        if (!file && OperatingSystem.IsWindows()) return new WindowsCredentialSecretStore();
+        if (!file && OperatingSystem.IsLinux() && LinuxSecretServiceStore.IsAvailable()) return new LinuxSecretServiceStore();
         return new FileSecretStore(Path.Combine(paths.Root, "Sekrety"));
     }
 }

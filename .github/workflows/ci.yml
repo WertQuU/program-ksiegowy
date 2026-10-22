@@ -2,13 +2,22 @@ name: CI
 
 on:
   push:
+    branches: ['**']
+    tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+env:
+  DOTNET_NOLOGO: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  AVALONIA_TELEMETRY_OPTOUT: '1'
+
 jobs:
   test:
+    name: Testy (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
@@ -19,6 +28,15 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: PostgreSQL i atrapa S3 do testów integracyjnych (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "CREATE USER pk WITH PASSWORD 'pk_test_pw' CREATEDB;"
+          pip install --quiet "moto[server]"
+          (nohup moto_server -H 127.0.0.1 -p 5055 > moto.log 2>&1 &)
+          echo "PK_TEST_PG=Host=127.0.0.1;Username=pk;Password=pk_test_pw;Database=postgres" >> "$GITHUB_ENV"
+          echo "PK_TEST_S3_ENDPOINT=http://127.0.0.1:5055" >> "$GITHUB_ENV"
       - name: Przywrócenie pakietów
         run: dotnet restore PelnaKsiegowosc.sln
       - name: Kompilacja
@@ -31,3 +49,108 @@ jobs:
         with:
           name: wyniki-testow-${{ matrix.os }}
           path: '**/TestResults/*.trx'
+
+  linux:
+    name: Pakiety Linux (tar.gz, deb)
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Wersja
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"; else echo "VERSION=0.9.0" >> "$GITHUB_ENV"; fi
+      - name: Publikacja (self-contained linux-x64)
+        run: |
+          dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj -c Release -r linux-x64 --self-contained true -p:Version=$VERSION -o artifacts/linux-x64
+          dotnet publish src/PelnaKsiegowosc.Cli/PelnaKsiegowosc.Cli.csproj -c Release -r linux-x64 --self-contained true -p:Version=$VERSION -o artifacts/linux-x64
+      - name: Kontrola uruchomienia opublikowanego programu
+        run: artifacts/linux-x64/PelnaKsiegowosc --test-uruchomienia
+      - name: Pakiety
+        run: packaging/linux/build-packages.sh artifacts/linux-x64 "$VERSION" artifacts/packages
+      - name: Test instalacji pakietu deb
+        run: |
+          sudo apt-get install -y ./artifacts/packages/pelnaksiegowosc_${VERSION}_amd64.deb
+          pelnaksiegowosc --test-uruchomienia
+          pk-cli pomoc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PelnaKsiegowosc-linux
+          path: artifacts/packages/*
+
+  windows:
+    name: Pakiety Windows (MSI, zip)
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Wersja
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.9.0' }
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Publikacja (self-contained win-x64)
+        shell: pwsh
+        run: |
+          dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj -c Release -r win-x64 --self-contained true -p:Version=$env:VERSION -o artifacts/win-x64
+          dotnet publish src/PelnaKsiegowosc.Cli/PelnaKsiegowosc.Cli.csproj -c Release -r win-x64 --self-contained true -p:Version=$env:VERSION -o artifacts/win-x64
+      - name: Kontrola uruchomienia opublikowanego programu
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath artifacts/win-x64/PelnaKsiegowosc.exe -ArgumentList '--test-uruchomienia' -Wait -PassThru -NoNewWindow -RedirectStandardOutput test.log -RedirectStandardError test.err
+          Get-Content test.log, test.err
+          if ($p.ExitCode -ne 0) { throw "Kontrola uruchomienia zakończona kodem $($p.ExitCode)" }
+          ./artifacts/win-x64/pk-cli.exe pomoc
+      - name: Pakiet przenośny (zip)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/packages | Out-Null
+          Get-ChildItem artifacts/win-x64 -Recurse -Filter *.pdb | Remove-Item
+          Copy-Item LICENSE, THIRD-PARTY-NOTICES.md artifacts/win-x64/
+          Compress-Archive -Path artifacts/win-x64/* -DestinationPath "artifacts/packages/PelnaKsiegowosc-$env:VERSION-win-x64.zip"
+      - name: Instalator MSI (WiX 5)
+        shell: pwsh
+        run: |
+          dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release -p:ProductVersion=$env:VERSION "-p:AppPublishDir=$PWD/artifacts/win-x64" -o artifacts/msi
+          Copy-Item artifacts/msi/*.msi artifacts/packages/
+      - name: Test instalacji MSI
+        shell: pwsh
+        run: |
+          $msi = Get-ChildItem artifacts/packages/*.msi | Select-Object -First 1
+          $p = Start-Process msiexec.exe -ArgumentList "/i `"$($msi.FullName)`" /qn /l*v msi.log" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { Get-Content msi.log -Tail 50; throw "Instalacja MSI nieudana: $($p.ExitCode)" }
+          $exe = Join-Path $env:ProgramFiles 'PelnaKsiegowosc\PelnaKsiegowosc.exe'
+          if (-not (Test-Path $exe)) { throw "Brak zainstalowanego programu: $exe" }
+          $t = Start-Process -FilePath $exe -ArgumentList '--test-uruchomienia' -Wait -PassThru -NoNewWindow -RedirectStandardOutput inst.log
+          Get-Content inst.log
+          if ($t.ExitCode -ne 0) { throw "Zainstalowany program nie przeszedł kontroli uruchomienia" }
+          $u = Start-Process msiexec.exe -ArgumentList "/x `"$($msi.FullName)`" /qn" -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "Odinstalowanie nieudane: $($u.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PelnaKsiegowosc-windows
+          path: artifacts/packages/*
+
+  release:
+    name: Wydanie (tag v*)
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: pakiety
+          merge-multiple: true
+      - name: Sumy kontrolne
+        run: cd pakiety && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: pakiety/*
+          generate_release_notes: true

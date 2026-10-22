@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <!-- Instalator MSI (Windows x64) budowany z katalogu publikacji self-contained win-x64 (AppPublishDir).
+       Wymaga Windows: WiX korzysta z bibliotek Instalatora Windows. Polecenia: docs/BUILD.md. -->
+  <PropertyGroup>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">0.9.0</ProductVersion>
+    <AppPublishDir Condition="'$(AppPublishDir)' == ''">$(MSBuildThisFileDirectory)..\artifacts\win-x64</AppPublishDir>
+    <OutputName>PelnaKsiegowosc-$(ProductVersion)-x64</OutputName>
+    <OutputType>Package</OutputType>
+    <Platform>x64</Platform>
+    <InstallerPlatform>x64</InstallerPlatform>
+    <DefineConstants>ProductVersion=$(ProductVersion);AppPublishDir=$(AppPublishDir.TrimEnd('\').TrimEnd('/'))</DefineConstants>
+    <Cultures>pl-PL</Cultures>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" />
+  </ItemGroup>
+</Project>
