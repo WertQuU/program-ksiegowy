@@ -20,7 +20,8 @@ public static class BankOperationTypes
         new("WLASNY", "Przelew między własnymi rachunkami / wpłata do kasy", "139", "Środki w drodze — druga strona przelewu trafi na to samo konto i wyzeruje je."),
         new("POZYCZKA_WSPOLNIK", "Pożyczka od wspólnika/akcjonariusza (wpływ) lub jej spłata", "245-03", "Rozrachunki z właścicielami; wymaga umowy pożyczki (PCC — sprawdź zwolnienie)."),
         new("KREDYT", "Kredyt bankowy — wpływ lub spłata kapitału", "134", "Odsetki od kredytu zaksięguj osobno jako koszt finansowy."),
-        new("KARA", "Kara, mandat, odsetki budżetowe", "751-04", "Nie jest kosztem podatkowym."),
+        new("KARA", "Kara, mandat, grzywna", "761-03", "Nie jest kosztem podatkowym — po zaksięgowaniu dodaj korektę NKUP w sekcji CIT."),
+        new("ODSETKI_BUDZ", "Odsetki od zaległości podatkowych lub ZUS", "751-04", "Nie są kosztem podatkowym."),
         new("INNE_PRZYCHODY", "Inny przychód (np. odszkodowanie, zwrot)", "760-03", "Pozostały przychód operacyjny — sprawdź, czy nie powinien być fakturą."),
         new("INNE_KOSZTY", "Inny koszt bez faktury", "761-03", "Pozostały koszt operacyjny — zachowaj dowód (np. potwierdzenie)."),
     };

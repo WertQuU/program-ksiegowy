@@ -34,7 +34,8 @@ public sealed class DeadlineItem
     {
         Deadline = d;
         DateText = d.Date.ToPl();
-        Status = d.Done ? "zrobione" : d.IsOverdue(today) ? $"po terminie ({-d.DaysLeft(today)} dni)" : d.DaysLeft(today) == 0 ? "dziś" : $"za {d.DaysLeft(today)} dni";
+        Status = d.Done ? "zrobione" : d.IsOverdue(today) ? $"po terminie ({-d.DaysLeft(today)} dni)" : d.DaysLeft(today) == 0 ? "dziś"
+            : d.DaysLeft(today) < 0 ? "termin minął — sprawdź, czy obowiązek wykonano" : $"za {d.DaysLeft(today)} dni";
         Color = d.Done ? "#2E7D32" : d.IsOverdue(today) ? "#C62828" : d.DaysLeft(today) <= 5 ? "#E08A00" : "#546E7A";
         GoCommand = new RelayCommand(() => session.Navigate(d.Area));
     }
@@ -107,7 +108,7 @@ public sealed partial class DashboardViewModel : SectionViewModel
         var moneyAccounts = await db.MoneyAccounts.AsNoTracking().Where(m => m.CompanyId == Session.CompanyId && m.IsActive).ToListAsync();
         var tb = await new Application.Ledger.LedgerQueries(db).TrialBalanceAsync(Session.CurrentYear.Id, Session.CurrentYear.StartDate,
             today < Session.CurrentYear.EndDate ? (today < Session.CurrentYear.StartDate ? Session.CurrentYear.StartDate : today) : Session.CurrentYear.EndDate);
-        MoneyText = string.Join("\n", moneyAccounts.Select(m => $"{(m.Kind == MoneyAccountKind.Kasa ? "Kasa" : m.Name)}: {Money.Format(tb.FirstOrDefault(t => t.Account.Number == m.LedgerAccountNumber)?.Balance ?? 0)} {m.Currency}"));
+        MoneyText = string.Join("\n", moneyAccounts.Select(m => $"{(m.Kind == MoneyAccountKind.Kasa ? "Kasa" : m.Name)}: {Money.Format(tb.FirstOrDefault(t => t.Account.Number == m.LedgerAccountNumber)?.Balance ?? 0)} zł{(m.Currency != "PLN" ? $" (rachunek {m.Currency}, wartość w PLN)" : "")}"));
         if (string.IsNullOrEmpty(MoneyText)) MoneyText = "brak rachunków";
 
         var b = Session.Config.Backup;

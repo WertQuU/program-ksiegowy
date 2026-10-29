@@ -41,9 +41,10 @@ public enum AppArea
 public sealed record Issue(string Code, IssueSeverity Severity, string Title, string Details, string HowToFix, AppArea Area, Guid? ObjectId = null);
 
 /// <summary>Termin ustawowy z informacją, czy obowiązek został już wykonany w programie.</summary>
-public sealed record Deadline(DateOnly Date, string Title, string Details, bool Done, AppArea Area)
+public sealed record Deadline(DateOnly Date, string Title, string Details, bool Done, AppArea Area, bool Informational = false)
 {
-    public bool IsOverdue(DateOnly today) => !Done && Date < today;
+    /// <summary>Termin informacyjny — program nie wie, czy obowiązek wykonano poza nim (np. złożenie CIT-8), więc nie oznacza go jako zaległego.</summary>
+    public bool IsOverdue(DateOnly today) => !Done && !Informational && Date < today;
     public int DaysLeft(DateOnly today) => Date.DayNumber - today.DayNumber;
 }
 
@@ -99,12 +100,13 @@ public sealed class BookkeepingAssistant
             Add("DOK_ROBOCZE", IssueSeverity.Ostrzezenie, $"{drafts.Count} dokument(ów) roboczych starszych niż 7 dni",
                 string.Join(", ", drafts.Take(8).Select(d => d.Number)), "Sprawdź je, zatwierdź i zaksięguj albo anuluj błędne.", AppArea.Dokumenty);
         var unposted = docs.Where(d => d.Status == DocumentStatus.Zatwierdzony).ToList();
-        var unpostedOld = unposted.Where(d => d.IssueDate < new DateOnly(today.Year, today.Month, 1)).ToList();
+        static DateOnly BooksDue(DateOnly d) => new DateOnly(d.Year, d.Month, 1).AddMonths(1).AddDays(14);
+        var unpostedOld = unposted.Concat(docs.Where(d => d.Status == DocumentStatus.Roboczy)).Where(d => today > BooksDue(d.IssueDate)).ToList();
         if (unpostedOld.Count > 0)
-            Add("DOK_NIEZAKSIEGOWANE", IssueSeverity.Blad, $"{unpostedOld.Count} zatwierdzonych dokumentów z poprzednich miesięcy nie zaksięgowano",
+            Add("DOK_NIEZAKSIEGOWANE", IssueSeverity.Blad, $"{unpostedOld.Count} dokumentów z minionych miesięcy nie zaksięgowano w terminie",
                 string.Join(", ", unpostedOld.Take(8).Select(d => d.Number)) +
-                ". Operacje miesiąca ujmuje się w księgach najpóźniej do 15. dnia następnego miesiąca (art. 24 ust. 5 pkt 4 UoR).",
-                "Zaksięguj je (Dokumenty → Zaksięguj).", AppArea.Dokumenty);
+                ". Księgi prowadzi się bieżąco (art. 24 ust. 5 UoR) — przyjęty termin ujęcia operacji miesiąca to 15. dzień następnego miesiąca (sprawdź politykę rachunkowości).",
+                "Użyj kreatora „Rozlicz miesiąc” albo zaksięguj je w sekcji Dokumenty.", AppArea.Dokumenty);
         else if (unposted.Count > 0)
             Add("DOK_DO_KSIEGOWANIA", IssueSeverity.Wskazowka, $"{unposted.Count} zatwierdzonych dokumentów czeka na zaksięgowanie",
                 string.Join(", ", unposted.Take(8).Select(d => d.Number)), "Zaksięguj je (Dokumenty → Zaksięguj).", AppArea.Dokumenty);
@@ -124,28 +126,29 @@ public sealed class BookkeepingAssistant
                 "Otwórz dokument (Edytuj roboczą) i kliknij „Pobierz kurs NBP”.", d.IsSales ? AppArea.Sprzedaz : AppArea.Zakupy, d.Id);
 
         // KSeF
-        var noKsef = docs.Where(d => d.Kind == DocumentKind.FakturaSprzedazy && d.Status is DocumentStatus.Zatwierdzony or DocumentStatus.Zaksiegowany
+        var noKsef = docs.Where(d => d.Kind is DocumentKind.FakturaSprzedazy or DocumentKind.KorektaSprzedazy && d.Status is DocumentStatus.Zatwierdzony or DocumentStatus.Zaksiegowany
                                      && d.IssueDate >= KsefMandatoryFrom && string.IsNullOrEmpty(d.KsefNumber)
                                      && (d.CounterpartyCountry ?? "PL") == "PL" && !string.IsNullOrEmpty(d.CounterpartyNip)).ToList();
         if (noKsef.Count > 0)
-            Add("KSEF_BRAK", IssueSeverity.Blad, $"{noKsef.Count} faktur sprzedaży dla firm bez numeru KSeF",
-                string.Join(", ", noKsef.Take(8).Select(d => d.Number)) + ". Od 2026 r. faktury dla firm krajowych wystawia się w KSeF (art. 106ga ustawy o VAT; wyjątki — sprawdź).",
+            Add("KSEF_BRAK", IssueSeverity.Ostrzezenie, $"{noKsef.Count} faktur sprzedaży dla firm bez numeru KSeF",
+                string.Join(", ", noKsef.Take(8).Select(d => d.Number)) + ". Od 2026 r. faktury dla firm krajowych wystawia się w KSeF (art. 106ga ustawy o VAT): najwięksi podatnicy od 1.02.2026, pozostali od 1.04.2026; podatnicy ze sprzedażą do 10 000 zł miesięcznie mogą do końca 2026 r. wystawiać faktury poza KSeF.",
                 "Sprzedaż → zaznacz fakturę → „Wyślij do KSeF”. Jeżeli faktura była wystawiona w trybie awaryjnym/offline — dośli ją w terminie.", AppArea.Sprzedaz);
         foreach (var d in docs.Where(d => d.KsefStatus == KsefStatus.Odrzucona))
             Add("KSEF_ODRZUCONA", IssueSeverity.Blad, $"KSeF odrzucił fakturę {d.Number}", "Faktura nie została wystawiona w KSeF.",
                 "Sprawdź komunikat w Integracje → Dziennik integracji, popraw dane i wyślij ponownie.", AppArea.Sprzedaz, d.Id);
 
         // Duplikaty zakupów
-        foreach (var g in docs.Where(d => d.IsPurchase && !string.IsNullOrEmpty(d.ExternalNumber)).GroupBy(d => (d.CounterpartyNip, d.ExternalNumber, d.Kind)).Where(g => g.Count() > 1))
+        foreach (var g in docs.Where(d => d.IsPurchase && !string.IsNullOrEmpty(d.ExternalNumber)).GroupBy(d => (d.CounterpartyId, d.ExternalNumber, d.Kind)).Where(g => g.Count() > 1))
             Add("ZAKUP_DUPLIKAT", IssueSeverity.Blad, $"Faktura {g.Key.ExternalNumber} od {g.First().CounterpartyName} zarejestrowana {g.Count()} razy",
                 string.Join(", ", g.Select(d => d.Number)), "Anuluj zbędny dokument (jeżeli niezaksięgowany) albo wystornuj zapis.", AppArea.Zakupy);
 
         // Płatności gotówkowe > 15 000 zł (art. 15d ustawy o CIT, art. 19 ustawy Prawo przedsiębiorców)
-        foreach (var d in docs.Where(d => d.IsPurchase && d.PaymentMethod == PaymentMethod.Gotowka && d.GrossAmountPln > CashPaymentLimit))
+        foreach (var d in docs.Where(d => d.IsPurchase && d.PaymentMethod == PaymentMethod.Gotowka && d.GrossAmountPln > CashPaymentLimit && fy.Contains(d.IssueDate)))
             Add("GOTOWKA_LIMIT", IssueSeverity.Ostrzezenie, $"Zakup {d.Number} za {Money.Format(d.GrossAmountPln)} zł opłacony gotówką",
                 "Transakcje z firmami powyżej 15 000 zł należy regulować przelewem; zapłata gotówką powoduje wyłączenie kwoty z kosztów podatkowych (art. 15d ustawy o CIT).",
                 "Sprawdź formę płatności; jeżeli zapłata była gotówkowa — wyłącz wydatek z KUP (CIT → korekta NKUP).", AppArea.Zakupy, d.Id);
-        foreach (var d in docs.Where(d => d.IsInvoice && !d.SplitPayment && d.GrossAmountPln > SplitPaymentThreshold && d.Status != DocumentStatus.Roboczy && (d.CounterpartyCountry ?? "PL") == "PL"))
+        foreach (var d in docs.Where(d => d.IsInvoice && !d.SplitPayment && d.GrossAmountPln > SplitPaymentThreshold && d.Status != DocumentStatus.Roboczy
+                                          && (d.CounterpartyCountry ?? "PL") == "PL" && d.IssueDate >= today.AddDays(-45)))
             Add("MPP_SPRAWDZ", IssueSeverity.Wskazowka, $"Faktura {d.Number} powyżej 15 000 zł bez oznaczenia podzielonej płatności",
                 "Mechanizm podzielonej płatności jest obowiązkowy, gdy faktura obejmuje towary lub usługi z załącznika nr 15 do ustawy o VAT.",
                 "Sprawdź, czy pozycje faktury są w załączniku nr 15; jeżeli tak — oznacz „Mechanizm podzielonej płatności”.", d.IsSales ? AppArea.Sprzedaz : AppArea.Zakupy, d.Id);
@@ -273,7 +276,7 @@ public sealed class BookkeepingAssistant
         var to = today.AddDays(60);
         var years = await _db.FiscalYears.AsNoTracking().Include(f => f.Periods).Where(f => f.CompanyId == companyId).ToListAsync(ct);
         var advances = await _db.CitAdvances.AsNoTracking().Where(a => a.CompanyId == companyId).ToListAsync(ct);
-        var docs = await _db.Documents.AsNoTracking().Where(d => d.CompanyId == companyId && d.Status == DocumentStatus.Zatwierdzony).Select(d => d.IssueDate).ToListAsync(ct);
+        var docs = await _db.Documents.AsNoTracking().Where(d => d.CompanyId == companyId && (d.Status == DocumentStatus.Zatwierdzony || d.Status == DocumentStatus.Roboczy)).Select(d => d.IssueDate).ToListAsync(ct);
 
         for (var m = new DateOnly(from.Year, from.Month, 1).AddMonths(-1); m <= to; m = m.AddMonths(1))
         {
@@ -282,11 +285,11 @@ public sealed class BookkeepingAssistant
             if (fy is null) continue;
             var period = fy.Periods.FirstOrDefault(p => p.Contains(m));
 
-            // Ujęcie operacji w księgach (art. 24 ust. 5 pkt 4 UoR)
+            // Ujęcie operacji w księgach (bieżące prowadzenie ksiąg, art. 24 ust. 5 UoR; przyjęty termin: 15. dzień)
             var booksDue = m.AddMonths(1).AddDays(14);
             var booksDone = period?.Status == PeriodStatus.Zamkniety || !docs.Any(d => d >= m && d <= monthEnd);
             list.Add(new Deadline(booksDue, $"Zaksięgowanie operacji za {m:MM.yyyy}",
-                "Operacje miesiąca ujmuje się w księgach do 15. dnia następnego miesiąca (art. 24 ust. 5 pkt 4 UoR).", booksDone && monthEnd < today, AppArea.Dokumenty));
+                "Księgi prowadzi się bieżąco (art. 24 ust. 5 UoR); przyjęto termin ujęcia operacji miesiąca do 15. dnia następnego miesiąca.", booksDone && monthEnd < today, AppArea.Dokumenty));
 
             if (company.VatStatus == VatStatus.CzynnyPodatnikVat && company.VatPeriod == VatSettlementPeriod.Miesieczny)
             {
@@ -299,12 +302,21 @@ public sealed class BookkeepingAssistant
                     settled && jpk, AppArea.Vat));
             }
 
+            if (company.VatStatus == VatStatus.CzynnyPodatnikVat && company.VatPeriod == VatSettlementPeriod.Kwartalny)
+            {
+                var due = Domain.Cit.CitCalculator.ShiftToBusinessDay(new DateOnly(m.Year, m.Month, 25).AddMonths(1));
+                var quarterEnd = m.Month % 3 == 0;
+                list.Add(new Deadline(due, $"JPK_V7K za {m:MM.yyyy}" + (quarterEnd ? " (z deklaracją kwartalną i zapłatą VAT)" : " (ewidencja)"),
+                    "Plik JPK_V7K składa się co miesiąc do 25. dnia; deklarację i zapłatę — za kwartał. Program nie generuje JPK_V7K — przygotuj plik innym narzędziem.",
+                    false, AppArea.Vat, Informational: true));
+            }
+
             if (LegalForms.IsCitTaxpayer(company.LegalForm) && period is not null &&
                 (company.CitAdvanceMethod == CitAdvanceMethod.Miesieczne || period.Number % 3 == 0))
             {
                 var due = Domain.Cit.CitCalculator.AdvanceDeadline(period.EndDate);
                 var adv = advances.FirstOrDefault(a => a.FiscalYearId == fy.Id && a.PeriodNumber == period.Number);
-                list.Add(new Deadline(due, $"Zaliczka CIT za {(company.CitAdvanceMethod == CitAdvanceMethod.Miesieczne ? $"{m:MM.yyyy}" : $"{period.Number / 3}. kwartał {m:yyyy}")}",
+                list.Add(new Deadline(due, $"Zaliczka CIT za {(company.CitAdvanceMethod == CitAdvanceMethod.Miesieczne ? $"{m:MM.yyyy}" : $"kwartał kończący się {period.EndDate:MM.yyyy}")}",
                     "Wpłata zaliczki do 20. dnia następnego miesiąca (art. 25 ust. 1 ustawy o CIT)" + (adv is null ? "; zaliczki nie wyliczono." : $"; do zapłaty {Money.Format(adv.AdvanceDue)} zł."),
                     adv?.IsApproved == true, AppArea.Cit));
             }
@@ -314,13 +326,14 @@ public sealed class BookkeepingAssistant
         {
             void Y(DateOnly date, string title, string details, bool done, AppArea area)
             {
-                if (date >= from && date <= to) list.Add(new Deadline(date, title, details, done, area));
+                if (date >= from && date <= to) list.Add(new Deadline(date, title, details, done, area, Informational: !done));
             }
             var closed = fy.Status is FiscalYearStatus.Zamkniety or FiscalYearStatus.Zarchiwizowany;
-            Y(fy.EndDate.AddMonths(3), $"Sporządzenie sprawozdania finansowego za {fy.Name}", "W ciągu 3 miesięcy od dnia bilansowego (art. 52 ust. 1 UoR); podpisuje kierownik jednostki i osoba sporządzająca.", closed, AppArea.Raporty);
+            DateOnly After(int months) => fy.EndDate.AddDays(1).AddMonths(months).AddDays(-1);
+            Y(After(3), $"Sporządzenie sprawozdania finansowego za {fy.Name}", "W ciągu 3 miesięcy od dnia bilansowego (art. 52 ust. 1 UoR); podpisuje kierownik jednostki i osoba sporządzająca. Najpierw zamknij rok obrotowy.", closed, AppArea.Raporty);
             if (LegalForms.IsCitTaxpayer(company.LegalForm))
-                Y(Domain.Cit.CitCalculator.AnnualReturnDeadline(fy.EndDate), $"Zeznanie CIT-8 za {fy.Name}", "Do końca 3. miesiąca roku następnego (art. 27 ust. 1 ustawy o CIT); zapłata podatku w tym terminie.", false, AppArea.Cit);
-            Y(fy.EndDate.AddMonths(6), $"Zatwierdzenie sprawozdania finansowego za {fy.Name}", "Nie później niż 6 miesięcy od dnia bilansowego (art. 53 ust. 1 UoR); następnie złożenie w KRS w ciągu 15 dni (art. 69 UoR) — dotyczy jednostek wpisanych do KRS.", false, AppArea.Raporty);
+                Y(Domain.Cit.CitCalculator.AnnualReturnDeadline(fy.EndDate), $"Zeznanie CIT-8 za {fy.Name}", "Do końca 3. miesiąca roku następnego (art. 27 ust. 1 ustawy o CIT); zapłata podatku w tym terminie. Zeznanie składa się poza programem.", false, AppArea.Cit);
+            Y(After(6), $"Zatwierdzenie sprawozdania finansowego za {fy.Name}", "Nie później niż 6 miesięcy od dnia bilansowego (art. 53 ust. 1 UoR); następnie złożenie w KRS w ciągu 15 dni (art. 69 UoR) — dotyczy jednostek wpisanych do KRS.", false, AppArea.Raporty);
         }
         return list.OrderBy(d => d.Date).ToList();
     }

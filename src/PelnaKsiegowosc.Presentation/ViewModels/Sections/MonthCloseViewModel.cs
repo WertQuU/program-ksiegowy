@@ -63,7 +63,7 @@ public sealed partial class MonthCloseViewModel : ViewModelBase
         Steps = new List<CloseStep>
         {
             new(1, "Dokumenty miesiąca zatwierdzone i zaksięgowane",
-                "Każdą fakturę i dowód z tego miesiąca trzeba zaksięgować (do 15. dnia następnego miesiąca). Przycisk zatwierdza i księguje wszystkie poprawne dokumenty; błędne zostaną wymienione.",
+                "Każdą fakturę i dowód z tego miesiąca trzeba zaksięgować — księgi prowadzi się bieżąco (przyjęty termin: 15. dzień następnego miesiąca). Przycisk zatwierdza i księguje wszystkie poprawne dokumenty; błędne zostaną wymienione.",
                 "Zaksięguj wszystkie poprawne", PostDocumentsAsync),
             new(2, "Bank i kasa rozliczone",
                 "Wyciągi z rachunków za cały miesiąc powinny być zaimportowane, a każda operacja dopasowana do faktury lub konta i zaksięgowana.",

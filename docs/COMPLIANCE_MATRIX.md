@@ -30,7 +30,7 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | VAT art. 109 ust. 3 | ewidencja VAT | rejestry z polami JPK | Z/W |
 | Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M | generator; mapowanie pól wymaga weryfikacji; bez walidacji XSD | Cz |
 | JPK_V7K, osoba fizyczna | kwartalny wariant, sekcja OsobaFizyczna | — | N |
-| UoR art. 24 ust. 5 pkt 4 | ujęcie operacji miesiąca do 15. dnia następnego miesiąca | asystent i kalendarz terminów | Z |
+| UoR art. 24 ust. 5 | bieżące prowadzenie ksiąg (przyjęty termin ujęcia operacji miesiąca: 15. dzień następnego miesiąca — do potwierdzenia w polityce) | asystent i kalendarz terminów | Z/W |
 | VAT art. 86a, 88 ust. 1 pkt 4 | ograniczenia odliczenia (samochody osobowe, noclegi, gastronomia) | kategorie wydatków z procentem odliczenia | Z/W |
 | VAT art. 89b, CIT art. 15b | korekta przy niezapłaconych zobowiązaniach (90 dni) | asystent: błąd dla zobowiązań > 90 dni po terminie | Z/W |
 | VAT art. 96b, CIT art. 15d, Ordynacja art. 117ba | biała lista, płatności > 15 000 zł | sprawdzenie rachunku w wykazie, asystent: gotówka > 15 000 zł | Z/W |

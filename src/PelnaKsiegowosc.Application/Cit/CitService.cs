@@ -130,7 +130,8 @@ public sealed class CitService
                                select new { l.AccountId, l.Debit, l.Credit, l.CitClassification }).ToListAsync(ct);
         var accById = tb.ToDictionary(t => t.Account.Id, t => t.Account);
         var nkupLines = overrides.Where(o => o.CitClassification == CitClassification.KosztNiepodatkowy && accById.TryGetValue(o.AccountId, out var a)
-                                             && a.Type == AccountType.WynikoweKosztowe && a.CitClassification != CitClassification.KosztNiepodatkowy).ToList();
+                                             && a.Type == AccountType.WynikoweKosztowe && a.CitClassification != CitClassification.KosztNiepodatkowy
+                                             && !depAccounts.Contains(a.Number)).ToList();
         var nkupTotal = nkupLines.Sum(o => o.Debit - o.Credit);
         if (nkupTotal != 0)
         {

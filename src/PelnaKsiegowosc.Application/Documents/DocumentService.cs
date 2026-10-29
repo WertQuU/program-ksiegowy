@@ -248,8 +248,11 @@ public sealed class DocumentService
     /// </summary>
     public async Task<bool> ApplyCategoryDeductionAsync(Guid documentId, CancellationToken ct = default)
     {
+        if (!_user.Can(Permission.ManageVat)) return false;
         var doc = await GetAsync(documentId, ct);
-        if (!doc.IsPurchase || doc.Status != DocumentStatus.Roboczy) return false;
+        if (!doc.IsPurchase || doc.Status != DocumentStatus.Roboczy || doc.ExcludedFromVatRegister) return false;
+        var company = await _db.Companies.AsNoTracking().FirstAsync(c => c.Id == doc.CompanyId, ct);
+        if (company.VatStatus != VatStatus.CzynnyPodatnikVat) return false;
         if (doc.Lines.Count == 0 || doc.Lines.Any(l => Templates.ExpenseCategories.Find(l.ExpenseCategory) is null)) return false;
         var perRate = doc.Lines.GroupBy(l => l.VatRateCode).ToDictionary(g => g.Key, g =>
         {
@@ -375,17 +378,27 @@ public sealed class DocumentService
                 {
                     // koszty z częścią NKUP (kategorie wydatków): VAT nieodliczony rozdzielany proporcjonalnie do netto,
                     // a każda grupa dzielona na część KUP i NKUP (np. art. 16 ust. 1 pkt 51 ustawy o CIT — 75% kosztów samochodu osobowego)
+                    // VAT nieodliczony przypisywany do pozycji, z której wynika (kategoria pozycji, w braku — procent odliczenia stawki)
+                    decimal Pln(decimal v) => foreign ? Money.ToPln(v, doc.ExchangeRate) : v;
+                    var lineShare = doc.Lines.ToDictionary(l => l, l =>
+                    {
+                        var pct = Templates.ExpenseCategories.Find(l.ExpenseCategory)?.VatDeductionPercent
+                                  ?? doc.VatLines.FirstOrDefault(v => v.VatRateCode == l.VatRateCode)?.DeductionPercent ?? 100m;
+                        return Money.Round(Pln(l.VatAmount) * (100m - pct) / 100m);
+                    });
+                    var diff = nonDeductible - lineShare.Values.Sum();
+                    if (diff != 0 && doc.Lines.Count > 0)
+                    {
+                        var largest = doc.Lines.OrderByDescending(l => Math.Abs(l.VatAmount)).First();
+                        lineShare[largest] += diff;
+                    }
                     var groups = doc.Lines.GroupBy(l => (Account: l.AccountId ?? Acc(p.PurchaseCostDefault), l.NkupPercent))
-                        .Select(g => (g.Key.Account, g.Key.NkupPercent, Net: foreign ? Money.ToPln(g.Sum(x => x.NetAmount), doc.ExchangeRate) : g.Sum(x => x.NetAmount)))
+                        .Select(g => (g.Key.Account, g.Key.NkupPercent, Net: Pln(g.Sum(x => x.NetAmount)), Share: g.Sum(x => lineShare[x])))
                         .ToList();
-                    var totalNet = groups.Sum(g => g.Net);
-                    var allocated = 0m;
                     for (var i = 0; i < groups.Count; i++)
                     {
                         var g = groups[i];
-                        var share = i == groups.Count - 1 ? nonDeductible - allocated : (totalNet == 0 ? 0 : Money.Round(nonDeductible * g.Net / totalNet));
-                        allocated += share;
-                        var amount = g.Net + share;
+                        var amount = g.Net + g.Share;
                         var nkup = Money.Round(amount * g.NkupPercent / 100m);
                         Add(g.Account, amount - nkup, 0, $"Koszt {doc.ExternalNumber ?? doc.Number}");
                         if (nkup != 0) Add(g.Account, nkup, 0, $"Koszt {doc.ExternalNumber ?? doc.Number} — część NKUP ({g.NkupPercent:0.##}%)", cit: CitClassification.KosztNiepodatkowy);

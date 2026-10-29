@@ -190,3 +190,48 @@ public class WizardsTests
         Assert.Equal(27.88m, (await db.JournalLines.Where(l => l.CitClassification == CitClassification.KosztNiepodatkowy).ToListAsync()).Sum(l => l.Debit)); // 25% z 111,50 (netto + 50% VAT)
     }
 }
+
+public class CategoryAllocationTests
+{
+    [Fact]
+    public async Task Mixed_categories_book_non_deductible_vat_on_the_line_that_caused_it()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Serwis i biuro", "7740001454");
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 1, 10);
+        var car = ExpenseCategories.Find("AUTO_OSOBOWY")!;
+        var office = ExpenseCategories.Find("BIURO")!;
+        var accounts = await t.Db.Accounts.AsNoTracking().Where(a => a.ChartId == t.Chart.Id).ToListAsync();
+        var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp.Id, d, d, new[]
+        {
+            new DocumentLineInput("Naprawa auta", 1, 1000m, "23", "usł.", ExpenseCategories.ResolveAccount(car, accounts), null, car.Code, car.NkupPercent),
+            new DocumentLineInput("Papier", 1, 1000m, "23", "szt.", ExpenseCategories.ResolveAccount(office, accounts), null, office.Code, office.NkupPercent)
+        }, ExternalNumber: "MIX/1", ReceiptDate: d));
+        Assert.True(await docs.ApplyCategoryDeductionAsync(inv.Id));
+        await docs.ApproveAsync(inv.Id);
+        await docs.PostAsync(inv.Id);
+        Assert.Equal(345m, await t.BalanceAsync("221-02")); // 115 (50% z 230) + 230
+        Assert.Equal(1115m, await t.BalanceAsync("402"));   // naprawa + 115 VAT nieodliczonego
+        Assert.Equal(1000m, await t.BalanceAsync("401"));
+        var nkup = await t.Db.JournalLines.AsNoTracking().Where(l => l.CitClassification == CitClassification.KosztNiepodatkowy).SumAsync(l => (double)l.Debit);
+        Assert.Equal(278.75, nkup, 2);
+    }
+
+    [Fact]
+    public async Task Category_deduction_is_not_applied_for_vat_exempt_company()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var company = await t.Db.Companies.FirstAsync();
+        company.VatStatus = PelnaKsiegowosc.Domain.Companies.VatStatus.ZwolnionyPodmiotowo;
+        await t.Db.SaveChangesAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Sklep", "7740001454");
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 1, 10);
+        var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp.Id, d, d,
+            new[] { new DocumentLineInput("Papier", 1, 100m, "23", "szt.", "401", null, "BIURO", 0) }, ExternalNumber: "Z/1", ReceiptDate: d));
+        Assert.False(await docs.ApplyCategoryDeductionAsync(inv.Id));
+        var doc = await t.Db.Documents.Include(x => x.VatLines).AsNoTracking().FirstAsync(x => x.Id == inv.Id);
+        Assert.All(doc.VatLines, v => Assert.Equal(0m, v.DeductibleVatPln));
+    }
+}

@@ -72,7 +72,7 @@ public static class ChartTemplate
         if (o.Leasing)
             list.Add(new("249", "Rozrachunki z tytułu leasingu", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true));
         if (!o.Employees)
-            list.RemoveAll(a => a.Number is "230" or "404" or "405" or "220-02" or "220-03");
+            list.RemoveAll(a => a.Number is "230" or "404" or "405");
         if (!o.TradingGoods)
             list.RemoveAll(a => a.Number is "330" or "730" or "731");
         return list.OrderBy(a => a.Number, StringComparer.Ordinal).ToList();
