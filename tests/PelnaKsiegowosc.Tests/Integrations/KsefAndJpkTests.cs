@@ -199,3 +199,22 @@ public class KsefAndJpkTests
         Assert.Contains("NIEZWALIDOWANY", r.Status); // schemat JPK_V7M nie jest dołączony do repozytorium (zob. schemas/README.md)
     }
 }
+
+public class InvoicePdfTests
+{
+    [Fact]
+    public async Task Sales_invoice_pdf_is_generated()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("K001", "Klient sp. z o.o.", "7740001454");
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 1, 15);
+        var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, cp.Id, d, d,
+            new[] { new DocumentLineInput("Usługa doradcza — zażółć gęślą jaźń", 2, 1500m, "23", "usł.") }, DueDate: d.AddDays(14)));
+        var full = await docs.GetAsync(inv.Id);
+        var pdf = PelnaKsiegowosc.Infrastructure.Export.InvoicePdf.Build(full, t.Company);
+        Assert.True(pdf.Length > 1000);
+        Assert.Equal("%PDF", Encoding.ASCII.GetString(pdf, 0, 4));
+        if (Environment.GetEnvironmentVariable("PK_TEST_PDF_OUT") is { Length: > 0 } outPath) File.WriteAllBytes(outPath, pdf);
+    }
+}

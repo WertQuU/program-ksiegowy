@@ -11,6 +11,7 @@
       <Button Content="+ Wystaw fakturę" Command="{Binding NewCommand}" Classes="accent" />
       <Button Content="Edytuj roboczą" Command="{Binding EditCommand}" />
       <Button Content="Wystaw korektę" Command="{Binding NewCorrectionCommand}" />
+      <Button Content="Drukuj / PDF…" Command="{Binding PrintPdfCommand}" />
       <Button Content="Zapisz XML FA(3)…" Command="{Binding SaveXmlCommand}" />
       <Button Content="Wyślij do KSeF" Command="{Binding SendToKsefCommand}" />
       <TextBox Text="{Binding Search}" Watermark="Szukaj (numer, kontrahent, opis)" />

@@ -352,6 +352,22 @@ public sealed partial class SalesViewModel : DocumentListBase
     }, "Faktura zapisana i zaksięgowana.");
 
     [RelayCommand]
+    private Task PrintPdfAsync() => RunAsync(async () =>
+    {
+        var id = SelectedId;
+        await using var db = Session.OpenDb();
+        var svc = new DocumentService(db, Session.User, Session.Clock);
+        var d = await svc.GetAsync(id);
+        var company = await db.Companies.AsNoTracking().FirstAsync(c => c.Id == d.CompanyId);
+        var corrected = d.CorrectedDocumentId is { } cid ? await svc.GetAsync(cid) : null;
+        var target = await Dialogs.SaveFileAsync("Zapisz fakturę (PDF)", $"{d.Number.Replace('/', '-')}.pdf", new FileFilter("PDF", "*.pdf"));
+        if (target is null) return;
+        await File.WriteAllBytesAsync(target, Infrastructure.Export.InvoicePdf.Build(d, company, corrected));
+        StatusMessage = $"Zapisano {target}";
+        Dialogs.OpenInSystem(target);
+    });
+
+    [RelayCommand]
     private Task SaveXmlAsync() => RunAsync(async () =>
     {
         var id = SelectedId;
