@@ -61,3 +61,33 @@ public class WhiteListTests
         foreach (var t in PelnaKsiegowosc.Application.Templates.BankOperationTypes.All) Assert.Contains(t.AccountNumber, all);
     }
 }
+
+public class NbpTests
+{
+    private sealed class Fake(Func<string, (HttpStatusCode, string)> f) : HttpMessageHandler
+    {
+        public List<string> Paths { get; } = new();
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage r, CancellationToken ct)
+        {
+            Paths.Add(r.RequestUri!.PathAndQuery);
+            var (c, b) = f(r.RequestUri!.PathAndQuery);
+            return Task.FromResult(new HttpResponseMessage(c) { Content = new StringContent(b, Encoding.UTF8, "application/json") });
+        }
+    }
+
+    [Fact]
+    public async Task Rate_is_taken_from_last_published_table_before_operation_date()
+    {
+        // operacja w poniedziałek 2.11.2026 → niedziela i sobota bez tabeli → piątek 30.10.2026
+        var fake = new Fake(p => p.Contains("2026-10-30")
+            ? (HttpStatusCode.OK, """{"table":"A","currency":"euro","code":"EUR","rates":[{"no":"211/A/NBP/2026","effectiveDate":"2026-10-30","mid":4.2512}]}""")
+            : (HttpStatusCode.NotFound, "404 NotFound - Not Found - Brak danych"));
+        using var http = new HttpClient(fake) { BaseAddress = PelnaKsiegowosc.Infrastructure.Nbp.NbpClient.BaseUrl };
+        var r = await new PelnaKsiegowosc.Infrastructure.Nbp.NbpClient(http).RateBeforeAsync("eur", new DateOnly(2026, 11, 2));
+        Assert.Equal(4.2512m, r.Mid);
+        Assert.Equal("211/A/NBP/2026", r.TableNumber);
+        Assert.Equal(new DateOnly(2026, 10, 30), r.EffectiveDate);
+        Assert.Equal(3, fake.Paths.Count);
+        Assert.StartsWith("/api/exchangerates/rates/a/eur/2026-11-01", fake.Paths[0]);
+    }
+}

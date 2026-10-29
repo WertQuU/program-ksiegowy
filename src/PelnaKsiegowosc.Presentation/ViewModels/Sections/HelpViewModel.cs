@@ -15,6 +15,34 @@ public sealed partial class HelpViewModel : SectionViewModel
     [ObservableProperty] private TableData _integrity = TableData.Empty;
     public string LicenseText => Terms.Text;
 
+    public string Glossary => """
+        Słowniczek — najważniejsze pojęcia w prostych słowach
+
+        Pełna księgowość (księgi rachunkowe) — zapis każdej operacji firmy na kontach, zawsze podwójnie: raz po stronie Wn, raz po stronie Ma.
+        Wn (Winien) i Ma — dwie strony konta. Suma Wn każdego zapisu równa się sumie Ma. Program pilnuje tego sam.
+        Konto — „szufladka” na jeden rodzaj operacji, np. 130 Rachunek bankowy, 402 Usługi obce, 700 Sprzedaż.
+        Plan kont — lista kont firmy. Tworzy go kreator; zatwierdza kierownik jednostki.
+        Dokument (dowód księgowy) — faktura, rachunek, wyciąg, polecenie księgowania. Bez dowodu nie ma zapisu.
+        Zaksięgowanie — trwałe wpisanie dokumentu do ksiąg. Zaksięgowanego zapisu nie można zmienić — poprawia się go stornem.
+        Storno — zapis odwracający błędny zapis (czerwone: ujemny po tej samej stronie, czarne: odwrotny po przeciwnej).
+        Bufor — miejsce na zapisy robocze, które nie są jeszcze w księgach.
+        Rozrachunki — kto komu ile jest winien: należności (od klientów) i zobowiązania (wobec dostawców, urzędów).
+        VAT należny — VAT z faktur sprzedaży (do oddania państwu). VAT naliczony — VAT z faktur zakupu (do odliczenia).
+        Odliczenie VAT — pomniejszenie VAT do zapłaty o VAT z zakupów. Nie przysługuje m.in. dla hoteli i restauracji; dla samochodu osobowego zwykle 50%.
+        JPK_V7M — plik dla urzędu skarbowego z ewidencją VAT i deklaracją za miesiąc, wysyłany do 25. dnia następnego miesiąca.
+        KSeF — Krajowy System e-Faktur. Faktury dla firm wystawia się w KSeF; każda dostaje numer KSeF.
+        Biała lista — wykaz podatników VAT z ich rachunkami. Płać powyżej 15 000 zł tylko na rachunek z wykazu.
+        KUP — koszt uzyskania przychodu (zmniejsza podatek dochodowy). NKUP — wydatek, który nie zmniejsza podatku (np. reprezentacja, mandaty).
+        CIT — podatek dochodowy od osób prawnych (spółek). Zaliczki płaci się co miesiąc lub kwartał do 20. dnia.
+        Środek trwały — rzecz używana dłużej niż rok i droższa niż 10 000 zł netto. Kosztem staje się stopniowo, przez amortyzację.
+        Amortyzacja — comiesięczne „zużycie” środka trwałego zapisywane w kosztach.
+        Bilans — zestawienie, co firma ma (aktywa) i skąd to pochodzi (pasywa). Aktywa zawsze równają się pasywom.
+        Rachunek zysków i strat (RZiS) — przychody minus koszty, czyli wynik firmy (zysk lub strata).
+        Zamknięcie miesiąca — zablokowanie zmian w rozliczonym miesiącu. Zamknięcie roku — przeniesienie wyniku i otwarcie nowego roku (bilans otwarcia).
+        Polityka rachunkowości — dokument z zasadami prowadzenia ksiąg w firmie, przyjmowany przez kierownika jednostki.
+        Kierownik jednostki — zarząd (w spółce) lub właściciel; odpowiada za prowadzenie ksiąg.
+        """;
+
     public static string Version => typeof(HelpViewModel).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion.Split('+')[0] ?? "?";
 
     protected override Task LoadCoreAsync()

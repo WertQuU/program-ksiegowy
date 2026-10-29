@@ -18,6 +18,9 @@
           <c:TableView Table="{Binding Integrity}" />
         </DockPanel>
       </TabItem>
+      <TabItem Header="Słowniczek">
+        <TextBox Text="{Binding Glossary, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" />
+      </TabItem>
       <TabItem Header="Licencja">
         <TextBox Text="{Binding LicenseText, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" />
       </TabItem>

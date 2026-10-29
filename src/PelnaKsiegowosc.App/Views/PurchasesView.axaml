@@ -61,7 +61,11 @@
           <TextBlock Grid.Row="4" Grid.Column="4" Text="Procedury / typ JPK" />
           <Grid Grid.Row="4" Grid.Column="5" ColumnDefinitions="*,*"><TextBox Text="{Binding Editor.JpkProcedures}" Watermark="np. MPP" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Editor.JpkDocumentType}" Watermark="np. WEW" Margin="0,2,12,2" /></Grid>
         </Grid>
-        <CheckBox Content="Mechanizm podzielonej płatności" IsChecked="{Binding Editor.SplitPayment}" />
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <CheckBox Content="Mechanizm podzielonej płatności" IsChecked="{Binding Editor.SplitPayment}" />
+          <Button Content="Pobierz kurs NBP (waluta obca)" Command="{Binding Editor.FetchNbpRateCommand}" />
+          <TextBlock Text="{Binding Editor.RateInfo}" VerticalAlignment="Center" Classes="cardnote" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CorrectionMode}" Margin="0,6">
           <TextBlock Text="Przyczyna korekty:" VerticalAlignment="Center" /><TextBox Text="{Binding CorrectionReason}" Width="500" />
         </StackPanel>

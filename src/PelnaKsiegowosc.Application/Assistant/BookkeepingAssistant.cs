@@ -118,6 +118,11 @@ public sealed class BookkeepingAssistant
             Add("DATA_PRZYSZLA", IssueSeverity.Ostrzezenie, $"Dokument {d.Number} ma datę z przyszłości ({d.IssueDate.ToPl()})", "Prawdopodobnie błąd w dacie.",
                 "Popraw datę (dokument roboczy) albo wystaw korektę.", d.IsSales ? AppArea.Sprzedaz : AppArea.Dokumenty, d.Id);
 
+        foreach (var d in docs.Where(d => d.IsInvoice && d.Currency != "PLN" && string.IsNullOrWhiteSpace(d.ExchangeRateTable) && d.Status != DocumentStatus.Zaksiegowany))
+            Add("KURS_NBP", IssueSeverity.Ostrzezenie, $"Dokument {d.Number} w {d.Currency} bez numeru tabeli kursu NBP",
+                "Kwoty w walucie przelicza się po kursie średnim NBP z ostatniego dnia roboczego przed dniem operacji (art. 31a ustawy o VAT, art. 30 UoR).",
+                "Otwórz dokument (Edytuj roboczą) i kliknij „Pobierz kurs NBP”.", d.IsSales ? AppArea.Sprzedaz : AppArea.Zakupy, d.Id);
+
         // KSeF
         var noKsef = docs.Where(d => d.Kind == DocumentKind.FakturaSprzedazy && d.Status is DocumentStatus.Zatwierdzony or DocumentStatus.Zaksiegowany
                                      && d.IssueDate >= KsefMandatoryFrom && string.IsNullOrEmpty(d.KsefNumber)

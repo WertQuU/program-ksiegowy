@@ -173,6 +173,30 @@ public sealed partial class InvoiceEditor : ObservableObject
         if (SelectedLine is not null) Lines.Remove(SelectedLine);
     }
 
+    [ObservableProperty] private string _rateInfo = "";
+
+    /// <summary>Kurs średni NBP z ostatniego dnia roboczego przed wcześniejszą z dat: wystawienia i operacji.</summary>
+    [RelayCommand]
+    private async Task FetchNbpRateAsync()
+    {
+        try
+        {
+            var issue = Parse.Date(IssueDate, "Data wystawienia");
+            var op = Parse.OptionalDate(OperationDate, "Data sprzedaży/dostawy") ?? issue;
+            var basis = op < issue ? op : issue;
+            using var http = new HttpClient { BaseAddress = Infrastructure.Nbp.NbpClient.BaseUrl, Timeout = TimeSpan.FromSeconds(15) };
+            var r = await new Infrastructure.Nbp.NbpClient(http).RateBeforeAsync(Currency, basis);
+            ExchangeRate = r.Mid.ToString("0.0000", Money.Pl);
+            ExchangeRateTable = r.TableNumber;
+            ExchangeRateDate = r.EffectiveDate.ToPl();
+            RateInfo = $"Kurs średni NBP {r.Currency} z {r.EffectiveDate.ToPl()} (tabela {r.TableNumber}): {r.Mid:0.0000}";
+        }
+        catch (Exception ex) when (ex is DomainException or HttpRequestException or TaskCanceledException)
+        {
+            RateInfo = "Nie udało się pobrać kursu: " + ex.Message + " Wpisz kurs ręcznie.";
+        }
+    }
+
     public IReadOnlyList<DocumentLineInput> LineInputs()
     {
         if (Lines.Count == 0) throw new DomainException("Dodaj co najmniej jedną pozycję.");
