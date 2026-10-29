@@ -48,6 +48,11 @@ public sealed class AppSession
 
     public event EventHandler? ContextChanged;
 
+    /// <summary>Prośba o przejście do sekcji (np. z listy „Do zrobienia”); opcjonalna czynność, np. „nowy” dokument.</summary>
+    public event Action<PelnaKsiegowosc.Application.Assistant.AppArea, string?>? NavigationRequested;
+
+    public void Navigate(PelnaKsiegowosc.Application.Assistant.AppArea area, string? action = null) => NavigationRequested?.Invoke(area, action);
+
     public DatabaseProfile Profile => Config.ActiveDatabase;
     public string DatabaseDescription => Profile.SafeDescription + (Profile.IsEmergencyWorkingCopy ? " — KOPIA ROBOCZA TRYBU AWARYJNEGO" : "");
 

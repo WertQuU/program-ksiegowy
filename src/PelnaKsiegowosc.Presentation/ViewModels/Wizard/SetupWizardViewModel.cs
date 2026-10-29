@@ -86,6 +86,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
 
     [ObservableProperty] private string _chartInfo = "";
     [ObservableProperty] private bool _approveChart = true;
+    public ChartOptionsForm ChartOptions { get; } = new();
 
     [ObservableProperty] private string _policyContent = "";
     [ObservableProperty] private bool _approvePolicy;
@@ -278,7 +279,8 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty), Company.ToCompany());
         var actor = OperatorIdentity.For(company.Id);
         var year = await setup.CreateFiscalYearAsync(actor, company.Id, Parse.Date(YearStart, "Początek roku"), Parse.Date(YearEnd, "Koniec roku"), IsFirstYear);
-        var chart = await new ChartService(db, actor, Session.Clock).CreateFromTemplateAsync(year.Id);
+        var chart = await new ChartService(db, actor, Session.Clock).CreateFromTemplateAsync(year.Id, ChartTemplate.Build(company.LegalForm, ChartOptions.ToOptions()));
+        await ChartOptions.ApplyPostingSettingsAsync(db, company.Id, Session.Clock);
         if (ApproveChart) await setup.ApproveChartAsync(actor, chart.Id);
         var policy = await setup.CreatePolicyFromTemplateAsync(actor, company.Id);
         policy = await setup.SavePolicyAsync(actor, policy.Id, PolicyContent, CorrectionMethod.StornoCzerwone, 10000m, false, false);

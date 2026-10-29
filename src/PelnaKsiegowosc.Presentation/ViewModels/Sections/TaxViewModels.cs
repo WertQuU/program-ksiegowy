@@ -88,19 +88,8 @@ public sealed partial class VatViewModel : SectionViewModel
     [RelayCommand]
     private Task GenerateJpkAsync() => RunAsync(async () =>
     {
-        await using var db = Session.OpenDb();
-        var vat = new VatService(db, Session.User, Session.Clock);
-        var company = await db.Companies.AsNoTracking().FirstAsync(c => c.Id == Session.CompanyId);
-        var sales = await vat.RegisterAsync(VatRegisterType.Sprzedaz, PeriodDate);
-        var purchases = await vat.RegisterAsync(VatRegisterType.Zakup, PeriodDate);
-        var decl = await vat.ComputeDeclarationAsync(PeriodDate, Parse.OptionalAmount(CarriedForward, "Nadwyżka z poprzedniej deklaracji"));
-        var r = JpkV7Builder.Build(company, PeriodDate, sales, purchases, decl, Correction, Session.Clock.UtcNow, Session.Validator);
-        var target = await Dialogs.SaveFileAsync("Zapisz JPK_V7M", $"JPK_V7M-{PeriodDate:yyyy-MM}{(Correction ? "-korekta" : "")}.xml", new FileFilter("XML", "*.xml"));
-        if (target is null) return;
-        r.Document.Save(target);
-        await Dialogs.ShowTextAsync("JPK_V7M", $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
-            string.Join(Environment.NewLine, r.Warnings.Concat(r.Validation.Errors.Take(30))) +
-            $"{Environment.NewLine}{Environment.NewLine}Plik wymaga weryfikacji i podpisania przed wysyłką do urzędu — program nie wysyła JPK.");
+        if (await JpkExport.GenerateAsync(Session, Dialogs, PeriodDate, Parse.OptionalAmount(CarriedForward, "Nadwyżka z poprzedniej deklaracji"), Correction))
+            StatusMessage = "Wygenerowano JPK_V7M.";
     });
 }
 

@@ -246,7 +246,7 @@ public sealed class BookkeepingAssistant
         var openOld = fy.Periods.Where(p => p.Status == PeriodStatus.Otwarty && p.EndDate < today.AddMonths(-2)).ToList();
         if (openOld.Count > 0)
             Add("OKRESY_OTWARTE", IssueSeverity.Wskazowka, $"{openOld.Count} zakończonych miesięcy nie jest zamkniętych", string.Join(", ", openOld.Select(p => p.Name)),
-                "Zamknięcie okresu chroni przed przypadkowymi zmianami. Użyj kreatora „Zamknij miesiąc” na Pulpicie.", AppArea.Zamkniecie);
+                "Zamknięcie okresu chroni przed przypadkowymi zmianami. Użyj przycisku „Rozlicz miesiąc” na Pulpicie.", AppArea.Zamkniecie);
 
         // --- Kopie ---
         if (lastBackupUtc is null || _clock.UtcNow - lastBackupUtc.Value > TimeSpan.FromDays(7))

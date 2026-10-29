@@ -1,26 +1,115 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
-             xmlns:vm="using:PelnaKsiegowosc.Presentation.ViewModels"
-             xmlns:c="using:PelnaKsiegowosc.App.Controls"
              x:Class="PelnaKsiegowosc.App.Views.DashboardView"
              x:DataType="s:DashboardViewModel">
-  <DockPanel>
-    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
-    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-      <Button Content="Odśwież" Command="{Binding LoadCommand}" />
-      <Button Content="Wykonaj kopię zapasową teraz" Command="{Binding BackupNowCommand}" />
-    </WrapPanel>
-    <TextBlock DockPanel.Dock="Top" Text="{Binding BackupInfo}" Classes="info" />
-    <Grid ColumnDefinitions="*,12,*">
-      <DockPanel>
-        <TextBlock DockPanel.Dock="Top" Text="Gotowość ksiąg" Classes="h2" />
-        <c:TableView Table="{Binding Readiness}" />
-      </DockPanel>
-      <DockPanel Grid.Column="2">
-        <TextBlock DockPanel.Dock="Top" Text="Stan bieżący" Classes="h2" />
-        <c:TableView Table="{Binding Summary}" />
-      </DockPanel>
-    </Grid>
-  </DockPanel>
+  <ScrollViewer>
+    <StackPanel Spacing="14">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Text="Pulpit" Classes="h1" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <Button Content="Sprawdź ponownie" Command="{Binding LoadCommand}" />
+        </StackPanel>
+      </Grid>
+
+      <!-- karty -->
+      <UniformGrid Columns="4">
+        <Border Classes="card" BorderBrush="{Binding HealthColor}" BorderThickness="0,4,0,0">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Stan ksiąg" Classes="cardcaption" />
+            <TextBlock Text="{Binding HealthTitle}" Classes="cardvalue" Foreground="{Binding HealthColor}" />
+            <TextBlock Text="{Binding HealthText}" TextWrapping="Wrap" Classes="cardnote" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Klienci są winni firmie" Classes="cardcaption" />
+            <TextBlock Text="{Binding Receivables}" Classes="cardvalue" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Firma ma do zapłacenia" Classes="cardcaption" />
+            <TextBlock Text="{Binding Payables}" Classes="cardvalue" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+        <Border Classes="card">
+          <StackPanel Spacing="4">
+            <TextBlock Text="Pieniądze (bank i kasa)" Classes="cardcaption" />
+            <TextBlock Text="{Binding MoneyText}" Classes="cardnote" FontSize="14" TextWrapping="Wrap" />
+          </StackPanel>
+        </Border>
+      </UniformGrid>
+
+      <!-- szybkie czynności -->
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Text="Co chcesz zrobić?" Classes="h2" Margin="0" />
+          <WrapPanel Classes="quick">
+            <Button Command="{Binding NewSaleCommand}" Classes="accent"><StackPanel><TextBlock Text="Wystaw fakturę" FontWeight="SemiBold" /><TextBlock Text="sprzedaż dla klienta" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding NewPurchaseCommand}"><StackPanel><TextBlock Text="Dodaj wydatek" FontWeight="SemiBold" /><TextBlock Text="faktura, rachunek od dostawcy" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding ImportStatementCommand}"><StackPanel><TextBlock Text="Wyciąg z banku" FontWeight="SemiBold" /><TextBlock Text="import i rozliczenie wpłat" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding CloseMonthCommand}"><StackPanel><TextBlock Text="Rozlicz miesiąc" FontWeight="SemiBold" /><TextBlock Text="VAT, JPK, CIT krok po kroku" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding OpenReportsCommand}"><StackPanel><TextBlock Text="Raporty" FontWeight="SemiBold" /><TextBlock Text="bilans, wynik, rejestry" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding BackupNowCommand}"><StackPanel><TextBlock Text="Kopia zapasowa" FontWeight="SemiBold" /><TextBlock Text="{Binding BackupInfo}" Classes="cardnote" /></StackPanel></Button>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <Grid ColumnDefinitions="3*,16,2*">
+        <!-- do zrobienia -->
+        <Border Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+              <TextBlock Text="Do zrobienia — asystent kontroli ksiąg" Classes="h2" Margin="0" />
+              <CheckBox Grid.Column="1" Content="pokaż wskazówki" IsChecked="{Binding ShowHints}" />
+            </Grid>
+            <TextBlock Text="Brak spraw do załatwienia. 👍" IsVisible="{Binding NoIssues}" Classes="cardnote" />
+            <ItemsControl ItemsSource="{Binding Issues}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="s:IssueItem">
+                  <Border Classes="issue" BorderBrush="{Binding Color}">
+                    <Grid ColumnDefinitions="*,Auto">
+                      <StackPanel Spacing="3">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <Border Background="{Binding Color}" CornerRadius="3" Padding="6,1"><TextBlock Text="{Binding Badge}" Foreground="White" FontSize="11" FontWeight="Bold" /></Border>
+                          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Classes="cardnote" IsVisible="{Binding HasDetails}" />
+                        <TextBlock Text="{Binding HowToFix}" TextWrapping="Wrap" FontStyle="Italic" Foreground="#37474F" />
+                      </StackPanel>
+                      <Button Grid.Column="1" Content="Przejdź →" Command="{Binding GoCommand}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+        <!-- terminy -->
+        <Border Grid.Column="2" Classes="card" VerticalAlignment="Top">
+          <StackPanel Spacing="8">
+            <TextBlock Text="Terminy" Classes="h2" Margin="0" />
+            <ItemsControl ItemsSource="{Binding Deadlines}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="s:DeadlineItem">
+                  <Border Classes="deadline" ToolTip.Tip="{Binding Details}">
+                    <Grid ColumnDefinitions="90,*,Auto">
+                      <TextBlock Text="{Binding DateText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="1" Spacing="1">
+                        <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Status}" Foreground="{Binding Color}" FontSize="12" FontWeight="SemiBold" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Content="→" Command="{Binding GoCommand}" VerticalAlignment="Center" Padding="8,2" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock Classes="cardnote" TextWrapping="Wrap" Text="Terminy wyliczono na podstawie przepisów (z przesunięciem na dzień roboczy) — sprawdzaj komunikaty Ministerstwa Finansów." />
+          </StackPanel>
+        </Border>
+      </Grid>
+    </StackPanel>
+  </ScrollViewer>
 </UserControl>

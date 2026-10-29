@@ -7,7 +7,7 @@
         Icon="avares://PelnaKsiegowosc/Assets/ikona.ico"
         WindowStartupLocation="CenterScreen">
   <DockPanel>
-    <Border DockPanel.Dock="Top" Background="#174e8c" Padding="12,8">
+    <Border DockPanel.Dock="Top" Background="#1F5FAD" Padding="16,10">
       <Grid ColumnDefinitions="*,Auto,Auto">
         <StackPanel>
           <TextBlock Text="{Binding Title}" Foreground="White" FontSize="17" FontWeight="SemiBold" />
@@ -20,25 +20,30 @@
     <Border DockPanel.Dock="Top" Background="#fff4ce" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="#6b4e00" />
     </Border>
-    <Border DockPanel.Dock="Bottom" Background="#eef1f4" Padding="12,4">
+    <Border DockPanel.Dock="Bottom" Background="#FFFFFF" BorderBrush="#E3E8EE" BorderThickness="0,1,0,0" Padding="12,5">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Text="{Binding Footer}" Foreground="#333" TextTrimming="CharacterEllipsis" />
         <TextBlock Grid.Column="1" Text="{Binding SelectedSection.StatusMessage}" Foreground="#174e8c" FontWeight="SemiBold" Margin="12,0,0,0" />
       </Grid>
     </Border>
-    <ListBox DockPanel.Dock="Left" Width="230" ItemsSource="{Binding Sections}" SelectedItem="{Binding SelectedSection}" Background="#f6f8fa">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="vm:SectionViewModel">
-          <StackPanel Orientation="Horizontal" Spacing="8">
-            <TextBlock Text="{Binding Icon}" Width="22" TextAlignment="Center" />
-            <TextBlock Text="{Binding Title}" />
-          </StackPanel>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+    <Border DockPanel.Dock="Left" Width="236" Background="#FFFFFF" BorderBrush="#E3E8EE" BorderThickness="0,0,1,0">
+      <ListBox ItemsSource="{Binding MenuItems}" SelectedItem="{Binding SelectedMenuItem}" Background="Transparent">
+        <ListBox.DataTemplates>
+          <DataTemplate DataType="vm:MenuHeader">
+            <TextBlock Text="{Binding Text}" Classes="menuheader" />
+          </DataTemplate>
+          <DataTemplate DataType="vm:SectionViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="2,1">
+              <TextBlock Text="{Binding Icon}" Width="22" TextAlignment="Center" />
+              <TextBlock Text="{Binding Title}" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.DataTemplates>
+      </ListBox>
+    </Border>
     <Grid RowDefinitions="Auto,*">
       <ProgressBar IsIndeterminate="True" Height="3" IsVisible="{Binding SelectedSection.IsBusy}" />
-      <ContentControl Grid.Row="1" Content="{Binding SelectedSection}" Margin="16,12,16,8" />
+      <ContentControl Grid.Row="1" Content="{Binding SelectedSection}" Margin="20,14,20,8" />
     </Grid>
   </DockPanel>
 </Window>

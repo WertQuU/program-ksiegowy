@@ -28,7 +28,11 @@
   </Application.DataTemplates>
 
   <Application.Styles>
-    <FluentTheme />
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#1F5FAD" RegionColor="#FFFFFF" ErrorText="#C62828" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
     <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
     <Style Selector="TextBlock.h1">
       <Setter Property="FontSize" Value="20" />
@@ -81,6 +85,62 @@
     <Style Selector="Grid.form > CheckBox">
       <Setter Property="Margin" Value="0,2,12,2" />
     </Style>
+    <Style Selector="Window">
+      <Setter Property="Background" Value="#F4F6F9" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="Margin" Value="0,0,12,0" />
+      <Setter Property="BoxShadow" Value="0 1 3 0 #22000000" />
+    </Style>
+    <Style Selector="TextBlock.cardcaption">
+      <Setter Property="Foreground" Value="#607D8B" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.cardvalue">
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#1C2833" />
+    </Style>
+    <Style Selector="TextBlock.cardnote">
+      <Setter Property="Foreground" Value="#607D8B" />
+      <Setter Property="FontSize" Value="12.5" />
+    </Style>
+    <Style Selector="Border.issue">
+      <Setter Property="BorderThickness" Value="4,0,0,0" />
+      <Setter Property="Background" Value="#FAFBFC" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <Style Selector="Border.deadline">
+      <Setter Property="BorderBrush" Value="#ECEFF1" />
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="Padding" Value="0,6" />
+    </Style>
+    <Style Selector="WrapPanel.quick > Button">
+      <Setter Property="MinWidth" Value="190" />
+      <Setter Property="MinHeight" Value="56" />
+      <Setter Property="Margin" Value="0,0,10,10" />
+      <Setter Property="Padding" Value="14,8" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button">
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Button.accent TextBlock.cardnote">
+      <Setter Property="Foreground" Value="#DCE8F7" />
+    </Style>
+    <Style Selector="TextBlock.menuheader">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Foreground" Value="#8FA3B8" />
+      <Setter Property="Margin" Value="10,12,0,2" />
+    </Style>
     <Style Selector="TabItem">
       <Setter Property="FontSize" Value="15" />
       <Setter Property="MinHeight" Value="36" />
@@ -92,7 +152,7 @@
       <Setter Property="CornerRadius" Value="6" />
       <Setter Property="Padding" Value="12" />
       <Setter Property="Margin" Value="0,0,0,10" />
-      <Setter Property="Background" Value="#fbfcfd" />
+      <Setter Property="Background" Value="White" />
     </Style>
   </Application.Styles>
 </Application>

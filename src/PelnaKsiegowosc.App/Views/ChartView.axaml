@@ -11,13 +11,26 @@
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
       <TextBox Text="{Binding Filter}" Watermark="Filtr: numer lub nazwa" />
       <Button Content="Filtruj" Command="{Binding ApplyFilterCommand}" />
-      <Button Content="Utwórz z szablonu" Command="{Binding CreateFromTemplateCommand}" />
+      <Button Content="Dodaj szczegółowe konta kosztów" Command="{Binding AddDetailedCostAccountsCommand}" IsVisible="{Binding HasChart}" />
       <Button Content="Kontrola planu" Command="{Binding ValidateCommand}" />
       <Button Content="Zatwierdź plan kont" Command="{Binding ApproveCommand}" />
       <Button Content="Eksport CSV…" Command="{Binding ExportCsvCommand}" />
       <Button Content="Import kont z CSV…" Command="{Binding ImportCsvCommand}" />
     </WrapPanel>
-    <Border DockPanel.Dock="Top" Classes="panel">
+    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding !HasChart}">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Kreator planu kont" Classes="h2" Margin="0" />
+        <CheckBox Content="Szczegółowe konta kosztów (zalecane)" IsChecked="{Binding Options.DetailedCosts}" />
+        <CheckBox Content="Handel towarami" IsChecked="{Binding Options.TradingGoods}" />
+        <CheckBox Content="Pracownicy" IsChecked="{Binding Options.Employees}" />
+        <CheckBox Content="Rachunek w EUR" IsChecked="{Binding Options.ForeignCurrencyEur}" />
+        <CheckBox Content="Rachunek w USD" IsChecked="{Binding Options.ForeignCurrencyUsd}" />
+        <CheckBox Content="Kredyt lub pożyczka bankowa" IsChecked="{Binding Options.BankLoans}" />
+        <CheckBox Content="Leasing" IsChecked="{Binding Options.Leasing}" />
+        <Button Content="Utwórz plan kont" Command="{Binding CreateFromTemplateCommand}" Classes="accent" Margin="0,6,0,0" />
+      </StackPanel>
+    </Border>
+    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding HasChart}">
       <StackPanel>
         <Grid Classes="form" ColumnDefinitions="110,140,90,*,90,220" RowDefinitions="Auto,Auto">
           <TextBlock Text="Numer" /><TextBox Grid.Column="1" Text="{Binding Number}" />

@@ -99,7 +99,16 @@
       <!-- 5. Plan kont -->
       <StackPanel IsVisible="{Binding IsChart}" Spacing="6">
         <TextBlock Classes="info" Text="{Binding ChartInfo}" />
-        <CheckBox Content="Zatwierdź plan kont teraz (bez zatwierdzenia księgowanie jest zablokowane)" IsChecked="{Binding ApproveChart}" />
+        <TextBlock Text="Kilka pytań — plan kont zostanie dopasowany do Twojej działalności:" Classes="h2" />
+        <CheckBox Content="Szczegółowe konta kosztów (paliwo, telefon, najem, IT…) — zalecane, wydatki same trafią na właściwe konta" IsChecked="{Binding ChartOptions.DetailedCosts}" />
+        <CheckBox Content="Kupuję towary do odsprzedaży (handel)" IsChecked="{Binding ChartOptions.TradingGoods}" />
+        <CheckBox Content="Zatrudniam pracowników na umowę o pracę lub zlecenie" IsChecked="{Binding ChartOptions.Employees}" />
+        <CheckBox Content="Mam rachunek walutowy w EUR" IsChecked="{Binding ChartOptions.ForeignCurrencyEur}" />
+        <CheckBox Content="Mam rachunek walutowy w USD" IsChecked="{Binding ChartOptions.ForeignCurrencyUsd}" />
+        <CheckBox Content="Mam kredyt lub pożyczkę bankową" IsChecked="{Binding ChartOptions.BankLoans}" />
+        <CheckBox Content="Korzystam z leasingu" IsChecked="{Binding ChartOptions.Leasing}" />
+        <TextBlock Classes="info" Text="Odpowiedzi możesz zmienić później — konta dodaje się w sekcji „Plan kont”." />
+        <CheckBox Content="Zatwierdź plan kont teraz (bez zatwierdzenia księgowanie jest zablokowane)" IsChecked="{Binding ApproveChart}" Margin="0,8,0,0" />
       </StackPanel>
 
       <!-- 6. Polityka -->

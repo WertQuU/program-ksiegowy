@@ -31,6 +31,53 @@ public static class ChartTemplate
         _ => a
     }).ToList();
 
+    /// <summary>
+    /// Plan kont z kreatora: szablon dopasowany do formy prawnej i odpowiedzi użytkownika. Szczegółowe konta kosztów
+    /// pozwalają automatycznie przypisywać wydatki według kategorii (paliwo, telefon, najem…).
+    /// </summary>
+    public static IReadOnlyList<AccountTemplate> Build(LegalForm form, ChartOptions o)
+    {
+        var list = For(form).ToList();
+        if (o.DetailedCosts)
+        {
+            list.AddRange(new AccountTemplate[]
+            {
+                new("401-01", "Materiały biurowe i drobne wyposażenie", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.II", Cit: CitClassification.KosztPodatkowy),
+                new("401-02", "Paliwo", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.II", Cit: CitClassification.KosztPodatkowy),
+                new("401-03", "Energia, gaz, woda", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.II", Cit: CitClassification.KosztPodatkowy),
+                new("401-99", "Pozostałe materiały", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.II", Cit: CitClassification.KosztPodatkowy),
+                new("402-01", "Telefon i internet", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-02", "Najem i czynsz", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-03", "Usługi księgowe, prawne i doradcze", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-04", "Oprogramowanie i usługi IT", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-05", "Transport, kurier, poczta", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-06", "Naprawy, serwis, eksploatacja pojazdów", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-07", "Reklama i marketing", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("402-99", "Pozostałe usługi obce", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.III", Cit: CitClassification.KosztPodatkowy),
+                new("409-05", "Szkolenia i konferencje", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.VII", Cit: CitClassification.KosztPodatkowy),
+            });
+            // konta syntetyczne z analityką nie mają już własnej pozycji RZiS (sumują analityki)
+            for (var i = 0; i < list.Count; i++)
+                if (list[i].Number is "401" or "402") list[i] = list[i] with { ProfitLossLine = null, Cit = CitClassification.NieDotyczy };
+        }
+        if (o.ForeignCurrencyUsd)
+            list.Add(new("130-04", "Rachunek walutowy USD", AccountType.Aktywne, "B.III.1.c"));
+        if (!o.ForeignCurrencyEur)
+            list.RemoveAll(a => a.Number == "130-03");
+        if (o.BankLoans)
+        {
+            list.Add(new("134", "Kredyty bankowe", AccountType.Pasywne, BalanceCreditLine: "P.B.III.3.a"));
+            list.Add(new("751-05", "Odsetki od kredytów i pożyczek", AccountType.WynikoweKosztowe, ProfitLossLine: "R.H.I", Cit: CitClassification.DoAnalizy));
+        }
+        if (o.Leasing)
+            list.Add(new("249", "Rozrachunki z tytułu leasingu", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true));
+        if (!o.Employees)
+            list.RemoveAll(a => a.Number is "230" or "404" or "405" or "220-02" or "220-03");
+        if (!o.TradingGoods)
+            list.RemoveAll(a => a.Number is "330" or "730" or "731");
+        return list.OrderBy(a => a.Number, StringComparer.Ordinal).ToList();
+    }
+
     public static readonly IReadOnlyList<AccountTemplate> Accounts = new List<AccountTemplate>
     {
         // Zespół 0 — aktywa trwałe
@@ -145,3 +192,13 @@ public static class ChartTemplate
         new("990", "Konta pozabilansowe — zabezpieczenia, zobowiązania warunkowe", AccountType.Pozabilansowe),
     };
 }
+
+/// <summary>Odpowiedzi kreatora planu kont.</summary>
+public sealed record ChartOptions(
+    bool DetailedCosts = true,
+    bool TradingGoods = true,
+    bool Employees = true,
+    bool ForeignCurrencyEur = true,
+    bool ForeignCurrencyUsd = false,
+    bool BankLoans = false,
+    bool Leasing = false);

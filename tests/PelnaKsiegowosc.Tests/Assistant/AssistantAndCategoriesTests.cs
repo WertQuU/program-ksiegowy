@@ -5,6 +5,7 @@ using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Domain.Accounts;
+using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Documents;
 using PelnaKsiegowosc.Domain.Settlements;
 using PelnaKsiegowosc.Tests.Infrastructure;
@@ -121,5 +122,71 @@ public class AssistantAndCategoriesTests
         Assert.Contains(deadlines, x => x.Title.Contains("JPK_V7M") && x.Title.Contains("01.2026") && x.Date == new DateOnly(2026, 2, 25));
         Assert.Contains(deadlines, x => x.Title.Contains("Zaliczka CIT") && x.Date == new DateOnly(2026, 2, 20));
         Assert.Contains(deadlines, x => x.Title.Contains("Zaksięgowanie operacji") && x.Date == new DateOnly(2026, 2, 15));
+    }
+}
+
+public class WizardsTests
+{
+    [Fact]
+    public async Task Chart_wizard_options_produce_valid_chart_and_detailed_cost_accounts()
+    {
+        using var root = new PelnaKsiegowosc.Tests.Presentation.TempRoot();
+        var (session, dialogs) = PelnaKsiegowosc.Presentation.Services.SelfTestScenario.CreateSession(root.Path);
+        var w = await PelnaKsiegowosc.Presentation.Services.SelfTestScenario.RunWizardAsync(session, dialogs);
+        Assert.Empty(dialogs.Errors);
+        await using var db = session.OpenDb();
+        var numbers = await db.Accounts.Select(a => a.Number).ToListAsync();
+        Assert.Contains("401-02", numbers);
+        Assert.Contains("402-99", numbers);
+        Assert.DoesNotContain("230", numbers); // bez pracowników (domyślnie)
+        Assert.True((await db.Charts.FirstAsync()).IsApproved);
+        var posting = await new PelnaKsiegowosc.Application.Setup.SettingsService(db, session.Clock)
+            .GetAsync(session.CompanyId, PostingSettings.SettingKey, () => new PostingSettings());
+        Assert.Equal("402-99", posting.PurchaseCostDefault);
+        foreach (var o in new[] { new ChartOptions(), new ChartOptions(false, false, false, false, true, true, true) })
+        {
+            var t = ChartTemplate.Build(PelnaKsiegowosc.Domain.Companies.LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia, o);
+            Assert.Equal(t.Count, t.Select(x => x.Number).Distinct().Count());
+            foreach (var a in t.Where(x => x.Number.Contains('-')))
+                Assert.Contains(t, p => p.Number == a.Number[..a.Number.LastIndexOf('-')]);
+        }
+    }
+
+    [Fact]
+    public async Task Month_close_wizard_posts_documents_settles_vat_and_closes_month()
+    {
+        using var root = new PelnaKsiegowosc.Tests.Presentation.TempRoot();
+        var (session, dialogs) = PelnaKsiegowosc.Presentation.Services.SelfTestScenario.CreateSession(root.Path);
+        await PelnaKsiegowosc.Presentation.Services.SelfTestScenario.RunWizardAsync(session, dialogs);
+        var main = new PelnaKsiegowosc.Presentation.ViewModels.MainViewModel(session, dialogs);
+        var purchases = main.Sections.OfType<PelnaKsiegowosc.Presentation.ViewModels.Sections.PurchasesViewModel>().Single();
+        var cps = main.Sections.OfType<PelnaKsiegowosc.Presentation.ViewModels.Sections.CounterpartiesViewModel>().Single();
+        await cps.LoadAsync();
+        await cps.NewCommand.ExecuteAsync(null);
+        cps.Name = "Stacja paliw"; cps.Nip = "7740001454"; cps.Street = "Długa"; cps.Building = "1"; cps.PostalCode = "00-001"; cps.City = "Warszawa";
+        await cps.SaveCommand.ExecuteAsync(null);
+        await purchases.LoadAsync();
+        await purchases.NewCommand.ExecuteAsync(null);
+        var today = session.Clock.Today;
+        purchases.Editor.IssueDate = purchases.Editor.OperationDate = purchases.Editor.ReceiptDate = today.ToPl();
+        purchases.Editor.Counterparty = purchases.Editor.Counterparties.First();
+        purchases.Editor.ExternalNumber = "F/1";
+        purchases.Editor.Lines[0].Category = ExpenseCategories.Find("PALIWO_OSOBOWY");
+        purchases.Editor.Lines[0].UnitNetPrice = "100";
+        await purchases.SaveCommand.ExecuteAsync(null);
+        Assert.Empty(dialogs.Errors);
+
+        var close = new PelnaKsiegowosc.Presentation.ViewModels.Sections.MonthCloseViewModel(session, dialogs) { Month = $"{today.Month:00}.{today.Year}" };
+        await close.RefreshAsync();
+        Assert.False(close.Steps[0].Done);
+        await close.Steps[0].ActionCommand.ExecuteAsync(null);
+        Assert.True(close.Steps[0].Done, string.Join(" | ", dialogs.Errors.Concat(dialogs.Infos)));
+        await close.Steps[3].ActionCommand.ExecuteAsync(null);
+        Assert.True(close.Steps[3].Done, string.Join(" | ", dialogs.Errors.Concat(dialogs.Infos)));
+        await close.Steps[5].ActionCommand.ExecuteAsync(null);
+        Assert.True(close.Steps[5].Done, string.Join(" | ", dialogs.Errors));
+        Assert.Empty(dialogs.Errors);
+        await using var db = session.OpenDb();
+        Assert.Equal(27.88m, (await db.JournalLines.Where(l => l.CitClassification == CitClassification.KosztNiepodatkowy).ToListAsync()).Sum(l => l.Debit)); // 25% z 111,50 (netto + 50% VAT)
     }
 }

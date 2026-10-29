@@ -111,7 +111,9 @@ public class ScreensTests
         Assert.Contains(ledger.Entries.Rows, r => r.Cells[2] == "SPR");
         var dashboard = main.Sections.OfType<DashboardViewModel>().Single();
         await dashboard.LoadAsync();
-        Assert.All(dashboard.Readiness.Rows, r => Assert.StartsWith("✔", r.Cells[1]));
+        // jedyny możliwy błąd: faktura dla firmy bez numeru KSeF (wysyłka nie jest częścią scenariusza)
+        Assert.All(dashboard.Issues.Where(i => i.Issue.Severity == PelnaKsiegowosc.Application.Assistant.IssueSeverity.Blad), i => Assert.Equal("KSEF_BRAK", i.Issue.Code));
+        Assert.NotEmpty(dashboard.Deadlines);
     }
 
     [Fact]

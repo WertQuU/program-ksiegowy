@@ -10,7 +10,9 @@ namespace PelnaKsiegowosc.Presentation.ViewModels.Sections;
 /// <summary>Zamknięcie miesiąca (lista kontrolna), ponowne otwarcie z uzasadnieniem, zamknięcie roku z bilansem otwarcia.</summary>
 public sealed partial class ClosingViewModel : SectionViewModel
 {
-    public ClosingViewModel(AppSession s, IDialogService d) : base(s, d, "Zamknięcie okresu i roku", "🔒") { }
+    public ClosingViewModel(AppSession s, IDialogService d) : base(s, d, "Zamknięcie okresu i roku", "🔒") => MonthClose = new MonthCloseViewModel(s, d);
+
+    public MonthCloseViewModel MonthClose { get; }
 
     [ObservableProperty] private TableData _periods = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedPeriod;
@@ -24,15 +26,15 @@ public sealed partial class ClosingViewModel : SectionViewModel
         return t;
     }
 
-    protected override Task LoadCoreAsync()
+    protected override async Task LoadCoreAsync()
     {
+        await MonthClose.RefreshAsync();
         var y = Session.CurrentYear;
         var t = new TableData(new TableColumn("Okres", Width: 0.6), new TableColumn("Od", ColumnKind.Date), new TableColumn("Do", ColumnKind.Date), new TableColumn("Status"),
             new TableColumn("Zamknięto", ColumnKind.Text, 1.2), new TableColumn("Ponowne otwarcia", ColumnKind.Integer, 0.6));
         foreach (var p in y.Periods) t.Add(p.Id, p.Name, p.StartDate, p.EndDate, p.Status, p.ClosedAtUtc is { } c ? c.ToPlDateTime() : "", p.ReopenCount);
         Periods = t;
         YearInfo = $"Rok obrotowy {y.Name}: {Display.Enum(y.Status)}" + (y.ClosedAtUtc is { } at ? $", zamknięty {at.ToPlDateTime()}" : "");
-        return Task.CompletedTask;
     }
 
     private Guid PeriodId => SelectedPeriod?.Tag is Guid g ? g : throw new DomainException("Zaznacz okres.");

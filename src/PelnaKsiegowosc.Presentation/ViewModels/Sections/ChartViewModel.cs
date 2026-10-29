@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Application.Setup;
+using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Domain.Accounts;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Presentation.Services;
@@ -18,6 +19,8 @@ public sealed partial class ChartViewModel : SectionViewModel
     [ObservableProperty] private TableRow? _selected;
     [ObservableProperty] private string _chartInfo = "";
     [ObservableProperty] private string _filter = "";
+    public ChartOptionsForm Options { get; } = new();
+    [ObservableProperty] private bool _hasChart;
     private Guid? _chartId;
 
     [ObservableProperty] private string _number = "";
@@ -38,6 +41,7 @@ public sealed partial class ChartViewModel : SectionViewModel
         var svc = new ChartService(db, Session.User, Session.Clock);
         var chart = await db.Charts.AsNoTracking().Where(c => c.FiscalYearId == Session.CurrentYear.Id).OrderByDescending(c => c.Version).FirstOrDefaultAsync();
         _chartId = chart?.Id;
+        HasChart = chart is not null;
         if (chart is null)
         {
             ChartInfo = $"Rok {Session.CurrentYear.Name} nie ma planu kont. Utwórz go z szablonu.";
@@ -76,8 +80,28 @@ public sealed partial class ChartViewModel : SectionViewModel
     private Task CreateFromTemplateAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
-        await new ChartService(db, Session.User, Session.Clock).CreateFromTemplateAsync(Session.CurrentYear.Id);
-    }, "Utworzono plan kont z szablonu — przejrzyj go i zatwierdź.");
+        await new ChartService(db, Session.User, Session.Clock).CreateFromTemplateAsync(Session.CurrentYear.Id,
+            ChartTemplate.Build(Session.Company!.LegalForm, Options.ToOptions()));
+        await Options.ApplyPostingSettingsAsync(db, Session.CompanyId, Session.Clock);
+    }, "Utworzono plan kont z kreatora — przejrzyj go i zatwierdź.");
+
+    /// <summary>Dodanie szczegółowych kont kosztów do istniejącego planu (gdy konta 401/402 nie mają jeszcze zapisów).</summary>
+    [RelayCommand]
+    private Task AddDetailedCostAccountsAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        var svc = new ChartService(db, Session.User, Session.Clock);
+        var existing = (await svc.GetAccountsAsync(ChartId)).Select(a => a.Number).ToHashSet();
+        var added = 0;
+        foreach (var t in ChartTemplate.Build(Session.Company!.LegalForm, new ChartOptions(DetailedCosts: true)).Where(t => t.Number.Contains('-') && !existing.Contains(t.Number)
+                     && (t.Number.StartsWith("401-") || t.Number.StartsWith("402-") || t.Number == "409-05")))
+        {
+            await svc.AddAccountAsync(ChartId, t.Number, t.Name, t.Type, t.BalanceDebitLine, t.BalanceCreditLine, t.ProfitLossLine, t.Settlement, t.Cit);
+            added++;
+        }
+        await new ChartOptionsForm { DetailedCosts = true }.ApplyPostingSettingsAsync(db, Session.CompanyId, Session.Clock);
+        StatusMessage = $"Dodano {added} kont kosztów.";
+    }, "Dodano szczegółowe konta kosztów — kategorie wydatków będą trafiać na właściwe konta.");
 
     [RelayCommand]
     private Task AddAccountAsync() => ChangeAsync(async () =>

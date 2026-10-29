@@ -7,20 +7,55 @@
              x:DataType="s:ClosingViewModel">
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
-    <TextBlock DockPanel.Dock="Top" Text="{Binding YearInfo}" Classes="info" />
-    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-      <Button Content="Lista kontrolna okresu" Command="{Binding CheckCommand}" />
-      <Button Content="Zamknij okres" Command="{Binding ClosePeriodCommand}" />
-      <Button Content="Otwórz ponownie…" Command="{Binding ReopenPeriodCommand}" />
-      <Button Content="Podgląd zamknięcia roku" Command="{Binding PreviewYearCloseCommand}" />
-      <Button Content="Zamknij rok obrotowy…" Command="{Binding CloseYearCommand}" />
-    </WrapPanel>
-    <Grid ColumnDefinitions="*,12,1.4*">
-      <c:TableView Table="{Binding Periods}" SelectedRow="{Binding SelectedPeriod}" />
-      <DockPanel Grid.Column="2">
-        <TextBlock DockPanel.Dock="Top" Text="Lista kontrolna" Classes="h2" Margin="0,0,0,4" />
-        <c:TableView Table="{Binding Checklist}" />
-      </DockPanel>
-    </Grid>
+    <TabControl>
+      <TabItem Header="Rozlicz miesiąc (kreator)">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,8,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="Miesiąc (mm.rrrr):" VerticalAlignment="Center" />
+              <TextBox Text="{Binding MonthClose.Month}" Width="100" />
+              <Button Content="Sprawdź" Command="{Binding MonthClose.RefreshCommand}" />
+            </StackPanel>
+            <TextBlock Text="{Binding MonthClose.Summary}" Classes="h2" Margin="0" />
+            <ItemsControl ItemsSource="{Binding MonthClose.Steps}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="s:CloseStep">
+                  <Border Classes="issue" BorderBrush="{Binding Color}">
+                    <Grid ColumnDefinitions="40,*,Auto">
+                      <TextBlock Text="{Binding Mark}" FontSize="22" Foreground="{Binding Color}" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"><Run Text="{Binding Number}" />. <Run Text="{Binding Title}" /></TextBlock>
+                        <TextBlock Text="{Binding Status}" Foreground="{Binding Color}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Explanation}" Classes="cardnote" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding ActionCommand}" IsEnabled="{Binding Applicable}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Okresy i rok obrotowy">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{Binding YearInfo}" Classes="info" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <Button Content="Lista kontrolna okresu" Command="{Binding CheckCommand}" />
+            <Button Content="Zamknij okres" Command="{Binding ClosePeriodCommand}" />
+            <Button Content="Otwórz ponownie…" Command="{Binding ReopenPeriodCommand}" />
+            <Button Content="Podgląd zamknięcia roku" Command="{Binding PreviewYearCloseCommand}" />
+            <Button Content="Zamknij rok obrotowy…" Command="{Binding CloseYearCommand}" />
+          </WrapPanel>
+          <Grid ColumnDefinitions="*,12,1.4*">
+            <c:TableView Table="{Binding Periods}" SelectedRow="{Binding SelectedPeriod}" />
+            <DockPanel Grid.Column="2">
+              <TextBlock DockPanel.Dock="Top" Text="Lista kontrolna" Classes="h2" Margin="0,0,0,4" />
+              <c:TableView Table="{Binding Checklist}" />
+            </DockPanel>
+          </Grid>
+        </DockPanel>
+      </TabItem>
+    </TabControl>
   </DockPanel>
 </UserControl>

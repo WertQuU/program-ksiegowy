@@ -5,7 +5,11 @@ using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Presentation.ViewModels.Sections;
 
+using AA = PelnaKsiegowosc.Application.Assistant.AppArea;
+
 namespace PelnaKsiegowosc.Presentation.ViewModels;
+
+public sealed record MenuHeader(string Text);
 
 /// <summary>Okno główne: menu sekcji, wybór roku obrotowego, pasek stanu (baza, operator, kopie).</summary>
 public sealed partial class MainViewModel : ViewModelBase
@@ -36,12 +40,38 @@ public sealed partial class MainViewModel : ViewModelBase
             new SettingsViewModel(session, dialogs),
             new HelpViewModel(session, dialogs)
         };
+        SectionViewModel S(PelnaKsiegowosc.Application.Assistant.AppArea a) => Sections[(int)a];
+        MenuItems = new List<object>
+        {
+            new MenuHeader("NA CO DZIEŃ"),
+            S(AA.Pulpit), S(AA.Sprzedaz), S(AA.Zakupy), S(AA.Bank), S(AA.Kontrahenci),
+            new MenuHeader("ROZLICZENIA"),
+            S(AA.Zamkniecie), S(AA.Vat), S(AA.Cit), S(AA.Raporty),
+            new MenuHeader("KSIĘGI"),
+            S(AA.Dokumenty), S(AA.Ksiegowosc), S(AA.PlanKont), S(AA.SrodkiTrwale), S(AA.Kapital),
+            new MenuHeader("FIRMA I PROGRAM"),
+            S(AA.Jednostka), S(AA.Backupy), S(AA.Archiwum), S(AA.Integracje), S(AA.Ustawienia), S(AA.Pomoc)
+        };
         session.ContextChanged += (_, _) => RefreshHeader();
+        session.NavigationRequested += (area, action) => _ = NavigateAsync(area, action);
         RefreshHeader();
     }
 
     public AppSession Session { get; }
     public IReadOnlyList<SectionViewModel> Sections { get; }
+
+    /// <summary>Menu z nagłówkami grup (nagłówki nie są wybieralne).</summary>
+    public IReadOnlyList<object> MenuItems { get; }
+
+    public object? SelectedMenuItem
+    {
+        get => SelectedSection;
+        set
+        {
+            if (value is SectionViewModel s) SelectedSection = s;
+            else OnPropertyChanged();
+        }
+    }
 
     [ObservableProperty] private SectionViewModel? _selectedSection;
     [ObservableProperty] private string _title = "Pełna Księgowość";
@@ -58,8 +88,23 @@ public sealed partial class MainViewModel : ViewModelBase
         await Sections[0].LoadAsync();
     }
 
+    /// <summary>Przejście do sekcji (kolejność sekcji odpowiada wyliczeniu AppArea) i opcjonalnie rozpoczęcie czynności.</summary>
+    public async Task NavigateAsync(PelnaKsiegowosc.Application.Assistant.AppArea area, string? action)
+    {
+        var section = Sections[(int)area];
+        SelectedSection = section;
+        if (!section.Loaded) await section.LoadAsync();
+        if (action == "nowy")
+        {
+            if (section is SalesViewModel s) await s.NewCommand.ExecuteAsync(null);
+            else if (section is PurchasesViewModel p) await p.NewCommand.ExecuteAsync(null);
+            else if (section is LedgerViewModel l) await l.NewEntryCommand.ExecuteAsync(null);
+        }
+    }
+
     partial void OnSelectedSectionChanged(SectionViewModel? value)
     {
+        OnPropertyChanged(nameof(SelectedMenuItem));
         if (value is { Loaded: false }) _ = value.LoadAsync();
     }
 
