@@ -236,6 +236,10 @@ public class DocumentLine : Entity
     public string? PkwiuOrCn { get; set; }
     /// <summary>Konto kosztów/przychodów proponowane do dekretacji.</summary>
     public Guid? AccountId { get; set; }
+    /// <summary>Kategoria wydatku (kod z katalogu <c>ExpenseCategories</c>) — źródło konta, odliczenia VAT i części NKUP.</summary>
+    public string? ExpenseCategory { get; set; }
+    /// <summary>Część kosztu (netto + VAT nieodliczony) niestanowiąca kosztu uzyskania przychodu, w % (np. 25 dla samochodu osobowego w użytku mieszanym).</summary>
+    public decimal NkupPercent { get; set; }
 }
 
 /// <summary>Podsumowanie stawek VAT dokumentu (podstawa rejestru VAT).</summary>

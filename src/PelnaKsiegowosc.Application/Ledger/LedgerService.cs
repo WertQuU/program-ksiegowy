@@ -14,7 +14,7 @@ namespace PelnaKsiegowosc.Application.Ledger;
 
 /// <summary>Pozycja dekretu wprowadzana przez użytkownika / schemat dekretacji.</summary>
 public sealed record LineInput(string AccountNumber, decimal Debit, decimal Credit, Guid? CounterpartyId = null,
-    string? Description = null, Guid? OpenItemId = null, decimal? CurrencyAmount = null);
+    string? Description = null, Guid? OpenItemId = null, decimal? CurrencyAmount = null, CitClassification? Cit = null);
 
 public sealed record EntryInput(
     string JournalCode,
@@ -389,7 +389,8 @@ public sealed class LedgerService
                 CounterpartyId = li.CounterpartyId,
                 Description = li.Description,
                 OpenItemId = li.OpenItemId,
-                CurrencyAmount = li.CurrencyAmount
+                CurrencyAmount = li.CurrencyAmount,
+                CitClassification = li.Cit
             });
         }
     }

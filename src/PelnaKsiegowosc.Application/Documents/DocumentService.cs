@@ -18,7 +18,7 @@ using PelnaKsiegowosc.Domain.Vat;
 namespace PelnaKsiegowosc.Application.Documents;
 
 public sealed record DocumentLineInput(string Name, decimal Quantity, decimal UnitNetPrice, string VatRateCode, string Unit = "szt.",
-    string? AccountNumber = null, string? GtuCode = null);
+    string? AccountNumber = null, string? GtuCode = null, string? ExpenseCategory = null, decimal NkupPercent = 0m);
 
 public sealed record InvoiceInput(
     DocumentKind Kind,
@@ -187,7 +187,9 @@ public sealed class DocumentService
                 UnitNetPrice = l.UnitNetPrice,
                 VatRateCode = l.VatRateCode,
                 AccountId = accountId,
-                GtuCode = l.GtuCode
+                GtuCode = l.GtuCode,
+                ExpenseCategory = l.ExpenseCategory,
+                NkupPercent = l.NkupPercent is < 0 or > 100 ? throw new DomainException($"Pozycja {n - 1}: część NKUP musi mieścić się w przedziale 0–100%.") : l.NkupPercent
             });
         }
         InvoiceCalculator.Recalculate(doc);
@@ -238,6 +240,26 @@ public sealed class DocumentService
         doc.PostingLines.Clear();
         AddHistory(doc, "ODLICZENIE_VAT", string.Join(", ", doc.VatLines.Select(v => $"{v.VatRateCode}: {v.DeductionPercent}%")) + $"; okres {period:MM.yyyy}");
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Ustala odliczenie VAT na podstawie kategorii wydatków pozycji (np. paliwo do samochodu osobowego — 50%).
+    /// Działa, gdy każda pozycja ma kategorię; zwraca false, gdy odliczenie trzeba potwierdzić ręcznie.
+    /// </summary>
+    public async Task<bool> ApplyCategoryDeductionAsync(Guid documentId, CancellationToken ct = default)
+    {
+        var doc = await GetAsync(documentId, ct);
+        if (!doc.IsPurchase || doc.Status != DocumentStatus.Roboczy) return false;
+        if (doc.Lines.Count == 0 || doc.Lines.Any(l => Templates.ExpenseCategories.Find(l.ExpenseCategory) is null)) return false;
+        var perRate = doc.Lines.GroupBy(l => l.VatRateCode).ToDictionary(g => g.Key, g =>
+        {
+            var vat = g.Sum(l => l.VatAmount);
+            var deductible = g.Sum(l => l.VatAmount * Templates.ExpenseCategories.Find(l.ExpenseCategory)!.VatDeductionPercent / 100m);
+            var percent = vat == 0 ? 100m : Math.Round(deductible / vat * 100m, 2, MidpointRounding.AwayFromZero);
+            return (percent, g.Any(l => Templates.ExpenseCategories.Find(l.ExpenseCategory)!.FixedAsset));
+        });
+        await SetVatDeductionAsync(documentId, perRate, DefaultVatPeriod(doc), ct);
+        return true;
     }
 
     /// <summary>Zatwierdzenie dokumentu (kontrola formalna i merytoryczna).</summary>
@@ -305,7 +327,7 @@ public sealed class DocumentService
         Guid Acc(string number) => accounts.TryGetValue(number, out var a) ? a.Id : throw new DomainException($"Brak konta {number} (parametry księgowania).");
 
         var lines = new List<DocumentPostingLine>();
-        void Add(Guid account, decimal debit, decimal credit, string? desc, bool counterparty = false, decimal? cur = null, bool openItem = false)
+        void Add(Guid account, decimal debit, decimal credit, string? desc, bool counterparty = false, decimal? cur = null, bool openItem = false, CitClassification? cit = null)
         {
             if (debit == 0 && credit == 0) return;
             // kwoty ujemne (np. korekta in minus) przenoszone na stronę przeciwną
@@ -321,7 +343,8 @@ public sealed class DocumentService
                 CounterpartyId = counterparty ? doc.CounterpartyId : null,
                 Description = desc,
                 CurrencyAmount = cur is { } c ? Math.Abs(c) : null,
-                CreatesOpenItem = openItem
+                CreatesOpenItem = openItem,
+                CitClassification = cit
             });
         }
 
@@ -348,13 +371,36 @@ public sealed class DocumentService
             {
                 var deductible = doc.VatLines.Sum(v => v.DeductibleVatPln);
                 var nonDeductible = doc.VatAmountPln - deductible;
-                foreach (var g in doc.Lines.GroupBy(l => l.AccountId ?? Acc(p.PurchaseCostDefault)))
+                if (doc.Lines.Any(l => l.NkupPercent != 0))
                 {
-                    var net = g.Sum(x => x.NetAmount);
-                    Add(g.Key, foreign ? Money.ToPln(net, doc.ExchangeRate) : net, 0, $"Koszt {doc.ExternalNumber ?? doc.Number}");
+                    // koszty z częścią NKUP (kategorie wydatków): VAT nieodliczony rozdzielany proporcjonalnie do netto,
+                    // a każda grupa dzielona na część KUP i NKUP (np. art. 16 ust. 1 pkt 51 ustawy o CIT — 75% kosztów samochodu osobowego)
+                    var groups = doc.Lines.GroupBy(l => (Account: l.AccountId ?? Acc(p.PurchaseCostDefault), l.NkupPercent))
+                        .Select(g => (g.Key.Account, g.Key.NkupPercent, Net: foreign ? Money.ToPln(g.Sum(x => x.NetAmount), doc.ExchangeRate) : g.Sum(x => x.NetAmount)))
+                        .ToList();
+                    var totalNet = groups.Sum(g => g.Net);
+                    var allocated = 0m;
+                    for (var i = 0; i < groups.Count; i++)
+                    {
+                        var g = groups[i];
+                        var share = i == groups.Count - 1 ? nonDeductible - allocated : (totalNet == 0 ? 0 : Money.Round(nonDeductible * g.Net / totalNet));
+                        allocated += share;
+                        var amount = g.Net + share;
+                        var nkup = Money.Round(amount * g.NkupPercent / 100m);
+                        Add(g.Account, amount - nkup, 0, $"Koszt {doc.ExternalNumber ?? doc.Number}");
+                        if (nkup != 0) Add(g.Account, nkup, 0, $"Koszt {doc.ExternalNumber ?? doc.Number} — część NKUP ({g.NkupPercent:0.##}%)", cit: CitClassification.KosztNiepodatkowy);
+                    }
+                }
+                else
+                {
+                    foreach (var g in doc.Lines.GroupBy(l => l.AccountId ?? Acc(p.PurchaseCostDefault)))
+                    {
+                        var net = g.Sum(x => x.NetAmount);
+                        Add(g.Key, foreign ? Money.ToPln(net, doc.ExchangeRate) : net, 0, $"Koszt {doc.ExternalNumber ?? doc.Number}");
+                    }
                 }
                 // VAT nieodliczalny powiększa koszt (art. 28 ust. 2 UoR — cena nabycia z podatkiem niepodlegającym odliczeniu)
-                if (nonDeductible != 0)
+                if (nonDeductible != 0 && !doc.Lines.Any(l => l.NkupPercent != 0))
                 {
                     var target = lines.Where(l => l.Debit > 0).OrderByDescending(l => l.Debit).FirstOrDefault()?.AccountId ?? Acc(p.NonDeductibleVatCost);
                     Add(target, nonDeductible, 0, "VAT nieodliczalny");
@@ -507,7 +553,7 @@ public sealed class DocumentService
                     var amount = l.Debit + l.Credit;
                     if (!reducing || linkedOpenItem.RemainingPln >= amount) openItemId = linkedOpenItem.Id;
                 }
-                return new LineInput(acc.Number, l.Debit, l.Credit, l.CounterpartyId, l.Description, openItemId, l.CurrencyAmount);
+                return new LineInput(acc.Number, l.Debit, l.Credit, l.CounterpartyId, l.Description, openItemId, l.CurrencyAmount, l.CitClassification);
             }).ToList(),
             doc.Id,
             doc.Currency,

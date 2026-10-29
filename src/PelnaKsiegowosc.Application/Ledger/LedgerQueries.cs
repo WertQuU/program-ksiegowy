@@ -58,7 +58,11 @@ public sealed class LedgerQueries
     /// Obroty i salda kont za okres [periodFrom; periodTo] roku obrotowego. BO = zapisy rodzaju „bilans otwarcia”.
     /// Konta syntetyczne zawierają sumę kont analitycznych.
     /// </summary>
-    public async Task<List<AccountTotals>> TrialBalanceAsync(Guid fiscalYearId, DateOnly periodFrom, DateOnly periodTo, CancellationToken ct = default)
+    public async Task<List<AccountTotals>> TrialBalanceAsync(Guid fiscalYearId, DateOnly periodFrom, DateOnly periodTo, CancellationToken ct = default) =>
+        await TrialBalanceAsync(fiscalYearId, periodFrom, periodTo, false, ct);
+
+    /// <param name="excludeClosing">Pomija zapis zamknięcia roku (przeksięgowanie kont wynikowych) — dla wyliczeń podatkowych za cały rok.</param>
+    public async Task<List<AccountTotals>> TrialBalanceAsync(Guid fiscalYearId, DateOnly periodFrom, DateOnly periodTo, bool excludeClosing, CancellationToken ct = default)
     {
         var chart = await _db.Charts.AsNoTracking().Where(c => c.FiscalYearId == fiscalYearId).OrderByDescending(c => c.Version).FirstAsync(ct);
         var accounts = await _db.Accounts.AsNoTracking().Where(a => a.ChartId == chart.Id).ToListAsync(ct);
@@ -68,6 +72,7 @@ public sealed class LedgerQueries
         foreach (var l in lines)
         {
             if (!totals.TryGetValue(l.AccountId, out var t)) continue;
+            if (excludeClosing && l.Kind == EntryKind.Zamkniecie) continue;
             if (l.Kind == EntryKind.BilansOtwarcia)
             {
                 t.OpeningDebit += l.Debit;

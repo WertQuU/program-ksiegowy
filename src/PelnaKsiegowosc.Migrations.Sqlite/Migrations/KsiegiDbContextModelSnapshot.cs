@@ -1456,6 +1456,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExpenseCategory")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("GrossAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -1473,6 +1477,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("NetAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("NkupPercent")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -2071,6 +2079,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<string>("AccountNumber")
                         .IsRequired()
                         .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CitClassification")
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("CounterpartyId")

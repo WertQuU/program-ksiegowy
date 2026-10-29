@@ -146,6 +146,7 @@ public static class EntryValidator
                 AccountNumber = l.AccountNumber,
                 CounterpartyId = l.CounterpartyId,
                 OpenItemId = l.OpenItemId,
+                CitClassification = l.CitClassification,
                 Description = l.Description
             };
             if (method == Companies.CorrectionMethod.StornoCzerwone)

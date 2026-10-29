@@ -25,6 +25,27 @@ public abstract partial class DocumentListBase : SectionViewModel
 
     protected Guid SelectedId => Selected?.Tag is Guid g ? g : throw new DomainException("Zaznacz dokument na liście.");
 
+    /// <summary>Konta planu kont roku obejmującego datę (do doboru konta według kategorii wydatku).</summary>
+    protected async Task<List<Domain.Accounts.Account>> AccountsForAsync(PelnaKsiegowosc.Data.KsiegiDbContext db, DateOnly date)
+    {
+        var fy = Session.Years.FirstOrDefault(y => y.Contains(date)) ?? Session.CurrentYear;
+        var chart = await db.Charts.AsNoTracking().Where(c => c.FiscalYearId == fy.Id).OrderByDescending(c => c.Version).FirstOrDefaultAsync();
+        return chart is null ? new() : await db.Accounts.AsNoTracking().Where(a => a.ChartId == chart.Id).ToListAsync();
+    }
+
+    /// <summary>Zatwierdzenie i zaksięgowanie zapisanego dokumentu jednym krokiem (dla prostego trybu pracy).</summary>
+    protected async Task<string> ApproveAndPostAsync(Guid id)
+    {
+        await using var db = Session.OpenDb();
+        var svc = new DocumentService(db, Session.User, Session.Clock);
+        var d = await svc.GetAsync(id);
+        var v = await svc.ValidateAsync(d);
+        if (!v.IsValid) throw new DomainException("Dokument zapisano jako roboczy, ale nie można go zaksięgować:" + Environment.NewLine + string.Join(Environment.NewLine, v.Errors));
+        await svc.ApproveAsync(id);
+        var e = await svc.PostAsync(id);
+        return e.JournalNumber ?? "";
+    }
+
     protected override async Task LoadCoreAsync()
     {
         await using var db = Session.OpenDb();
@@ -263,6 +284,7 @@ public sealed partial class SalesViewModel : DocumentListBase
     private Task NewAsync() => RunAsync(async () =>
     {
         await using var db = Session.OpenDb();
+        Editor.Accounts = await AccountsForAsync(db, Session.Clock.Today);
         Editor.Reset(Session.Clock.Today, await CounterpartyChoice.LoadAsync(db, Session.CompanyId));
         CorrectionMode = false;
         EditorVisible = true;
@@ -298,8 +320,7 @@ public sealed partial class SalesViewModel : DocumentListBase
 
     [RelayCommand] private void CloseEditor() => EditorVisible = false;
 
-    [RelayCommand]
-    private Task SaveAsync() => ChangeAsync(async () =>
+    private async Task<Document> SaveSaleAsync()
     {
         await using var db = Session.OpenDb();
         var svc = new DocumentService(db, Session.User, Session.Clock);
@@ -313,7 +334,22 @@ public sealed partial class SalesViewModel : DocumentListBase
         else doc = await svc.CreateInvoiceAsync(Editor.ToInput());
         EditorVisible = false;
         StatusMessage = $"Zapisano {doc.Number}: brutto {Money.Format(doc.GrossAmount)} {doc.Currency}";
-    }, "Zapisano dokument roboczy.");
+        return doc;
+    }
+
+    [RelayCommand]
+    private Task SaveAsync() => ChangeAsync(async () => await SaveSaleAsync(), "Zapisano dokument roboczy.");
+
+    [RelayCommand]
+    private Task SaveAndPostAsync() => ChangeAsync(async () =>
+    {
+        var doc = await SaveSaleAsync();
+        var entry = await ApproveAndPostAsync(doc.Id);
+        var ksef = Session.Config.Ksef.Enabled && doc.KsefStatus == KsefStatus.DoWyslania
+            ? " Wyślij fakturę do KSeF przyciskiem „Wyślij do KSeF”." : "";
+        StatusMessage = $"Wystawiono i zaksięgowano {doc.Number} ({entry}).{ksef}";
+        if (ksef.Length > 0) await Dialogs.InfoAsync("KSeF", $"Faktura {doc.Number} jest zaksięgowana.{ksef}");
+    }, "Faktura zapisana i zaksięgowana.");
 
     [RelayCommand]
     private Task SaveXmlAsync() => RunAsync(async () =>
@@ -368,6 +404,7 @@ public sealed partial class PurchasesViewModel : DocumentListBase
     private Task NewAsync() => RunAsync(async () =>
     {
         await using var db = Session.OpenDb();
+        Editor.Accounts = await AccountsForAsync(db, Session.Clock.Today);
         Editor.Reset(Session.Clock.Today, await CounterpartyChoice.LoadAsync(db, Session.CompanyId));
         CorrectionMode = false;
         EditorVisible = true;
@@ -378,6 +415,7 @@ public sealed partial class PurchasesViewModel : DocumentListBase
     {
         await using var db = Session.OpenDb();
         var d = await new DocumentService(db, Session.User, Session.Clock).GetAsync(SelectedId);
+        Editor.Accounts = await AccountsForAsync(db, d.IssueDate);
         if (d.Status != DocumentStatus.Roboczy) throw new DomainException("Edytować można tylko dokument roboczy.");
         if (d.IsCorrection) throw new DomainException("Korekty robocze anuluj i zarejestruj ponownie.");
         Editor.Load(d, await CounterpartyChoice.LoadAsync(db, Session.CompanyId));
@@ -391,6 +429,7 @@ public sealed partial class PurchasesViewModel : DocumentListBase
         await using var db = Session.OpenDb();
         var d = await new DocumentService(db, Session.User, Session.Clock).GetAsync(SelectedId);
         if (d.Status != DocumentStatus.Zaksiegowany || d.IsCorrection || !d.IsInvoice) throw new DomainException("Korektę rejestruje się do zaksięgowanej faktury pierwotnej.");
+        Editor.Accounts = await AccountsForAsync(db, Session.Clock.Today);
         Editor.Load(d, await CounterpartyChoice.LoadAsync(db, Session.CompanyId));
         Editor.Header = $"Korekta do {d.Number} ({d.ExternalNumber}) — wpisz RÓŻNICE pozycji";
         Editor.IssueDate = Session.Clock.Today.ToPl();
@@ -403,8 +442,7 @@ public sealed partial class PurchasesViewModel : DocumentListBase
 
     [RelayCommand] private void CloseEditor() => EditorVisible = false;
 
-    [RelayCommand]
-    private Task SaveAsync() => ChangeAsync(async () =>
+    private async Task<Document> SavePurchaseAsync()
     {
         await using var db = Session.OpenDb();
         var svc = new DocumentService(db, Session.User, Session.Clock);
@@ -414,9 +452,22 @@ public sealed partial class PurchasesViewModel : DocumentListBase
                 Editor.LineInputs().Where(l => l.Quantity != 0 && l.UnitNetPrice != 0).ToList());
         else if (Editor.DocumentId is { } id) doc = await svc.UpdateInvoiceAsync(id, Editor.ToInput());
         else doc = await svc.CreateInvoiceAsync(Editor.ToInput());
+        var auto = await svc.ApplyCategoryDeductionAsync(doc.Id);
         EditorVisible = false;
-        StatusMessage = $"Zarejestrowano {doc.Number}. Potwierdź odliczenie VAT, zatwierdź i zaksięguj.";
-    }, "Zapisano dokument roboczy.");
+        StatusMessage = $"Zarejestrowano {doc.Number}." + (auto ? " Odliczenie VAT ustalono według kategorii." : doc.VatAmount != 0 ? " Potwierdź odliczenie VAT." : "");
+        return doc;
+    }
+
+    [RelayCommand]
+    private Task SaveAsync() => ChangeAsync(async () => await SavePurchaseAsync(), "Zapisano dokument roboczy.");
+
+    [RelayCommand]
+    private Task SaveAndPostAsync() => ChangeAsync(async () =>
+    {
+        var doc = await SavePurchaseAsync();
+        var entry = await ApproveAndPostAsync(doc.Id);
+        StatusMessage = $"Zaksięgowano {doc.Number} ({entry}).";
+    }, "Dokument zapisany i zaksięgowany.");
 
     [RelayCommand]
     private Task ConfirmDeductionAsync() => ChangeAsync(async () =>

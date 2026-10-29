@@ -143,6 +143,8 @@ public class JournalLine : Entity
     /// <summary>Pozycja rozrachunkowa (należność/zobowiązanie), której dotyczy zapis.</summary>
     public Guid? OpenItemId { get; set; }
     public string? Description { get; set; }
+    /// <summary>Klasyfikacja CIT pozycji nadpisująca klasyfikację konta (np. część kosztu niestanowiąca KUP).</summary>
+    public Accounts.CitClassification? CitClassification { get; set; }
 
     public decimal Amount => Debit != 0 ? Debit : Credit;
     public bool IsDebit => Debit != 0;

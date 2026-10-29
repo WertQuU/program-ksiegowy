@@ -61,6 +61,13 @@
         </StackPanel>
         <DataGrid ItemsSource="{Binding Editor.Lines}" SelectedItem="{Binding Editor.SelectedLine}" AutoGenerateColumns="False" CanUserSortColumns="False" MinHeight="140" MaxHeight="300" Margin="0,6,0,0">
           <DataGrid.Columns>
+            <DataGridTemplateColumn Header="Rodzaj wydatku (kategoria)" Width="260">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate x:DataType="vm:InvoiceLineRow">
+                  <ComboBox ItemsSource="{x:Static vm:InvoiceLineRow.CategoryChoices}" SelectedItem="{Binding Category}" HorizontalAlignment="Stretch" PlaceholderText="wybierz…" />
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
             <DataGridTextColumn Header="Nazwa towaru / usługi" Binding="{ReflectionBinding Name}" Width="*" />
             <DataGridTextColumn Header="Ilość" Binding="{ReflectionBinding Quantity}" Width="80" />
             <DataGridTextColumn Header="J.m." Binding="{ReflectionBinding Unit}" Width="70" />
@@ -73,13 +80,15 @@
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>
             <DataGridTextColumn Header="Konto" Binding="{ReflectionBinding AccountNumber}" Width="100" />
-            <DataGridTextColumn Header="GTU" Binding="{ReflectionBinding Gtu}" Width="70" />
+            <DataGridTextColumn Header="NKUP %" Binding="{ReflectionBinding NkupPercent}" Width="80" />
           </DataGrid.Columns>
         </DataGrid>
+        <TextBlock Text="{Binding Editor.CategoryHint}" Classes="info" Margin="0,6,0,0" />
         <WrapPanel Classes="toolbar" Margin="0,6,0,0">
           <Button Content="Dodaj pozycję" Command="{Binding Editor.AddLineCommand}" />
           <Button Content="Usuń pozycję" Command="{Binding Editor.RemoveLineCommand}" />
-          <Button Content="Zapisz (roboczy)" Command="{Binding SaveCommand}" />
+          <Button Content="Zapisz i zaksięguj" Command="{Binding SaveAndPostCommand}" Classes="accent" />
+          <Button Content="Zapisz jako roboczy" Command="{Binding SaveCommand}" />
           <Button Content="Zamknij" Command="{Binding CloseEditorCommand}" />
         </WrapPanel>
       </StackPanel>

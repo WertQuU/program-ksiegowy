@@ -4,6 +4,7 @@ using PelnaKsiegowosc.Application.Audit;
 using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Accounts;
+using PelnaKsiegowosc.Domain.Ledger;
 using PelnaKsiegowosc.Domain.Cit;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
@@ -77,7 +78,7 @@ public sealed class CitService
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
         var period = fy.Periods.Single(p => p.Number == uptoPeriod);
         var company = await _db.Companies.FirstAsync(c => c.Id == fy.CompanyId, ct);
-        var tb = await new LedgerQueries(_db).TrialBalanceAsync(fy.Id, fy.StartDate, period.EndDate, ct);
+        var tb = await new LedgerQueries(_db).TrialBalanceAsync(fy.Id, fy.StartDate, period.EndDate, true, ct);
         var r = new CitReconciliation { From = fy.StartDate, To = period.EndDate };
 
         // amortyzacja: księgowa vs podatkowa
@@ -120,6 +121,26 @@ public sealed class CitService
             if (bookOnDepAccounts != bookDep)
                 r.Warnings.Add($"Saldo kont amortyzacji ({Money.Format(bookOnDepAccounts)}) ≠ suma naliczeń modułu ŚT ({Money.Format(bookDep)}) — sprawdź ręczne zapisy amortyzacji.");
             if (taxDep != bookOnDepAccounts) r.Adjustments.Add(new("Różnica amortyzacji bilansowej i podatkowej", bookOnDepAccounts - taxDep, "art. 16a–16m ustawy o CIT"));
+        }
+        // pozycje z klasyfikacją CIT nadpisującą konto (np. część NKUP kosztów samochodu osobowego, reprezentacja)
+        var overrides = await (from l in _db.JournalLines.AsNoTracking()
+                               join e in _db.JournalEntries.AsNoTracking() on l.EntryId equals e.Id
+                               where e.FiscalYearId == fy.Id && e.Status == EntryStatus.Zaksiegowany && e.Kind != EntryKind.Zamkniecie
+                                     && e.PostingDate <= period.EndDate && l.CitClassification != null
+                               select new { l.AccountId, l.Debit, l.Credit, l.CitClassification }).ToListAsync(ct);
+        var accById = tb.ToDictionary(t => t.Account.Id, t => t.Account);
+        var nkupLines = overrides.Where(o => o.CitClassification == CitClassification.KosztNiepodatkowy && accById.TryGetValue(o.AccountId, out var a)
+                                             && a.Type == AccountType.WynikoweKosztowe && a.CitClassification != CitClassification.KosztNiepodatkowy).ToList();
+        var nkupTotal = nkupLines.Sum(o => o.Debit - o.Credit);
+        if (nkupTotal != 0)
+        {
+            taxCost -= nkupTotal;
+            r.Adjustments.Add(new("Koszty NKUP — części wydatków wskazane w dokumentach (kategorie wydatków)", nkupTotal, "art. 16 ust. 1 ustawy o CIT (np. pkt 28, 51)"));
+            foreach (var g in nkupLines.GroupBy(o => o.AccountId))
+            {
+                var idx = r.ToAnalyze.FindIndex(x => x.Account == accById[g.Key].Number);
+                if (idx >= 0) r.ToAnalyze[idx] = (r.ToAnalyze[idx].Account, r.ToAnalyze[idx].Name, r.ToAnalyze[idx].Amount - g.Sum(o => o.Debit - o.Credit));
+            }
         }
         r.BookResultBeforeTax = r.BookRevenue - (r.BookCosts - tb.Where(t => t.IsLeaf && t.Account.Number == "870").Sum(t => t.CumulativeDebit - t.CumulativeCredit));
 

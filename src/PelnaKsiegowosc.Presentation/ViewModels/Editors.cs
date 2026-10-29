@@ -4,6 +4,8 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Application.Ledger;
+using PelnaKsiegowosc.Application.Templates;
+using PelnaKsiegowosc.Domain.Accounts;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Documents;
@@ -32,13 +34,34 @@ public sealed partial class InvoiceLineRow : ObservableObject
     [ObservableProperty] private string _vatRate = "23";
     [ObservableProperty] private string? _accountNumber;
     [ObservableProperty] private string? _gtu;
+    [ObservableProperty] private ExpenseCategory? _category;
+    [ObservableProperty] private string _nkupPercent = "0";
 
     public static IReadOnlyList<string> RateCodes { get; } = VatRules.Rates.Select(r => r.Code).Distinct().ToList();
+    public static IReadOnlyList<ExpenseCategory> CategoryChoices { get; } = ExpenseCategories.All;
 
-    public DocumentLineInput ToInput(int no) => new(
-        string.IsNullOrWhiteSpace(Name) ? throw new DomainException($"Pozycja {no}: podaj nazwę towaru lub usługi.") : Name.Trim(),
-        Parse.Amount(Quantity, $"Ilość (pozycja {no})"), Parse.Amount(UnitNetPrice, $"Cena netto (pozycja {no})"),
-        VatRate, string.IsNullOrWhiteSpace(Unit) ? "szt." : Unit.Trim(), Parse.Trim(AccountNumber), Parse.Trim(Gtu));
+    /// <summary>Wybór kategorii ustawia typową stawkę VAT i część NKUP; konto dobierane jest przy zapisie.</summary>
+    partial void OnCategoryChanged(ExpenseCategory? value)
+    {
+        if (value is null) return;
+        if (RateCodes.Contains(value.DefaultVatRate)) VatRate = value.DefaultVatRate;
+        NkupPercent = value.NkupPercent.ToString("0.##", Money.Pl);
+        AccountNumber = null;
+        if (string.IsNullOrWhiteSpace(Name)) Name = value.Name;
+    }
+
+    public DocumentLineInput ToInput(int no, IReadOnlyCollection<Account>? accounts = null)
+    {
+        var account = Parse.Trim(AccountNumber);
+        if (account is null && Category is not null && accounts is not null)
+            account = ExpenseCategories.ResolveAccount(Category, accounts)
+                      ?? throw new DomainException($"Pozycja {no}: w planie kont brak konta dla kategorii „{Category.Name}” ({string.Join(" / ", Category.Accounts)}). Dodaj je w sekcji „Plan kont” albo wpisz konto ręcznie.");
+        return new(
+            string.IsNullOrWhiteSpace(Name) ? throw new DomainException($"Pozycja {no}: podaj nazwę towaru lub usługi.") : Name.Trim(),
+            Parse.Amount(Quantity, $"Ilość (pozycja {no})"), Parse.Amount(UnitNetPrice, $"Cena netto (pozycja {no})"),
+            VatRate, string.IsNullOrWhiteSpace(Unit) ? "szt." : Unit.Trim(), account, Parse.Trim(Gtu), Category?.Code,
+            Parse.Amount(NkupPercent, $"Część NKUP % (pozycja {no})"));
+    }
 }
 
 /// <summary>Edytor faktury sprzedaży lub zakupu (nowej albo roboczej).</summary>
@@ -73,6 +96,12 @@ public sealed partial class InvoiceEditor : ObservableObject
     [ObservableProperty] private InvoiceLineRow? _selectedLine;
 
     public ObservableCollection<InvoiceLineRow> Lines { get; } = new();
+    /// <summary>Konta planu kont roku dokumentu — do doboru konta według kategorii wydatku.</summary>
+    public IReadOnlyCollection<Account> Accounts { get; set; } = Array.Empty<Account>();
+    [ObservableProperty] private string _categoryHint = "";
+
+    partial void OnSelectedLineChanged(InvoiceLineRow? value) =>
+        CategoryHint = value?.Category is { } c ? $"{c.Name}: {c.Hint} (VAT do odliczenia {c.VatDeductionPercent:0}%, część NKUP {c.NkupPercent:0}%)" : "";
     public List<Choice<PaymentMethod>> PaymentMethods { get; } = Choices.Of<PaymentMethod>();
     public List<Choice<VatTransactionType>> TransactionTypes { get; } = Choices.Of<VatTransactionType>();
     public List<Choice<DocumentKind>> Kinds { get; private set; } = new();
@@ -128,8 +157,11 @@ public sealed partial class InvoiceEditor : ObservableObject
         foreach (var l in d.Lines.OrderBy(l => l.LineNo))
             Lines.Add(new InvoiceLineRow
             {
+                Category = ExpenseCategories.Find(l.ExpenseCategory),
                 Name = l.Name, Quantity = l.Quantity.ToString("0.####", Money.Pl), Unit = l.Unit, UnitNetPrice = l.UnitNetPrice.ToString("0.00##", Money.Pl),
-                VatRate = l.VatRateCode, Gtu = l.GtuCode
+                VatRate = l.VatRateCode, Gtu = l.GtuCode,
+                NkupPercent = l.NkupPercent.ToString("0.##", Money.Pl),
+                AccountNumber = l.AccountId is { } aid ? Accounts.FirstOrDefault(a => a.Id == aid)?.Number : null
             });
     }
 
@@ -144,7 +176,7 @@ public sealed partial class InvoiceEditor : ObservableObject
     public IReadOnlyList<DocumentLineInput> LineInputs()
     {
         if (Lines.Count == 0) throw new DomainException("Dodaj co najmniej jedną pozycję.");
-        return Lines.Select((l, i) => l.ToInput(i + 1)).ToList();
+        return Lines.Select((l, i) => l.ToInput(i + 1, Accounts)).ToList();
     }
 
     public InvoiceInput ToInput()

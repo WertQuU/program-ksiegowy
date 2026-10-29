@@ -1461,6 +1461,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ExpenseCategory")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<decimal>("GrossAmount")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -1478,6 +1482,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("character varying(512)");
 
                     b.Property<decimal>("NetAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("NkupPercent")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -2077,6 +2085,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("CitClassification")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<Guid?>("CounterpartyId")
                         .HasColumnType("uuid");
