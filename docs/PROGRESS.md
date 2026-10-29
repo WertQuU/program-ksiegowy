@@ -16,6 +16,10 @@ Wersja: 0.9.0 (przed pierwszym wydaniem 1.0).
 - Testy automatyczne: jednostkowe, integracyjne (SQLite, PostgreSQL, S3), atrapa KSeF, E2E ekranów,
   uruchomienie programu okienkowego bez monitora.
 
+- Ułatwienia dla osób bez przygotowania księgowego: asystent kontroli ksiąg z kalendarzem terminów, kategorie
+  wydatków z regułami VAT/KUP, kreatory planu kont i rozliczenia miesiąca, księgowanie jednym kliknięciem,
+  biała lista VAT, kurs NBP, rodzaje operacji bankowych, objaśnienia sekcji i słowniczek.
+
 ## Znane ograniczenia
 
 Zob. [README](../README.md#znane-ograniczenia) i [COMPLIANCE_MATRIX.md](COMPLIANCE_MATRIX.md). Najważniejsze:

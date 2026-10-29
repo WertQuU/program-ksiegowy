@@ -16,7 +16,30 @@
 9. **Utworzenie ksiąg** — program tworzy księgi, rachunek bankowy i kasę oraz wykonuje pierwszą kopię.
    Lista gotowości pokazuje, co jeszcze uzupełnić (także na Pulpicie).
 
+## Pulpit — od czego zacząć
+
+Pulpit pokazuje stan ksiąg, pieniądze, należności i zobowiązania, przyciski najczęstszych czynności oraz listę
+**„Do zrobienia”** przygotowaną przez asystenta kontroli ksiąg. Pracuj od góry: najpierw pozycje **BŁĄD**, potem
+**UWAGA**. Każda pozycja mówi, co jest nie tak i co zrobić, a przycisk **„Przejdź”** otwiera właściwe miejsce.
+Obok widać **terminy** (JPK i VAT, zaliczki CIT, zaksięgowanie miesiąca, sprawozdanie) z informacją, czy zostały wykonane.
+
 ## Codzienna praca
+
+**Wydatek (faktura zakupu):** Zakupy → „+ Dodaj wydatek” → wybierz dostawcę, wpisz numer faktury i daty → w pozycji
+wybierz **rodzaj wydatku** (np. „Paliwo — samochód osobowy”, „Telefon, internet”, „Hotel”) i wpisz cenę netto →
+**„Zapisz i zaksięguj”**. Program dobierze konto, odliczenie VAT i część kosztu, której nie uznaje urząd skarbowy.
+Pod tabelą pojawia się wyjaśnienie zasad dla wybranego rodzaju wydatku.
+
+**Faktura sprzedaży:** Sprzedaż → „+ Wystaw fakturę” → klient, pozycje → **„Zapisz i zaksięguj”** → „Wyślij do KSeF”.
+
+**Nowy kontrahent:** Kontrahenci → „Nowy kontrahent” → wpisz NIP → **„Pobierz dane z białej listy”** → Zapisz.
+Przed przelewem powyżej 15 000 zł kliknij **„Sprawdź rachunek na białej liście”**.
+
+**Waluta obca:** w fakturze wpisz walutę (np. EUR) i kliknij **„Pobierz kurs NBP”**.
+
+**Bank:** po imporcie wyciągu zaznacz operację: wpływ od klienta lub zapłatę faktury dopasuj do propozycji;
+opłatę, podatek, ZUS albo przelew własny wybierz z listy **„Co to za operacja?”** → Zaksięguj.
+
 
 | Zadanie | Gdzie |
 |---|---|
@@ -33,13 +56,19 @@
 | Zdarzenia kapitałowe | Kapitał i właściciele → dodaj właściciela → nowe zdarzenie → potwierdź dokumenty → zaksięguj |
 | Raporty | Raporty → wybierz raport i daty → Generuj → eksport PDF/XLSX/CSV |
 
-## Koniec miesiąca
+## Koniec miesiąca — kreator „Rozlicz miesiąc”
 
-1. Zaksięguj dokumenty i wyciągi, nalicz amortyzację.
-2. VAT → okres → Kontrola rejestrów → Zaksięguj rozliczenie VAT → Generuj JPK_V7M (zweryfikuj i wyślij
-   narzędziem MF — program nie wysyła JPK).
-3. CIT → okres → Przelicz → Zapisz wyliczenie zaliczki → po weryfikacji pozycji „do analizy” Zatwierdź.
-4. Zamknięcie okresu i roku → zaznacz miesiąc → Lista kontrolna → Zamknij okres.
+Pulpit → **„Rozlicz miesiąc”** (albo sekcja Zamknięcie → zakładka kreatora). Wpisz miesiąc i wykonuj kroki po kolei —
+każdy ma swój przycisk i pokazuje, czy jest zrobiony:
+
+1. Dokumenty — „Zaksięguj wszystkie poprawne” (dokumenty z błędami zostaną wymienione do poprawy).
+2. Bank i kasa — zaimportuj wyciąg za cały miesiąc i rozlicz operacje.
+3. Amortyzacja — jeżeli firma ma środki trwałe.
+4. VAT — kontrola rejestrów i zaksięgowanie rozliczenia (program pokaże kwotę do zapłaty).
+5. JPK_V7M — zapis pliku; wyślij go narzędziem MF do 25. dnia (program nie wysyła JPK).
+6. Zaliczka CIT — wyliczenie i zatwierdzenie; zapłać do 20. dnia.
+7. Kopia zapasowa.
+8. Zamknięcie miesiąca.
 
 ## Koniec roku
 

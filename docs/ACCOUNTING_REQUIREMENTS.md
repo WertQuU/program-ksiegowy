@@ -80,6 +80,12 @@ Ewidencja sprzedaży i zakupów (art. 109 ust. 3 VAT) z mapowaniem na pola JPK_V
 odliczenie VAT wymaga świadomego potwierdzenia zakresu i okresu (art. 86 ust. 10b, 11); import usług
 z samonaliczeniem; wyliczenie deklaracji w pełnych złotych; rozliczenie na kontach; plik JPK_V7M.
 
+### Kategorie wydatków
+
+Pozycja zakupu może mieć kategorię (np. paliwo do samochodu osobowego w użytku mieszanym), która wyznacza konto,
+procent odliczenia VAT i część kosztu niestanowiącą KUP. Dekret dzieli koszt (netto + VAT nieodliczony) na część
+KUP i NKUP; część NKUP jest oznaczona w pozycji zapisu i uwzględniana w uzgodnieniu CIT (także po stornie).
+
 ## 10. Faktury i KSeF
 
 Faktury FA(3) z elementami art. 106e VAT (w zakresie obsługiwanym przez generator), walidowane z oficjalnym XSD;

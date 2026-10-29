@@ -10,6 +10,23 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 
 ## Najważniejsze cechy
 
+**Dla osób bez przygotowania księgowego:**
+
+- **Asystent kontroli ksiąg** na Pulpicie — sam wykrywa błędy, niezgodności i zaległości (dokumenty niezaksięgowane
+  w terminie, brak odliczenia VAT, faktury dla firm bez KSeF, duplikaty, płatności gotówkowe ponad 15 000 zł,
+  niezapłacone faktury po 90 dniach, ujemna kasa, salda po złej stronie, brak wyciągów, amortyzacji, kopii…),
+  objaśnia je prostym językiem i prowadzi do miejsca naprawy.
+- **Kalendarz terminów** — JPK_V7M i VAT, zaliczki CIT, zaksięgowanie miesiąca, sprawozdanie finansowe, CIT-8.
+- **Rodzaje wydatków** (paliwo, samochód osobowy, telefon, najem, hotel, restauracja, reprezentacja…) — program sam
+  dobiera konto, procent odliczenia VAT i część kosztu nieuznawaną podatkowo.
+- **Kreator „Rozlicz miesiąc”** — dokumenty, bank, amortyzacja, VAT, JPK, zaliczka CIT, kopia i zamknięcie, każdy
+  krok jednym przyciskiem. **„Zapisz i zaksięguj”** w fakturach.
+- **Kreator planu kont** dopasowany do działalności, **biała lista VAT** (dane kontrahenta po NIP, sprawdzenie
+  rachunku), **kurs NBP** jednym przyciskiem, **rodzaje operacji bankowych** zamiast numerów kont, objaśnienia
+  w każdej sekcji i słowniczek pojęć.
+
+**Księgowość:**
+
 - **Silnik księgowy**: podwójny zapis Wn/Ma z kontrolą bilansowania, kwoty wyłącznie `decimal`, zapisy zaksięgowane
   niemodyfikowalne (logika + wyzwalacze bazy), korekty tylko stornem, ciągła numeracja dziennika i łańcuch skrótów
   SHA-256 wykrywający manipulacje, bufor zapisów.
@@ -34,8 +51,10 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   operator jest zapisywany w dzienniku zdarzeń. Hasła i klucze w magazynie systemu (Windows: Menedżer
   poświadczeń, Linux: pęk kluczy) — nigdy w plikach konfiguracji.
 
-| Kreator pierwszego uruchomienia | Faktura sprzedaży |
+| Wydatek z kategorią | Rozlicz miesiąc |
 |---|---|
+| ![Wydatek](docs/zrzuty/wydatek.png) | ![Rozlicz miesiąc](docs/zrzuty/rozlicz-miesiac.png) |
+| **Kreator pierwszego uruchomienia** | **Faktura sprzedaży** |
 | ![Kreator](docs/zrzuty/kreator.png) | ![Faktura](docs/zrzuty/faktura-sprzedazy.png) |
 
 ## Pobranie i instalacja
@@ -73,8 +92,9 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 - JPK_V7K (rozliczenie kwartalne), JPK dla osoby fizycznej (sekcja OsobaFizyczna) i zaliczki PIT — nieobsługiwane.
 - Schematy XSD JPK_V7M i e-Sprawozdania nie są dołączone — pliki mają status „niezwalidowany” do czasu
   walidacji oficjalnym schematem (szczegóły: [schemas/README.md](schemas/README.md)).
-- KSeF: uwierzytelnianie tokenem; podpis XAdES (kwalifikowany/Profil Zaufany) nieobsługiwany. Integracja
-  sprawdzona testami na atrapie API — przed użyciem produkcyjnym przetestuj ją w środowisku testowym KSeF.
+- KSeF: uwierzytelnianie tokenem; podpis XAdES (kwalifikowany/Profil Zaufany) nieobsługiwany.
+- Biała lista VAT i kursy NBP: integracje sprawdzone testami na atrapach API (publiczne API MF i NBP).
+- Reguły kategorii wydatków odpowiadają typowym przypadkom — w nietypowej sytuacji procenty zmienia się ręcznie.
 - Wariant kalkulacyjny RZiS i informacja dodatkowa sprawozdania — nieobsługiwane.
 - Mapowania podatkowe i księgowe wymagają weryfikacji przez księgowego lub doradcę podatkowego
   ([docs/COMPLIANCE_MATRIX.md](docs/COMPLIANCE_MATRIX.md)).

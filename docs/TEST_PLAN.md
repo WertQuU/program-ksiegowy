@@ -27,6 +27,8 @@ zapisuje zrzuty wszystkich ekranów.
 | Integracyjne | pełny rok obrotowy z zamknięciem i BO (kontrola wyniku i sum bilansu), kopie (szyfrowanie, manipulacje, odtwarzanie), PostgreSQL (migracja, księgowanie, utrata połączenia), S3 | `Integration/` |
 | Integracje zewnętrzne | KSeF 2.0 na atrapie API (szyfrowanie RSA/AES, skróty, odrzucenie, zły token), FA(3) z oficjalnym XSD, JPK_V7M | `Integrations/` |
 | Ekrany (E2E bez interfejsu) | kreator dla różnych form prawnych, wszystkie sekcje, faktura → zatwierdzenie → księgowanie, zapis ręczny i storno, drugie stanowisko, walidacja kreatora | `Presentation/` |
+| Asystent i kreatory | wykrywanie problemów (dokumenty, odliczenie VAT, zobowiązania > 90 dni, ujemna kasa, kopie), terminy JPK/CIT/księgowania, kategorie wydatków (paliwo 50% VAT i 25% NKUP, reprezentacja, storno), kreator planu kont, kreator „Rozlicz miesiąc” | `Assistant/` |
+| Biała lista i NBP | odwzorowanie odpowiedzi API, rozbiór adresu, sprawdzenie rachunku, błędy, kurs z ostatniej tabeli przed datą | `Integrations/WhiteListTests.cs` |
 | Wiersz poleceń | info, kopia, weryfikacja, odtworzenie, integralność, kody wyjścia | `Presentation/` (`CommandLineTests`) |
 | Program okienkowy | uruchomienie procesu z `--test-uruchomienia`: okna, 20 widoków, operacje | `Presentation/` (`DesktopAppStartupTests`) |
 | Pakiety (CI) | kontrola uruchomienia opublikowanych programów, instalacja `.deb` i `.msi`, uruchomienie zainstalowanego programu, odinstalowanie | `.github/workflows/ci.yml` |

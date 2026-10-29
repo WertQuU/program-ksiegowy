@@ -30,6 +30,13 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | VAT art. 109 ust. 3 | ewidencja VAT | rejestry z polami JPK | Z/W |
 | Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M | generator; mapowanie pól wymaga weryfikacji; bez walidacji XSD | Cz |
 | JPK_V7K, osoba fizyczna | kwartalny wariant, sekcja OsobaFizyczna | — | N |
+| UoR art. 24 ust. 5 pkt 4 | ujęcie operacji miesiąca do 15. dnia następnego miesiąca | asystent i kalendarz terminów | Z |
+| VAT art. 86a, 88 ust. 1 pkt 4 | ograniczenia odliczenia (samochody osobowe, noclegi, gastronomia) | kategorie wydatków z procentem odliczenia | Z/W |
+| VAT art. 89b, CIT art. 15b | korekta przy niezapłaconych zobowiązaniach (90 dni) | asystent: błąd dla zobowiązań > 90 dni po terminie | Z/W |
+| VAT art. 96b, CIT art. 15d, Ordynacja art. 117ba | biała lista, płatności > 15 000 zł | sprawdzenie rachunku w wykazie, asystent: gotówka > 15 000 zł | Z/W |
+| VAT art. 108a | mechanizm podzielonej płatności | asystent: wskazówka dla faktur > 15 000 zł bez MPP (załącznik nr 15 — ocenia użytkownik) | Cz |
+| VAT art. 31a, UoR art. 30, CIT art. 15a | kurs NBP z dnia poprzedzającego | pobieranie kursu NBP, asystent: dokument walutowy bez tabeli | Z/W |
+| CIT art. 16 ust. 1 pkt 28, 51 | reprezentacja, 75% kosztów samochodu osobowego | część NKUP pozycji w dekrecie i w uzgodnieniu CIT | Z/W |
 | CIT art. 19 | stawki 9% / 19% | stawka wg statusu małego podatnika i pierwszego roku | Z/W |
 | CIT art. 25 | zaliczki | narastająco, miesięczne/kwartalne, terminy | Z/W |
 | CIT art. 16a–16m | amortyzacja podatkowa | odrębne parametry podatkowe | Z/W |
