@@ -22,6 +22,13 @@ public sealed partial class BankViewModel : SectionViewModel
     [ObservableProperty] private TableData _suggestions = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedSuggestion;
     [ObservableProperty] private string _offsetAccount = "";
+    [ObservableProperty] private Application.Templates.BankOperationType? _operationType;
+    public IReadOnlyList<Application.Templates.BankOperationType> OperationTypes => Application.Templates.BankOperationTypes.All;
+
+    partial void OnOperationTypeChanged(Application.Templates.BankOperationType? value)
+    {
+        if (value is not null) OffsetAccount = value.AccountNumber;
+    }
     [ObservableProperty] private string _exchangeRate = "";
 
     [ObservableProperty] private Choice<MoneyAccountKind> _newKind = Choices.Of<MoneyAccountKind>()[0];

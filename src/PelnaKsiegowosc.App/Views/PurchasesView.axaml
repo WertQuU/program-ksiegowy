@@ -8,21 +8,27 @@
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-      <Button Content="Zarejestruj fakturę" Command="{Binding NewCommand}" />
+      <Button Content="+ Dodaj wydatek" Command="{Binding NewCommand}" Classes="accent" />
       <Button Content="Edytuj roboczą" Command="{Binding EditCommand}" />
       <Button Content="Zarejestruj korektę" Command="{Binding NewCorrectionCommand}" />
       <TextBox Text="{Binding Search}" Watermark="Szukaj (numer, kontrahent, opis)" />
       <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
       <CheckBox Content="Tylko bieżący rok" IsChecked="{Binding OnlyCurrentYear}" />
     </WrapPanel>
-    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-      <TextBlock Text="Odliczenie VAT %:" /><TextBox Text="{Binding DeductionPercent}" MinWidth="70" />
-      <CheckBox Content="Środek trwały" IsChecked="{Binding DeductionFixedAsset}" />
-      <TextBox Text="{Binding DeductionPeriod}" Watermark="okres mm.rrrr (domyślny)" />
-      <Button Content="Potwierdź odliczenie VAT" Command="{Binding ConfirmDeductionCommand}" />
-      <TextBlock Text="KSeF od–do:" /><TextBox Text="{Binding KsefFrom}" Watermark="dd.mm.rrrr" /><TextBox Text="{Binding KsefTo}" Watermark="dd.mm.rrrr" />
-      <Button Content="Pobierz faktury z KSeF" Command="{Binding ImportFromKsefCommand}" />
-    </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Więcej: ręczne odliczenie VAT, pobieranie faktur z KSeF" Margin="0,0,0,8">
+      <StackPanel>
+        <WrapPanel Classes="toolbar">
+          <TextBlock Text="Odliczenie VAT %:" /><TextBox Text="{Binding DeductionPercent}" MinWidth="70" />
+          <CheckBox Content="Środek trwały" IsChecked="{Binding DeductionFixedAsset}" />
+          <TextBox Text="{Binding DeductionPeriod}" Watermark="okres mm.rrrr (domyślny)" />
+          <Button Content="Potwierdź odliczenie VAT dla zaznaczonego" Command="{Binding ConfirmDeductionCommand}" />
+        </WrapPanel>
+        <WrapPanel Classes="toolbar">
+          <TextBlock Text="Faktury z KSeF od–do:" /><TextBox Text="{Binding KsefFrom}" Watermark="dd.mm.rrrr" /><TextBox Text="{Binding KsefTo}" Watermark="dd.mm.rrrr" />
+          <Button Content="Pobierz faktury z KSeF" Command="{Binding ImportFromKsefCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Expander>
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
       <Button Content="Szczegóły" Command="{Binding DetailsCommand}" />
       <Button Content="Zatwierdź" Command="{Binding ApproveCommand}" />

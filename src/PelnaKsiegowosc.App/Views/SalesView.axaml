@@ -8,7 +8,7 @@
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-      <Button Content="Nowa faktura" Command="{Binding NewCommand}" />
+      <Button Content="+ Wystaw fakturę" Command="{Binding NewCommand}" Classes="accent" />
       <Button Content="Edytuj roboczą" Command="{Binding EditCommand}" />
       <Button Content="Wystaw korektę" Command="{Binding NewCorrectionCommand}" />
       <Button Content="Zapisz XML FA(3)…" Command="{Binding SaveXmlCommand}" />

@@ -42,6 +42,45 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
     [ObservableProperty] private bool _active = true;
     [ObservableProperty] private string _notes = "";
     [ObservableProperty] private string _formHeader = "Nowy kontrahent";
+    [ObservableProperty] private string _whiteListInfo = "";
+
+    /// <summary>Pobranie danych firmy z białej listy podatników VAT (nazwa, adres, REGON, KRS, rachunki, status VAT).</summary>
+    [RelayCommand]
+    private Task FetchFromWhiteListAsync() => RunAsync(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(Nip)) throw new DomainException("Wpisz NIP kontrahenta.");
+        using var http = new HttpClient { BaseAddress = Infrastructure.WhiteList.WhiteListClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        var s = await new Infrastructure.WhiteList.WhiteListClient(http).FindByNipAsync(Nip, Session.Clock.Today);
+        if (s is null)
+        {
+            WhiteListInfo = $"Brak podmiotu o NIP {Nip} w wykazie podatników VAT na dzień {Session.Clock.Today.ToPl()} — sprawdź NIP; firma może nie być czynnym podatnikiem VAT.";
+            return;
+        }
+        Name = s.Name;
+        Nip = s.Nip;
+        Regon = s.Regon ?? Regon;
+        if (Infrastructure.WhiteList.WhiteListClient.ParseAddress(s.Address) is { } a)
+        {
+            Street = a.Street; Building = a.Building; Apartment = a.Apartment ?? ""; PostalCode = a.PostalCode; City = a.City;
+        }
+        if (string.IsNullOrWhiteSpace(Iban) && s.AccountNumbers.Count > 0) Iban = s.AccountNumbers[0];
+        Country = "PL";
+        WhiteListInfo = $"Biała lista ({s.CheckDate.ToPl()}, zapytanie {s.RequestId}): status VAT — {s.StatusVat ?? "brak"}; rachunków w wykazie: {s.AccountNumbers.Count}." +
+                        (s.IsActiveVatPayer ? "" : " UWAGA: podmiot nie jest czynnym podatnikiem VAT — VAT z jego faktur zwykle nie podlega odliczeniu.");
+    });
+
+    /// <summary>Sprawdzenie, czy rachunek kontrahenta jest w wykazie (ważne przy płatnościach powyżej 15 000 zł).</summary>
+    [RelayCommand]
+    private Task CheckAccountAsync() => RunAsync(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(Nip) || string.IsNullOrWhiteSpace(Iban)) throw new DomainException("Wpisz NIP i numer rachunku.");
+        using var http = new HttpClient { BaseAddress = Infrastructure.WhiteList.WhiteListClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        var (assigned, requestId) = await new Infrastructure.WhiteList.WhiteListClient(http).CheckAccountAsync(Nip, Iban, Session.Clock.Today);
+        WhiteListInfo = assigned
+            ? $"Rachunek JEST w wykazie podatników VAT (stan na {Session.Clock.Today.ToPl()}, identyfikator zapytania {requestId} — zachowaj jako dowód)."
+            : $"Rachunku NIE MA w wykazie (zapytanie {requestId}). Płatność ponad 15 000 zł na ten rachunek może wyłączyć wydatek z kosztów i grozi odpowiedzialnością za VAT dostawcy — zawiadom urząd skarbowy (ZAW-NR) w ciągu 7 dni od zlecenia przelewu albo zapłać na rachunek z wykazu.";
+        await Session.AuditAsync("BIALA_LISTA_RACHUNEK", "Counterparty", _editedId?.ToString(), $"{Nip}; {Iban}; {(assigned ? "TAK" : "NIE")}; {requestId}");
+    });
     private static readonly List<Choice<CounterpartyKind>> KindChoices = Enum.GetValues<CounterpartyKind>()
         .Select(k => new Choice<CounterpartyKind>(k, KindName(k))).ToList();
     public List<Choice<CounterpartyKind>> Kinds => KindChoices;

@@ -12,8 +12,11 @@
       <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
       <CheckBox Content="Pokaż nieaktywnych" IsChecked="{Binding ShowInactive}" />
       <Button Content="Nowy kontrahent" Command="{Binding NewCommand}" />
-      <Button Content="Zapisz" Command="{Binding SaveCommand}" />
+      <Button Content="Zapisz" Command="{Binding SaveCommand}" Classes="accent" />
+      <Button Content="Pobierz dane z białej listy (po NIP)" Command="{Binding FetchFromWhiteListCommand}" />
+      <Button Content="Sprawdź rachunek na białej liście" Command="{Binding CheckAccountCommand}" />
     </WrapPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding WhiteListInfo}" Classes="info" Foreground="#1F5FAD" />
     <Border DockPanel.Dock="Top" Classes="panel">
       <StackPanel>
         <TextBlock Text="{Binding FormHeader}" Classes="h2" Margin="0,0,0,6" />

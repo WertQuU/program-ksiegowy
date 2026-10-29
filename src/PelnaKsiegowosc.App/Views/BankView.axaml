@@ -18,7 +18,8 @@
     </WrapPanel>
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
       <Button Content="Dopasuj do zaznaczonego rozrachunku" Command="{Binding MatchSuggestionCommand}" />
-      <TextBox Text="{Binding OffsetAccount}" Watermark="konto przeciwstawne (np. 751-03)" />
+      <ComboBox ItemsSource="{Binding OperationTypes}" SelectedItem="{Binding OperationType}" PlaceholderText="Co to za operacja? (bez faktury)" MinWidth="300" />
+      <TextBox Text="{Binding OffsetAccount}" Watermark="konto (wypełni się samo)" />
       <Button Content="Przypisz konto przeciwstawne" Command="{Binding MatchToAccountCommand}" />
       <TextBox Text="{Binding ExchangeRate}" Watermark="kurs (walutowe)" MinWidth="90" />
       <Button Content="Zaksięguj operację" Command="{Binding PostCommand}" />

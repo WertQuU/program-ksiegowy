@@ -43,7 +43,12 @@
     </Border>
     <Grid RowDefinitions="Auto,*">
       <ProgressBar IsIndeterminate="True" Height="3" IsVisible="{Binding SelectedSection.IsBusy}" />
-      <ContentControl Grid.Row="1" Content="{Binding SelectedSection}" Margin="20,14,20,8" />
+      <DockPanel Grid.Row="1" Margin="20,14,20,8">
+        <Border DockPanel.Dock="Top" Background="#E8F0FA" CornerRadius="8" Padding="12,8" Margin="0,0,0,10">
+          <TextBlock Text="{Binding SelectedSection.Guide}" TextWrapping="Wrap" Foreground="#1B3A5C" />
+        </Border>
+        <ContentControl Content="{Binding SelectedSection}" />
+      </DockPanel>
     </Grid>
   </DockPanel>
 </Window>

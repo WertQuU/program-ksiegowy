@@ -80,6 +80,15 @@ public static class SelfTest
         Pump(window);
         Shot(window, "21-SalesEditor");
         sales.EditorVisible = false;
+        var purchases = main.Sections.OfType<Presentation.ViewModels.Sections.PurchasesViewModel>().Single();
+        main.SelectedSection = purchases;
+        await purchases.LoadAsync();
+        await purchases.NewCommand.ExecuteAsync(null);
+        purchases.Editor.Lines[0].Category = Application.Templates.ExpenseCategories.Find("PALIWO_OSOBOWY");
+        purchases.Editor.SelectedLine = purchases.Editor.Lines[0];
+        Pump(window);
+        Shot(window, "23-PurchaseEditor");
+        purchases.EditorVisible = false;
         var ledger = main.Sections.OfType<Presentation.ViewModels.Sections.LedgerViewModel>().Single();
         main.SelectedSection = ledger;
         await ledger.LoadAsync();

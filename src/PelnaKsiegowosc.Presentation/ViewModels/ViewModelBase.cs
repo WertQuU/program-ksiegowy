@@ -76,6 +76,33 @@ public abstract partial class SectionViewModel : ViewModelBase
 
     public bool Loaded { get; private set; }
 
+    /// <summary>Krótkie objaśnienie sekcji w prostym języku (wyświetlane nad zawartością).</summary>
+    public string Guide => Guides.GetValueOrDefault(GetType().Name, "");
+
+    private static readonly Dictionary<string, string> Guides = new()
+    {
+        ["DashboardViewModel"] = "Tu widzisz, co wymaga uwagi. Pracuj od góry: najpierw pozycje „BŁĄD”, potem „UWAGA”. Przycisk „Przejdź” prowadzi tam, gdzie problem się naprawia.",
+        ["CompanyViewModel"] = "Dane firmy, osoby odpowiedzialne i polityka rachunkowości. Politykę zatwierdza kierownik jednostki — bez tego program nie pozwoli księgować.",
+        ["DocumentsViewModel"] = "Wszystkie dowody księgowe. Dokument przechodzi drogę: roboczy → zatwierdzony → zaksięgowany. Zaksięgowanego nie zmienia się — wystawia się korektę.",
+        ["SalesViewModel"] = "Wystawianie faktur dla klientów. „Zapisz i zaksięguj” robi wszystko naraz; fakturę dla firmy wyślij potem do KSeF.",
+        ["PurchasesViewModel"] = "Wydatki firmy. Wybierz rodzaj wydatku (np. paliwo, telefon, hotel) — program sam dobierze konto, odliczenie VAT i część nieuznawaną przez fiskusa.",
+        ["LedgerViewModel"] = "Dziennik zapisów księgowych. Zapis ręczny (polecenie księgowania) przyda się rzadko — zwykle zapisy tworzą się z dokumentów. Błąd poprawia się stornem.",
+        ["ChartViewModel"] = "Lista kont, na których program zapisuje operacje. Zwykle wystarczy plan z kreatora; nowe konto dodasz tu.",
+        ["CounterpartiesViewModel"] = "Klienci i dostawcy. Wpisz NIP i kliknij „Pobierz dane z białej listy” — reszta wypełni się sama. Zakładka „Rozrachunki” pokazuje, kto komu ile winien.",
+        ["BankViewModel"] = "Import wyciągów i rozliczanie płatności. Wpływ od klienta lub zapłatę za fakturę dopasuj do faktury; inną operację (opłata, podatek) — wybierz z listy „Co to za operacja?”.",
+        ["VatViewModel"] = "Rejestry VAT i plik JPK_V7M. Najprościej rozliczyć VAT kreatorem „Rozlicz miesiąc” (sekcja Zamknięcie).",
+        ["CitViewModel"] = "Podatek dochodowy spółki: zaliczki i różnice między wynikiem księgowym a podatkowym.",
+        ["FixedAssetsViewModel"] = "Sprzęt, maszyny i auta droższe niż 10 000 zł netto. Po przyjęciu (OT) program co miesiąc nalicza amortyzację.",
+        ["CapitalViewModel"] = "Wkłady wspólników, podział zysku, dywidendy i pożyczki od właścicieli. Księgowanie dopiero po wskazaniu uchwały lub umowy.",
+        ["ReportsViewModel"] = "Zestawienia z ksiąg: bilans, rachunek zysków i strat, rejestry, rozrachunki. Każdy raport zapiszesz do PDF, Excela lub CSV.",
+        ["ClosingViewModel"] = "Kreator „Rozlicz miesiąc” prowadzi krok po kroku: dokumenty, bank, VAT i JPK, CIT, kopia, zamknięcie. Rok zamyka się raz w roku, po rozliczeniu wszystkich miesięcy.",
+        ["ArchiveViewModel"] = "Załączniki i dziennik zdarzeń (kto, co i kiedy zmienił). Kontrola sum potwierdza, że nic nie zostało zmienione.",
+        ["BackupsViewModel"] = "Kopie zapasowe ksiąg. Klucz odzyskiwania przechowuj poza komputerem — bez niego kopii nie da się odtworzyć.",
+        ["IntegrationsViewModel"] = "Połączenie z KSeF i kopią w chmurze OVHcloud. Tokeny i klucze są przechowywane bezpiecznie w systemie.",
+        ["SettingsViewModel"] = "Gdzie są przechowywane księgi (ten komputer albo serwer) i przeniesienie ich na serwer.",
+        ["HelpViewModel"] = "Informacje o programie, licencja i pełna kontrola integralności ksiąg.",
+    };
+
     /// <summary>Wczytanie danych sekcji (przy pierwszym wyświetleniu i po „Odśwież”).</summary>
     protected abstract Task LoadCoreAsync();
 
