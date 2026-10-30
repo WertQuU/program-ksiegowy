@@ -1,0 +1,923 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/" xmlns:kus="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/" xmlns:kw="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/" xmlns:tns="http://jpk.mf.gov.pl/wzor/2025/11/24/11242/" targetNamespace="http://jpk.mf.gov.pl/wzor/2025/11/24/11242/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/StrukturyDanych_v10-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/KodyWalut_v1-0E.xsd"/>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek JPK_MAG</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="JPK_MAG (2)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia" type="tns:TCelZlozenia"/>
+			<xsd:element name="DataWytworzeniaJPK" type="etd:TDataCzas">
+				<xsd:annotation>
+					<xsd:documentation>Data i czas wytworzenia JPK_MAG</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataOd" type="etd:TData">
+				<xsd:annotation>
+					<xsd:documentation>Data początkowa okresu, którego dotyczy JPK_MAG</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataDo" type="etd:TData">
+				<xsd:annotation>
+					<xsd:documentation>Data końcowa okresu, którego dotyczy JPK_MAG</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DomyslnyKodWaluty" type="kw:TKodWaluty">
+				<xsd:annotation>
+					<xsd:documentation>Trzyliterowy kod lokalnej waluty (ISO-4217), domyślny dla wytworzonego JPK_MAG</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="kus:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKwotowy">
+		<xsd:annotation>
+			<xsd:documentation>Wartość numeryczna 18 znaków max, w tym 2 znaki po przecinku</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:decimal">
+			<xsd:totalDigits value="18"/>
+			<xsd:fractionDigits value="2"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TIlosciJPK">
+		<xsd:annotation>
+			<xsd:documentation>Wykorzystywany do określenia ilości. Wartość numeryczna 22 znaki max, w tym 6 po przecinku.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:decimal">
+			<xsd:totalDigits value="22"/>
+			<xsd:fractionDigits value="6"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TNaturalnyJPK">
+		<xsd:annotation>
+			<xsd:documentation>Liczby naturalne większe od zera</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TNaturalny">
+			<xsd:minExclusive value="0"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TZnakowyJPK">
+		<xsd:annotation>
+			<xsd:documentation>Typ znakowy ograniczony do 256 znaków</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:token">
+			<xsd:minLength value="1"/>
+			<xsd:maxLength value="256"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TNumerKSeF">
+		<xsd:annotation>
+			<xsd:documentation>Numer identyfikujący fakturę w Krajowym Systemie e-Faktur (KSeF)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:token">
+			<xsd:pattern value="([1-9]((\d[1-9])|([1-9]\d))\d{7}|M\d{9}|[A-Z]{3}\d{7})-(20[2-9][0-9]|2[1-9][0-9]{2}|[3-9][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|3[0-1])-([0-9A-F]{6})-?([0-9A-F]{6})-([0-9A-F]{2})"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TMetody">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj metody prowadzenia magazynu</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:integer">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>Ewidencja ilościowo-wartościowa, w której dla każdego składnika ujmuje się obroty i stany w jednostkach naturalnych i pieniężnych - art. 17 ust. 2 pkt 1 ustawy o rachunkowości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>Ewidencja ilościowa obrotów i stanów, prowadzona dla poszczególnych składników lub ich jednorodnych grup wyłącznie w jednostkach naturalnych - art. 17 ust. 2 pkt 2 ustawy o rachunkowości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>Ewidencja wartościowa obrotów i stanów towarów oraz opakowań, prowadzona dla punktów obrotu detalicznego lub miejsc składowania, której przedmiotem zapisów są tylko przychody, rozchody i stany całego zapasu - art. 17 ust. 2 pkt 3 ustawy o rachunkowości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>Metoda odpisywania w koszty wartości materiałów i towarów na dzień ich zakupu lub produktów gotowych w momencie ich wytworzenia, połączone z ustalaniem stanu tych składników aktywów i jego wyceny oraz korekty kosztów o wartość tego stanu, nie później niż na dzień bilansowy - art. 17 ust. 2 pkt 4 ustawy o rachunkowości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="JPK_MAG"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TCelZlozenia">
+		<xsd:annotation>
+			<xsd:documentation>Określenie celu złożenia JPK</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>złożenie JPK po raz pierwszy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="JPK">
+		<xsd:annotation>
+			<xsd:documentation>Jednolity plik kontrolny dla obrotu magazynowego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek JPK_MAG</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="IdentyfikatorPodmiotu" type="etd:TIdentyfikatorOsobyNiefizycznej">
+								<xsd:annotation>
+									<xsd:documentation>Dane identyfikujące podmiot</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="Adres">
+								<xsd:annotation>
+									<xsd:documentation>Adres podmiotu</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:choice>
+										<xsd:element name="AdresPol" type="etd:TAdresPolski1">
+											<xsd:annotation>
+												<xsd:documentation>Adres polski</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="AdresZagr" type="etd:TAdresZagraniczny">
+											<xsd:annotation>
+												<xsd:documentation>Adres zagraniczny</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:choice>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Magazyn" type="tns:TZnakowyJPK">
+					<xsd:annotation>
+						<xsd:documentation>Oznaczenie magazynu</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Metoda" type="tns:TMetody">
+					<xsd:annotation>
+						<xsd:documentation>Metoda prowadzenia kont ksiąg pomocniczych dla obrotu magazynowego</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PZ" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Przyjęcie z zewnątrz</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="PZWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów PZ</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerPZ" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu PZ</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataPZ" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu PZ</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscPZ" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość ogólna dokumentu PZ. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataOtrzymaniaPZ" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data otrzymania towaru/materiału</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Dostawca" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Dostawca towaru/materiału</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NumerFaPZ" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer faktury lub specyfikacji dotyczącej przyjętego towaru/materiału</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrKSeFPZ" type="tns:TNumerKSeF" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer identyfikujący fakturę wystawioną przy użyciu Krajowego Systemu e-Faktur (numer KSeF) dotyczącej przyjętego towaru/materiału</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataFaPZ" type="etd:TData" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Data wystawienia faktury lub specyfikacji dotyczącej przyjętego towaru/materiału</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="PZWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodu PZ</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaPZ" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu PZ</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodTowaruPZ" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod towaru/materiału</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaTowaruPZ" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa towaru/materiału</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscPrzyjetaPZ" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość przyjęta. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryPZ" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednPZ" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena towaru/materiału. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiPZ" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość towaru/materiału. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PW" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Przyjęcie wewnętrzne</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="PWWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów PW</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerPW" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu PW</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataPW" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu PW</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscPW" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość ogólna dokumentu PW. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataOtrzymaniaPW" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data otrzymania produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Wydzial" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wydział, z którego został dostarczony produkt gotowy, w przypadku gdy występuje więcej niż jedno miejsce produkcji</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="PWWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodu PW</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaPW" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu PW</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodProduktuPW" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaProduktuPW" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscPrzyjetaPW" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość przyjęta. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryPW" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednPW" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena produktu gotowego. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiPW" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość produktu gotowego. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="WZ" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Wydanie na zewnątrz</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="WZWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów WZ</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerWZ" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu WZ</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataWZ" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu WZ</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscWZ" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość dokumentu WZ. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataWydaniaWZ" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data wydania towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="OdbiorcaWZ" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Odbiorca towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NumerFaWZ" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer faktury lub specyfikacji dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrKSeFWZ" type="tns:TNumerKSeF" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer identyfikujący fakturę wystawioną przy użyciu Krajowego Systemu e-Faktur (numer KSeF) dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataFaWZ" type="etd:TData" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Data faktury lub specyfikacji dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WZWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodów WZ</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaWZ" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu WZ</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodTowaruWZ" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaTowaruWZ" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscWydanaWZ" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość wydana. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryWZ" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednWZ" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena towaru/materiału/produktu gotowego. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiWZ" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość towaru/materiału/produktu gotowego. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="RW" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Rozchód wewnętrzny</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="RWWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów RW</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerRW" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu RW</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataRW" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu RW</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscRW" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość dokumentu RW. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataWydaniaRW" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data wydania towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NumerFaRW" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer faktury lub specyfikacji dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrKSeFRW" type="tns:TNumerKSeF" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer identyfikujący fakturę wystawioną przy użyciu Krajowego Systemu e-Faktur (numer KSeF) dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataFaRW" type="etd:TData" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Data wystawienia faktury lub specyfikacji dotyczącej wydanego towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DokadRW" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Miejsce przeznacznienia towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="RWWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodów RW</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaRW" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu RW</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodTowaruRW" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaTowaruRW" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscWydanaRW" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość wydana. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryRW" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednRW" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena towaru/materiału/produktu gotowego. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiRW" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość towaru/materiału/produktu gotowego. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="MMWE" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Przesunięcia międzymagazynowe - wejście do magazynu</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="MMWEWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów MM</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerMMWE" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu MM</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataMMWE" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu MM</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscMMWE" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość dokumentu MM. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataPrzyjeciaMMWE" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data przyjęcia towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="SkadMMWE" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Miejsce pochodzenia towaru/materiału/produktu gotowego - magazynu, z którego przesunięto towar/materiał/produkt gotowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="MMWEWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodów MM</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaMMWE" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu MM</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodTowaruMMWE" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaTowaruMMWE" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscPrzyjetaMMWE" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość przyjęta. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryMMWE" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednMMWE" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena towaru/materiału/produktu gotowego. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiMMWE" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość towaru/materiału/produktu gotowego. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="MMWY" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Przesunięcia międzymagazynowe - wyjście z magazynu</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="MMWYWartosc">
+								<xsd:annotation>
+									<xsd:documentation>Zestawienie dowodów MM</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="NumerMMWY" type="tns:TZnakowyJPK">
+											<xsd:annotation>
+												<xsd:documentation>Numer dokumentu MM</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataMMWY" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data dokumentu MM</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="WartoscMMWY" type="tns:TKwotowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Wartość dokumentu MM. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataWydaniaMMWY" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data wydania towaru/materiału/produktu gotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DokadMMWY" type="tns:TZnakowyJPK" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Miejsce przeznaczenia towaru/materiału/produktu gotowego - magazynu, do którego przesunięto towar/materiał/produkt gotowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="MMWYWiersz" maxOccurs="unbounded">
+											<xsd:annotation>
+												<xsd:documentation>Szczegółowe pozycje dowodów MM</xsd:documentation>
+											</xsd:annotation>
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="NrWierszaMMWY" type="tns:TNaturalnyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Kolejny numer wiersza dowodu MM</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="KodTowaruMMWY" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Kod towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="NazwaTowaruMMWY" type="tns:TZnakowyJPK">
+														<xsd:annotation>
+															<xsd:documentation>Nazwa towaru/materiału/produktu gotowego</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="IloscWydanaMMWY" type="tns:TIlosciJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Ilość wydana. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="JednostkaMiaryMMWY" type="tns:TZnakowyJPK" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Jednostka miary. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="CenaJednMMWY" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Cena towaru/materiału/produktu gotowego. Pole opcjonalne dla metody wartościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="WartoscPozycjiMMWY" type="tns:TKwotowy" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Wartość towaru/materiału/produktu gotowego. Pole opcjonalne dla metody ilościowej</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="INW" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Inwentaryzacja rzeczowych składników aktywów obrotowych - zgodnie z przepisami ustawy o rachunkowości</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:element name="Termin">
+								<xsd:annotation>
+									<xsd:documentation>Data i czas przeprowadzenia inwentaryzacji</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="DataInwentaryzacji" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Spis z natury lub weryfikacja na ostatni dzień roku obrotowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataCzasOd" type="etd:TDataCzas">
+											<xsd:annotation>
+												<xsd:documentation>Data i czas rozpoczęcia inwentaryzacji</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="DataCzasDo" type="etd:TDataCzas">
+											<xsd:annotation>
+												<xsd:documentation>Data i czas zakończenia inwentaryzacji</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="Tabela1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Metoda inwentaryzacji - drogą spisu ich ilości z natury, wyceny tych ilości, porównania wartości z danymi ksiąg rachunkowych oraz wyjaśnienia i rozliczenia ewentualnych różnic (metoda spisu z natury) - art. 26 ust. 1 pkt 1 ustawy o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="Wiersz" maxOccurs="unbounded">
+												<xsd:complexType>
+													<xsd:sequence>
+														<xsd:element name="Lp" type="tns:TNaturalnyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Liczba porządkowa</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Indeks" type="tns:TZnakowyJPK" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Indeks lub kod składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Nazwa" type="tns:TZnakowyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Nazwa składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Jednostka" type="tns:TZnakowyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Jednostka miary składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Ilosc" type="tns:TIlosciJPK">
+															<xsd:annotation>
+																<xsd:documentation>Ilość składnika ustalona podczas spisu</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Cena" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Cena jednostkowa składnika </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Wartosc" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Wartość składnika </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Uwagi" type="tns:TZnakowyJPK" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Uwagi</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+													</xsd:sequence>
+												</xsd:complexType>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+								<xsd:element name="Tabela2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Metoda inwentaryzacji - drogą porównania danych ksiąg rachunkowych z odpowiednimi dokumentami i weryfikacji wartości tych składników (metoda weryfikacji) - art. 26 ust. 1 pkt 3 ustawy o rachunkowości (jeżeli przeprowadzenie spisu z natury rzeczowych aktywów obrotowych z przyczyn uzasadnionych nie było możliwe)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="Wiersz" maxOccurs="unbounded">
+												<xsd:complexType>
+													<xsd:sequence>
+														<xsd:element name="Lp" type="tns:TNaturalnyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Liczba porządkowa</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Indeks" type="tns:TZnakowyJPK" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Indeks lub kod składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Nazwa" type="tns:TZnakowyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Nazwa składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Jednostka" type="tns:TZnakowyJPK">
+															<xsd:annotation>
+																<xsd:documentation>Jednostka miary składnika</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Ilosc1" type="tns:TIlosciJPK">
+															<xsd:annotation>
+																<xsd:documentation>Ilość składnika wg ksiąg rachunkowych</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Ilosc2" type="tns:TIlosciJPK">
+															<xsd:annotation>
+																<xsd:documentation>Ilość składnika z dokumentów ustalona w wyniku weryfikacji</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Cena1" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Cena jednostkowa składnika wg ksiąg rachunkowych </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Cena2" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Cena jednostkowa składnika z dokumentów ustalona w wyniku weryfikacji </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Wartosc1" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Wartość składnika wg ksiąg rachunkowych </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Wartosc2" type="tns:TKwotowy" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Wartość składnika z dokumentów ustalona w wyniku weryfikacji </xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+														<xsd:element name="Uwagi" type="tns:TZnakowyJPK" minOccurs="0">
+															<xsd:annotation>
+																<xsd:documentation>Uwagi</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+													</xsd:sequence>
+												</xsd:complexType>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

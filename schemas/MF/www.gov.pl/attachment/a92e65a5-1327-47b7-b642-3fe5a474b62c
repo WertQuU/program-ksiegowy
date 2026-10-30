@@ -1,0 +1,805 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr1" xmlns:mdr="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" targetNamespace="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr1" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<xsd:import namespace="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/" schemaLocation="https://www.gov.pl/documents/2034621/2182793/mdr_v1-1.xsd"/>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:annotation>
+					<xsd:documentation>Kod formularza</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="MDR-1"/>
+					<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-1"/>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia" type="xsd:string" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Cel złożenia</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataZdarzenia">
+				<xsd:annotation>
+					<xsd:documentation>Data zdarzenia powodująca obowiązek złożenia: rok - miesiąc - dzień</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TData">
+						<xsd:minInclusive value="2018-06-26"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TInfoOgolne">
+		<xsd:annotation>
+			<xsd:documentation>Wskazanie innych podmiotów uczestniczących w schemacie podatkowym lub obowiązanych do przekazania informacji o schemacie podatkowym</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:choice>
+				<xsd:element name="IdOsobyFizycznejPLMDR" type="mdr:TIdOsobyFizycznejPL">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne osoby fizycznej mającej miejsce zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="IdOsobyFizycznejZagMDR" type="mdr:TOsobaZagranicznaFizyczna">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne osoby fizycznej niemającej miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="IdOsobyNiefizycznejMDR" type="mdr:TIdOsobyNiefizycznejMDR">
+					<xsd:annotation>
+						<xsd:documentation>Dane podmiotu niebędącego osobą fizyczną</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:element name="AdresZamieszkaniaSiedziby" type="mdr:TAdres">
+				<xsd:annotation>
+					<xsd:documentation>Adres zamieszkania / siedziby</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+		<xsd:attribute name="typ">
+			<xsd:simpleType>
+				<xsd:restriction base="xsd:string">
+					<xsd:enumeration value="Promotor"/>
+					<xsd:enumeration value="Wspomagający"/>
+					<xsd:enumeration value="Korzystający"/>
+					<xsd:enumeration value="Inny podmiot"/>
+				</xsd:restriction>
+			</xsd:simpleType>
+		</xsd:attribute>
+	</xsd:complexType>
+	<xsd:simpleType name="TRodzajId">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj Identyfikatora Zagranicznego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>numer identyfikacyjny TIN</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>numer ubezpieczeniowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>paszport</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>urzędowy dokument stwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="8">
+				<xsd:annotation>
+					<xsd:documentation>inny rodzaj identyfikacji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="9">
+				<xsd:annotation>
+					<xsd:documentation>inny dokument potwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Informacja">
+		<xsd:annotation>
+			<xsd:documentation>MDR-1 - Informacja na podstawie art. 86b § 1, art. 86c § 1 i 2, oraz art. 86d § 4 ustawy z dnia 29 sierpnia 1997 r. Ordynacja podatkowa.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek informacji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="ZakresZgloszenia" type="mdr:TZakresZgloszenia">
+					<xsd:annotation>
+						<xsd:documentation>Cel złożenia informacji </xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PosiadanieNSP">
+					<xsd:annotation>
+						<xsd:documentation>Informacja o posiadaniu numeru schematu podatkowego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="NSPstatus" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Czy składający posiada NSP schematu podatkowego, którego dotyczy składana informacja? (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="NSP" type="mdr:TNrMDR" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Numer schematu podatkowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="RodzajInformacji">
+					<xsd:annotation>
+						<xsd:documentation>Rodzaj zgłaszanego schematu</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="SPS" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Schemat podatkowy standaryzowany (1 - TAK, 2 - NIE)   </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="SPT" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Schemat podatkowy transgraniczny (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="Kwalifikowany" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Czy przynajmniej jeden z korzystających spełnia kryterium kwalifikowanego korzystającego zgodnie z art. 86a § 4? (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="NazwaUzgodnienia" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Nazwa uzgodnienia jeśli ją nadano</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="2000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Skladajacy">
+					<xsd:annotation>
+						<xsd:documentation>Informacje o składającym (1 - TAK, 2 - NIE) </xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:choice>
+								<xsd:element name="IdOsobyFizycznej" type="mdr:TIdOsobyFizycznejPL">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej mającej miejsce zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyFizycznejZag" type="mdr:TOsobaZagranicznaFizyczna">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej niemającej miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyNiefizycznej">
+									<xsd:annotation>
+										<xsd:documentation>Dane podmiotu niebędącego osobą fizyczną</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:complexContent>
+											<xsd:extension base="mdr:TIdOsobyNiefizycznejMDR"/>
+										</xsd:complexContent>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="AdresZamieszkaniaSiedziby" type="mdr:TAdres">
+								<xsd:annotation>
+									<xsd:documentation>Adres zamieszkania / siedziby</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="S_P">
+									<xsd:annotation>
+										<xsd:documentation>Promotor</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="P_ZO1" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez promotora w terminie 30 dni od dnia następnego po udostępnieniu schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO2" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez promotora w terminie 30 dni od następnego dnia po przygotowaniu do wdrożenia schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO3" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez promotora w terminie 30 dni od dnia dokonania pierwszej czynności związanej z wdrażaniem schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+								<xsd:element name="S_W">
+									<xsd:annotation>
+										<xsd:documentation>Wspomagający</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="P_ZO7" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez wspomagającego w terminie 30 dni od następnego dnia po udzieleniu bezpośrednio lub za pośrednictwem innych osób, pomocy, wsparcia lub porad dotyczących opracowania schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO8" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez wspomagającego w terminie 30 dni od następnego dnia po wprowadzeniu do obrotu schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO9" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez wspomagającego w terminie 30 dni od następnego dnia od organizowania do wdrożenia schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO10" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez wspomagającego w terminie 30 dni od następnego dnia od udostępnienia do wdrożenia schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_ZO11" type="etd:TWybor1_2">
+												<xsd:annotation>
+													<xsd:documentation>Informacja przekazywana przez wspomagającego w terminie 30 dni od następnego dnia od nadzorowania wdrożenia schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+								<xsd:sequence>
+									<xsd:element name="S_K">
+										<xsd:annotation>
+											<xsd:documentation>Korzystający</xsd:documentation>
+										</xsd:annotation>
+										<xsd:complexType>
+											<xsd:sequence>
+												<xsd:element name="P_ZO4" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Informacja przekazywana przez korzystającego w terminie 30 dni od dnia następującego po udostępnieniu mu schematu podatkowego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+												<xsd:element name="P_ZO5" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Informacja przekazywana przez korzystającego w terminie 30 dni od dnia następującego po przygotowaniu przez niego schematu podatkowego do wdrożenia. (1 - TAK, 2 - NIE)  </xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+												<xsd:element name="P_ZO6" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Informacja przekazywana przez korzystającego w terminie 30 dni od dnia dokonania pierwszej czynności związanej z wdrażaniem schematu podatkowego przez korzystającego. (1 - TAK, 2 - NIE)  </xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+											</xsd:sequence>
+										</xsd:complexType>
+									</xsd:element>
+									<xsd:element name="InformacjeDodatkowe">
+										<xsd:annotation>
+											<xsd:documentation>Informacje dotyczące korzystającego, który przekazuje informację zgodnie z art. 86c ustawy</xsd:documentation>
+										</xsd:annotation>
+										<xsd:complexType>
+											<xsd:sequence>
+												<xsd:element name="E_P1A" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Czy promotor poinformował pisemnie korzystającego o NSP? (1 - TAK, 2 - NIE)</xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+												<xsd:element name="E_P2A" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Czy schemat podatkowy posiada NSP? (1 - TAK, 2 - NIE)</xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+												<xsd:element name="E_P3" type="etd:TWybor1_2">
+													<xsd:annotation>
+														<xsd:documentation>Przekazanie informacji o schemacie podatkowym naruszałoby obowiązek zachowania prawnie chronionej tajemnicy zawodowej przez promotora (art. 86c § 2) (1 - TAK, 2 - NIE)</xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+												<xsd:sequence>
+													<xsd:element name="E_P4" type="etd:TWybor1_2">
+														<xsd:annotation>
+															<xsd:documentation>Informacja o schemacie podatkowym zawiera również dane otrzymane od promotora, zgodnie z art. 86b §4 (art. 86c §2 ustawy) (1 -TAK, 2 - NIE)</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+													<xsd:element name="InformacjeodPromotora" minOccurs="0">
+														<xsd:annotation>
+															<xsd:documentation>Dane otrzymane od promotora, zgodnie z art. 86b §4 (art. 86c §2 ustawy) </xsd:documentation>
+														</xsd:annotation>
+														<xsd:complexType>
+															<xsd:sequence>
+																<xsd:element name="OpisSchematuP">
+																	<xsd:annotation>
+																		<xsd:documentation>Opis schematu podatkowego otrzymanego od promotora</xsd:documentation>
+																	</xsd:annotation>
+																	<xsd:complexType>
+																		<xsd:sequence>
+																			<xsd:element name="RodzajPodatkuP" type="mdr:TRodzajPodatku">
+																				<xsd:annotation>
+																					<xsd:documentation>Przepisy prawa podatkowego znajdujące zastosowanie w schemacie podatkowym</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="SchematDotyczyP" type="mdr:TSchematDot">
+																				<xsd:annotation>
+																					<xsd:documentation>Schemat podatkowy dotyczy następujących działań</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="SchematDotTranskacjiP" type="mdr:TSchematTransakcje">
+																				<xsd:annotation>
+																					<xsd:documentation>Schemat podatkowy obejmuje następujące transakcje / zdarzenia </xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="SchematPodmiotyP" type="mdr:TSchematPodmioty">
+																				<xsd:annotation>
+																					<xsd:documentation>W schemacie podatkowym występuje którykolwiek ze wskazanych podmiotów </xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="UmowaUnikaniaP">
+																				<xsd:annotation>
+																					<xsd:documentation>Do schematu podatkowego zastosowanie ma umowa o unikaniu podwójnego opodatkowania (wskaż umowę o unikaniu podwójnego opodatkowania )</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:complexType>
+																					<xsd:complexContent>
+																						<xsd:extension base="mdr:TUmowyUnikPodOpodatkowanie">
+																							<xsd:sequence>
+																								<xsd:element name="Inne" minOccurs="0">
+																									<xsd:simpleType>
+																										<xsd:restriction base="xsd:string">
+																											<xsd:maxLength value="1000"/>
+																										</xsd:restriction>
+																									</xsd:simpleType>
+																								</xsd:element>
+																							</xsd:sequence>
+																						</xsd:extension>
+																					</xsd:complexContent>
+																				</xsd:complexType>
+																			</xsd:element>
+																			<xsd:element name="PodstawaPrawnaP">
+																				<xsd:annotation>
+																					<xsd:documentation>Podstawa prawna przekazywania informacji o schemacie podatkowym ze wskazaniem przesłanek skutkujących uznaniem danego uzgodnienia za 
+schemat podatkowy
+</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="5000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																			<xsd:element name="CechaRozpoznawczaOgolP" type="mdr:TCechaRozpoznawczaOgol">
+																				<xsd:annotation>
+																					<xsd:documentation>Ogólna cecha rozpoznawcza schematu podatkowego oraz kryterium głównej korzyści (1 - TAK, 2 - NIE)</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="CechaRozpoznawczaSzczeP" type="mdr:TCechaRozpoznawczaSzcze">
+																				<xsd:annotation>
+																					<xsd:documentation>Szczególna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE) </xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="CechaRozpoznawczaInnaP" type="mdr:TCechaRozpoznawczaInna">
+																				<xsd:annotation>
+																					<xsd:documentation>Inna szczególna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE)</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="StreszczenieP">
+																				<xsd:annotation>
+																					<xsd:documentation>Streszczenie opisu uzgodnienia stanowiącego schemat podatkowy, opis działalności gospodarczej, do której ma zastosowanie schemat podatkowy, bez ujawnienia danych objętych tajemnicą handlową, przemysłową, zawodową lub procesu produkcyjnego  
+</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="5000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																		</xsd:sequence>
+																	</xsd:complexType>
+																</xsd:element>
+																<xsd:element name="PelnyOpisSchematuP">
+																	<xsd:annotation>
+																		<xsd:documentation>Pełny opis schematu podatkowego otrzymanego od promotora</xsd:documentation>
+																	</xsd:annotation>
+																	<xsd:complexType>
+																		<xsd:sequence>
+																			<xsd:element name="OpisSchematuPodP">
+																				<xsd:annotation>
+																					<xsd:documentation>Wyczerpujący opis uzgodnienia stanowiącego schemat podatkowy, założeń uzgodnienia, czynności dokonywanych w ramach uzgodnienia i ich chronologii oraz występujących powiązań pomiędzy podmiotami powiązanymi</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="100000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																			<xsd:element name="WartoscPrzedmiotuP" type="mdr:TWartoscPrzedmiotu">
+																				<xsd:annotation>
+																					<xsd:documentation>Wartość przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																		</xsd:sequence>
+																	</xsd:complexType>
+																</xsd:element>
+																<xsd:element name="InfoDodatkoweP">
+																	<xsd:annotation>
+																		<xsd:documentation>Informacje dodatkowe o schemacie podatkowym otrzymanym od promotora</xsd:documentation>
+																	</xsd:annotation>
+																	<xsd:complexType>
+																		<xsd:sequence>
+																			<xsd:element name="CelSchematuP">
+																				<xsd:annotation>
+																					<xsd:documentation>Wskazanie celów, których realizacji schemat podatkowy ma służyć</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="10000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																			<xsd:element name="PrzepisyPrawaP">
+																				<xsd:annotation>
+																					<xsd:documentation>Przepisy prawa podatkowego znajdujące, według wiedzy składającego informację, zastosowanie w schemacie podatkowym </xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="10000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																			<xsd:element name="WartoscKorzysciP" type="mdr:TWartoscKorzysci">
+																				<xsd:annotation>
+																					<xsd:documentation>Szacunkowa wartość korzyści podatkowej lub przybliżona wartość aktywa w podatku odroczonym, jeśli występuje i jest znana lub możliwa do oszacowania przez składającego informację, w złotych.</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:element name="WartoscKorzysciTransgraP" type="etd:TKwota2" minOccurs="0">
+																				<xsd:annotation>
+																					<xsd:documentation>Wartość korzyści podatkowej schematu podatkowego transgranicznego, w złotych</xsd:documentation>
+																				</xsd:annotation>
+																			</xsd:element>
+																			<xsd:sequence>
+																				<xsd:annotation>
+																					<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym, wraz ze wskazaniem dnia, w którym została lub zostanie dokonana pierwsza czynność, służąca wdrożeniu tego schematu</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:element name="DataP">
+																					<xsd:annotation>
+																						<xsd:documentation>Dzień, w którym została lub zostanie dokonana pierwsza czynność, służąca wdrożeniu tego schematu</xsd:documentation>
+																					</xsd:annotation>
+																					<xsd:simpleType>
+																						<xsd:restriction base="etd:TData">
+																							<xsd:minInclusive value="2018-06-26"/>
+																						</xsd:restriction>
+																					</xsd:simpleType>
+																				</xsd:element>
+																				<xsd:element name="CzynnoscP" maxOccurs="unbounded">
+																					<xsd:annotation>
+																						<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym</xsd:documentation>
+																					</xsd:annotation>
+																					<xsd:simpleType>
+																						<xsd:restriction base="xsd:string">
+																							<xsd:maxLength value="2000"/>
+																						</xsd:restriction>
+																					</xsd:simpleType>
+																				</xsd:element>
+																			</xsd:sequence>
+																			<xsd:element name="EtapWdorozeniaP">
+																				<xsd:annotation>
+																					<xsd:documentation>Wskazanie etapu, na jakim zgodnie z wiedzą składającego informację znajduje się schemat podatkowy, w szczególności informacji o terminach jego udostępniania lub wdrażania lub o dacie czynności w ramach uzgodnienia</xsd:documentation>
+																				</xsd:annotation>
+																				<xsd:simpleType>
+																					<xsd:restriction base="xsd:string">
+																						<xsd:maxLength value="10000"/>
+																					</xsd:restriction>
+																				</xsd:simpleType>
+																			</xsd:element>
+																		</xsd:sequence>
+																	</xsd:complexType>
+																</xsd:element>
+															</xsd:sequence>
+														</xsd:complexType>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:sequence>
+										</xsd:complexType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:choice>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="DaneKorzystajacego" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Dane korzystających przekazywane przez promotora lub wspomagającego. Uwaga ! Jeśli składana informacja dotyczy schematu podatkowego standaryzowanego, pól nie wypełnia się. Jeśli Promotor lub Wspomagający nie został zwolniony z prawnie chronionej tajemnicy zawodowej, pól nie wypełnia się.</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:choice>
+								<xsd:element name="IdOsobyFizycznej" type="mdr:TIdOsobyFizycznejPL">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej mającej miejsce zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyFizycznejZag" type="mdr:TOsobaZagranicznaFizyczna">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej niemającej miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyNiefizycznej">
+									<xsd:annotation>
+										<xsd:documentation>Dane podmiotu niebędącego osobą fizyczną</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:complexContent>
+											<xsd:extension base="mdr:TIdOsobyNiefizycznejMDR"/>
+										</xsd:complexContent>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="AdresZamieszkaniaSiedziby" type="mdr:TAdres">
+								<xsd:annotation>
+									<xsd:documentation>Adres zamieszkania / siedziby</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="OpisSchematu">
+					<xsd:annotation>
+						<xsd:documentation>Opis zgłaszanego schematu podatkowego (1 - TAK, 2 - NIE) </xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="RodzajPodatku" type="mdr:TRodzajPodatku">
+								<xsd:annotation>
+									<xsd:documentation>Przepisy prawa podatkowego znajdujące zastosowanie w schemacie podatkowym (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="SchematDotyczy" type="mdr:TSchematDot">
+								<xsd:annotation>
+									<xsd:documentation>Schemat podatkowy dotyczy następujących działań (1 - TAK, 2 - NIE) </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="SchematDotTranskacji" type="mdr:TSchematTransakcje">
+								<xsd:annotation>
+									<xsd:documentation>Schemat podatkowy dotyczy następujących transakcji / zdarzeń (1 - TAK, 2 - NIE) </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="SchematPodmioty" type="mdr:TSchematPodmioty">
+								<xsd:annotation>
+									<xsd:documentation>W schemacie podatkowym występuje którykolwiek ze wskazanych typów podmiotów (1 - TAK, 2 - NIE) </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="UmowaUnikania">
+								<xsd:annotation>
+									<xsd:documentation>Do schematu podatkowego zastosowanie ma umowa o unikaniu podwójnego opodatkowania (wskaż umowę o unikaniu podwójnego opodatkowania: wartość 1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="mdr:TUmowyUnikPodOpodatkowanie">
+											<xsd:sequence>
+												<xsd:element name="Inne" minOccurs="0">
+													<xsd:simpleType>
+														<xsd:restriction base="xsd:string">
+															<xsd:maxLength value="1000"/>
+														</xsd:restriction>
+													</xsd:simpleType>
+												</xsd:element>
+											</xsd:sequence>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="PodstawaPrawna">
+								<xsd:annotation>
+									<xsd:documentation>Podstawa prawna przekazywania informacji o schemacie podatkowym ze wskazaniem przesłanek skutkujących uznaniem danego uzgodnienia za 
+schemat podatkowy
+</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="5000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="CechaRozpoznawczaOgol" type="mdr:TCechaRozpoznawczaOgol">
+								<xsd:annotation>
+									<xsd:documentation>Ogólna cecha rozpoznawcza schematu podatkowego oraz kryterium głównej korzyści (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="CechaRozpoznawczaSzcze" type="mdr:TCechaRozpoznawczaSzcze">
+								<xsd:annotation>
+									<xsd:documentation>Szczególna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE) </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="CechaRozpoznawczaInna" type="mdr:TCechaRozpoznawczaInna">
+								<xsd:annotation>
+									<xsd:documentation>Inna szczególna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="Streszczenie">
+								<xsd:annotation>
+									<xsd:documentation>Streszczenie opisu uzgodnienia stanowiącego schemat podatkowy, opis działalności gospodarczej, do której ma zastosowanie schemat podatkowy, bez ujawnienia danych objętych tajemnicą handlową, przemysłową, zawodową lub procesu produkcyjnego  
+</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="5000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PelnyOpisSchematu">
+					<xsd:annotation>
+						<xsd:documentation>Pełny opis zgłaszanego schematu podatkowego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OpisSchematuPod">
+								<xsd:annotation>
+									<xsd:documentation>Wyczerpujący opis uzgodnienia stanowiącego schemat podatkowy, założeń uzgodnienia, czynności dokonywanych w ramach uzgodnienia i ich chronologii oraz występujących powiązań pomiędzy podmiotami powiązanymi</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="100000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="WartoscPrzedmiotu" type="mdr:TWartoscPrzedmiotu">
+								<xsd:annotation>
+									<xsd:documentation>Wartość przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy.</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="InfoDodatkowe">
+					<xsd:annotation>
+						<xsd:documentation>Informacje dodatkowe o zgłaszanym schemacie podatkowym</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="CelSchematu">
+								<xsd:annotation>
+									<xsd:documentation>Wskazanie celów, których realizacji schemat podatkowy ma służyć</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="10000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="PrzepisyPrawa">
+								<xsd:annotation>
+									<xsd:documentation>Przepisy prawa podatkowego znajdujące, według wiedzy składającego informację, zastosowanie w schemacie podatkowym</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="10000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="WartoscKorzysci" type="mdr:TWartoscKorzysci">
+								<xsd:annotation>
+									<xsd:documentation>Szacunkowa wartość korzyści podatkowej lub przybliżona wartość aktywa w podatku odroczonym, jeśli występuje i jest znana lub możliwa do oszacowania przez składającego informację, w złotych.</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="WartoscKorzysciTransgra" type="etd:TKwota2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wartość korzyści podatkowej schematu podatkowego transgranicznego, w złotych</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym, wraz ze wskazaniem dnia, w którym została lub zostanie dokonana pierwsza czynność, służąca wdrożeniu tego schematu</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="Data">
+									<xsd:annotation>
+										<xsd:documentation>Dzień, w którym została lub zostanie dokonana pierwsza czynność służąca wdrożeniu tego schematu</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TData">
+											<xsd:minInclusive value="2018-06-26"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="Czynnosc" maxOccurs="unbounded">
+									<xsd:annotation>
+										<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="xsd:string">
+											<xsd:maxLength value="2000"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="EtapWdorozenia">
+								<xsd:annotation>
+									<xsd:documentation>Wskazanie etapu, na jakim zgodnie z wiedzą składającego informację znajduje się schemat podatkowy, w szczególności informacji o terminach jego udostępniania lub wdrażania lub o dacie czynności w ramach uzgodnienia</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:maxLength value="10000"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Uczestnicy" type="tns:TInfoOgolne" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Wskazanie innych podmiotów uczestniczących w schemacie podatkowym, mających uczestniczyć w schemacie podatkowym lub na które może mieć wpływ schemat podatkowy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<!-- Przeprobić na tytpy proste-->
+				<xsd:element name="ObowiazaniInni" type="tns:TInfoOgolne" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Wskazanie innych podmiotów obowiązanych do przekazania informacji o schemacie podatkowym</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DodatkoweWyjasnienia" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dodatkowe wyjaśnienia. Pole wymagane w przypadku złożenia uzupełnienia.</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:maxLength value="10000"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="KlauzulaRODO" type="xsd:string" fixed="KLAUZULA INFORMACYJNA dotycząca przetwarzania danych osobowych w związku z przekazaniem drogą elektroniczną do Szefa Krajowej Administracji Skarbowej informacji lub zawiadomienia o schemacie podatkowym. W związku z obowiązkiem stosowania od dnia 25 maja 2018 r. rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 4.05.2016, str. 1., z późn. zm.) zwanego dalej RODO, poniżej przedstawiamy informacje o zasadach przetwarzania Pani/Pana danych osobowych oraz o przysługujących Pani/Panu prawach z tym związanych: 1. Administratorem Pani/Pana danych osobowych jest Szef Krajowej Administracji Skarbowej, ul. Świętokrzyska 12, Warszawa 00-916. Zgodnie z art. 12e ustawy z dnia 16 listopada 2016 r. o Krajowej Administracji Skarbowej (Dz. U. z 2018 r. poz. 508, z późn. zm.) współadministratorem Pani/Pana danych osobowych jest Minister Finansów z siedzibą w Warszawie przy ul. Świętokrzyskiej 12, 00-916 Warszawa. 2. Minister Finansów oraz Szef Krajowej Administracji Skarbowej wyznaczył Inspektora Ochrony Danych, adres e- mail: IOD@mf.gov.pl. 3. Podstawę prawną przetwarzania Pana/Pani danych osobowych stanowią obowiązujące przepisy prawa, tj. ustawa z dnia 29 sierpnia 1997 r. Ordynacja podatkowa (Dz. U. z 2018 r., poz. 800, z późn. zm.) (art. 6 lit. c RODO). 4. Pani/Pana dane osobowe są przetwarzane w celu wypełnienia obowiązków prawnych ustanowionych w przepisach prawnych, o których mowa w pkt 3, związanych z przekazaniem informacji lub zawiadomienia o schemacie podatkowym. 5. W związku z przetwarzaniem Pani/Pana danych osobowych w celu, o którym mowa w pkt 4, Pani/Pana dane osobowe: • mogą być przekazywane do organów administracji publicznej lub innych podmiotów upoważnionych na podstawie przepisów prawa lub wykonujących zadania realizowane w interesie publicznym, lub w ramach sprawowania władzy publicznej; • nie będą podlegały zautomatyzowanemu podejmowaniu decyzji, w tym profilowaniu. 6. Pani/Pana dane osobowe będą przechowywane przez okres niezbędny do realizacji celu określonego w pkt 4, a po tym czasie archiwizowane, zgodnie z obowiązującymi przepisami prawa. 7. Podanie przez Panią/Pana danych osobowych w zakresie niezbędnym do realizacji celu, o którym mowa w pkt 4, wynika z obowiązujących przepisów prawa wskazanych w pkt 3. 8. Przetwarzane dane osobowe obejmują w szczególności imię i nazwisko, PESEL, datę i miejsce urodzenia, numer i serię dokumentu stwierdzającego tożsamość, adres oraz inne dane podane w złożonej do Szefa Krajowej Administracji Skarbowej informacji lub zawiadomieniu o schemacie podatkowym. 9. W związku z przetwarzaniem Pani/Pana danych osobowych przysługują Pani/Panu następujące uprawnienia: • prawo dostępu do swoich danych osobowych, • prawo żądania sprostowania swoich danych osobowych, • prawo żądania ograniczenia przetwarzania danych osobowych. 10. Przysługuje Pani/Panu także prawo wniesienia skargi do organu nadzorczego, tj. Prezesa Urzędu Ochrony Danych Osobowych.">
+					<xsd:annotation>
+						<xsd:documentation>Klauzula Informacyjna RODO</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DoreczenieElektroniczne">
+					<xsd:annotation>
+						<xsd:documentation>Adres ePUAP do doręczenia</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TDoreczenieElektroniczne"/>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:complexType name="TDoreczenieElektroniczne">
+		<xsd:annotation>
+			<xsd:documentation>Podanie adresu do doręczeń elektronicznych</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="OswiadczenieAdresEPUAP" fixed="Wyrażam zgodę na doręczanie potwierdzenia nadania NSP wyłącznie za pomocą środków komunikacji elektronicznej (art. 86f § 1 pkt 13 ustawy).">
+				<xsd:annotation>
+					<xsd:documentation>Treść oświadczenia</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="AdresEPUAP" type="etd:TZnakowy">
+				<xsd:annotation>
+					<xsd:documentation>Adres skrzynki ePUAP</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>
