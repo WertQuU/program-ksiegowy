@@ -110,9 +110,28 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
             case "VATUE":
                 var month = Parse.Month(From, "Od");
                 if (Parse.Month(To, "Do") != month) throw new DomainException("VAT-UE składa się za miesiąc — ustaw ten sam miesiąc w polach Od i Do.");
-                var x = VatUeXmlBuilder.Build(company, month, await r.VatUeLinesAsync(month, month), Session.Validator, person);
-                await DeclarationXmlExport.SaveAsync(Session, Dialogs, "VAT-UE(5)", $"VAT-UE-{month:yyyy-MM}.xml", x,
-                    "Plik wyślij przez e-Deklaracje (bramka MF) lub e-Urząd Skarbowy — podpis przy wysyłce. Program nie wysyła deklaracji.");
+                var lines = await r.VatUeLinesAsync(month, month);
+                var settings = new Application.Setup.SettingsService(db, Session.Clock);
+                var key = $"vatue.zlozono.{month:yyyy-MM}";
+                var filed = await settings.GetAsync<List<ReportService.VatUeLine>?>(Session.CompanyId, key, () => null);
+                const string hint = "Plik wyślij przez e-Deklaracje (bramka MF) lub e-Urząd Skarbowy — podpis przy wysyłce. Program nie wysyła deklaracji.";
+                if (filed is not null && await Dialogs.ConfirmAsync("VAT-UE",
+                        $"Informacja VAT-UE za {month:MM.yyyy} została już wygenerowana. Utworzyć korektę VAT-UEK (różnice BYŁO/JEST względem zapisanej wersji)?"))
+                {
+                    var k = VatUeXmlBuilder.BuildCorrection(company, month, filed, lines, Session.Validator, person);
+                    if (await DeclarationXmlExport.SaveAsync(Session, Dialogs, "VAT-UEK(5)", $"VAT-UEK-{month:yyyy-MM}.xml", k, hint))
+                    {
+                        await settings.SetAsync(Session.CompanyId, key, lines);
+                        await db.SaveChangesAsync();
+                    }
+                    break;
+                }
+                var x = VatUeXmlBuilder.Build(company, month, lines, Session.Validator, person);
+                if (await DeclarationXmlExport.SaveAsync(Session, Dialogs, "VAT-UE(5)", $"VAT-UE-{month:yyyy-MM}.xml", x, hint))
+                {
+                    await settings.SetAsync(Session.CompanyId, key, lines);
+                    await db.SaveChangesAsync();
+                }
                 break;
             case "PIT11":
                 var year = y.EndDate.Year;

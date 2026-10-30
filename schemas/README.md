@@ -31,5 +31,6 @@ przez program, a `esf2/nazwane/` — kopie plików `zalacznik_oi_*` (przekierowa
 ### e-Deklaracje (`MF/edek`)
 
 Pobierane automatycznie (`tools/fetch-edek.py`, workflow „Schematy e-Deklaracji”) z tabeli struktur dokumentów XML MF.
-Program generuje i waliduje: VAT-UE(5) (`nazwane/Schemat_VAT-UE(5)_v1-0E.xsd`, CRWDE 2020/07/03/9690) i PIT-11(29)
+Program generuje i waliduje: VAT-UE(5) (`nazwane/Schemat_VAT-UE(5)_v2-0E.xsd`, CRWDE 2021/01/12/10293), VAT-UEK(5)
+(`nazwane/Schemat_VAT-UEK(5)_v2-1E.xsd`, CRWDE 2021/01/26/10316) i PIT-11(29)
 (`nazwane/Schemat_PIT-11(29)_v1-1E.xsd`, CRWDE 2022/11/09/11890). Wersje aktualne według podatki.gov.pl (październik 2026).

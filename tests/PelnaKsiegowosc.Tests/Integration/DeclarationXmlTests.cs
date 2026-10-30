@@ -35,6 +35,21 @@ public class DeclarationXmlTests
         var person = VatUeXmlBuilder.Build(Company(), new DateOnly(2026, 3, 1), lines, Validator, new TaxpayerPerson("Jan", "Nowak", new DateOnly(1980, 5, 1)));
         Assert.True(person.Validation.IsValid, string.Join(Environment.NewLine, person.Validation.Errors));
         Assert.Throws<DomainException>(() => VatUeXmlBuilder.Build(Company(), new DateOnly(2026, 3, 1), new[] { new ReportService.VatUeLine("C", "DE", "", "Bez numeru", 1m) }, Validator));
+
+        // korekta VAT-UEK: zmieniona wartość, usunięta i nowa pozycja
+        var corrected = new List<ReportService.VatUeLine>
+        {
+            new("C", "DE", "123456789", "Kunde GmbH", 9800m),
+            new("D", "CZ", "12345678", "Dodavatel s.r.o.", 2300m),
+            new("C", "FR", "12345678901", "Client SA", 400m),
+        };
+        var k = VatUeXmlBuilder.BuildCorrection(Company(), new DateOnly(2026, 3, 1), lines, corrected, Validator);
+        Assert.True(k.Validation.IsValid, string.Join(Environment.NewLine, k.Validation.Errors));
+        var kn = VatUeXmlBuilder.NsCorrection;
+        Assert.Equal(2, k.Document.Root!.Descendants(kn + "Grupa1").Count());
+        Assert.Single(k.Document.Root!.Descendants(kn + "Grupa3"));
+        Assert.Empty(k.Document.Root!.Descendants(kn + "Grupa2"));
+        Assert.Throws<DomainException>(() => VatUeXmlBuilder.BuildCorrection(Company(), new DateOnly(2026, 3, 1), lines, lines, Validator));
     }
 
     [Fact]

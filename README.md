@@ -109,7 +109,7 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
   (`schemas/`) i odświeżane automatycznie w GitHub Actions; nowe wersje można też pobrać w *Ustawienia → Schematy XSD*.
 - e-Sprawozdanie: struktury SFJINZ/SFJINT(2) (pełna), SFJMAZ/SFJMAT(2) (jednostka mała) i SFJMIZ/SFJMIT(2) (mikro) —
   w złotych lub w tysiącach złotych (zaokrąglenia do tysięcy sprawdź przed podpisaniem).
-- Pliki XML e-Deklaracji: VAT-UE(5) i PIT-11(29) (aktualne wzory, walidowane schematem MF). CIT-8(34), PIT-4R(13),
+- Pliki XML e-Deklaracji: VAT-UE(5), korekta VAT-UEK(5) i PIT-11(29) z adresem zamieszkania (aktualne wzory, walidowane schematem MF). CIT-8(34), PIT-4R(13),
   PIT-8AR(14), IFT-2R(12), PIT-36/36L oraz ZUS DRA/RCA — MF i ZUS nie publikują aktualnych schematów XSD tych wzorów
   (MF udostępnia je tylko w e-Urzędzie), więc program wylicza kwoty i drukuje zestawienia;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
