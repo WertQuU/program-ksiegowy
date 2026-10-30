@@ -93,7 +93,8 @@ Sekcja **Deklaracje** zbiera wszystkie deklaracje z terminami. Wybierz pozycję 
 CIT-8 z CIT-8/O, VAT-UE, IFT-2R/CIT-10Z, PIT-36/PIT-36L (wspólnicy lub właściciel — jeden wiersz na osobę),
 uchwały roczne, inwentaryzacja (metody, potwierdzenia sald, protokół kasy). Pozostałe (JPK_V7M/V7K, JPK_CIT,
 ZUS, PIT-11) program otwiera we właściwej sekcji. Przycisk „Plik XML…” zapisuje deklarację w formacie
-e-Deklaracji (walidowaną oficjalnym schematem) — obecnie VAT-UE(5). Pozostałe deklaracje program wylicza i drukuje;
+e-Deklaracji (walidowaną oficjalnym schematem) — VAT-UE(5) za miesiąc oraz PIT-11(29) (osobny plik dla każdej osoby;
+w kartotece pracownika uzupełnij PESEL i kod urzędu skarbowego). Pozostałe deklaracje program wylicza i drukuje;
 wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 
 ## Koniec roku

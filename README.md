@@ -109,7 +109,9 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
   (`schemas/`) i odświeżane automatycznie w GitHub Actions; nowe wersje można też pobrać w *Ustawienia → Schematy XSD*.
 - e-Sprawozdanie: struktury SFJINZ(2) (pełna), SFJMAZ(2) (jednostka mała) i SFJMIZ(2) (mikro), dane w złotych —
   wariantów „w tysiącach złotych” program nie generuje.
-- Deklaracje CIT-8, VAT-UE, PIT-36/36L, PIT-4R/8AR/11, DRA/RCA — program wylicza kwoty i drukuje zestawienia;
+- Pliki XML e-Deklaracji: VAT-UE(5) i PIT-11(29) (aktualne wzory, walidowane schematem MF). CIT-8(34), PIT-4R(13),
+  PIT-8AR(14), IFT-2R(12), PIT-36/36L oraz ZUS DRA/RCA — MF i ZUS nie publikują aktualnych schematów XSD tych wzorów
+  (MF udostępnia je tylko w e-Urzędzie), więc program wylicza kwoty i drukuje zestawienia;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
 - Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie
   chorobowe pracodawcy; urlop wypoczynkowy przy stałej pensji nie zmienia wynagrodzenia.

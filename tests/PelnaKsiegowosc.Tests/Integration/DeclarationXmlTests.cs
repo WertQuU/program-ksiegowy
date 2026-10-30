@@ -36,4 +36,25 @@ public class DeclarationXmlTests
         Assert.True(person.Validation.IsValid, string.Join(Environment.NewLine, person.Validation.Errors));
         Assert.Throws<DomainException>(() => VatUeXmlBuilder.Build(Company(), new DateOnly(2026, 3, 1), new[] { new ReportService.VatUeLine("C", "DE", "", "Bez numeru", 1m) }, Validator));
     }
+
+    [Fact]
+    public void Pit11_is_valid_against_official_schema()
+    {
+        var person = new ReportService.Pit11Person(Guid.NewGuid(), "Jan", "Nowak", "44051401359", new DateOnly(1944, 5, 14), "1402",
+            new[]
+            {
+                new ReportService.Pit11Source(Domain.Payroll.ContractType.UmowaOPrace, false, 72000m, 3000m, 3492m, 0m, 0m),
+                new ReportService.Pit11Source(Domain.Payroll.ContractType.UmowaZlecenie, false, 5000m, 887.40m, 494m, 0m, 0m),
+            }, 10504.40m, 5591.64m, 0m, 0m);
+        var r = Pit11XmlBuilder.Build(Company(), 2026, person, Validator);
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors));
+        var ns = Pit11XmlBuilder.Ns;
+        Assert.Equal("69000.00", r.Document.Root!.Descendants(ns + "P_31").Single().Value);
+        Assert.Equal("494", r.Document.Root!.Descendants(ns + "P_61").Single().Value);
+
+        var young = person with { Sources = new[] { new ReportService.Pit11Source(Domain.Payroll.ContractType.UmowaZlecenie, true, 4000m, 2000m, 240m, 4000m, 2000m) }, ExemptCivil = 3000m };
+        var y = Pit11XmlBuilder.Build(Company(), 2026, young, Validator);
+        Assert.True(y.Validation.IsValid, string.Join(Environment.NewLine, y.Validation.Errors));
+        Assert.Throws<DomainException>(() => Pit11XmlBuilder.Build(Company(), 2026, person with { TaxOfficeCode = null }, Validator));
+    }
 }

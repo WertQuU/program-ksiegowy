@@ -22,6 +22,7 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
     {
         new("CIT-8 z CIT-8/O — zeznanie roczne", "koniec 3. miesiąca po roku", "tutaj: Generuj", AppArea.Cit, "CIT8"),
         new("VAT-UE — informacja podsumowująca", "25. dzień następnego miesiąca", "tutaj: Generuj (okres od–do), plik XML za miesiąc", AppArea.Vat, "VATUE"),
+        new("PIT-11 — informacje o dochodach pracowników i zleceniobiorców", "do końca stycznia (US), do końca lutego (podatnik)", "tutaj: Generuj (rok), pliki XML", AppArea.Place, "PIT11"),
         new("IFT-2R / CIT-10Z — wypłaty dla nierezydentów", "koniec 3. miesiąca po roku", "tutaj: Generuj (rok)", AppArea.Cit, "IFT2R"),
         new("Uchwały: zatwierdzenie sprawozdania, podział zysku, absolutorium", "6 miesięcy po dniu bilansowym", "tutaj: Generuj", AppArea.Raporty, "UCHWALY"),
         new("PIT-36 / PIT-36L — właściciel JDG / wspólnicy spółki osobowej", "30 kwietnia (zaliczki: 20. dnia)", "tutaj: wpisz wspólników i Generuj", AppArea.Cit, "PIT"),
@@ -32,7 +33,7 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
         new("JPK_CIT (JPK_KR_PD) — księgi ze znacznikami", "koniec 7. miesiąca po roku", "sekcja CIT → JPK CIT", AppArea.Cit, null),
         new("Zaliczki CIT", "20. dzień następnego miesiąca", "sekcja CIT → wyliczenie zaliczki", AppArea.Cit, null),
         new("ZUS DRA / RCA", "15. (osoby prawne) / 20. dzień", "sekcja Płace → ZUS i PIT", AppArea.Place, null),
-        new("PIT-4R, PIT-8AR, PIT-11", "koniec stycznia (PIT-11 podatnikowi: koniec lutego)", "sekcja Płace → ZUS i PIT", AppArea.Place, null),
+        new("PIT-4R, PIT-8AR", "koniec stycznia", "sekcja Płace → ZUS i PIT", AppArea.Place, null),
         new("Sprawozdanie finansowe (e-Sprawozdanie XML) i informacja dodatkowa", "3 miesiące po dniu bilansowym", "sekcja Raporty", AppArea.Raporty, null),
         new("Zestawienie zmian w kapitale, rachunek przepływów", "razem ze sprawozdaniem", "sekcja Raporty", AppArea.Raporty, null),
     };
@@ -84,6 +85,7 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
             "CIT8" => await r.Cit8Async(y.Id),
             "VATUE" => await r.VatUeAsync(Parse.Month(From, "Od"), Parse.Month(To, "Do")),
             "IFT2R" => await r.ForeignPaymentsAsync(y.EndDate.Year),
+            "PIT11" => await r.Pit11Async(y.EndDate.Year),
             "PIT" => await r.PitPartnersAsync(y.Id, Partners.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(PitPartner.ParseLine).ToList()),
             "INW" => await r.InventoryPlanAsync(y.Id, Parse.Date(AsOf, "Na dzień")),
             "SALDA" => await r.BalanceConfirmationsAsync(Parse.Date(AsOf, "Na dzień"), true),
@@ -111,6 +113,31 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
                 var x = VatUeXmlBuilder.Build(company, month, await r.VatUeLinesAsync(month, month), Session.Validator, person);
                 await DeclarationXmlExport.SaveAsync(Session, Dialogs, "VAT-UE(5)", $"VAT-UE-{month:yyyy-MM}.xml", x,
                     "Plik wyślij przez e-Deklaracje (bramka MF) lub e-Urząd Skarbowy — podpis przy wysyłce. Program nie wysyła deklaracji.");
+                break;
+            case "PIT11":
+                var year = y.EndDate.Year;
+                var people = await r.Pit11DataAsync(year);
+                if (people.Count == 0) throw new DomainException($"Brak zaksięgowanych list płac w roku {year}.");
+                var results = new List<(string Name, DeclarationXmlResult? Result, string? Error)>();
+                foreach (var p in people)
+                {
+                    try { results.Add(($"{p.LastName} {p.FirstName}", Pit11XmlBuilder.Build(company, year, p, Session.Validator, person), null)); }
+                    catch (DomainException ex) { results.Add(($"{p.LastName} {p.FirstName}", null, ex.Message)); }
+                }
+                var folder = await Dialogs.PickFolderAsync($"Folder na pliki PIT-11 za {year}");
+                if (folder is null) return;
+                var report = new List<string>();
+                foreach (var (name, res, err) in results)
+                {
+                    if (res is null) { report.Add($"✖ {name}: {err}"); continue; }
+                    var file = Path.Combine(folder, $"PIT-11-{year}-{string.Concat(name.Split(Path.GetInvalidFileNameChars())).Replace(' ', '-')}.xml");
+                    res.Document.Save(file);
+                    report.Add($"{(res.Validation.IsValid ? "✔" : "⚠")} {name}: {Path.GetFileName(file)} — {res.Status}");
+                    report.AddRange(res.Validation.Errors.Take(5).Select(e => "    " + e));
+                }
+                await Session.AuditAsync("DEKLARACJA_XML", "Declaration", null, $"PIT-11 {year}; {results.Count(x => x.Result is not null)} plików");
+                await Dialogs.ShowTextAsync("PIT-11 (XML)", string.Join(Environment.NewLine, report) + Environment.NewLine + Environment.NewLine +
+                    "Pliki wyślij przez e-Deklaracje (pojedynczo lub zbiorczo przez bramkę UBD jako PIT-11Z) i przekaż podatnikom kopie. Sprawdź przypisanie przychodów do wierszy części E.");
                 break;
             default:
                 throw new DomainException(XmlUnavailable(Selected.Kind));
