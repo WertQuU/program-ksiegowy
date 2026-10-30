@@ -275,6 +275,20 @@ public sealed partial class PayrollViewModel : SectionViewModel
         await LoadHrAsync(db);
     }, "Nieobecność usunięta.");
 
+    /// <summary>RODO art. 17 dla pracownika/zleceniobiorcy — po upływie 10 lat od końca roku zakończenia umowy.</summary>
+    [RelayCommand]
+    private Task EraseEmployeeDataAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedEmployee?.Tag is not Guid id) throw new DomainException("Zaznacz osobę na liście.");
+        await using var db = Session.OpenDb();
+        var svc = new Application.Security.PersonalDataService(db, Session.User, Session.Clock);
+        var check = await svc.EmployeeRetentionAsync(id);
+        var request = await Dialogs.PromptAsync("Żądanie usunięcia danych (RODO)", check.Basis + Environment.NewLine + Environment.NewLine + "Opisz żądanie (data wpływu, kto, w jakiej formie):");
+        if (string.IsNullOrWhiteSpace(request)) return;
+        var r = await svc.EraseEmployeeAsync(id, request);
+        await Dialogs.InfoAsync("RODO", r.CanErase ? "Dane osobowe zanonimizowano. Zdarzenie zapisano w dzienniku." : $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis}");
+    }, "Obsłużono żądanie RODO.");
+
     [RelayCommand] private Task SalaryCardAsync() => SelectedEmployee?.Tag is Guid id
         ? ShowReportAsync(r => r.SalaryCardAsync(id, Parse.Int(ReportYear, "Rok")))
         : RunAsync(() => throw new DomainException("Zaznacz osobę na liście w zakładce „Osoby i umowy”."));

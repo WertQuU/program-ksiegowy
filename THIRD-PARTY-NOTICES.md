@@ -17,7 +17,8 @@ dotyczą wyłącznie kodu projektu „Pełna Księgowość”. Licencje MIT, Apa
 | Tmds.DBus.Protocol (zależność Avalonia na Linuksie) | 0.21.x | MIT | integracja z pulpitem Linux |
 | Microsoft.EntityFrameworkCore (+ Sqlite, Relational, Design) | 10.0.13 | MIT | dostęp do bazy danych, migracje |
 | Microsoft.Data.Sqlite | 10.0.13 | MIT | sterownik SQLite |
-| SQLitePCLRaw (bundle_e_sqlite3) | 2.1.x | Apache-2.0 | natywna biblioteka SQLite |
+| SQLitePCLRaw (bundle_e_sqlcipher) | 2.1.11 | Apache-2.0 | natywna biblioteka SQLite z szyfrowaniem |
+| SQLCipher (Community Edition, Zetetic LLC) | 4.x | BSD-3-Clause | szyfrowanie pliku bazy (AES-256) |
 | SQLite | 3.x | domena publiczna | silnik bazy lokalnej |
 | Npgsql, Npgsql.EntityFrameworkCore.PostgreSQL | 10.0.x | PostgreSQL License | sterownik PostgreSQL |
 | AWSSDK.S3, AWSSDK.Core | 4.0.x | Apache-2.0 | OVHcloud Object Storage (API S3) |

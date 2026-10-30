@@ -103,11 +103,12 @@ public sealed class BackupService
             if (profile.Engine == DatabaseEngine.Sqlite)
             {
                 var dbDir = Directory.CreateDirectory(Path.Combine(staging, "baza")).FullName;
-                await using var src = new SqliteConnection(profile.BuildConnectionString(null));
-                await src.OpenAsync(ct);
-                await using var dst = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = Path.Combine(dbDir, "ksiegi.db"), Pooling = false }.ToString());
-                await dst.OpenAsync(ct);
-                src.BackupDatabase(dst);
+                // baza (także zaszyfrowana SQLCipher) eksportowana jawnie do katalogu roboczego, który trafia wyłącznie do archiwum
+                // szyfrowanego kluczem kopii; katalog roboczy jest usuwany po utworzeniu archiwum
+                var conn = db.Database.GetDbConnection();
+                await db.Database.OpenConnectionAsync(ct);
+                try { SqliteEncryption.ExportPlaintext(conn, Path.Combine(dbDir, "ksiegi.db")); }
+                finally { await db.Database.CloseConnectionAsync(); }
                 manifest.IncludesDatabaseFile = true;
             }
             manifest.Tables = await DataDump.ExportAsync(db, Path.Combine(staging, "dane"), ct);

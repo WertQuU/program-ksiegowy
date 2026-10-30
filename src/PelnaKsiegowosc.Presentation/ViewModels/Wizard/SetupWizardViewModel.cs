@@ -186,6 +186,13 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         var p = Database.ToProfile();
         if (p.Engine == DatabaseEngine.PostgreSql && !string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
         if (p.Engine == DatabaseEngine.Sqlite) Directory.CreateDirectory(Path.GetDirectoryName(p.SqlitePath!)!);
+        if (Session.Connector.SqliteKeyMissing(p))
+        {
+            var key = await Dialogs.PromptAsync("Klucz bazy", "Plik bazy jest zaszyfrowany (RODO). Wpisz klucz bazy — administrator wyświetli go na stanowisku, " +
+                "na którym baza była używana (Ustawienia → „Pokaż klucz bazy”). Bez klucza możesz odtworzyć bazę z kopii zapasowej.", password: true);
+            if (string.IsNullOrWhiteSpace(key)) throw new DomainException("Bez klucza nie można otworzyć zaszyfrowanej bazy.");
+            Session.Connector.ImportSqliteKey(p, key);
+        }
         var r = await Session.Connector.TestAsync(p);
         if (!r.Success) throw new DomainException(r.Message);
         ConnectToExisting = !r.DatabaseEmpty;

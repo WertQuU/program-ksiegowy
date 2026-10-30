@@ -9,7 +9,8 @@
     <!-- UWAGA LICENCYJNA: SixLabors.Fonts 1.x = Apache-2.0; wersje 2.x mają licencję „Six Labors Split License” — nie podnosić bez analizy. -->
     <PackageVersion Include="SixLabors.Fonts" Version="1.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite.Core" Version="10.0.13" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlcipher" Version="2.1.11" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />

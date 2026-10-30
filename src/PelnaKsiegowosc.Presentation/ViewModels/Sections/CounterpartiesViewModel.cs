@@ -83,6 +83,22 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
         await Dialogs.ShowTextAsync($"Weryfikacja kontrahenta {Name}", report.ToString());
     });
 
+    /// <summary>RODO art. 17: żądanie usunięcia danych osoby — anonimizacja po upływie okresów przechowywania albo odmowa z podstawą prawną.</summary>
+    [RelayCommand]
+    private Task ErasePersonalDataAsync() => ChangeAsync(async () =>
+    {
+        if (_editedId is not { } id) throw new DomainException("Otwórz kontrahenta, którego dotyczy żądanie.");
+        await using var db = Session.OpenDb();
+        var svc = new Application.Security.PersonalDataService(db, Session.User, Session.Clock);
+        var check = await svc.CounterpartyRetentionAsync(id);
+        var request = await Dialogs.PromptAsync("Żądanie usunięcia danych (RODO)",
+            (check.CanErase ? "Okresy przechowywania upłynęły — dane osoby zostaną zanonimizowane (zapisy księgowe pozostaną). " : "Dane muszą być jeszcze przechowywane — żądanie zostanie odnotowane jako odmowa z podstawą prawną. ") +
+            check.Basis + Environment.NewLine + Environment.NewLine + "Opisz żądanie (data wpływu, kto, w jakiej formie):");
+        if (string.IsNullOrWhiteSpace(request)) return;
+        var r = await svc.EraseCounterpartyAsync(id, request);
+        await Dialogs.InfoAsync("RODO", r.CanErase ? "Dane osobowe zanonimizowano. Zdarzenie zapisano w dzienniku." : $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis} Przekaż osobie odpowiedź z tą podstawą.");
+    }, "Obsłużono żądanie RODO.");
+
     [RelayCommand]
     private void OpenKrz() => Dialogs.OpenInSystem(Infrastructure.Counterparties.CounterpartyVerifier.KrzUrl);
 

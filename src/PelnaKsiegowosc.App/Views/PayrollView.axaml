@@ -43,6 +43,7 @@
             <WrapPanel Grid.Row="7" Grid.ColumnSpan="6" Classes="toolbar">
               <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />
               <Button Content="Zapisz zmiany zaznaczonej" Command="{Binding SaveEmployeeCommand}" />
+              <Button Content="Żądanie usunięcia danych (RODO)…" Command="{Binding EraseEmployeeDataCommand}" />
               <TextBlock Text="Stopa wypadkowa %:" /><TextBox Text="{Binding AccidentRate}" MinWidth="70" />
               <Button Content="Zapisz stopę" Command="{Binding SaveAccidentRateCommand}" />
             </WrapPanel>

@@ -7,7 +7,9 @@
     <ProjectReference Include="..\PelnaKsiegowosc.Domain\PelnaKsiegowosc.Domain.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Core" />
+    <!-- SQLCipher: szyfrowanie pliku bazy (AES-256) — RODO art. 32 -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlcipher" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
   </ItemGroup>
 </Project>

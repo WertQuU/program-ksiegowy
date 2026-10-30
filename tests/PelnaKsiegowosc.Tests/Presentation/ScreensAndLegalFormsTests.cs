@@ -153,6 +153,7 @@ public class ScreensTests
         var w = new SetupWizardViewModel(second, d2) { TermsAccepted = true };
         await w.NextCommand.ExecuteAsync(null);
         w.Database.SqlitePath = first.Profile.SqlitePath!;
+        d2.Prompts.Enqueue(first.Connector.ExportSqliteKey(first.Profile)!); // baza zaszyfrowana — klucz przekazany z pierwszego stanowiska
         await w.NextCommand.ExecuteAsync(null);
         Assert.True(w.ConnectToExisting);
         Assert.Equal(WizardStep.KopieZapasowe, w.Step);

@@ -38,6 +38,17 @@ public sealed partial class SettingsViewModel : SectionViewModel
     private void RefreshSchemas() =>
         Schemas = Library().Status().Select(x => new SchemaItem(x.Schema.Name, x.Available ? "✔ dostępny" : "✖ brak — plik nie zostanie zwalidowany", x.Schema.Purpose, x.Schema.InfoUrl, x.Schema.DownloadUrl is not null, x.Schema)).ToList();
 
+    /// <summary>Klucz szyfrowania pliku bazy SQLite — do przeniesienia bazy na inne stanowisko (tylko administrator).</summary>
+    [RelayCommand]
+    private Task ShowDatabaseKeyAsync() => RunAsync(async () =>
+    {
+        Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
+        var key = Session.Connector.ExportSqliteKey(Session.Profile) ?? throw new DomainException("Aktywna baza nie jest plikiem SQLite szyfrowanym na tym stanowisku.");
+        if (!await Dialogs.ConfirmAsync("Klucz bazy", "Klucz otwiera plik bazy z danymi księgowymi i osobowymi. Wyświetlić? Przekaż go wyłącznie bezpiecznym kanałem.")) return;
+        await Session.AuditAsync("KLUCZ_BAZY_WYSWIETLONY", "Database", null, Session.Profile.SafeDescription);
+        await Dialogs.ShowTextAsync("Klucz bazy (SQLCipher, AES-256)", key);
+    });
+
     [RelayCommand]
     private Task DownloadSchemasAsync() => RunAsync(async () =>
     {

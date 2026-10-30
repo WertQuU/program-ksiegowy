@@ -52,9 +52,14 @@ public sealed class DatabaseProfile
     public DateTime? LastSuccessfulConnectionUtc { get; set; }
     public string? LastConnectionError { get; set; }
 
-    public string PasswordSecretKey => $"PelnaKsiegowosc/db/{Engine}/{Host}:{Port}/{Database}/{Username}";
+    public string PasswordSecretKey => Engine == DatabaseEngine.Sqlite
+        ? $"PelnaKsiegowosc/db/Sqlite/{Path.GetFullPath(SqlitePath ?? "").ToLowerInvariant()}"
+        : $"PelnaKsiegowosc/db/{Engine}/{Host}:{Port}/{Database}/{Username}";
 
-    public string BuildConnectionString(string? password)
+    /// <param name="password">PostgreSQL: hasło. SQLite: nie dotyczy — klucz szyfrowania pliku przekazuje się do
+    /// <see cref="DbContextFactory.Create"/> (ustawiany przy otwarciu połączenia).</param>
+    /// <param name="encrypted">SQLite szyfrowane: klucze obce włącza się po ustawieniu klucza (pierwsza instrukcja musi ustawić klucz).</param>
+    public string BuildConnectionString(string? password, bool encrypted = false)
     {
         switch (Engine)
         {
@@ -64,13 +69,15 @@ public sealed class DatabaseProfile
                 {
                     DataSource = SqlitePath,
                     Mode = SqliteOpenMode.ReadWriteCreate,
-                    ForeignKeys = true,
+                    ForeignKeys = encrypted ? null : true,
                     Pooling = false,
                     DefaultTimeout = TimeoutSeconds
                 }.ToString();
             case DatabaseEngine.PostgreSql:
                 if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Database) || string.IsNullOrWhiteSpace(Username))
                     throw new InvalidOperationException("Profil PostgreSQL wymaga hosta, nazwy bazy i użytkownika.");
+                if (SslMode is PgSslMode.Disable or PgSslMode.Prefer && !IsLocalHost(Host))
+                    throw new InvalidOperationException("Połączenie z serwerem bazy poza tym komputerem musi być szyfrowane (TLS: Require, VerifyCA lub VerifyFull) — dane księgowe i osobowe (RODO art. 32).");
                 var b = new NpgsqlConnectionStringBuilder
                 {
                     Host = Host,
@@ -98,6 +105,9 @@ public sealed class DatabaseProfile
         }
     }
 
+    public static bool IsLocalHost(string host) =>
+        host.Trim().ToLowerInvariant() is "localhost" or "127.0.0.1" or "::1" or "[::1]" || host.StartsWith('/');
+
     /// <summary>Opis połączenia bez hasła (do logów i UI).</summary>
     public string SafeDescription => Engine == DatabaseEngine.Sqlite
         ? $"SQLite: {SqlitePath}"
@@ -109,13 +119,14 @@ public static class DbContextFactory
     public const string SqliteMigrationsAssembly = "PelnaKsiegowosc.Migrations.Sqlite";
     public const string PostgresMigrationsAssembly = "PelnaKsiegowosc.Migrations.PostgreSql";
 
-    public static DbContextOptions<KsiegiDbContext> BuildOptions(DatabaseEngine engine, string connectionString)
+    public static DbContextOptions<KsiegiDbContext> BuildOptions(DatabaseEngine engine, string connectionString, string? sqliteKey = null)
     {
         var b = new DbContextOptionsBuilder<KsiegiDbContext>();
         switch (engine)
         {
             case DatabaseEngine.Sqlite:
                 b.UseSqlite(connectionString, o => o.MigrationsAssembly(SqliteMigrationsAssembly));
+                if (sqliteKey is not null) b.AddInterceptors(new SqliteKeyInterceptor(sqliteKey));
                 break;
             case DatabaseEngine.PostgreSql:
                 b.UseNpgsql(connectionString, o =>
@@ -129,6 +140,6 @@ public static class DbContextFactory
         return b.Options;
     }
 
-    public static KsiegiDbContext Create(DatabaseEngine engine, string connectionString) =>
-        new(BuildOptions(engine, connectionString));
+    public static KsiegiDbContext Create(DatabaseEngine engine, string connectionString, string? sqliteKey = null) =>
+        new(BuildOptions(engine, connectionString, sqliteKey));
 }

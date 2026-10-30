@@ -275,3 +275,82 @@ public class ObjectStorageTests
         Assert.Throws<DomainException>(() => new S3BackupTarget(new ObjectStorageSettings { Endpoint = "ftp://x", Bucket = "b" }, "a", "b"));
     }
 }
+
+public class DatabaseEncryptionTests
+{
+    [Fact]
+    public async Task Sqlite_file_is_encrypted_at_rest_and_backup_restore_still_works()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var e = await t.Ledger().CreateDraftAsync(TestBooks.Entry(new DateOnly(2026, 1, 10), "PK/1", new("130-01", 50m, 0), new("801", 0, 50m)));
+        await t.Ledger().PostAsync(e.Id);
+        var dir = Path.Combine(t.Directory, "szyfrowana");
+        Directory.CreateDirectory(dir);
+        var path = Path.Combine(dir, "ksiegi.db");
+        File.Copy(t.DbPath, path);
+        Assert.True(SqliteEncryption.IsPlaintext(path));
+
+        var secrets = new InMemorySecretStore();
+        var connector = new DatabaseConnector(secrets);
+        var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = path };
+        await using (var db = connector.CreateContext(profile))
+            Assert.Equal(1, await db.JournalEntries.CountAsync());
+        Assert.True(SqliteEncryption.IsEncrypted(path));                                // plik zaszyfrowany przy pierwszym otwarciu
+        Assert.DoesNotContain("PK/1", System.Text.Encoding.UTF8.GetString(await File.ReadAllBytesAsync(path)));
+
+        await using (var raw = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={path};Pooling=False"))
+        {
+            await raw.OpenAsync();
+            await using var cmd = raw.CreateCommand();
+            cmd.CommandText = "SELECT count(*) FROM JournalEntries";
+            Assert.ThrowsAny<Exception>(() => cmd.ExecuteScalar());                  // bez klucza baza jest nieczytelna
+        }
+        // bez klucza na stanowisku — komunikat o odtworzeniu z kopii (nie tworzy nowej bazy w miejscu zaszyfrowanej)
+        Assert.Throws<InvalidOperationException>(() => new DatabaseConnector(new InMemorySecretStore()).CreateContext(profile));
+
+        // kopia zapasowa (archiwum szyfrowane kluczem kopii) i odtworzenie
+        var store = new LocalFileStore(Path.Combine(t.Directory, "Zalaczniki"));
+        var backup = new BackupService(t.Clock, Path.Combine(t.Directory, "tmp"));
+        string archive;
+        await using (var db = connector.CreateContext(profile))
+            archive = (await backup.CreateAsync(db, profile, store, null, new BackupOptions(new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "kopie")))).FilePath;
+        var restored = await backup.RestoreToSqliteAsync(archive, new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "odtworzona"));
+        Assert.Empty(restored.Problems);
+        var restoredProfile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = restored.DatabasePath };
+        await using (var db = connector.CreateContext(restoredProfile))                 // odtworzona baza też zostaje zaszyfrowana
+            Assert.Equal(1, await db.JournalEntries.CountAsync());
+        Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));
+    }
+
+    [Fact]
+    public void Remote_postgres_requires_tls()
+    {
+        var p = new DatabaseProfile { Engine = DatabaseEngine.PostgreSql, Host = "db.firma.pl", Database = "ksiegi", Username = "ksiegowa", SslMode = PgSslMode.Disable };
+        Assert.Throws<InvalidOperationException>(() => p.BuildConnectionString("x"));
+        p.SslMode = PgSslMode.VerifyFull;
+        Assert.Contains("db.firma.pl", p.BuildConnectionString("x"));
+    }
+}
+
+public class PersonalDataTests
+{
+    [Fact]
+    public async Task Erasure_request_is_refused_during_retention_and_anonymizes_afterwards()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var client = await t.AddCounterpartyAsync("K001", "Jan Kowalski", "7740001454");
+        await PelnaKsiegowosc.Tests.Modules.SalesAndBankScenarioTests.IssueAndPostSalesInvoiceAsync(t, client.Id, 100m, new DateOnly(2026, 1, 10));
+        var svc = new Application.Security.PersonalDataService(t.Db, t.User, t.Clock);
+        var refused = await svc.EraseCounterpartyAsync(client.Id, "Wniosek e-mail z 30.10.2026");
+        Assert.False(refused.CanErase);                                                 // nierozliczona należność / okres przechowywania
+        Assert.Equal("Jan Kowalski", (await t.Db.Counterparties.AsNoTracking().SingleAsync(c => c.Id == client.Id)).Name);
+
+        var prospect = await t.AddCounterpartyAsync("K002", "Anna Nowak", null);
+        var done = await svc.EraseCounterpartyAsync(prospect.Id, "Wniosek pisemny z 30.10.2026");
+        Assert.True(done.CanErase);                                                     // brak dokumentów — dane można usunąć
+        var anon = await t.Db.Counterparties.AsNoTracking().SingleAsync(c => c.Id == prospect.Id);
+        Assert.StartsWith("Osoba usunięta", anon.Name);
+        Assert.Null(anon.Nip);
+        Assert.Equal(2, await t.Db.AuditEvents.CountAsync(a => a.Action.StartsWith("RODO_")));
+    }
+}

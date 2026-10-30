@@ -54,6 +54,7 @@
         </Grid>
         <WrapPanel Classes="toolbar" Margin="0,8,0,0">
           <Button Content="Testuj połączenie" Command="{Binding TestDatabaseCommand}" />
+          <Button Content="Pokaż klucz bazy…" Command="{Binding ShowDatabaseKeyCommand}" ToolTip.Tip="Plik bazy jest szyfrowany (RODO). Klucz jest potrzebny, by otworzyć ten plik na innym stanowisku." />
           <Button Content="Używaj tej bazy (po ponownym uruchomieniu)" Command="{Binding UseDatabaseCommand}" />
           <Button Content="Migruj dane do tej bazy…" Command="{Binding MigrateCommand}" />
         </WrapPanel>
