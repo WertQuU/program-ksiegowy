@@ -245,6 +245,7 @@ public sealed partial class MonthCloseViewModel : ViewModelBase
     {
         var fy = _session.Years.First(y => y.Contains(MonthStart));
         var number = fy.Periods.First(p => p.Contains(MonthStart)).Number;
+        await CitViewModel.EnsureLimitRateAsync(_session, fy);
         await using var db = _session.OpenDb();
         var svc = new CitService(db, _session.User, _session.Clock);
         var adv = await svc.ComputeAdvanceAsync(fy.Id, number);

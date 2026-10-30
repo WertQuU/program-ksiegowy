@@ -87,6 +87,7 @@ public class FullYearScenarioTests
         for (var m = 2; m <= 12; m++) await fa.RunDepreciationAsync(2026, m);
 
         // podatek dochodowy za rok
+        await new CitService(t.Db, t.User, t.Clock).SetLimitEurRateAsync(t.Year.StartDate, 4.2156m);
         var cit = await new CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
         var taxEntry = await t.Ledger().CreateDraftAsync(TestBooks.Entry(new DateOnly(2026, 12, 31), "PK/CIT/2026", new("870", cit.Computation.Tax, 0), new("220-01", 0, cit.Computation.Tax)));
         await t.Ledger().PostAsync(taxEntry.Id);

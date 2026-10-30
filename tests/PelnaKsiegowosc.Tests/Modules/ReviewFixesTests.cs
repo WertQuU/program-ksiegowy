@@ -1,10 +1,14 @@
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Assistant;
+using PelnaKsiegowosc.Application.Capital;
 using PelnaKsiegowosc.Application.Cit;
 using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Application.Vat;
 using PelnaKsiegowosc.Domain.Accounts;
+using PelnaKsiegowosc.Domain.Capital;
+using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Ledger;
 using PelnaKsiegowosc.Domain.Cit;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Documents;
@@ -19,22 +23,24 @@ namespace PelnaKsiegowosc.Tests.Modules;
 public class ReviewFixesTests
 {
     [Fact]
-    public void Reduced_rate_requires_status_no_exclusion_and_current_year_revenue_within_limit()
+    public void Reduced_rate_limit_uses_tax_year_rate_full_months_and_rounds_last()
     {
-        // 2 mln euro × 4,2617 = 8 523 400 → zaokrąglenie do 1000 zł
-        Assert.Equal(8_523_000m, CitCalculator.ReducedRateLimitPln(4.2617m, 12));
-        // rok krótszy niż 12 miesięcy — limit proporcjonalny; dłuższy — bez zwiększenia
-        Assert.Equal(4_261_500m, CitCalculator.ReducedRateLimitPln(4.2617m, 6));
-        Assert.Equal(8_523_000m, CitCalculator.ReducedRateLimitPln(4.2617m, 18));
+        // 2026: kurs z 2.01.2026 (pierwszy dzień roboczy roku podatkowego) 4,2156 → 8 431 200 → 8 431 000 zł
+        Assert.Equal(8_431_000m, CitCalculator.ReducedRateLimitPln(4.2156m, 12));
+        // rok krótszy i dłuższy: 1/12 × 2 mln euro × pełne miesiące, przeliczenie i dopiero potem zaokrąglenie
+        Assert.Equal(4_216_000m, CitCalculator.ReducedRateLimitPln(4.2156m, 6));    // 1 000 000 € × 4,2156 = 4 215 600 → 4 216 000
+        Assert.Equal(12_647_000m, CitCalculator.ReducedRateLimitPln(4.2156m, 18));  // 3 000 000 € × 4,2156 = 12 646 800 → 12 647 000
+        Assert.Equal(12, CitCalculator.FullMonths(new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31)));
+        Assert.Equal(21, CitCalculator.FullMonths(new DateOnly(2026, 3, 15), new DateOnly(2027, 12, 31))); // marzec niepełny
+        Assert.Equal(8_517_000m, CitCalculator.SmallTaxpayerLimitPln(4.2586m)); // status: kurs z 1.10 roku poprzedniego
 
-        Assert.Equal(9m, CitCalculator.DecideRate(true, false, 4.2617m, 12, 8_523_000m).RatePercent);
-        Assert.Equal(19m, CitCalculator.DecideRate(true, false, 4.2617m, 12, 8_523_000.01m).RatePercent); // przekroczenie limitu w bieżącym roku
-        Assert.Equal(19m, CitCalculator.DecideRate(true, false, 4.2617m, 6, 5_000_000m).RatePercent);    // limit proporcjonalny
-        Assert.Equal(19m, CitCalculator.DecideRate(false, false, 4.2617m, 12, 100m).RatePercent);        // brak statusu
-        Assert.Equal(19m, CitCalculator.DecideRate(true, true, 4.2617m, 12, 100m).RatePercent);          // wyłączenie art. 19 ust. 1b
-        var fallback = CitCalculator.DecideRate(true, false, null, 12, 100m);
-        Assert.True(fallback.FallbackRateUsed);
-        Assert.Equal(8_000_000m, fallback.LimitPln); // ostrożny kurs zastępczy zaniża limit
+        Assert.Equal(9m, CitCalculator.DecideRate(true, false, 4.2156m, 12, 8_431_000m).RatePercent);
+        Assert.Equal(19m, CitCalculator.DecideRate(true, false, 4.2156m, 12, 8_431_000.01m).RatePercent); // przekroczenie w bieżącym roku
+        Assert.Equal(19m, CitCalculator.DecideRate(true, false, 4.2156m, 6, 5_000_000m).RatePercent);
+        Assert.Equal(9m, CitCalculator.DecideRate(true, false, 4.2156m, 18, 10_000_000m).RatePercent);    // rok dłuższy — limit zwiększony
+        Assert.Equal(19m, CitCalculator.DecideRate(false, false, 4.2156m, 12, 100m).RatePercent);
+        Assert.Equal(19m, CitCalculator.DecideRate(true, true, 4.2156m, 12, 100m).RatePercent);
+        Assert.True(CitCalculator.DecideRate(true, false, null, 12, 100m).RateMissing); // brak kursu — bez zastępczego kursu
     }
 
     [Fact]
@@ -59,40 +65,73 @@ public class ReviewFixesTests
         Assert.Equal(5000m, rec.CapitalGains.Income);
         Assert.Equal(950m, rec.CapitalGains.Tax); // zyski kapitałowe zawsze 19%
         Assert.Equal(1670m, rec.Computation.Tax);
+        var noRate = await Assert.ThrowsAsync<DomainException>(() => cit.ComputeAdvanceAsync(t.Year.Id, 1)); // brak kursu NBP — zaliczki nie zapisuje się
+        Assert.Contains("kurs euro", noRate.Message);
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 4.2156m);
         Assert.Equal(1670m, (await cit.ComputeAdvanceAsync(t.Year.Id, 1)).AdvanceDue);
 
         // przychody roku przekraczają limit (sztucznie niski kurs) → 19% od dochodu narastająco
-        await cit.SetEurRateAsync(2026, 0.001m); // limit 2 000 zł
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 0.001m); // limit 2 000 zł
         var over = await cit.ReconcileAsync(t.Year.Id, 1);
         Assert.Equal(19m, over.Operating.RatePercent);
         Assert.Equal(1520m + 950m, over.Computation.Tax);
         Assert.Contains("przekroczyły limit", over.Rate.Reason);
 
-        await cit.SetEurRateAsync(2026, 4.2617m);
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 4.2156m);
         await cit.SetReducedRateExcludedAsync(true);
         Assert.Equal(19m, (await cit.ReconcileAsync(t.Year.Id, 1)).Operating.RatePercent);
     }
 
-    [Fact]
-    public async Task Unpaid_purchase_increases_cit_income_in_period_when_90_days_elapse()
+    private static async Task<Document> PurchaseAsync(TestBooks t, Guid cpId, string number, decimal net, string? account = null, decimal nkupPercent = 0m)
     {
-        await using var t = await TestBooks.CreateAsync();
-        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
         var docs = new DocumentService(t.Db, t.User, t.Clock);
         var d = new DateOnly(2026, 1, 15);
-        var doc = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp.Id, d, d,
-            new[] { new DocumentLineInput("Usługa", 1, 1000m, "23") }, DueDate: d.AddDays(14), ExternalNumber: "FZ/1", ReceiptDate: d));
+        var doc = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cpId, d, d,
+            new[] { new DocumentLineInput("Usługa", 1, net, "23", AccountNumber: account, NkupPercent: nkupPercent) }, DueDate: d.AddDays(14), ExternalNumber: number, ReceiptDate: d));
         await docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (100m, false) }, new DateOnly(2026, 1, 1));
         await docs.ApproveAsync(doc.Id);
         await docs.PostAsync(doc.Id);
+        return doc;
+    }
+
+    [Fact]
+    public async Task Unpaid_purchase_increases_cit_only_by_its_kup_part_by_source_and_keeps_history()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var kup = await PurchaseAsync(t, cp.Id, "FZ/1", 1000m);
+        await PurchaseAsync(t, cp.Id, "FZ/NKUP", 500m, nkupPercent: 100m); // w całości NKUP — bez zwiększenia
+        var capAcc = await t.Db.Accounts.FirstAsync(a => a.Number == "751-03");
+        capAcc.CitClassification = CitClassification.KosztZyskiKapitalowe;
+        await t.Db.SaveChangesAsync();
+        await PurchaseAsync(t, cp.Id, "FZ/KAP", 300m, account: "751-03");
+        var person = t.Db.Counterparties.Add(new Domain.Counterparties.Counterparty { CompanyId = t.Company.Id, Code = "OS1", Name = "Jan Kowalski (osoba prywatna)" }).Entity;
+        await t.Db.SaveChangesAsync();
+        await PurchaseAsync(t, person.Id, "R/1", 200m); // nie transakcja handlowa
 
         var cit = new CitService(t.Db, t.User, t.Clock);
         var march = await cit.ReconcileAsync(t.Year.Id, 3); // termin 29.01 + 90 dni = 29.04
         Assert.DoesNotContain(march.Adjustments, a => a.Basis.Contains("18f"));
         var april = await cit.ReconcileAsync(t.Year.Id, 4);
-        var row = Assert.Single(april.Adjustments, a => a.Basis.Contains("18f"));
-        Assert.Equal(1000m, row.Amount); // kwota netto (VAT odliczony nie był kosztem)
-        Assert.Equal(march.TaxCosts - 1000m, april.TaxCosts);
+        var op = Assert.Single(april.Adjustments, a => a.Basis.Contains("18f") && !a.Item.Contains("kapitałowe"));
+        Assert.Equal(1000m, op.Amount); // tylko część KUP faktury FZ/1 (netto); NKUP i osoba prywatna pominięte
+        Assert.Contains("ust. 1 pkt 2", op.Basis);
+        Assert.Equal(300m, Assert.Single(april.Adjustments, a => a.Item.Contains("kapitałowe")).Amount);
+        Assert.Equal(march.CapitalGains.TaxCosts - 300m, april.CapitalGains.TaxCosts);
+        Assert.Equal(march.Operating.TaxCosts - 1000m, april.Operating.TaxCosts);
+
+        // zapłata po 90. dniu w tym samym roku — zmniejszenie do wysokości zwiększenia, historia zapisana z zaliczką
+        var item = await t.Db.OpenItems.SingleAsync(o => o.DocumentId == kup.Id);
+        var pay = await t.Ledger().CreateDraftAsync(TestBooks.Entry(new DateOnly(2026, 5, 10), "WB/5", new("210", 1230m, 0, cp.Id, OpenItemId: item.Id), new("130-01", 0, 1230m)));
+        await t.Ledger().PostAsync(pay.Id);
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 4.2156m);
+        var may = await cit.ReconcileAsync(t.Year.Id, 5);
+        Assert.Equal(-1000m, Assert.Single(may.Adjustments, a => a.Item.StartsWith("Zapłata") && !a.Item.Contains("kapitałowe")).Amount);
+        await cit.ComputeAdvanceAsync(t.Year.Id, 5);
+        var history = await t.Db.CitLiabilityAdjustments.Where(h => h.OpenItemId == item.Id).ToListAsync();
+        Assert.Equal(2, history.Count);
+        Assert.Equal(1000m, history.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zwiekszenie).AmountOperating);
+        Assert.Equal(1000m, history.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zmniejszenie).AmountOperating);
     }
 
     [Fact]
@@ -139,5 +178,61 @@ public class ReviewFixesTests
         Assert.Contains("JPK_V7K", BookkeepingAssistant.JpkCitRequired(quarterly, new DateOnly(2027, 1, 1)));
         Assert.Null(BookkeepingAssistant.JpkCitRequired(nonVat, new DateOnly(2026, 1, 1)));
         Assert.Contains("pozostali", BookkeepingAssistant.JpkCitRequired(nonVat, new DateOnly(2027, 1, 1)));
+        Assert.Contains("50 mln euro", BookkeepingAssistant.JpkCitRequired(quarterly, new DateOnly(2025, 1, 1), pgkOrRevenueOver50mEur: true));
+    }
+
+    [Fact]
+    public async Task Psa_subscriptions_posted_with_old_logic_are_detected_settled_first_and_corrected_by_storno()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cap = new CapitalService(t.Db, t.User, t.Clock);
+        var sh = await cap.AddShareholderAsync("Anna Akcjonariuszka", null, false);
+        var cp = sh.CounterpartyId!.Value;
+
+        async Task<CapitalEvent> LegacySubscriptionAsync(decimal amount, DateOnly date)
+        {
+            // stan sprzed wersji 1.0.1: objęcie zaksięgowane Wn należne wkłady / Ma kapitał akcyjny
+            var ev = await cap.CreateEventAsync(new CapitalEvent
+            {
+                Type = CapitalEventType.ObjecieAkcjiWkladPieniezny, EventDate = date, ShareholderId = sh.Id, ShareCapitalAmount = amount,
+                ContributionType = ContributionType.Pieniezny, AgreementReference = "Umowa 1/2026", Description = "Objęcie akcji"
+            });
+            var entry = await t.Ledger().CreateAndPostAsync(TestBooks.Entry(date, "KAP/OLD", new("245-01", amount, 0, cp), new("801", 0, amount)));
+            ev.JournalEntryId = entry.Id;
+            ev.Status = CapitalEventStatus.Zaksiegowany;
+            await t.Db.SaveChangesAsync();
+            return ev;
+        }
+
+        var paidLegacy = await LegacySubscriptionAsync(1000m, new DateOnly(2026, 1, 2));
+        var unpaidLegacy = await LegacySubscriptionAsync(2000m, new DateOnly(2026, 1, 3));
+        Assert.Equal(2, (await cap.LegacyPsaSubscriptionsAsync()).Count);
+        Assert.Equal(-3000m, await t.BalanceAsync("801"));
+
+        // wpłata najpierw rozlicza stary należny wkład — kapitał nie jest uznawany drugi raz
+        var pay = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 10), ShareholderId = sh.Id, TotalAmount = 1000m });
+        await cap.ConfirmDocumentsAsync(pay.Id);
+        await cap.PostEventAsync(pay.Id);
+        Assert.Equal(-3000m, await t.BalanceAsync("801"));
+        Assert.Equal(2000m, await t.BalanceAsync("245-01"));
+
+        // korekta: storno tylko objęcia całkowicie niewpłaconego
+        var paidState = (await cap.LegacyPsaSubscriptionsAsync()).Single(l => l.EventId == paidLegacy.Id);
+        Assert.Equal(1000m, paidState.Paid);
+        await Assert.ThrowsAsync<DomainException>(() => cap.CorrectLegacyPsaSubscriptionAsync(paidLegacy.Id, ""));
+        var reversal = await cap.CorrectLegacyPsaSubscriptionAsync(unpaidLegacy.Id, "");
+        Assert.Equal(EntryKind.Storno, reversal.Kind);
+        Assert.Equal(-1000m, await t.BalanceAsync("801"));
+        Assert.Equal(0m, await t.BalanceAsync("245-01"));
+        Assert.Single(await cap.LegacyPsaSubscriptionsAsync());
+        Assert.Equal(2000m, (await cap.UnpaidContributionAsync(sh.Id)).Unpaid); // objęcie po korekcie — w ewidencji wkładów do wniesienia
+
+        var pay2 = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 20), ShareholderId = sh.Id, TotalAmount = 2000m });
+        await cap.ConfirmDocumentsAsync(pay2.Id);
+        await cap.PostEventAsync(pay2.Id);
+        Assert.Equal(-3000m, await t.BalanceAsync("801")); // kapitał akcyjny = wniesione wkłady
+        Assert.Equal(0m, (await cap.UnpaidContributionAsync(sh.Id)).Unpaid);
+        var issues = await new BookkeepingAssistant(t.Db, t.User, t.Clock).CheckAsync(t.Year.Id, null);
+        Assert.Single(issues, i => i.Code == "KAPITAL_PSA_OBJECIE");
     }
 }

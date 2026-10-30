@@ -156,15 +156,27 @@ public sealed class CapitalService
             case CapitalEventType.WplataWkladu when psa:
             {
                 if (ev.ShareholderId is not { } shId) throw new DomainException("Wpłata wkładu wymaga wskazania akcjonariusza.");
-                var (unpaid, capitalShare) = await UnpaidContributionAsync(shId, ev.Id, ct);
-                if (ev.TotalAmount > unpaid)
-                    throw new DomainException($"Wpłata ({Money.Format(ev.TotalAmount)}) przekracza wkłady objęte i niewniesione przez akcjonariusza ({Money.Format(unpaid)}).");
-                var toCapital = ev.ShareCapitalAmount + ev.SupplementaryCapitalAmount == ev.TotalAmount && ev.TotalAmount > 0
-                    ? ev.ShareCapitalAmount
-                    : Money.Round(ev.TotalAmount * capitalShare);
                 lines.Add(new(ev.DebitAccountNumber ?? p.Bank, ev.TotalAmount, 0, Description: "Wpłata wkładu na akcje"));
-                lines.Add(new(p.ShareCapital, 0, toCapital, Description: "Kapitał akcyjny — wkład wniesiony"));
-                if (ev.TotalAmount - toCapital > 0) lines.Add(new(p.SupplementaryCapital, 0, ev.TotalAmount - toCapital, Description: "Nadwyżka wkładu — kapitał zapasowy"));
+                // najpierw rozliczenie należnych wkładów zaksięgowanych według wcześniejszej logiki (kapitał uznany przy objęciu)
+                var rest = ev.TotalAmount;
+                foreach (var legacy in await LegacyOpenContributionsAsync(cp, p.ShareContributionsDue, ct))
+                {
+                    if (rest <= 0) break;
+                    var part = Math.Min(rest, legacy.RemainingPln);
+                    lines.Add(new(p.ShareContributionsDue, 0, part, cp, "Wpłata wkładu — rozliczenie należnego wkładu (zapis sprzed wersji 1.0.1)", legacy.Id));
+                    rest -= part;
+                }
+                if (rest > 0)
+                {
+                    var (unpaid, capitalShare) = await UnpaidContributionAsync(shId, ev.Id, ct);
+                    if (rest > unpaid)
+                        throw new DomainException($"Wpłata ({Money.Format(ev.TotalAmount)}) przekracza wkłady objęte i niewniesione przez akcjonariusza ({Money.Format(unpaid + ev.TotalAmount - rest)}).");
+                    var toCapital = rest == ev.TotalAmount && ev.ShareCapitalAmount + ev.SupplementaryCapitalAmount == ev.TotalAmount && ev.TotalAmount > 0
+                        ? ev.ShareCapitalAmount
+                        : Money.Round(rest * capitalShare);
+                    lines.Add(new(p.ShareCapital, 0, toCapital, Description: "Kapitał akcyjny — wkład wniesiony"));
+                    if (rest - toCapital > 0) lines.Add(new(p.SupplementaryCapital, 0, rest - toCapital, Description: "Nadwyżka wkładu — kapitał zapasowy"));
+                }
                 break;
             }
             case CapitalEventType.WplataWkladu:
@@ -234,14 +246,74 @@ public sealed class CapitalService
     /// </summary>
     public async Task<(decimal Unpaid, decimal CapitalShare)> UnpaidContributionAsync(Guid shareholderId, Guid? excludingEventId = null, CancellationToken ct = default)
     {
+        var p = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
         var events = await _db.CapitalEvents.AsNoTracking()
             .Where(e => e.CompanyId == _user.CompanyId && e.ShareholderId == shareholderId && e.Status == CapitalEventStatus.Zaksiegowany && e.Id != excludingEventId
                         && (e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny || e.Type == CapitalEventType.WplataWkladu)).ToListAsync(ct);
-        var subscribed = events.Where(e => e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny).ToList();
+        var entryIds = events.Where(e => e.JournalEntryId != null).Select(e => e.JournalEntryId!.Value).ToList();
+        var entries = await _db.JournalEntries.AsNoTracking().Where(e => entryIds.Contains(e.Id)).Select(e => new { e.Id, e.ReversedByEntryId }).ToDictionaryAsync(e => e.Id, ct);
+        // objęcia według nowej logiki: bez zapisu albo z zapisem wcześniejszym, który wystornowano
+        var subscribed = events.Where(e => e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny
+                                           && (e.JournalEntryId is null || entries.GetValueOrDefault(e.JournalEntryId.Value)?.ReversedByEntryId is not null)).ToList();
+        // wpłaty: bez części, która rozliczyła należne wkłady zaksięgowane według wcześniejszej logiki (konto należnych wkładów)
+        var legacyPaid = await _db.JournalLines.AsNoTracking()
+            .Where(l => entryIds.Contains(l.EntryId) && l.AccountNumber == p.ShareContributionsDue && l.Credit != 0)
+            .Select(l => new { l.EntryId, l.Credit }).ToListAsync(ct);
+        var paid = events.Where(e => e.Type == CapitalEventType.WplataWkladu)
+            .Sum(e => e.TotalAmount - legacyPaid.Where(l => l.EntryId == e.JournalEntryId).Sum(l => l.Credit));
         var total = subscribed.Sum(e => e.TotalAmount);
-        var paid = events.Where(e => e.Type == CapitalEventType.WplataWkladu).Sum(e => e.TotalAmount);
         var share = total == 0 ? 1m : subscribed.Sum(e => e.ShareCapitalAmount) / total;
         return (total - paid, share);
+    }
+
+    private async Task<List<OpenItem>> LegacyOpenContributionsAsync(Guid? counterpartyId, string account, CancellationToken ct) =>
+        counterpartyId is null ? new() : (await _db.OpenItems.Where(o => o.CompanyId == _user.CompanyId && o.CounterpartyId == counterpartyId && o.AccountNumber == account
+                                                                       && o.Side == OpenItemSide.Naleznosc).OrderBy(o => o.DocumentDate).ToListAsync(ct))
+            .Where(o => o.RemainingPln > 0).ToList();
+
+    public sealed record LegacyPsaSubscription(Guid EventId, DateOnly Date, string Shareholder, decimal Amount, decimal Paid, string JournalNumber);
+
+    /// <summary>
+    /// P.S.A.: objęcia akcji za wkład pieniężny zaksięgowane według logiki sprzed wersji 1.0.1 (kapitał akcyjny uznany już przy
+    /// objęciu, Wn należne wkłady / Ma kapitał), których zapis nie został wystornowany. Kontrola danych — nic nie jest zmieniane.
+    /// </summary>
+    public async Task<List<LegacyPsaSubscription>> LegacyPsaSubscriptionsAsync(CancellationToken ct = default)
+    {
+        var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.LegalForm).FirstAsync(ct);
+        if (form != LegalForm.ProstaSpolkaAkcyjna) return new();
+        var list = await (from e in _db.CapitalEvents.AsNoTracking()
+                          join j in _db.JournalEntries.AsNoTracking() on e.JournalEntryId equals j.Id
+                          where e.CompanyId == _user.CompanyId && e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny && j.ReversedByEntryId == null
+                          select new { EventId = e.Id, e.EventDate, e.ShareholderId, e.TotalAmount, EntryId = j.Id, j.JournalNumber }).ToListAsync(ct);
+        var names = await _db.Shareholders.AsNoTracking().Where(s => s.CompanyId == _user.CompanyId).ToDictionaryAsync(s => s.Id, s => s.Name, ct);
+        var result = new List<LegacyPsaSubscription>();
+        foreach (var x in list)
+        {
+            var item = await _db.OpenItems.AsNoTracking().FirstOrDefaultAsync(o => o.JournalEntryId == x.EntryId && o.Side == OpenItemSide.Naleznosc, ct);
+            result.Add(new(x.EventId, x.EventDate, x.ShareholderId is { } sid ? names.GetValueOrDefault(sid, "") : "", x.TotalAmount, item?.SettledAmountPln ?? 0m, x.JournalNumber));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Korekta objęcia akcji P.S.A. zaksięgowanego według wcześniejszej logiki — wyłącznie stornem (zapis pierwotny pozostaje
+    /// w księgach), gdy wkład nie został jeszcze wpłacony. Po stornie objęcie jest ujęte w ewidencji wkładów do wniesienia,
+    /// a kapitał zostanie uznany przy wpłacie. Przy wpłacie częściowej wymagana korekta poleceniem księgowania (procedura w podręczniku).
+    /// </summary>
+    public async Task<JournalEntry> CorrectLegacyPsaSubscriptionAsync(Guid eventId, string reason, CancellationToken ct = default)
+    {
+        _user.Require(Permission.CorrectEntries);
+        var legacy = (await LegacyPsaSubscriptionsAsync(ct)).FirstOrDefault(l => l.EventId == eventId)
+                     ?? throw new DomainException("To zdarzenie nie jest objęciem akcji P.S.A. zaksięgowanym według wcześniejszej logiki.");
+        if (legacy.Paid != 0)
+            throw new DomainException($"Wkład został już częściowo wpłacony ({Money.Format(legacy.Paid)} zł) — storno całego zapisu zaburzyłoby rozliczenie wpłat. " +
+                "Postępuj wg podręcznika („Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1”): PK storno części niewpłaconej (Wn kapitał akcyjny/zapasowy, Ma należne wkłady).");
+        var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId, ct);
+        var reversal = await new LedgerService(_db, _user, _clock).ReverseAsync(ev.JournalEntryId!.Value,
+            string.IsNullOrWhiteSpace(reason) ? "P.S.A.: kapitał akcyjny tworzą wniesione wkłady (art. 300^3 KSH) — objęcie przeniesione do ewidencji wkładów do wniesienia" : reason, null, ct);
+        await _audit.AddAsync(_user, "KAPITAL_PSA_KOREKTA_OBJECIA", "CapitalEvent", ev.Id.ToString(), $"storno {legacy.JournalNumber} → {reversal.JournalNumber}", ct);
+        await _db.SaveChangesAsync(ct);
+        return reversal;
     }
 
     /// <summary>P.S.A.: zestawienie wkładów objętych i niewniesionych wg akcjonariuszy (ewidencja pozabilansowa).</summary>

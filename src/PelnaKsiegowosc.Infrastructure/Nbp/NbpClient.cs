@@ -22,6 +22,26 @@ public sealed class NbpClient
     private sealed record RateDto(string No, string EffectiveDate, decimal Mid);
     private sealed record TableDto(string Code, List<RateDto> Rates);
 
+    /// <summary>
+    /// Kurs ogłoszony na pierwszy dzień roboczy przypadający w dniu <paramref name="date"/> lub po nim (np. limity CIT:
+    /// pierwszy dzień roboczy roku podatkowego albo października roku poprzedniego).
+    /// </summary>
+    public async Task<NbpRate> RateOnFirstBusinessDayAsync(string currency, DateOnly date, CancellationToken ct = default)
+    {
+        var code = currency.Trim().ToUpperInvariant();
+        for (var d = date; d <= date.AddDays(10); d = d.AddDays(1))
+        {
+            using var resp = await _http.GetAsync($"api/exchangerates/rates/a/{code.ToLowerInvariant()}/{d:yyyy-MM-dd}/?format=json", ct);
+            if (resp.StatusCode == HttpStatusCode.NotFound) continue;
+            if (!resp.IsSuccessStatusCode) throw new DomainException($"NBP: błąd {(int)resp.StatusCode} przy pobieraniu kursu {code}.");
+            var t = await resp.Content.ReadFromJsonAsync<TableDto>(new JsonSerializerOptions(JsonSerializerDefaults.Web), ct)
+                    ?? throw new DomainException("NBP: pusta odpowiedź.");
+            var r = t.Rates.First();
+            return new NbpRate(code, r.Mid, r.No, DateOnly.ParseExact(r.EffectiveDate, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+        }
+        throw new DomainException($"NBP: brak tabeli kursów {code} w ciągu 10 dni od {date:dd.MM.yyyy}.");
+    }
+
     /// <summary>Kurs z ostatniej tabeli opublikowanej przed dniem <paramref name="operationDate"/>.</summary>
     public async Task<NbpRate> RateBeforeAsync(string currency, DateOnly operationDate, CancellationToken ct = default)
     {

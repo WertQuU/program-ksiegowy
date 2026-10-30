@@ -366,6 +366,7 @@ public class FixedAssetCitCapitalTests
         Assert.Equal(9400m, rec.Computation.TaxBase);
         Assert.Equal(9m, rec.Computation.RatePercent); // pierwszy rok działalności
         Assert.Equal(846m, rec.Computation.Tax);
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 4.2156m); // kurs NBP z 2.01.2026 — limit przychodów dla 9%
         var adv = await cit.ComputeAdvanceAsync(t.Year.Id, 2);
         Assert.Equal(846m, adv.AdvanceDue);
         Assert.Equal(new DateOnly(2026, 3, 20), adv.PaymentDeadline);

@@ -787,6 +787,53 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.ToTable("CitAdvances");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.CitLiabilityAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountCapital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AmountOperating")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FiscalYearId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("OpenItemId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FiscalYearId");
+
+                    b.HasIndex("OpenItemId");
+
+                    b.ToTable("CitLiabilityAdjustments");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Companies.AccountingPolicy", b =>
                 {
                     b.Property<Guid>("Id")

@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
@@ -56,6 +57,17 @@ public static class SelfTestScenario
         await w.NextCommand.ExecuteAsync(null);
         await w.FinishCommand.ExecuteAsync(null);
         if (!w.Finished) throw new InvalidOperationException("Kreator nie zakończył się: " + string.Join(" | ", dialogs.Errors) + $" (krok {w.Step})");
+        // dane scenariusza: kurs EUR do limitu 9% CIT (w pracy pobierany z NBP przyciskiem w sekcji CIT) — autotest działa bez internetu
+        await using (var db = session.OpenDb())
+        {
+            foreach (var c in await db.Companies.AsNoTracking().ToListAsync())
+            {
+                if (!LegalForms.IsCitTaxpayer(c.LegalForm)) continue;
+                var cit = new Application.Cit.CitService(db, OperatorIdentity.For(c.Id), session.Clock);
+                foreach (var fy in await db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == c.Id).ToListAsync())
+                    await cit.SetLimitEurRateAsync(fy.StartDate, 4.2156m);
+            }
+        }
         return w;
     }
 

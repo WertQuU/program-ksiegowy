@@ -54,6 +54,7 @@ public class KsiegiDbContext : DbContext
     public DbSet<VatRegisterEntry> VatRegister => Set<VatRegisterEntry>();
     public DbSet<CitAdjustment> CitAdjustments => Set<CitAdjustment>();
     public DbSet<CitAdvance> CitAdvances => Set<CitAdvance>();
+    public DbSet<CitLiabilityAdjustment> CitLiabilityAdjustments => Set<CitLiabilityAdjustment>();
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<StockItem> StockItems => Set<StockItem>();
@@ -234,6 +235,7 @@ public class KsiegiDbContext : DbContext
         });
         m.Entity<CitAdvance>(e => { e.HasIndex(x => new { x.FiscalYearId, x.PeriodNumber }).IsUnique(); e.Property(x => x.RatePercent).HasPrecision(7, 4); e.Property(x => x.WarningsText).HasMaxLength(int.MaxValue); });
         m.Entity<CitAdjustment>(e => e.HasIndex(x => x.FiscalYearId));
+        m.Entity<CitLiabilityAdjustment>(e => { e.HasIndex(x => x.FiscalYearId); e.HasIndex(x => x.OpenItemId); });
 
         m.Entity<ReceivableAllowance>(e => e.HasIndex(x => new { x.CompanyId, x.OpenItemId }));
         m.Entity<Provision>(e => e.HasIndex(x => new { x.CompanyId, x.Date }));

@@ -792,6 +792,53 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.ToTable("CitAdvances");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.CitLiabilityAdjustment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AmountCapital")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("AmountOperating")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("FiscalYearId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("OpenItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("RecordedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Reference")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FiscalYearId");
+
+                    b.HasIndex("OpenItemId");
+
+                    b.ToTable("CitLiabilityAdjustments");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Companies.AccountingPolicy", b =>
                 {
                     b.Property<Guid>("Id")

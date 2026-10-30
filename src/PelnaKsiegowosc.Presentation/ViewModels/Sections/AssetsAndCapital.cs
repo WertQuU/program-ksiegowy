@@ -268,4 +268,16 @@ public sealed partial class CapitalViewModel : SectionViewModel
             ? "P.S.A.: objęcie akcji ujęto w ewidencji wkładów do wniesienia — kapitał akcyjny zostanie zaksięgowany przy wpłacie wkładu (art. 300³ KSH)."
             : $"Zaksięgowano {e.JournalNumber}";
     }, "Zdarzenie zaksięgowane.");
+
+    [RelayCommand]
+    private Task CorrectLegacyPsaAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedEvent?.Tag is not Guid id) throw new DomainException("Zaznacz objęcie akcji do korekty.");
+        if (!await Dialogs.ConfirmAsync("Korekta objęcia akcji (P.S.A.)",
+                "Zapis objęcia zostanie wystornowany (pozostaje w księgach). Objęcie trafi do ewidencji wkładów do wniesienia, a kapitał akcyjny zostanie zaksięgowany przy wpłacie wkładu. Kontynuować?"))
+            return;
+        await using var db = Session.OpenDb();
+        var r = await new CapitalService(db, Session.User, Session.Clock).CorrectLegacyPsaSubscriptionAsync(id, "");
+        StatusMessage = $"Zaksięgowano storno {r.JournalNumber}.";
+    }, "Objęcie skorygowane.");
 }

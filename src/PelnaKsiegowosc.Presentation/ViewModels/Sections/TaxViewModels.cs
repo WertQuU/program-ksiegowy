@@ -104,7 +104,10 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private bool _isApplicable = true;
     [ObservableProperty] private string _uptoPeriod = "";
     [ObservableProperty] private string _eurRate = "";
+    [ObservableProperty] private string _statusEurRate = "";
+    [ObservableProperty] private string _rateLabels = "";
     [ObservableProperty] private bool _reducedRateExcluded;
+    [ObservableProperty] private bool _jpkCit2025;
     [ObservableProperty] private TableData _reconciliation = TableData.Empty;
     [ObservableProperty] private TableData _advances = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedAdvance;
@@ -157,9 +160,12 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var svc = new CitService(db, Session.User, Session.Clock);
         var rec = await svc.ReconcileAsync(year.Id, Parse.Int(UptoPeriod, "Okres"));
-        var eur = await svc.EurRateAsync(year.StartDate.Year);
-        EurRate = eur?.ToString("0.0000", System.Globalization.CultureInfo.GetCultureInfo("pl-PL")) ?? "";
+        var pl = System.Globalization.CultureInfo.GetCultureInfo("pl-PL");
+        EurRate = (await svc.LimitEurRateAsync(year.StartDate))?.ToString("0.0000", pl) ?? "";
+        StatusEurRate = (await svc.StatusEurRateAsync(year.StartDate.Year - 1))?.ToString("0.0000", pl) ?? "";
+        RateLabels = $"Limit 9% (przychody {year.Name}): kurs z 1. dnia roboczego roku podatkowego od {year.StartDate.ToPl()}. Status małego podatnika: kurs z 1. dnia roboczego października {year.StartDate.Year - 1} r.";
         ReducedRateExcluded = await svc.ReducedRateExcludedAsync();
+        JpkCit2025 = await svc.JpkCit2025Async();
         var t = new TableData(new TableColumn("Pozycja", Width: 3), new TableColumn("Kwota", ColumnKind.Money), new TableColumn("Podstawa / uwagi", Width: 2));
         t.Add(null, $"Przychody bilansowe ({rec.From.ToPl()}–{rec.To.ToPl()})", rec.BookRevenue, "");
         t.Add(null, "Koszty bilansowe", rec.BookCosts, "");
@@ -196,9 +202,50 @@ public sealed partial class CitViewModel : SectionViewModel
     {
         await using var db = Session.OpenDb();
         var svc = new CitService(db, Session.User, Session.Clock);
-        if (!string.IsNullOrWhiteSpace(EurRate)) await svc.SetEurRateAsync(Session.CurrentYear.StartDate.Year, Parse.Amount(EurRate, "Kurs EUR"));
+        var y = Session.CurrentYear;
+        if (!string.IsNullOrWhiteSpace(EurRate)) await svc.SetLimitEurRateAsync(y.StartDate, ParseRate(EurRate, "Kurs EUR (limit 9%)"));
+        if (!string.IsNullOrWhiteSpace(StatusEurRate)) await svc.SetStatusEurRateAsync(y.StartDate.Year - 1, ParseRate(StatusEurRate, "Kurs EUR (mały podatnik)"));
         await svc.SetReducedRateExcludedAsync(ReducedRateExcluded);
+        await svc.SetJpkCit2025Async(JpkCit2025);
     }, "Zapisano warunki stawki 9%.");
+
+    private static decimal ParseRate(string text, string field) =>
+        decimal.TryParse(text.Trim().Replace('.', ','), System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.GetCultureInfo("pl-PL"), out var v)
+            ? v : throw new DomainException($"Pole „{field}”: podaj kurs, np. 4,2156.");
+
+    /// <summary>
+    /// Gdy brak kursu euro do limitu 9% (pierwszy dzień roboczy roku podatkowego), program próbuje pobrać go z NBP przed
+    /// zapisem zaliczki; bez połączenia użytkownik wpisuje kurs ręcznie (zaliczka nie jest liczona po kursie zastępczym).
+    /// </summary>
+    internal static async Task EnsureLimitRateAsync(AppSession session, Domain.Periods.FiscalYear year)
+    {
+        await using var db = session.OpenDb();
+        var svc = new CitService(db, session.User, session.Clock);
+        if (await svc.LimitEurRateAsync(year.StartDate) is not null) return;
+        try
+        {
+            using var http = new HttpClient { BaseAddress = Infrastructure.Nbp.NbpClient.BaseUrl, Timeout = TimeSpan.FromSeconds(15) };
+            var r = await new Infrastructure.Nbp.NbpClient(http).RateOnFirstBusinessDayAsync("EUR", year.StartDate);
+            await svc.SetLimitEurRateAsync(year.StartDate, r.Mid);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or DomainException) { /* komunikat o braku kursu zgłosi wyliczenie */ }
+    }
+
+    /// <summary>Pobranie obu kursów z tabeli A NBP (pierwszy dzień roboczy roku podatkowego oraz października roku poprzedniego).</summary>
+    [RelayCommand]
+    private Task FetchNbpRatesAsync() => ChangeAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        using var http = new HttpClient { BaseAddress = Infrastructure.Nbp.NbpClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        var nbp = new Infrastructure.Nbp.NbpClient(http);
+        var limit = await nbp.RateOnFirstBusinessDayAsync("EUR", y.StartDate);
+        var status = await nbp.RateOnFirstBusinessDayAsync("EUR", new DateOnly(y.StartDate.Year - 1, 10, 1));
+        await using var db = Session.OpenDb();
+        var svc = new CitService(db, Session.User, Session.Clock);
+        await svc.SetLimitEurRateAsync(y.StartDate, limit.Mid);
+        await svc.SetStatusEurRateAsync(y.StartDate.Year - 1, status.Mid);
+        StatusMessage = $"NBP: {limit.Mid:0.0000} (tabela {limit.TableNumber} z {limit.EffectiveDate.ToPl()}), {status.Mid:0.0000} (tabela {status.TableNumber} z {status.EffectiveDate.ToPl()}).";
+    }, "Pobrano kursy euro z NBP.");
 
     [RelayCommand]
     private Task AddAdjustmentAsync() => ChangeAsync(async () =>
@@ -213,6 +260,7 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task ComputeAdvanceAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
+        await EnsureLimitRateAsync(Session, Session.CurrentYear);
         var a = await new CitService(db, Session.User, Session.Clock).ComputeAdvanceAsync(Session.CurrentYear.Id, Parse.Int(UptoPeriod, "Okres"));
         StatusMessage = $"Zaliczka za okres {a.PeriodNumber}: {Money.Format(a.AdvanceDue)} zł, termin {a.PaymentDeadline.ToPl()}";
     }, "Zapisano wyliczenie zaliczki.");

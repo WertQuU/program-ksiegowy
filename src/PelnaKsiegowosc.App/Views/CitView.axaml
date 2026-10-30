@@ -18,9 +18,14 @@
     </WrapPanel>
     <Expander DockPanel.Dock="Top" Header="Warunki stawki 9% (limit 2 mln euro, wyłączenia)" Margin="0,0,0,4">
       <WrapPanel Classes="toolbar">
-        <TextBlock Text="Kurs EUR NBP z 1. dnia roboczego października roku poprzedniego:" />
-        <TextBox Text="{Binding EurRate}" Watermark="np. 4,2617" MinWidth="90" />
+        <TextBlock Text="{Binding RateLabels}" TextWrapping="Wrap" MaxWidth="900" />
+        <TextBlock Text="Kurs EUR — limit 9%:" />
+        <TextBox Text="{Binding EurRate}" Watermark="np. 4,2156" MinWidth="90" />
+        <TextBlock Text="Kurs EUR — mały podatnik:" />
+        <TextBox Text="{Binding StatusEurRate}" Watermark="np. 4,2586" MinWidth="90" />
+        <Button Content="Pobierz kursy z NBP" Command="{Binding FetchNbpRatesCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Spółka powstała z przekształcenia / połączenia / podziału / wniesienia przedsiębiorstwa (art. 19 ust. 1b–1c) — 9% wyłączone" IsChecked="{Binding ReducedRateExcluded}" />
+        <CheckBox Content="Podatkowa grupa kapitałowa lub przychody ponad 50 mln euro (JPK_CIT od 2025 r.)" IsChecked="{Binding JpkCit2025}" />
         <Button Content="Zapisz" Command="{Binding SaveRateConditionsCommand}" IsEnabled="{Binding IsApplicable}" />
       </WrapPanel>
     </Expander>

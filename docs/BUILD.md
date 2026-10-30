@@ -72,7 +72,7 @@ Pakiet `.zip` na Windows: `Compress-Archive artifacts/win-x64/* PelnaKsiegowosc-
 ## 5. Instalator `.msi` (Windows)
 
 ```powershell
-dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release -p:ProductVersion=1.0.1 "-p:AppPublishDir=$PWD/artifacts/win-x64" -o artifacts/msi
+dotnet build installer/PelnaKsiegowosc.Installer.wixproj -c Release -p:ProductVersion=1.0.2 "-p:AppPublishDir=$PWD/artifacts/win-x64" -o artifacts/msi
 ```
 
 Instalator instaluje program w `C:\Program Files\PelnaKsiegowosc`, pokazuje licencję (`installer/Licencja.rtf`,
@@ -82,7 +82,7 @@ generowany z `LICENSE` skryptem `tools/licencja-rtf.py`), tworzy skrót w menu S
 ## 6. Pakiety Linux (`.deb`, `.tar.gz`)
 
 ```bash
-packaging/linux/build-packages.sh artifacts/linux-x64 1.0.1 artifacts/packages
+packaging/linux/build-packages.sh artifacts/linux-x64 1.0.2 artifacts/packages
 ```
 
 ## 7. Podpisanie cyfrowe i CI
@@ -93,7 +93,7 @@ Code Signing (`signtool sign /fd SHA256 /tr <serwer-znacznika-czasu> /td SHA256 
 
 `.github/workflows/ci.yml`: testy na Windows i Linux (na Linuksie z PostgreSQL i atrapą S3), publikacja,
 kontrola uruchomienia opublikowanych programów, budowa i próbna instalacja `.deb` oraz `.msi`. Wypchnięcie tagu
-`v<wersja>` (np. `v1.0.1`) tworzy wydanie z pakietami i plikiem `SHA256SUMS.txt`.
+`v<wersja>` (np. `v1.0.2`) tworzy wydanie z pakietami i plikiem `SHA256SUMS.txt`.
 
 Statystyki kompilacji wysyłane przez pakiet Avalonia.BuildServices są wyłączone w `Directory.Build.targets`.
 

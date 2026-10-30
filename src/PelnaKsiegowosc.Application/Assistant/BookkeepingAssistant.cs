@@ -216,6 +216,13 @@ public sealed class BookkeepingAssistant
                     "Saldo nie trafi do sprawozdania finansowego.", "Plan kont → zaznacz konto → uzupełnij „Bilans Wn / Ma” albo „RZiS”.", AppArea.PlanKont);
         }
 
+        // --- Kapitał P.S.A.: objęcia zaksięgowane według logiki sprzed wersji 1.0.1 ---
+        foreach (var l in await new Capital.CapitalService(_db, _user, _clock).LegacyPsaSubscriptionsAsync(ct))
+            Add("KAPITAL_PSA_OBJECIE", IssueSeverity.Ostrzezenie, $"Objęcie akcji ({l.Shareholder}, {l.Date.ToPl()}) zwiększyło kapitał akcyjny przed wpłatą",
+                $"Zapis {l.JournalNumber}: {Money.Format(l.Amount)} zł, wpłacono {Money.Format(l.Paid)} zł. W P.S.A. kapitał akcyjny tworzą wyłącznie wniesione wkłady (art. 300³ KSH).",
+                l.Paid == 0 ? "Kapitał → zaznacz zdarzenie → „Koryguj objęcie (P.S.A.)” — storno; kapitał zostanie uznany przy wpłacie."
+                            : "Wkład częściowo wpłacony — korekta PK wg podręcznika (rozdział „Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1”).", AppArea.Kapital, l.EventId);
+
         // --- Rozrachunki ---
         var items = await _db.OpenItems.AsNoTracking().Where(o => o.CompanyId == companyId && o.Status != OpenItemStatus.Rozliczona).ToListAsync(ct);
         var cps = await _db.Counterparties.AsNoTracking().Where(c => c.CompanyId == companyId).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
@@ -385,7 +392,8 @@ public sealed class BookkeepingAssistant
             if (LegalForms.IsCitTaxpayer(company.LegalForm))
             {
                 Y(Domain.Cit.CitCalculator.AnnualReturnDeadline(fy.EndDate), $"Zeznanie CIT-8 za {fy.Name}", "Do końca 3. miesiąca roku następnego (art. 27 ust. 1 ustawy o CIT); zapłata podatku w tym terminie. Zeznanie składa się poza programem.", false, AppArea.Cit);
-                if (JpkCitRequired(company, fy.StartDate) is { } basis)
+                var earlyGroup = await settings.GetAsync(companyId, Cit.CitService.JpkCit2025Key, () => false, ct);
+                if (JpkCitRequired(company, fy.StartDate, earlyGroup) is { } basis)
                 {
                     var jpkCit = await settings.GetAsync<DateTime?>(companyId, $"jpk-cit.wygenerowano.{fy.Name}", () => null, ct) is not null;
                     Y(Domain.Cit.CitCalculator.ShiftToBusinessDay(After(7)), $"JPK_CIT (księgi z oznaczeniami podatkowymi) za {fy.Name}",
@@ -400,12 +408,14 @@ public sealed class BookkeepingAssistant
 
     /// <summary>
     /// Harmonogram obowiązku JPK_CIT (przepisy przejściowe): lata podatkowe rozpoczęte od 2025 r. — podatkowe grupy
-    /// kapitałowe i najwięksi podatnicy (przychody ponad 50 mln euro; program nie ustala tego automatycznie); od 2026 r. —
+    /// kapitałowe i najwięksi podatnicy (przychody ponad 50 mln euro — oznaczenie użytkownika w sekcji CIT); od 2026 r. —
     /// podatnicy składający JPK_V7M (VAT miesięcznie); od 2027 r. — podatnicy składający JPK_V7K (VAT kwartalnie)
     /// oraz pozostali podatnicy CIT. Zwraca podstawę obowiązku albo null, gdy rok jeszcze nie jest objęty.
     /// </summary>
-    public static string? JpkCitRequired(Company company, DateOnly taxYearStart)
+    public static string? JpkCitRequired(Company company, DateOnly taxYearStart, bool pgkOrRevenueOver50mEur = false)
     {
+        if (pgkOrRevenueOver50mEur && taxYearStart.Year >= 2025)
+            return "Obowiązek od lat podatkowych rozpoczętych po 31.12.2024 r. — podatkowa grupa kapitałowa albo podatnik z przychodami ponad 50 mln euro (oznaczenie w sekcji CIT).";
         var vatPayer = company.VatStatus == VatStatus.CzynnyPodatnikVat;
         if (vatPayer && company.VatPeriod == VatSettlementPeriod.Miesieczny && taxYearStart.Year >= 2026)
             return "Obowiązek od lat podatkowych rozpoczętych po 31.12.2025 r. — podatnik składa JPK_V7M.";

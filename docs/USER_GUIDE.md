@@ -117,6 +117,32 @@ e-Deklaracji (walidowaną oficjalnym schematem) — VAT-UE(5) za miesiąc (ponow
 w kartotece pracownika uzupełnij PESEL i kod urzędu skarbowego). Pozostałe deklaracje program wylicza i drukuje;
 wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 
+## CIT — stawka 9% i kursy euro
+
+W sekcji CIT → „Warunki stawki 9%” przycisk **Pobierz kursy z NBP** zapisuje dwa różne kursy:
+
+- **limit 9% w bieżącym roku** — kurs z pierwszego dnia roboczego roku podatkowego; limit to 2 mln euro (przy roku
+  krótszym lub dłuższym niż 12 miesięcy: 1/12 za każdy pełny miesiąc), przeliczony i zaokrąglony do 1000 zł;
+- **status małego podatnika** — kurs z pierwszego dnia roboczego października roku poprzedniego (sprzedaż z VAT
+  w poprzednim roku ≤ 2 mln euro).
+
+Bez kursu dla limitu program pokazuje wyliczenie wstępne i nie zapisze zaliczki. Niezapłacone faktury kosztowe
+po 90 dniach od terminu (art. 18f) program dolicza sam — tylko część zaliczoną do kosztów podatkowych — i zapisuje
+historię korekt przy zaliczce; po zapłacie zmniejsza podstawę do wysokości wcześniejszego zwiększenia.
+
+## Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1
+
+W prostej spółce akcyjnej kapitał akcyjny tworzą tylko wniesione wkłady (art. 300³ KSH). Wersja 1.0.0 księgowała
+objęcie akcji od razu na kapitale (Wn 245-01 / Ma 801). Asystent pokazuje takie objęcia („Objęcie akcji … zwiększyło
+kapitał akcyjny przed wpłatą”). Zapisy nie są zmieniane automatycznie:
+
+1. **Nic nie wpłacono** — Kapitał → zaznacz objęcie → „Koryguj objęcie (P.S.A.)…”. Program księguje storno (zapis
+   pierwotny zostaje), objęcie trafia do ewidencji wkładów do wniesienia, a kapitał zostanie zaksięgowany przy wpłacie.
+2. **Wkład wpłacony w całości** — korekta nie jest potrzebna (kapitał odpowiada wniesionym wkładom).
+3. **Wpłacono część** — polecenie księgowania storno części niewpłaconej: Wn 801 (i 802 proporcjonalnie) / Ma 245-01
+   z kontrahentem akcjonariusza i rozrachunkiem objęcia, z opisem podstawy (art. 300³ KSH). Kolejne wpłaty program
+   rozliczy najpierw z pozostałym należnym wkładem, więc kapitał nie zostanie uznany podwójnie.
+
 ## Koniec roku
 
 Najprościej: Zamknięcie → zakładka **„Zamknij rok (kreator)”** — 8 kroków w kolejności (miesiące, inwentaryzacja,
