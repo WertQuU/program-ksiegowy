@@ -26,6 +26,12 @@ public static class JpkV7Rules
     public const string DeclarationVariant = "23";
     public const string SchemaFile = "Schemat_JPK_V7M(3)_v1-0E.xsd";
     public const string SchemaFileQuarterly = "Schemat_JPK_V7K(3)_v1-0E.xsd";
+    public const string QuarterlySystemCode = "JPK_V7K (3)";
+    /// <summary>Wariant części deklaracyjnej VAT-7K — NIEPOTWIERDZONY dla struktury (3).</summary>
+    public const string QuarterlyDeclarationSystemCode = "VAT-7K (17)";
+    public const string QuarterlyDeclarationVariant = "17";
+    /// <summary>Zastępcza przestrzeń nazw JPK_V7K(3) — używana tylko, gdy nie wczytano oficjalnego schematu (plik i tak NIEZWALIDOWANY).</summary>
+    public const string QuarterlyNamespacePlaceholder = "urn:pelna-ksiegowosc:jpk_v7k-3:wczytaj-oficjalny-schemat";
 }
 
 public sealed record JpkResult(XDocument Document, XsdValidationResult Validation, IReadOnlyList<string> Warnings)
@@ -33,26 +39,40 @@ public sealed record JpkResult(XDocument Document, XsdValidationResult Validatio
     public string Status => Validation.IsValid ? "ZWALIDOWANY ze schematem XSD" : "WYGENEROWANY — NIEZWALIDOWANY (nie składać bez walidacji)";
 }
 
-/// <summary>Generator JPK_V7M z ewidencji VAT (rejestry) i wyliczonej deklaracji.</summary>
+/// <summary>
+/// Generator JPK_V7M / JPK_V7K z ewidencji VAT (rejestry) i wyliczonej deklaracji. JPK_V7K: ewidencja za każdy miesiąc,
+/// część deklaracyjna (za kwartał) tylko w pliku za ostatni miesiąc kwartału. Przestrzeń nazw pobierana z wczytanego schematu.
+/// </summary>
 public static class JpkV7Builder
 {
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
     public static JpkResult Build(Company company, DateOnly period, IReadOnlyList<VatRegisterEntry> sales, IReadOnlyList<VatRegisterEntry> purchases,
-        VatDeclaration declaration, bool correction, DateTime generatedUtc, XsdValidator validator)
+        VatDeclaration declaration, bool correction, DateTime generatedUtc, XsdValidator validator) =>
+        Build(company, period, sales, purchases, declaration, declaration, correction, generatedUtc, validator);
+
+    /// <param name="declaration">Deklaracja (miesięczna lub kwartalna); <c>null</c> w 1. i 2. miesiącu kwartału (JPK_V7K bez deklaracji).</param>
+    /// <param name="monthControl">Zestawienie z rejestrów samego miesiąca — sumy kontrolne ewidencji.</param>
+    public static JpkResult Build(Company company, DateOnly period, IReadOnlyList<VatRegisterEntry> sales, IReadOnlyList<VatRegisterEntry> purchases,
+        VatDeclaration? declaration, VatDeclaration monthControl, bool correction, DateTime generatedUtc, XsdValidator validator)
     {
-        var ns = JpkV7Rules.Ns;
+        var quarterly = company.VatPeriod == VatSettlementPeriod.Kwartalny;
+        var schemaFile = quarterly ? JpkV7Rules.SchemaFileQuarterly : JpkV7Rules.SchemaFile;
+        XNamespace ns = validator.TargetNamespace(schemaFile) ?? (quarterly ? JpkV7Rules.QuarterlyNamespacePlaceholder : JpkV7Rules.Ns.NamespaceName);
         var warnings = new List<string>();
         if (string.IsNullOrWhiteSpace(company.TaxOfficeCode)) throw new DomainException("Uzupełnij kod urzędu skarbowego w danych jednostki (wymagany w nagłówku JPK).");
-        if (company.VatPeriod != VatSettlementPeriod.Miesieczny) throw new DomainException("Jednostka rozlicza VAT kwartalnie — JPK_V7K nie jest jeszcze obsługiwany.");
+        if (quarterly && period.Month % 3 == 0 && declaration is null) throw new DomainException("W ostatnim miesiącu kwartału JPK_V7K musi zawierać deklarację za kwartał.");
+        if (quarterly && period.Month % 3 != 0) declaration = null;
+        if (!quarterly && declaration is null) throw new DomainException("JPK_V7M wymaga części deklaracyjnej.");
         if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej)
             throw new DomainException("Dla osoby fizycznej JPK wymaga sekcji OsobaFizyczna (imię, nazwisko, data urodzenia) — ten wariant nie jest jeszcze obsługiwany.");
         if (string.IsNullOrWhiteSpace(company.Email)) warnings.Add("Brak adresu e-mail jednostki — pole wymagane w Podmiot1.");
-        warnings.AddRange(declaration.Warnings);
+        if (declaration is not null) warnings.AddRange(declaration.Warnings);
+        if (quarterly && declaration is null) warnings.Add($"JPK_V7K za {period:MM.yyyy}: tylko ewidencja — deklaracja za kwartał w pliku za {period.AddMonths(3 - (period.Month - 1) % 3 - 1):MM.yyyy}.");
 
         XElement E(string n, object? v) => new(ns + n, v);
         var naglowek = new XElement(ns + "Naglowek",
-            new XElement(ns + "KodFormularza", new XAttribute("kodSystemowy", JpkV7Rules.SystemCode), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "JPK_VAT"),
+            new XElement(ns + "KodFormularza", new XAttribute("kodSystemowy", quarterly ? JpkV7Rules.QuarterlySystemCode : JpkV7Rules.SystemCode), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "JPK_VAT"),
             E("WariantFormularza", JpkV7Rules.Variant),
             E("DataWytworzeniaJPK", generatedUtc.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", Inv)),
             E("NazwaSystemu", "Pełna Księgowość"),
@@ -66,16 +86,20 @@ public static class JpkV7Builder
                 E("PelnaNazwa", company.FullName),
                 E("Email", company.Email ?? ""),
                 string.IsNullOrWhiteSpace(company.Phone) ? null : E("Telefon", company.Phone)));
-        var pos = new XElement(ns + "PozycjeSzczegolowe");
-        foreach (var (k, v) in declaration.Fields.OrderBy(f => int.Parse(f.Key[2..], Inv)))
-            if (v != 0 || k is "P_38" or "P_51") pos.Add(E(k, v.ToString("0", Inv)));
-        var deklaracja = new XElement(ns + "Deklaracja",
-            new XElement(ns + "Naglowek",
-                new XElement(ns + "KodFormularzaDekl", new XAttribute("kodSystemowy", JpkV7Rules.DeclarationSystemCode), new XAttribute("kodPodatku", "VAT"),
-                    new XAttribute("rodzajZobowiazania", "Z"), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "VAT-7"),
-                E("WariantFormularzaDekl", JpkV7Rules.DeclarationVariant)),
-            pos,
-            E("Pouczenia", "1"));
+        XElement? deklaracja = null;
+        if (declaration is not null)
+        {
+            var pos = new XElement(ns + "PozycjeSzczegolowe");
+            foreach (var (k, v) in declaration.Fields.OrderBy(f => int.Parse(f.Key[2..], Inv)))
+                if (v != 0 || k is "P_38" or "P_51") pos.Add(E(k, v.ToString("0", Inv)));
+            deklaracja = new XElement(ns + "Deklaracja",
+                new XElement(ns + "Naglowek",
+                    new XElement(ns + "KodFormularzaDekl", new XAttribute("kodSystemowy", quarterly ? JpkV7Rules.QuarterlyDeclarationSystemCode : JpkV7Rules.DeclarationSystemCode), new XAttribute("kodPodatku", "VAT"),
+                        new XAttribute("rodzajZobowiazania", "Z"), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), quarterly ? "VAT-7K" : "VAT-7"),
+                    E("WariantFormularzaDekl", quarterly ? JpkV7Rules.QuarterlyDeclarationVariant : JpkV7Rules.DeclarationVariant)),
+                pos,
+                E("Pouczenia", "1"));
+        }
 
         var ewidencja = new XElement(ns + "Ewidencja");
         var lp = 1;
@@ -98,7 +122,7 @@ public static class JpkV7Builder
                 row.Add(E(fld.Key, Money.Xml(fld.Sum(x => x.Item2))));
             ewidencja.Add(row);
         }
-        ewidencja.Add(new XElement(ns + "SprzedazCtrl", E("LiczbaWierszySprzedazy", lp - 1), E("PodatekNalezny", Money.Xml(declaration.SalesTaxControl))));
+        ewidencja.Add(new XElement(ns + "SprzedazCtrl", E("LiczbaWierszySprzedazy", lp - 1), E("PodatekNalezny", Money.Xml(monthControl.SalesTaxControl))));
         lp = 1;
         foreach (var g in purchases.GroupBy(s => s.DocumentId))
         {
@@ -117,11 +141,11 @@ public static class JpkV7Builder
                 row.Add(E(fld.Key, Money.Xml(fld.Sum(x => x.Item2))));
             ewidencja.Add(row);
         }
-        ewidencja.Add(new XElement(ns + "ZakupCtrl", E("LiczbaWierszyZakupow", lp - 1), E("PodatekNaliczony", Money.Xml(declaration.PurchaseTaxControl))));
+        ewidencja.Add(new XElement(ns + "ZakupCtrl", E("LiczbaWierszyZakupow", lp - 1), E("PodatekNaliczony", Money.Xml(monthControl.PurchaseTaxControl))));
 
         var doc = new XDocument(new XDeclaration("1.0", "UTF-8", null),
             new XElement(ns + "JPK", new XAttribute(XNamespace.Xmlns + "tns", ns.NamespaceName), naglowek, podmiot, deklaracja, ewidencja));
-        var validation = validator.Validate(doc, JpkV7Rules.SchemaFile, "JPK_V7M(3)");
+        var validation = validator.Validate(doc, schemaFile, quarterly ? "JPK_V7K(3)" : "JPK_V7M(3)");
         if (!validation.IsValid) warnings.Add("Plik JPK nie został zweryfikowany oficjalnym schematem XSD — nie wysyłaj go bez walidacji.");
         return new JpkResult(doc, validation, warnings);
     }

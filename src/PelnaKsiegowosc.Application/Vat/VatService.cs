@@ -6,6 +6,7 @@ using PelnaKsiegowosc.Application.Setup;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Documents;
 using PelnaKsiegowosc.Domain.Ledger;
 using PelnaKsiegowosc.Domain.Security;
@@ -30,6 +31,9 @@ public sealed class VatDeclaration
     public int PurchaseRows { get; set; }
     public decimal SalesTaxControl { get; set; }
     public decimal PurchaseTaxControl { get; set; }
+    /// <summary>Deklaracja kwartalna (JPK_V7K) — obejmuje trzy miesiące kończące się w <see cref="Period"/>.</summary>
+    public bool Quarterly { get; init; }
+    public int Quarter => (Period.Month - 1) / 3 + 1;
 }
 
 /// <summary>Rejestry VAT, wyliczenie pozycji deklaracji, rozliczenie VAT na kontach, kontrole poprawności.</summary>
@@ -56,12 +60,32 @@ public sealed class VatService
             .OrderBy(v => v.OrdinalNumber).ToListAsync(ct);
     }
 
-    public async Task<VatDeclaration> ComputeDeclarationAsync(DateOnly period, decimal? carriedForward = null, CancellationToken ct = default)
+    private async Task<bool> QuarterlyAsync(CancellationToken ct) =>
+        await _db.Companies.AsNoTracking().Where(c => c.Id == _user.CompanyId).Select(c => c.VatPeriod).FirstOrDefaultAsync(ct) == VatSettlementPeriod.Kwartalny;
+
+    /// <summary>Czy w tym miesiącu składa się deklarację (miesięcznie — zawsze; kwartalnie — w ostatnim miesiącu kwartału).</summary>
+    public async Task<bool> IsDeclarationMonthAsync(DateOnly period, CancellationToken ct = default) => !await QuarterlyAsync(ct) || period.Month % 3 == 0;
+
+    /// <summary>
+    /// Deklaracja VAT za okres. Podatnik kwartalny: w ostatnim miesiącu kwartału — za cały kwartał (JPK_V7K);
+    /// <paramref name="monthOnly"/> wymusza zestawienie wyłącznie z jednego miesiąca (sumy kontrolne ewidencji).
+    /// </summary>
+    public async Task<VatDeclaration> ComputeDeclarationAsync(DateOnly period, decimal? carriedForward = null, CancellationToken ct = default) =>
+        await ComputeDeclarationAsync(period, carriedForward, monthOnly: false, ct);
+
+    public async Task<VatDeclaration> ComputeDeclarationAsync(DateOnly period, decimal? carriedForward, bool monthOnly, CancellationToken ct = default)
     {
         var p = new DateOnly(period.Year, period.Month, 1);
-        var sales = await RegisterAsync(VatRegisterType.Sprzedaz, p, ct);
-        var purchases = await RegisterAsync(VatRegisterType.Zakup, p, ct);
-        var d = new VatDeclaration { Period = p, SalesRows = sales.Select(s => s.DocumentId).Distinct().Count(), PurchaseRows = purchases.Select(s => s.DocumentId).Distinct().Count() };
+        var quarterly = !monthOnly && p.Month % 3 == 0 && await QuarterlyAsync(ct);
+        var months = quarterly ? new[] { p.AddMonths(-2), p.AddMonths(-1), p } : new[] { p };
+        var sales = new List<VatRegisterEntry>();
+        var purchases = new List<VatRegisterEntry>();
+        foreach (var m in months)
+        {
+            sales.AddRange(await RegisterAsync(VatRegisterType.Sprzedaz, m, ct));
+            purchases.AddRange(await RegisterAsync(VatRegisterType.Zakup, m, ct));
+        }
+        var d = new VatDeclaration { Period = p, Quarterly = quarterly, SalesRows = sales.Select(s => s.DocumentId).Distinct().Count(), PurchaseRows = purchases.Select(s => s.DocumentId).Distinct().Count() };
 
         foreach (var e in sales)
         {
@@ -79,7 +103,7 @@ public sealed class VatService
         foreach (var (k, v) in d.RegisterTotals) d.Fields["P_" + k[2..]] = Money.RoundToFullZloty(v);
         d.Fields["P_37"] = NetFieldsInTotal.Sum(f => d.Fields.GetValueOrDefault("P_" + f[2..]));
         d.Fields["P_38"] = TaxFieldsInTotal.Sum(f => d.Fields.GetValueOrDefault("P_" + f[2..]));
-        d.CarriedForwardFromPrevious = carriedForward ?? await PreviousSurplusAsync(p, ct);
+        d.CarriedForwardFromPrevious = carriedForward ?? await PreviousSurplusAsync(p, quarterly, ct);
         d.Fields["P_39"] = Money.RoundToFullZloty(d.CarriedForwardFromPrevious);
         d.Fields["P_48"] = d.Fields["P_39"] + d.Fields.GetValueOrDefault("P_41") + d.Fields.GetValueOrDefault("P_43") + d.Fields.GetValueOrDefault("P_44") +
                            d.Fields.GetValueOrDefault("P_45") + d.Fields.GetValueOrDefault("P_46") + d.Fields.GetValueOrDefault("P_47");
@@ -104,10 +128,10 @@ public sealed class VatService
         return d;
     }
 
-    private async Task<decimal> PreviousSurplusAsync(DateOnly period, CancellationToken ct)
+    private async Task<decimal> PreviousSurplusAsync(DateOnly period, bool quarterly, CancellationToken ct)
     {
-        var prev = period.AddMonths(-1);
-        var snap = await new SettingsService(_db, _clock).GetAsync<VatSettlementSnapshot?>(_user.CompanyId, $"vat.settlement.{prev:yyyy-MM}", () => null, ct);
+        // poprzednia deklaracja: miesiąc wcześniej, a przy kwartale — ostatni miesiąc poprzedniego kwartału
+        var snap = await new SettingsService(_db, _clock).GetAsync<VatSettlementSnapshot?>(_user.CompanyId, $"vat.settlement.{period.AddMonths(quarterly ? -3 : -1):yyyy-MM}", () => null, ct);
         return snap is null ? 0 : snap.CarriedForward;
     }
 
@@ -125,6 +149,8 @@ public sealed class VatService
         var settings = new SettingsService(_db, _clock);
         if (await settings.GetAsync<VatSettlementSnapshot?>(_user.CompanyId, key, () => null, ct) is { JournalEntryId: not null })
             throw new DomainException($"VAT za {p:MM.yyyy} został już rozliczony.");
+        if (!await IsDeclarationMonthAsync(p, ct))
+            throw new DomainException($"Jednostka rozlicza VAT kwartalnie — rozliczenie wykonuje się w ostatnim miesiącu kwartału ({p.AddMonths(3 - (p.Month - 1) % 3 - 1):MM.yyyy}) za cały kwartał.");
         var d = await ComputeDeclarationAsync(p, null, ct);
         if (refundRequested < 0 || refundRequested > d.Surplus) throw new DomainException("Kwota zwrotu nie może przekraczać nadwyżki podatku naliczonego.");
         var posting = await settings.GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
@@ -143,7 +169,7 @@ public sealed class VatService
         if (lines.Count == 0) throw new DomainException("Brak kwot do rozliczenia.");
         var lastDay = p.AddMonths(1).AddDays(-1);
         var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("VAT", lastDay, lastDay, lastDay,
-            $"Rozliczenie VAT za {p:MM.yyyy}: do zapłaty {Money.Format(d.Payable)}, nadwyżka {Money.Format(d.Surplus)}", "PK", $"PK/VAT/{p:yyyy-MM}", lines), ct);
+            $"Rozliczenie VAT za {(d.Quarterly ? $"{d.Quarter} kwartał {p.Year}" : p.ToString("MM.yyyy"))}: do zapłaty {Money.Format(d.Payable)}, nadwyżka {Money.Format(d.Surplus)}", "PK", $"PK/VAT/{p:yyyy-MM}", lines), ct);
         await settings.SetAsync(_user.CompanyId, key, new VatSettlementSnapshot(p, d.Payable, d.Surplus, d.Surplus - refundRequested, refundRequested, entry.Id), ct);
         await new AuditService(_db, _clock).AddAsync(_user, "VAT_ROZLICZONY", "VatPeriod", p.ToString("yyyy-MM"), $"P_51={d.Payable}; P_53={d.Surplus}", ct);
         await _db.SaveChangesAsync(ct);

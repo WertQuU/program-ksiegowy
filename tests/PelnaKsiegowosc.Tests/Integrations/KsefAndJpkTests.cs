@@ -1,3 +1,5 @@
+using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Companies;
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -197,6 +199,65 @@ public class KsefAndJpkTests
         Assert.Equal("1", r.Document.Descendants(ns + "BFK").Single().Value); // faktura bez numeru KSeF
         Assert.Contains(r.Warnings, w => w.Contains("e-mail", StringComparison.OrdinalIgnoreCase));
         Assert.Contains("NIEZWALIDOWANY", r.Status); // schemat JPK_V7M nie jest dołączony do repozytorium (zob. schemas/README.md)
+    }
+
+    [Fact]
+    public async Task Jpk_v7k_has_monthly_records_and_quarterly_declaration_only_in_last_month()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        t.Company.VatPeriod = VatSettlementPeriod.Kwartalny;
+        await t.Db.SaveChangesAsync();
+        var inv = await ApprovedSaleAsync(t);
+        await new DocumentService(t.Db, t.User, t.Clock).PostAsync(inv.Id);
+        var vat = new VatService(t.Db, t.User, t.Clock);
+        var jan = new DateOnly(2026, 1, 1);
+        var mar = new DateOnly(2026, 3, 1);
+        Assert.False(await vat.IsDeclarationMonthAsync(jan));
+        Assert.True(await vat.IsDeclarationMonthAsync(mar));
+        await Assert.ThrowsAsync<DomainException>(() => vat.PostSettlementAsync(jan));
+
+        var janMonth = await vat.ComputeDeclarationAsync(jan, null, monthOnly: true);
+        var rJan = JpkV7Builder.Build(t.Company, jan, await vat.RegisterAsync(VatRegisterType.Sprzedaz, jan), await vat.RegisterAsync(VatRegisterType.Zakup, jan), null, janMonth, false, t.Clock.UtcNow, Validator());
+        XNamespace ns = JpkV7Rules.QuarterlyNamespacePlaceholder;
+        Assert.Empty(rJan.Document.Descendants(ns + "Deklaracja"));
+        Assert.Single(rJan.Document.Descendants(ns + "SprzedazWiersz"));
+        Assert.Equal("JPK_V7K (3)", rJan.Document.Descendants(ns + "KodFormularza").Single().Attribute("kodSystemowy")!.Value);
+        Assert.Equal("695.00", rJan.Document.Descendants(ns + "PodatekNalezny").Single().Value);
+
+        var q = await vat.ComputeDeclarationAsync(mar);
+        Assert.True(q.Quarterly);
+        Assert.Equal(1, q.Quarter);
+        Assert.Equal(695m, q.Fields["P_38"]);
+        var marMonth = await vat.ComputeDeclarationAsync(mar, null, monthOnly: true);
+        var rMar = JpkV7Builder.Build(t.Company, mar, await vat.RegisterAsync(VatRegisterType.Sprzedaz, mar), await vat.RegisterAsync(VatRegisterType.Zakup, mar), q, marMonth, false, t.Clock.UtcNow, Validator());
+        Assert.Single(rMar.Document.Descendants(ns + "Deklaracja"));
+        Assert.Empty(rMar.Document.Descendants(ns + "SprzedazWiersz"));
+        Assert.Equal("695", rMar.Document.Descendants(ns + "P_51").Single().Value);
+        Assert.Equal("VAT-7K", rMar.Document.Descendants(ns + "KodFormularzaDekl").Single().Value);
+        Assert.Contains("NIEZWALIDOWANY", rMar.Status);
+        await vat.PostSettlementAsync(mar);
+    }
+
+    [Fact]
+    public async Task Jpk_cit_contains_trial_balance_with_tax_markers_and_journal()
+    {
+        await using var t = await PelnaKsiegowosc.Tests.Integration.FullYearScenarioTests.BuildFullYearAsync(closeYear: true);
+        var fy = await t.Db.FiscalYears.AsNoTracking().SingleAsync(f => f.Id == t.Year.Id);
+        var dir = Path.Combine(t.Directory, "schematy");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, JpkKrPdBuilder.SchemaFile), """<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://jpk.mf.gov.pl/test/kr_pd/"><xsd:element name="Inny"/></xsd:schema>""");
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, new XsdValidator(dir));
+        XNamespace ns = "http://jpk.mf.gov.pl/test/kr_pd/";
+        Assert.Equal(ns, r.Document.Root!.Name.Namespace); // przestrzeń nazw z wczytanego schematu
+        var zois = r.Document.Descendants(ns + "ZOiSWiersz").ToList();
+        var sales = zois.Single(z => z.Element(ns + "KodKonta")!.Value == "700-01");
+        Assert.Equal("PD_P", sales.Element(ns + "ZnacznikPD")!.Value);
+        Assert.Equal("R.A.I", sales.Element(ns + "ZnacznikRZiS")!.Value);
+        var ctrl = r.Document.Descendants(ns + "Ctrl").Single();
+        Assert.Equal(ctrl.Element(ns + "SumaWinien")!.Value, ctrl.Element(ns + "SumaMa")!.Value);
+        Assert.Equal(ctrl.Element(ns + "SumaWinienZOiS")!.Value, ctrl.Element(ns + "SumaMaZOiS")!.Value);
+        Assert.True(r.Document.Descendants(ns + "DziennikWiersz").Count() > 5);
+        Assert.False(r.Validation.IsValid); // schemat testowy nie opisuje struktury → plik NIEZWALIDOWANY
     }
 }
 

@@ -71,7 +71,7 @@ public sealed partial class MonthCloseViewModel : ViewModelBase
             new(3, "Amortyzacja środków trwałych", "Odpisy amortyzacyjne za miesiąc (jeżeli firma ma środki trwałe).", "Nalicz amortyzację", DepreciationAsync),
             new(4, "Rozliczenie VAT zaksięgowane", "Kontrola rejestrów VAT i przeksięgowanie VAT należnego i naliczonego na rozrachunek z urzędem skarbowym.",
                 "Sprawdź i zaksięguj VAT", VatAsync),
-            new(5, "Plik JPK_V7M przygotowany", "Plik do wysłania do urzędu skarbowego do 25. dnia następnego miesiąca.", "Generuj plik JPK", JpkAsync),
+            new(5, "Plik JPK_V7M lub JPK_V7K przygotowany", "Plik do wysłania do urzędu skarbowego do 25. dnia następnego miesiąca (kwartalnie: co miesiąc ewidencja, deklaracja po kwartale).", "Generuj plik JPK", JpkAsync),
             new(6, "Zaliczka CIT wyliczona i zatwierdzona", "Zaliczkę na podatek dochodowy wpłaca się do 20. dnia następnego miesiąca.", "Wylicz i zatwierdź zaliczkę", CitAsync),
             new(7, "Kopia zapasowa", "Kopia po zaksięgowaniu miesiąca chroni wykonaną pracę.", "Wykonaj kopię", BackupAsync),
             new(8, "Miesiąc zamknięty", "Zamknięcie blokuje przypadkowe zmiany w tym miesiącu (można go później otworzyć z uzasadnieniem).",
@@ -129,9 +129,12 @@ public sealed partial class MonthCloseViewModel : ViewModelBase
         var settings = new SettingsService(db, _session.Clock);
         var settled = await settings.GetAsync<VatService.VatSettlementSnapshot?>(companyId, $"vat.settlement.{from:yyyy-MM}", () => null) is { JournalEntryId: not null };
         var jpk = await settings.GetAsync<DateTime?>(companyId, $"jpk.wygenerowano.{from:yyyy-MM}", () => null);
-        Steps[3].Applicable = Steps[4].Applicable = vatPayer && company.VatPeriod == VatSettlementPeriod.Miesieczny;
+        var quarterly = company.VatPeriod == VatSettlementPeriod.Kwartalny;
+        Steps[3].Applicable = vatPayer && (!quarterly || from.Month % 3 == 0);
+        Steps[4].Applicable = vatPayer;
         Steps[3].Done = !Steps[3].Applicable || settled;
-        Steps[3].Status = !Steps[3].Applicable ? "Nie dotyczy (brak miesięcznego rozliczenia VAT)." : settled ? "Rozliczenie VAT zaksięgowane." : "Rozliczenie VAT niezaksięgowane.";
+        Steps[3].Status = !vatPayer ? "Nie dotyczy (brak rejestracji VAT)." : !Steps[3].Applicable ? "Rozliczenie kwartalne — VAT rozliczysz w ostatnim miesiącu kwartału." :
+            settled ? "Rozliczenie VAT zaksięgowane." : quarterly ? "Rozliczenie VAT za kwartał niezaksięgowane." : "Rozliczenie VAT niezaksięgowane.";
         Steps[4].Done = !Steps[4].Applicable || jpk is not null;
         Steps[4].Status = !Steps[4].Applicable ? "Nie dotyczy." : jpk is { } j ? $"Wygenerowano {j.ToPlDateTime()}." : "Plik nie został wygenerowany.";
 
@@ -224,8 +227,13 @@ public sealed partial class MonthCloseViewModel : ViewModelBase
             await Dialogs.ShowTextAsync("Kontrola rejestrów VAT", "Popraw najpierw:" + Environment.NewLine + string.Join(Environment.NewLine, problems));
             return;
         }
+        if (!await vat.IsDeclarationMonthAsync(MonthStart))
+        {
+            await Dialogs.InfoAsync("Rozliczenie VAT", "Rozliczasz VAT kwartalnie — w tym miesiącu nie rozliczasz podatku. Wygeneruj tylko JPK_V7K (sama ewidencja). Rozliczenie za kwartał zrobisz w ostatnim miesiącu kwartału.");
+            return;
+        }
         var decl = await vat.ComputeDeclarationAsync(MonthStart);
-        if (!await Dialogs.ConfirmAsync("Rozliczenie VAT", $"VAT należny: {Money.Format(decl.OutputTax)} zł, naliczony: {Money.Format(decl.InputTax)} zł.{Environment.NewLine}" +
+        if (!await Dialogs.ConfirmAsync(decl.Quarterly ? $"Rozliczenie VAT za {decl.Quarter} kwartał" : "Rozliczenie VAT", $"VAT należny: {Money.Format(decl.OutputTax)} zł, naliczony: {Money.Format(decl.InputTax)} zł.{Environment.NewLine}" +
                 (decl.Payable > 0 ? $"Do zapłaty do urzędu: {Money.Format(decl.Payable)} zł." : $"Nadwyżka do przeniesienia: {Money.Format(decl.Surplus)} zł.") +
                 $"{Environment.NewLine}{Environment.NewLine}Zaksięgować rozliczenie VAT za {Month}?")) return;
         await vat.PostSettlementAsync(MonthStart);

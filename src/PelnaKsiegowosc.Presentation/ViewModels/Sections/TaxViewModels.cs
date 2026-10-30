@@ -45,6 +45,8 @@ public sealed partial class VatViewModel : SectionViewModel
         foreach (var (k, v) in decl.Fields) t2.Add(null, k, v);
         Declaration = t2;
         var sb = new StringBuilder();
+        if (decl.Quarterly) sb.AppendLine($"Deklaracja kwartalna (JPK_V7K) za {decl.Quarter} kwartał {decl.Period.Year} — suma trzech miesięcy.");
+        else if (!await vat.IsDeclarationMonthAsync(PeriodDate)) sb.AppendLine("Rozliczenie kwartalne: w tym miesiącu składasz JPK_V7K bez deklaracji (sama ewidencja). Kwoty poniżej — tylko ten miesiąc.");
         sb.AppendLine($"Podatek należny: {Money.Format(decl.OutputTax)}; naliczony: {Money.Format(decl.InputTax)}; nadwyżka z poprzedniego okresu: {Money.Format(decl.CarriedForwardFromPrevious)}");
         sb.AppendLine(decl.Payable > 0 ? $"Do wpłaty: {Money.Format(decl.Payable)} zł" : $"Nadwyżka naliczonego nad należnym: {Money.Format(decl.Surplus)} zł");
         foreach (var w in decl.Warnings) sb.AppendLine("UWAGA: " + w);
@@ -178,4 +180,23 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).ApproveAdvanceAsync(id, true);
     }, "Zaliczka zatwierdzona.");
+
+    [RelayCommand]
+    private Task JpkCitAsync() => RunAsync(async () =>
+    {
+        var year = Session.CurrentYear;
+        await using var db = Session.OpenDb();
+        var company = await db.Companies.AsNoTracking().FirstAsync(c => c.Id == Session.CompanyId);
+        var fy = await db.FiscalYears.AsNoTracking().FirstAsync(f => f.Id == year.Id);
+        var r = await JpkKrPdBuilder.BuildAsync(db, company, fy, false, Session.Clock.UtcNow, Session.Validator);
+        var target = await Dialogs.SaveFileAsync("Zapisz JPK_CIT (JPK_KR_PD)", $"JPK_CIT-{year.Name}.xml", new FileFilter("XML", "*.xml"));
+        if (target is null) return;
+        r.Document.Save(target);
+        await new Application.Setup.SettingsService(db, Session.Clock).SetAsync<DateTime?>(Session.CompanyId, $"jpk-cit.wygenerowano.{year.Name}", Session.Clock.UtcNow);
+        await db.SaveChangesAsync();
+        await Session.AuditAsync("JPK_CIT_WYGENEROWANY", "JPK", null, $"{year.Name}; {r.Status}");
+        await Dialogs.ShowTextAsync("JPK_CIT", $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
+            string.Join(Environment.NewLine, r.Warnings.Take(40).Concat(r.Validation.Errors.Take(30))) +
+            $"{Environment.NewLine}{Environment.NewLine}Termin: do końca 7. miesiąca po roku podatkowym. Plik wyślij bramką JPK MF (wymaga podpisu). Program nie wysyła JPK.");
+    });
 }

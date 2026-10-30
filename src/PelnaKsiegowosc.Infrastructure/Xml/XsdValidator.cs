@@ -26,6 +26,14 @@ public sealed class XsdValidator
     public string? FindSchema(string fileName) =>
         _schemaDirectories.SelectMany(d => Directory.EnumerateFiles(d, fileName, SearchOption.AllDirectories)).FirstOrDefault();
 
+    /// <summary>Przestrzeń nazw (targetNamespace) wczytanego schematu — pozwala generować plik zgodny z faktycznie posiadanym XSD.</summary>
+    public string? TargetNamespace(string schemaFileName)
+    {
+        if (FindSchema(schemaFileName) is not { } path) return null;
+        try { return (string?)XDocument.Load(path).Root?.Attribute("targetNamespace"); }
+        catch (XmlException) { return null; }
+    }
+
     public XsdValidationResult Validate(XDocument doc, string schemaFileName, string description)
     {
         var schemaPath = FindSchema(schemaFileName);

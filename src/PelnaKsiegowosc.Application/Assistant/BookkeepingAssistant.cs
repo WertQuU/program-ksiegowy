@@ -317,9 +317,12 @@ public sealed class BookkeepingAssistant
             {
                 var due = Domain.Cit.CitCalculator.ShiftToBusinessDay(new DateOnly(m.Year, m.Month, 25).AddMonths(1));
                 var quarterEnd = m.Month % 3 == 0;
+                var jpk = await settings.GetAsync<DateTime?>(companyId, $"jpk.wygenerowano.{m:yyyy-MM}", () => null, ct) is not null;
+                var settled = !quarterEnd || await settings.GetAsync<VatService.VatSettlementSnapshot?>(companyId, $"vat.settlement.{m:yyyy-MM}", () => null, ct) is { JournalEntryId: not null };
                 list.Add(new Deadline(due, $"JPK_V7K za {m:MM.yyyy}" + (quarterEnd ? " (z deklaracją kwartalną i zapłatą VAT)" : " (ewidencja)"),
-                    "Plik JPK_V7K składa się co miesiąc do 25. dnia; deklarację i zapłatę — za kwartał. Program nie generuje JPK_V7K — przygotuj plik innym narzędziem.",
-                    false, AppArea.Vat, Informational: true));
+                    "Plik JPK_V7K składa się co miesiąc do 25. dnia (ewidencja); deklarację i zapłatę — za kwartał, w pliku za ostatni miesiąc kwartału (art. 99 ust. 2, art. 103 ust. 2 ustawy o VAT). " +
+                    (jpk ? "Plik JPK wygenerowany." : "Plik JPK niewygenerowany.") + (quarterEnd ? settled ? " Rozliczenie kwartału zaksięgowane." : " Rozliczenie kwartału niezaksięgowane." : ""),
+                    jpk && settled, AppArea.Vat));
             }
 
             if (LegalForms.IsCitTaxpayer(company.LegalForm) && period is not null &&
@@ -343,7 +346,16 @@ public sealed class BookkeepingAssistant
             DateOnly After(int months) => fy.EndDate.AddDays(1).AddMonths(months).AddDays(-1);
             Y(After(3), $"Sporządzenie sprawozdania finansowego za {fy.Name}", "W ciągu 3 miesięcy od dnia bilansowego (art. 52 ust. 1 UoR); podpisuje kierownik jednostki i osoba sporządzająca. Najpierw zamknij rok obrotowy.", closed, AppArea.Raporty);
             if (LegalForms.IsCitTaxpayer(company.LegalForm))
+            {
                 Y(Domain.Cit.CitCalculator.AnnualReturnDeadline(fy.EndDate), $"Zeznanie CIT-8 za {fy.Name}", "Do końca 3. miesiąca roku następnego (art. 27 ust. 1 ustawy o CIT); zapłata podatku w tym terminie. Zeznanie składa się poza programem.", false, AppArea.Cit);
+                if (company.VatStatus == VatStatus.CzynnyPodatnikVat && fy.StartDate.Year >= 2026)
+                {
+                    var jpkCit = await settings.GetAsync<DateTime?>(companyId, $"jpk-cit.wygenerowano.{fy.Name}", () => null, ct) is not null;
+                    Y(Domain.Cit.CitCalculator.ShiftToBusinessDay(After(7)), $"JPK_CIT (księgi z oznaczeniami podatkowymi) za {fy.Name}",
+                        "Podatnicy CIT składający JPK_V7 przesyłają księgi w strukturze JPK_KR_PD do końca 7. miesiąca po roku podatkowym (art. 9 ust. 1e ustawy o CIT; dla lat od 2026). Generator: sekcja CIT.",
+                        jpkCit, AppArea.Cit);
+                }
+            }
             Y(After(6), $"Zatwierdzenie sprawozdania finansowego za {fy.Name}", "Nie później niż 6 miesięcy od dnia bilansowego (art. 53 ust. 1 UoR); następnie złożenie w KRS w ciągu 15 dni (art. 69 UoR) — dotyczy jednostek wpisanych do KRS.", false, AppArea.Raporty);
         }
         return list.OrderBy(d => d.Date).ToList();
