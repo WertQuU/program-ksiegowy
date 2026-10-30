@@ -64,8 +64,11 @@ def handle(url, depth=0, seen=set()):
                 handle(full, depth + 1)
 
 
+# Struktury e-SF w CRWDE (numery wzorów z gov.pl/web/kas/struktury-e-sprawozdan) — jednostki inne / małe / mikro, zł i tys. zł
+for wz in ["2025/08/07/13817", "2025/08/04/13810", "2025/08/07/13818", "2025/09/10/13846", "2025/08/12/13821", "2025/08/11/13819"]:
+    handle(f"http://crd.gov.pl/wzor/{wz}/schemat.xsd")
+
 for u in [
-    "https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf",
     "https://www.gov.pl/web/kas/struktury-e-sprawozdan",
     "https://www.podatki.gov.pl/e-sprawozdania-finansowe/",
     "http://www.mf.gov.pl/schematy/SF/DefinicjeTypySprawozdaniaFinansowe/2018/07/09/",
