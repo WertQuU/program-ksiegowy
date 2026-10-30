@@ -46,7 +46,8 @@ public class DeclarationXmlTests
                 new ReportService.Pit11Source(Domain.Payroll.ContractType.UmowaOPrace, false, 72000m, 3000m, 3492m, 0m, 0m),
                 new ReportService.Pit11Source(Domain.Payroll.ContractType.UmowaZlecenie, false, 5000m, 887.40m, 494m, 0m, 0m),
             }, 10504.40m, 5591.64m, 0m, 0m);
-        var r = Pit11XmlBuilder.Build(Company(), 2026, person, Validator);
+        var r = Pit11XmlBuilder.Build(Company(), 2026, person with { Address = new ReportService.Pit11Address("mazowieckie", "Warszawa", "Warszawa", "Prosta", "1", "2", "Warszawa", "00-001") }, Validator);
+        Assert.Equal("Prosta", r.Document.Root!.Descendants(Pit11XmlBuilder.Ns + "Ulica").Single().Value);
         Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors));
         var ns = Pit11XmlBuilder.Ns;
         Assert.Equal("69000.00", r.Document.Root!.Descendants(ns + "P_31").Single().Value);

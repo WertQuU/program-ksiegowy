@@ -34,6 +34,18 @@ public sealed class SchemaLibrary
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki małej korzystającej z uproszczeń (zał. nr 5 UoR)"),
         new("e-Sprawozdanie SFJMIZ(2) — jednostka mikro, w złotych", FinancialStatementXmlBuilder.SchemaFileMikro, "http://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki mikro (zał. nr 4 UoR)"),
+        new("e-Sprawozdanie SFJINT(2) — jednostka inna, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileInnaTys, "http://crd.gov.pl/wzor/2025/08/04/13810/schemat.xsd",
+            "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie w tysiącach złotych (zał. nr 1 UoR)"),
+        new("e-Sprawozdanie SFJMAT(2) — jednostka mała, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMalaTys, "http://crd.gov.pl/wzor/2025/09/10/13846/schemat.xsd",
+            "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki małej w tysiącach złotych (zał. nr 5 UoR)"),
+        new("e-Sprawozdanie SFJMIT(2) — jednostka mikro, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMikroTys, "http://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd",
+            "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki mikro w tysiącach złotych (zał. nr 4 UoR)"),
+        new("VAT-UE(5)", Declarations.VatUeXmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2021/01/12/10293/schemat.xsd",
+            "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Informacja podsumowująca VAT-UE"),
+        new("VAT-UEK(5)", Declarations.VatUeXmlBuilder.SchemaFileCorrection, "http://crd.gov.pl/wzor/2021/01/26/10316/schemat.xsd",
+            "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Korekta informacji podsumowującej VAT-UEK"),
+        new("PIT-11(29)", Declarations.Pit11XmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd",
+            "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Informacja o dochodach i pobranych zaliczkach"),
     };
 
     private readonly string _userDirectory;

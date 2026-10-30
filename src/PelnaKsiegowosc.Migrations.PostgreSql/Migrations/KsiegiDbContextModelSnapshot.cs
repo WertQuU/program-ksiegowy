@@ -2159,6 +2159,14 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("City")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Commune")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
@@ -2175,6 +2183,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<Guid>("CounterpartyId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("County")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -2189,9 +2201,17 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("FlatNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<decimal>("Gross")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("HouseNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
@@ -2208,6 +2228,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<bool>("Pit2")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("Ppk")
                         .HasColumnType("boolean");
 
@@ -2222,10 +2246,18 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
+                    b.Property<string>("Street")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<bool>("StudentUnder26")
                         .HasColumnType("boolean");
 
                     b.Property<string>("TaxOfficeCode")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Voivodeship")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 

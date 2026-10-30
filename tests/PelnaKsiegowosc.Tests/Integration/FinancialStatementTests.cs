@@ -158,6 +158,16 @@ public class FinancialStatementTests
         Assert.Equal(V("A") - V("B") + V("C") - V("D") - V("E"), V("F"));
         var ma = xi.Document.Root!.Descendants(jmi + "Aktywa").Single();
         Assert.Equal("17160.00", ma.Element(dtsf + "KwotaA")!.Value);
+
+        // warianty w tysiącach złotych (SFJINT / SFJMAT / SFJMIT)
+        company.PkdCode = "6920A";
+        foreach (var scope in new[] { StatementScope.Inna, StatementScope.Mala, StatementScope.Mikro })
+        {
+            var tys = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator,
+                (scope == StatementScope.Inna ? extras : small with { Scope = scope }) with { InThousands = true });
+            Assert.True(tys.Validation.IsValid, scope + ": " + string.Join(Environment.NewLine, tys.Validation.Errors.Take(15)));
+            Assert.Equal("17", tys.Document.Root!.Descendants().First(e => e.Name.LocalName == "Aktywa").Element(dtsf + "KwotaA")!.Value);
+        }
     }
 
     private sealed class Fake(Func<string, (HttpStatusCode, string)> f) : HttpMessageHandler

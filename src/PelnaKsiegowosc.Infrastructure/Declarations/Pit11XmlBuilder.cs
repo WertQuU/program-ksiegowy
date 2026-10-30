@@ -25,6 +25,19 @@ public static class Pit11XmlBuilder
     private static string A(decimal v) => Math.Round(Math.Max(0, v), 2, MidpointRounding.AwayFromZero).ToString("0.00", Inv);
     private static string C(decimal v) => Math.Round(Math.Max(0, v), 0, MidpointRounding.AwayFromZero).ToString("0", Inv);
 
+    private static XElement? Address(ReportService.Pit11Address? a, Func<string, object?[], XElement> t)
+    {
+        if (a is null) return null;
+        XElement T(string n, params object?[] c) => t(n, c);
+        XElement? Opt(string n, string? v, string? poz = null) =>
+            string.IsNullOrWhiteSpace(v) ? null : T(n, poz is null ? null : new XAttribute("poz", poz), v.Trim());
+        return T("AdresZamieszkania", new XAttribute("rodzajAdresu", "RAD"),
+            T("KodKraju", new XAttribute("poz", "P_19A"), "PL"),
+            Opt("Wojewodztwo", a.Voivodeship), Opt("Powiat", a.County), Opt("Gmina", a.Commune),
+            Opt("Ulica", a.Street, "P_23"), Opt("NrDomu", a.HouseNumber, "P_24"), Opt("NrLokalu", a.FlatNumber, "P_25"),
+            T("Miejscowosc", new XAttribute("poz", "P_26"), a.City.Trim()), Opt("KodPocztowy", a.PostalCode, "P_27"));
+    }
+
     public static DeclarationXmlResult Build(Company company, int year, ReportService.Pit11Person p, XsdValidator validator, TaxpayerPerson? payerPerson = null)
     {
         var who = $"{p.FirstName} {p.LastName}";
@@ -73,10 +86,12 @@ public static class Pit11XmlBuilder
                 T("Podmiot1", new XAttribute("rola", "Płatnik/Składający"), payer),
                 T("Podmiot2", new XAttribute("rola", "Podatnik"),
                     T("OsobaFizyczna", T("PESEL", p.Pesel!.Trim()), T("ImiePierwsze", p.FirstName), T("Nazwisko", p.LastName),
-                        T("DataUrodzenia", p.BirthDate.Value.ToString("yyyy-MM-dd", Inv)))),
+                        T("DataUrodzenia", p.BirthDate.Value.ToString("yyyy-MM-dd", Inv))),
+                    Address(p.Address, T)),
                 pos,
                 T("Pouczenie", "1")));
-        warnings.Add($"{who}: adres zamieszkania (poz. 19–27) nie jest wypełniany — uzupełnij, jeśli wymaga tego Twoja praktyka; sprawdź przypisanie przychodów do wierszy części E przed wysyłką.");
+        if (p.Address is null) warnings.Add($"{who}: brak adresu zamieszkania w kartotece (poz. 19–27) — uzupełnij w sekcji Płace.");
+        warnings.Add($"{who}: sprawdź przypisanie przychodów do wierszy części E przed wysyłką.");
         return new DeclarationXmlResult(doc, validator.Validate(doc, SchemaFile, "PIT-11(29)"), warnings);
     }
 }

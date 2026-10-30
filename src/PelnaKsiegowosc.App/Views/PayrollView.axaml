@@ -9,7 +9,7 @@
     <TabControl>
       <TabItem Header="1. Osoby i umowy">
         <DockPanel>
-          <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding FirstName}" />
             <TextBlock Grid.Column="2" Text="Nazwisko" /><TextBox Grid.Column="3" Text="{Binding LastName}" />
             <TextBlock Grid.Column="4" Text="PESEL" /><TextBox Grid.Column="5" Text="{Binding Pesel}" />
@@ -20,9 +20,15 @@
             <TextBlock Grid.Row="2" Grid.Column="2" Text="Umowa od / do" />
             <Grid Grid.Row="2" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding StartDate}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding EndDate}" Watermark="bezterminowa" Margin="0,2,12,2" /></Grid>
             <TextBlock Grid.Row="2" Grid.Column="4" Text="Kod urzędu skarb." /><TextBox Grid.Row="2" Grid.Column="5" Text="{Binding TaxOffice}" />
-            <TextBlock Grid.Row="3" Text="Adres" /><TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Address}" />
+            <TextBlock Grid.Row="3" Text="Ulica, nr domu / lokalu" />
+            <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,60,60"><TextBox Text="{Binding Street}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding HouseNumber}" Watermark="nr" Margin="0,2,4,2" /><TextBox Grid.Column="2" Text="{Binding FlatNumber}" Watermark="lok." Margin="0,2,12,2" /></Grid>
+            <TextBlock Grid.Row="3" Grid.Column="2" Text="Kod, miejscowość" />
+            <Grid Grid.Row="3" Grid.Column="3" ColumnDefinitions="80,*"><TextBox Text="{Binding PostalCode}" Watermark="00-000" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding City}" Margin="0,2,12,2" /></Grid>
             <TextBlock Grid.Row="3" Grid.Column="4" Text="Rachunek do wypłaty" /><TextBox Grid.Row="3" Grid.Column="5" Text="{Binding Iban}" />
-            <WrapPanel Grid.Row="4" Grid.ColumnSpan="6" Classes="toolbar">
+            <TextBlock Grid.Row="4" Text="Województwo" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Voivodeship}" />
+            <TextBlock Grid.Row="4" Grid.Column="2" Text="Powiat" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding County}" />
+            <TextBlock Grid.Row="4" Grid.Column="4" Text="Gmina" /><TextBox Grid.Row="4" Grid.Column="5" Text="{Binding Commune}" />
+            <WrapPanel Grid.Row="5" Grid.ColumnSpan="6" Classes="toolbar">
               <CheckBox Content="Złożył PIT-2 (kwota zmniejszająca 300 zł)" IsChecked="{Binding Pit2}" />
               <CheckBox Content="Ulga dla młodych (do 26 lat)" IsChecked="{Binding YouthRelief}" />
               <CheckBox Content="Uczeń/student do 26 lat (zlecenie bez ZUS)" IsChecked="{Binding Student}" />
@@ -30,7 +36,7 @@
               <CheckBox Content="Zwolnienie z FP/FGŚP" IsChecked="{Binding ExemptFromFp}" />
               <CheckBox Content="Uczestnik PPK (2% + 1,5%)" IsChecked="{Binding Ppk}" />
             </WrapPanel>
-            <WrapPanel Grid.Row="5" Grid.ColumnSpan="6" Classes="toolbar">
+            <WrapPanel Grid.Row="6" Grid.ColumnSpan="6" Classes="toolbar">
               <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />
               <Button Content="Zapisz zmiany zaznaczonej" Command="{Binding SaveEmployeeCommand}" />
               <TextBlock Text="Stopa wypadkowa %:" /><TextBox Text="{Binding AccidentRate}" MinWidth="70" />

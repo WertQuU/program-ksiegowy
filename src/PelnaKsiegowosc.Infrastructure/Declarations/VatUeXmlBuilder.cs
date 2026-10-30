@@ -26,6 +26,7 @@ public static class VatUeXmlBuilder
     public static readonly XNamespace Ns = "http://crd.gov.pl/wzor/2020/07/03/9690/";
     public static readonly XNamespace Etd = "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/";
     public const string SchemaFile = "Schemat_VAT-UE(5)_v1-0E.xsd";
+    public const string SchemaFileCorrection = "Schemat_VAT-UEK(5)_v2-1E.xsd";
 
     internal static XElement Podmiot(XNamespace ns, XNamespace etd, Company company, TaxpayerPerson? person)
     {

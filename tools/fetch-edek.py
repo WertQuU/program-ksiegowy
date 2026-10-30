@@ -135,6 +135,40 @@ for f, (v, wz) in sorted(best.items()):
     log.append(f"NAJNOWSZY {f}({v}) {wz}")
     fetch_xsd(f"http://crd.gov.pl/wzor/{wz}/schemat.xsd", f"{f}({v})")
 
+# 1b) Aktualne formularze (e-Urząd): strony e-formularzy mogą wskazywać przestrzeń nazw / schemat wzoru CRWDE
+CURRENT = {"CIT-8 (34)": "CIT-8(34)", "PIT-4R (13)": "PIT-4R(13)", "PIT-8AR (14)": "PIT-8AR(14)", "IFT-2R (12)": "IFT-2R(12)", "CIT-8/O (20)": "CIT-8_O(20)"}
+for f in sorted(os.listdir(OUT)):
+    if not (f.startswith("wykaz") and f.endswith(".html")):
+        continue
+    text = open(os.path.join(OUT, f), encoding="utf-8").read()
+    for label, short in CURRENT.items():
+        i = text.find("Aktualny formularz <strong>" + label)
+        if i < 0:
+            continue
+        for form in re.findall(r'href="(https://klient-eformularz\.mf\.gov\.pl/declaration/form/[0-9a-f-]+)"', text[i:i + 3000])[:1]:
+            if form in seen or time.time() - START > 420:
+                continue
+            seen.add(form)
+            try:
+                data, final, ctype = get(form)
+            except Exception as e:
+                log.append(f"! e-formularz {short}: {e}")
+                continue
+            body = data.decode("utf-8", "replace")
+            open(os.path.join(OUT, f"eformularz_{short.replace('/', '_')}.html"), "w", encoding="utf-8").write(body)
+            refs = sorted(set(re.findall(r"crd\.gov\.pl/wzor/\d{4}/\d{2}/\d{2}/\d+", body)))
+            # skrypty strony (aplikacja JS) — przestrzeń nazw wzoru bywa w pakiecie
+            for js in re.findall(r'src="([^"]+\.js)"', body)[:6]:
+                try:
+                    jd, _, _ = get(urllib.parse.urljoin(final, js))
+                    refs += re.findall(r"crd\.gov\.pl/wzor/\d{4}/\d{2}/\d{2}/\d+", jd.decode("utf-8", "replace"))
+                except Exception as e:
+                    log.append(f"! js {js}: {e}")
+            refs = sorted(set(refs))
+            log.append(f"E-FORMULARZ {short} {form} -> {final} [{ctype}] {len(data)} B; wzory: {refs[:10]}")
+            for r in refs[:4]:
+                fetch_xsd(f"http://{r}/schemat.xsd", short if len(refs) == 1 else "")
+
 # 2) ZUS — dokumentacja KEDU (struktura dokumentów programu Płatnik): przeszukanie serwisu od strony głównej
 zq, zv, zi = ["https://www.zus.pl/", "https://www.zus.pl/firmy/programy-i-aplikacje"], set(), 0
 while zq and zi < 25 and time.time() - START < 500:
