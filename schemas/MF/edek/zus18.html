@@ -16499,8 +16499,8 @@ var $ = AUI.$;var _ = AUI._;
 Liferay.Loader.require('frontend-js-tabs-support-web@1.0.10/index', function(frontendJsTabsSupportWeb1010Index) {
 try {
 (function() {
-var TabsProvider = frontendJsTabsSupportWeb1010Index;
-TabsProvider.default()
+var CollapseProvider = frontendJsCollapseSupportWeb1014Index;
+CollapseProvider.default()
 })();
 } catch (err) {
 	console.error(err);
@@ -16522,11 +16522,37 @@ DropdownProvider.default()
 // ]]>
 </script><script type="text/javascript">
 // <![CDATA[
-Liferay.Loader.require('frontend-js-collapse-support-web@1.0.14/index', function(frontendJsCollapseSupportWeb1014Index) {
+Liferay.Loader.require('frontend-js-tabs-support-web@1.0.10/index', function(frontendJsTabsSupportWeb1010Index) {
 try {
 (function() {
-var CollapseProvider = frontendJsCollapseSupportWeb1014Index;
-CollapseProvider.default()
+var TabsProvider = frontendJsTabsSupportWeb1010Index;
+TabsProvider.default()
+})();
+} catch (err) {
+	console.error(err);
+}
+});
+// ]]>
+</script><script type="text/javascript">
+// <![CDATA[
+Liferay.Loader.require('frontend-js-alert-support-web@1.0.9/index', function(frontendJsAlertSupportWeb109Index) {
+try {
+(function() {
+var AlertProvider = frontendJsAlertSupportWeb109Index;
+AlertProvider.default()
+})();
+} catch (err) {
+	console.error(err);
+}
+});
+// ]]>
+</script><script type="text/javascript">
+// <![CDATA[
+Liferay.Loader.require('remote-app-support-web@1.0.7/index', function(remoteAppSupportWeb107Index) {
+try {
+(function() {
+var RemoteAppSupport = remoteAppSupportWeb107Index;
+RemoteAppSupport.default()
 })();
 } catch (err) {
 	console.error(err);

@@ -225,20 +225,20 @@
 
 		Liferay.Browser = {
 			acceptsGzip: function() {
-				return false;
+				return true;
 			},
 
 			
 
 			getMajorVersion: function() {
-				return 0;
+				return 156.0;
 			},
 
 			getRevision: function() {
-				return '';
+				return '537.36';
 			},
 			getVersion: function() {
-				return '';
+				return '156.0';
 			},
 
 			
@@ -247,7 +247,7 @@
 				return false;
 			},
 			isChrome: function() {
-				return false;
+				return true;
 			},
 			isEdge: function() {
 				return false;
@@ -256,7 +256,7 @@
 				return false;
 			},
 			isGecko: function() {
-				return false;
+				return true;
 			},
 			isIe: function() {
 				return false;
@@ -274,25 +274,25 @@
 				return false;
 			},
 			isMozilla: function() {
-				return true;
+				return false;
 			},
 			isOpera: function() {
 				return false;
 			},
 			isRtf: function() {
-				return false;
+				return true;
 			},
 			isSafari: function() {
-				return false;
+				return true;
 			},
 			isSun: function() {
 				return false;
 			},
 			isWebKit: function() {
-				return false;
+				return true;
 			},
 			isWindows: function() {
-				return false;
+				return true;
 			}
 		};
 
@@ -741,44 +741,6 @@
 
 <style data-senna-track="temporary" type="text/css">
 </style>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<script data-senna-track="temporary" type="text/javascript">
-	if (window.Analytics) {
-		window._com_liferay_document_library_analytics_isViewFileEntry = false;
-	}
-</script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 <script type="text/javascript">
 // <![CDATA[
 Liferay.on(
@@ -862,12 +824,50 @@ Liferay.on(
 </script>
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script data-senna-track="temporary" type="text/javascript">
+	if (window.Analytics) {
+		window._com_liferay_document_library_analytics_isViewFileEntry = false;
+	}
+</script>
+
+
+
+
       <script src="/o/portal-theme/js/zus/zus-pue-users-counter.js"></script>
       <script src="/o/portal-theme/js/lib/modernizr.js"></script>
 
 </head>
 
-<body class="other controls-visible  yui3-skin-sam guest-site signed-out public-page site dockbar-split zus-theme b-icon-firms" data-js-m="font-resizer" id="font-resizer">
+<body class="chrome controls-visible  yui3-skin-sam guest-site signed-out public-page site dockbar-split zus-theme b-icon-firms" data-js-m="font-resizer" id="font-resizer">
 
 
 
@@ -15447,6 +15447,45 @@ Osoba, która zgłasza zakończenie prowadzenia działalności gospodarczej moż
 		}
 	);
 (function() {var $ = AUI.$;var _ = AUI._;
+	var onShare = function (data) {
+		if (window.Analytics) {
+			Analytics.send('shared', 'SocialBookmarks', {
+				className: data.className,
+				classPK: data.classPK,
+				type: data.type,
+				url: data.url,
+			});
+		}
+	};
+
+	var onDestroyPortlet = function () {
+		Liferay.detach('socialBookmarks:share', onShare);
+		Liferay.detach('destroyPortlet', onDestroyPortlet);
+	};
+
+	Liferay.on('socialBookmarks:share', onShare);
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+})();(function() {var $ = AUI.$;var _ = AUI._;
+	var onDestroyPortlet = function () {
+		Liferay.detach('messagePosted', onMessagePosted);
+		Liferay.detach('destroyPortlet', onDestroyPortlet);
+	};
+
+	Liferay.on('destroyPortlet', onDestroyPortlet);
+
+	var onMessagePosted = function (event) {
+		if (window.Analytics) {
+			Analytics.send('posted', 'Comment', {
+				className: event.className,
+				classPK: event.classPK,
+				commentId: event.commentId,
+				text: event.text,
+			});
+		}
+	};
+
+	Liferay.on('messagePosted', onMessagePosted);
+})();(function() {var $ = AUI.$;var _ = AUI._;
 	var onVote = function (event) {
 		if (window.Analytics) {
 			Analytics.send('VOTE', 'Ratings', {
@@ -15767,11 +15806,11 @@ CollapseProvider.default()
 // ]]>
 </script><script type="text/javascript">
 // <![CDATA[
-Liferay.Loader.require('frontend-js-alert-support-web@1.0.9/index', function(frontendJsAlertSupportWeb109Index) {
+Liferay.Loader.require('frontend-js-dropdown-support-web@1.0.10/index', function(frontendJsDropdownSupportWeb1010Index) {
 try {
 (function() {
-var AlertProvider = frontendJsAlertSupportWeb109Index;
-AlertProvider.default()
+var DropdownProvider = frontendJsDropdownSupportWeb1010Index;
+DropdownProvider.default()
 })();
 } catch (err) {
 	console.error(err);
@@ -15796,8 +15835,8 @@ TooltipSupport.default()
 Liferay.Loader.require('remote-app-support-web@1.0.7/index', function(remoteAppSupportWeb107Index) {
 try {
 (function() {
-var RemoteAppSupport = remoteAppSupportWeb107Index;
-RemoteAppSupport.default()
+var CollapseProvider = frontendJsCollapseSupportWeb1014Index;
+CollapseProvider.default()
 })();
 } catch (err) {
 	console.error(err);
