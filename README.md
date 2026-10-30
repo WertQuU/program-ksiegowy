@@ -107,8 +107,8 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 
 - Oficjalne schematy XSD MF (JPK_V7M/V7K, JPK_KR_PD, e-Sprawozdanie SFJINZ(2), FA(3)) są dołączone do programu
   (`schemas/`) i odświeżane automatycznie w GitHub Actions; nowe wersje można też pobrać w *Ustawienia → Schematy XSD*.
-- e-Sprawozdanie: struktura SFJINZ(2) (jednostki inne, w złotych) — dopuszczalna także dla jednostek małych i mikro,
-  które nie korzystają z uproszczeń; uproszczonych wzorów dla jednostek małych/mikro (SFJMAZ/SFJMIZ) program nie generuje.
+- e-Sprawozdanie: struktury SFJINZ(2) (pełna), SFJMAZ(2) (jednostka mała) i SFJMIZ(2) (mikro), dane w złotych —
+  wariantów „w tysiącach złotych” program nie generuje.
 - Deklaracje CIT-8, VAT-UE, PIT-36/36L, PIT-4R/8AR/11, DRA/RCA — program wylicza kwoty i drukuje zestawienia;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
 - Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie

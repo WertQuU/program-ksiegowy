@@ -92,12 +92,18 @@ różnice — „Niedobór” / „Nadwyżka”.
 Sekcja **Deklaracje** zbiera wszystkie deklaracje z terminami. Wybierz pozycję i kliknij „Generuj / przejdź”:
 CIT-8 z CIT-8/O, VAT-UE, IFT-2R/CIT-10Z, PIT-36/PIT-36L (wspólnicy lub właściciel — jeden wiersz na osobę),
 uchwały roczne, inwentaryzacja (metody, potwierdzenia sald, protokół kasy). Pozostałe (JPK_V7M/V7K, JPK_CIT,
-ZUS, PIT-11) program otwiera we właściwej sekcji. Program przygotowuje kwoty i wydruki; deklaracje wysyłasz
-przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
+ZUS, PIT-11) program otwiera we właściwej sekcji. Przycisk „Plik XML…” zapisuje deklarację w formacie
+e-Deklaracji (walidowaną oficjalnym schematem) — obecnie VAT-UE(5). Pozostałe deklaracje program wylicza i drukuje;
+wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 
 ## Koniec roku
 
 1. Inwentaryzacja (Deklaracje → Inwentaryzacja, potwierdzenia sald, protokół kasy; Magazyn → spis z natury).
+   **Wycena na dzień bilansowy** (Zamknięcie → „Odpisy i rezerwy”): propozycje odpisów aktualizujących należności
+   według dni zwłoki (progi z polityki rachunkowości, domyślnie 50% po 180 dniach, 100% po roku), rozwiązanie odpisów
+   spłaconych należności, spisanie należności nieściągalnych, rezerwy na zobowiązania (urlopowa — wyliczana
+   z płac, emerytalna, na koszty okresu, gwarancyjne, sądowe). Odpisy i rezerwy są kosztem niepodatkowym; ich
+   wykorzystanie lub rozwiązanie program uwzględnia w uzgodnieniu CIT automatycznie.
 2. Zamknij wszystkie miesiące, wykonaj kopię, „Podgląd zamknięcia roku”, następnie „Zamknij rok obrotowy”
    i wpisz frazę potwierdzenia. Program przeksięguje wynik, zablokuje rok i utworzy rok następny z bilansem otwarcia.
 3. **Sprawozdanie** (Raporty): bilans, RZiS (porównawczy lub kalkulacyjny — klucz podziału kosztów ustawisz
