@@ -2948,6 +2948,11 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Valuation")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Value")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");

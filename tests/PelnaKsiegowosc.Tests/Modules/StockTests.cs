@@ -39,4 +39,20 @@ public class StockTests
         var st = await rs.StockStateAsync(new DateOnly(2026, 1, 6), false);
         Assert.Equal(230m, st.Rows.Single(r => r.IsTotal).Cells[6]);
     }
+
+    [Fact]
+    public async Task Fifo_issue_takes_oldest_lots_first()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new StockService(t.Db, t.User, t.Clock);
+        var item = await svc.AddItemAsync(new StockItem { Code = "F1", Name = "Farba", Kind = StockItemKind.Towar, Valuation = StockValuation.Fifo });
+        await svc.RegisterAsync(StockMovementType.PZ, item.Id, new DateOnly(2026, 1, 5), 10m, 10m);
+        await svc.RegisterAsync(StockMovementType.PZ, item.Id, new DateOnly(2026, 1, 6), 10m, 13m);
+        var a = await svc.RegisterAsync(StockMovementType.WZ, item.Id, new DateOnly(2026, 1, 7), 12m);
+        Assert.Equal(126m, a.Value); // 10 × 10 + 2 × 13
+        var b = await svc.RegisterAsync(StockMovementType.WZ, item.Id, new DateOnly(2026, 1, 8), 3m);
+        Assert.Equal(39m, b.Value);
+        var rest = await svc.RegisterAsync(StockMovementType.WZ, item.Id, new DateOnly(2026, 1, 9), 5m);
+        Assert.Equal(65m, rest.Value);
+    }
 }

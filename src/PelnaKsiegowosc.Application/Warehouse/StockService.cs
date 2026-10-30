@@ -64,7 +64,9 @@ public sealed class StockService
         else
         {
             if (quantity > item.Quantity) throw new DomainException($"Brak wystarczającej ilości: na stanie {item.Quantity:0.###} {item.Unit}.");
-            value = quantity == item.Quantity ? item.Value : Money.Round(quantity * item.Value / item.Quantity);
+            value = quantity == item.Quantity ? item.Value
+                : item.Valuation == StockValuation.Fifo ? await FifoValueAsync(item.Id, quantity, ct)
+                : Money.Round(quantity * item.Value / item.Quantity);
         }
         if (type == StockMovementType.PW && string.IsNullOrWhiteSpace(offsetAccount)) throw new DomainException("Przyjęcie z produkcji wymaga konta przeciwstawnego (np. 490 lub 580).");
 
@@ -96,6 +98,32 @@ public sealed class StockService
         await new AuditService(_db, _clock).AddAsync(_user, "MAGAZYN_DOKUMENT", "StockMovement", mv.Id.ToString(), $"{number}; {item.Code}; {quantity}; {value}", ct);
         await _db.SaveChangesAsync(ct);
         return mv;
+    }
+
+    /// <summary>Wartość rozchodu metodą FIFO: odtworzenie partii z historii przyjęć i rozchodów, zużycie najstarszych partii.</summary>
+    private async Task<decimal> FifoValueAsync(Guid itemId, decimal quantity, CancellationToken ct)
+    {
+        var moves = await _db.StockMovements.AsNoTracking().Where(m => m.StockItemId == itemId).OrderBy(m => m.Date).ThenBy(m => m.CreatedAtUtc).ToListAsync(ct);
+        var lots = new LinkedList<(decimal qty, decimal price)>();
+        void Consume(decimal q, Action<decimal, decimal>? onTake = null)
+        {
+            while (q > 0 && lots.First is { } f)
+            {
+                var take = Math.Min(q, f.Value.qty);
+                onTake?.Invoke(take, f.Value.price);
+                q -= take;
+                if (take == f.Value.qty) lots.RemoveFirst();
+                else f.Value = (f.Value.qty - take, f.Value.price);
+            }
+        }
+        foreach (var m in moves)
+        {
+            if (m.Type is StockMovementType.PZ or StockMovementType.PW or StockMovementType.InwNadwyzka) lots.AddLast((m.Quantity, m.Value / m.Quantity));
+            else Consume(m.Quantity);
+        }
+        decimal value = 0;
+        Consume(quantity, (q, p) => value += q * p);
+        return Money.Round(value);
     }
 
     /// <summary>Stan pozycji na dzień (z historii dokumentów).</summary>

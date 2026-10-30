@@ -4,6 +4,15 @@ namespace PelnaKsiegowosc.Domain.Warehouse;
 
 public enum StockItemKind { Towar, Material, Produkt }
 
+/// <summary>Metoda wyceny rozchodu (art. 34 ust. 4 UoR).</summary>
+public enum StockValuation
+{
+    /// <summary>Cena przeciętna ważona.</summary>
+    SredniaWazona,
+    /// <summary>„Pierwsze weszło — pierwsze wyszło”.</summary>
+    Fifo
+}
+
 /// <summary>Rodzaj dokumentu magazynowego.</summary>
 public enum StockMovementType
 {
@@ -21,7 +30,7 @@ public enum StockMovementType
     InwNiedobor
 }
 
-/// <summary>Kartoteka magazynowa — ilość i wartość według ceny przeciętnej ważonej (art. 34 ust. 4 pkt 1 UoR).</summary>
+/// <summary>Kartoteka magazynowa — ilość i wartość; rozchód wyceniany ceną przeciętną ważoną albo metodą FIFO (art. 34 ust. 4 UoR).</summary>
 public class StockItem : CompanyEntity
 {
     public string Code { get; set; } = "";
@@ -32,6 +41,7 @@ public class StockItem : CompanyEntity
     public string InventoryAccount { get; set; } = "330";
     /// <summary>Konto rozchodu (np. 731 wartość sprzedanych towarów, 401 zużycie materiałów).</summary>
     public string IssueAccount { get; set; } = "731";
+    public StockValuation Valuation { get; set; } = StockValuation.SredniaWazona;
     public decimal Quantity { get; set; }
     public decimal Value { get; set; }
     public bool IsActive { get; set; } = true;

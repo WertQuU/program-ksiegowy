@@ -2953,6 +2953,11 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("Valuation")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<decimal>("Value")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");

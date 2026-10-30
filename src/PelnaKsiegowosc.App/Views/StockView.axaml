@@ -14,6 +14,7 @@
             <TextBox Text="{Binding Name}" Watermark="nazwa" MinWidth="220" />
             <TextBox Text="{Binding Unit}" MinWidth="60" />
             <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" MinWidth="180" />
+            <ComboBox ItemsSource="{Binding Valuations}" SelectedItem="{Binding Valuation}" PlaceholderText="wycena: cena przeciętna" MinWidth="220" />
             <Button Content="Dodaj pozycję" Command="{Binding AddItemCommand}" />
           </WrapPanel>
           <WrapPanel DockPanel.Dock="Top" Classes="toolbar">

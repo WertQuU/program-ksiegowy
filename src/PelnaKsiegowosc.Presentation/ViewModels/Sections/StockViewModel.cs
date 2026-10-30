@@ -33,6 +33,8 @@ public sealed partial class StockViewModel : SectionViewModel
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private string _unit = "szt.";
     [ObservableProperty] private Choice<StockItemKind> _kind;
+    public List<Choice<StockValuation>> Valuations { get; } = new() { new(StockValuation.SredniaWazona, "Cena przeciętna ważona"), new(StockValuation.Fifo, "FIFO (pierwsze weszło — pierwsze wyszło)") };
+    [ObservableProperty] private Choice<StockValuation>? _valuation;
     [ObservableProperty] private Choice<StockMovementType> _movementType;
     [ObservableProperty] private string _date = "";
     [ObservableProperty] private string _quantity = "";
@@ -66,7 +68,7 @@ public sealed partial class StockViewModel : SectionViewModel
     {
         var (inv, issue) = Kind.Value switch { StockItemKind.Material => ("310", "401"), StockItemKind.Produkt => ("600", "490"), _ => ("330", "731") };
         await using var db = Session.OpenDb();
-        await new StockService(db, Session.User, Session.Clock).AddItemAsync(new StockItem { Code = Code, Name = Name, Unit = Unit, Kind = Kind.Value, InventoryAccount = inv, IssueAccount = issue });
+        await new StockService(db, Session.User, Session.Clock).AddItemAsync(new StockItem { Code = Code, Name = Name, Unit = Unit, Kind = Kind.Value, InventoryAccount = inv, IssueAccount = issue, Valuation = Valuation?.Value ?? StockValuation.SredniaWazona });
         Code = Name = "";
     }, "Dodano pozycję magazynową.");
 
