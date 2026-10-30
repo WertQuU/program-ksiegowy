@@ -57,6 +57,8 @@ public class KsiegiDbContext : DbContext
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<StockItem> StockItems => Set<StockItem>();
+    public DbSet<ReceivableAllowance> ReceivableAllowances => Set<ReceivableAllowance>();
+    public DbSet<Provision> Provisions => Set<Provision>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<PayrollList> PayrollLists => Set<PayrollList>();
     public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
@@ -194,6 +196,9 @@ public class KsiegiDbContext : DbContext
         });
         m.Entity<CitAdvance>(e => { e.HasIndex(x => new { x.FiscalYearId, x.PeriodNumber }).IsUnique(); e.Property(x => x.RatePercent).HasPrecision(7, 4); e.Property(x => x.WarningsText).HasMaxLength(int.MaxValue); });
         m.Entity<CitAdjustment>(e => e.HasIndex(x => x.FiscalYearId));
+
+        m.Entity<ReceivableAllowance>(e => e.HasIndex(x => new { x.CompanyId, x.OpenItemId }));
+        m.Entity<Provision>(e => e.HasIndex(x => new { x.CompanyId, x.Date }));
 
         m.Entity<StockItem>(e =>
         {

@@ -37,6 +37,40 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+      <TabItem Header="Odpisy i rezerwy">
+        <ScrollViewer>
+          <StackPanel Spacing="8" Margin="0,8,0,0">
+            <TextBlock Text="Odpisy aktualizujące należności" Classes="h2" Margin="0" />
+            <TextBlock Text="{Binding Valuation.PolicyText}" Classes="info" TextWrapping="Wrap" />
+            <WrapPanel Classes="toolbar">
+              <TextBlock Text="Na dzień:" VerticalAlignment="Center" />
+              <TextBox Text="{Binding Valuation.AsOf}" Width="110" />
+              <Button Content="Przelicz propozycje" Command="{Binding Valuation.RefreshCommand}" />
+              <Button Content="Zaksięguj odpisy i rozwiązania" Command="{Binding Valuation.PostAllowancesCommand}" />
+              <Button Content="Spisz zaznaczoną należność…" Command="{Binding Valuation.WriteOffCommand}" />
+              <Button Content="Progi odpisów…" Command="{Binding Valuation.SetPolicyCommand}" />
+            </WrapPanel>
+            <c:TableView Table="{Binding Valuation.Proposals}" SelectedRow="{Binding Valuation.SelectedProposal}" MinHeight="180" />
+            <TextBlock Text="Rezerwy na zobowiązania" Classes="h2" Margin="0,8,0,0" />
+            <TextBlock Classes="info" TextWrapping="Wrap" Text="Utworzenie: Wn konto kosztów / Ma 840 (843 — świadczenia pracownicze); koszt oznaczony jako niepodatkowy. Wykorzystanie i rozwiązanie odwracają koszt, a CIT uwzględnia to automatycznie. Konto kosztów można zmienić (pole „Konto kosztów”)." />
+            <WrapPanel Classes="toolbar">
+              <ComboBox ItemsSource="{Binding Valuation.Kinds}" SelectedItem="{Binding Valuation.Kind}" MinWidth="300" />
+              <TextBox Text="{Binding Valuation.Description}" Watermark="opis i sposób wyliczenia" MinWidth="260" />
+              <TextBox Text="{Binding Valuation.Amount}" Watermark="kwota" Width="110" />
+              <TextBox Text="{Binding Valuation.Date}" Watermark="data" Width="110" />
+              <TextBox Text="{Binding Valuation.CostAccount}" Watermark="konto kosztów (opcj.)" Width="150" />
+            </WrapPanel>
+            <WrapPanel Classes="toolbar">
+              <Button Content="Utwórz rezerwę" Command="{Binding Valuation.CreateProvisionCommand}" />
+              <Button Content="Wylicz rezerwę urlopową…" Command="{Binding Valuation.HolidayCommand}" />
+              <Button Content="Wykorzystaj zaznaczoną…" Command="{Binding Valuation.UseProvisionCommand}" />
+              <Button Content="Rozwiąż zaznaczoną…" Command="{Binding Valuation.ReleaseProvisionCommand}" />
+            </WrapPanel>
+            <c:TableView Table="{Binding Valuation.Provisions}" SelectedRow="{Binding Valuation.SelectedProvision}" MinHeight="160" />
+            <TextBlock Text="{Binding Valuation.StatusMessage}" Classes="info" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
       <TabItem Header="Okresy i rok obrotowy">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Text="{Binding YearInfo}" Classes="info" />
