@@ -666,7 +666,7 @@ public sealed class DocumentService
         JpkNetField = map.NetField,
         JpkTaxField = map.TaxField,
         GtuCodes = string.IsNullOrEmpty(gtu) ? null : gtu,
-        Procedures = doc.JpkProcedures ?? (doc.SplitPayment ? "MPP" : null),
+        Procedures = doc.JpkProcedures, // podzielona płatność (MPP) — adnotacja na fakturze, nie oznaczenie w JPK (zniesione 1.07.2021)
         JpkDocumentType = doc.JpkDocumentType,
         KsefNumber = doc.KsefNumber,
         KsefMarker = marker,

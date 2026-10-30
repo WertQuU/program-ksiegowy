@@ -89,7 +89,7 @@ public sealed class VatService
 
         foreach (var e in sales)
         {
-            if (e.JpkNetField is { } nf) d.RegisterTotals[nf] = d.RegisterTotals.GetValueOrDefault(nf) + e.NetPln;
+            foreach (var nf in VatRules.NetFields(e.JpkNetField)) d.RegisterTotals[nf] = d.RegisterTotals.GetValueOrDefault(nf) + e.NetPln;
             if (e.JpkTaxField is { } tf) d.RegisterTotals[tf] = d.RegisterTotals.GetValueOrDefault(tf) + e.VatPln;
         }
         foreach (var e in purchases)

@@ -31,10 +31,16 @@ public static class JpkV7Rules
     public const string SchemaFile = "Schemat_JPK_V7M(3)_v1-0E.xsd";
     public const string SchemaFileQuarterly = "Schemat_JPK_V7K(3)_v1-0E.xsd";
 
-    /// <summary>Wersja struktury dla okresu i chwili wytworzenia pliku (granica ze schematu wersji 3).</summary>
+    /// <summary>Pierwszy okres rozliczeniowy, za który składa się JPK_V7 w wersji 3 (luty 2026).</summary>
+    public static readonly DateOnly Version3From = new(2026, 2, 1);
+
+    /// <summary>
+    /// Wersja struktury zależy od OKRESU rozliczeniowego (także przy korekcie): za okresy do stycznia 2026 — wersja 2,
+    /// od lutego 2026 — wersja 3. Data wytworzenia nie decyduje o wersji.
+    /// </summary>
     public static JpkV7Version For(bool quarterly, DateOnly period, DateTime generatedUtc)
     {
-        var v3 = period.Year >= 2026 && generatedUtc >= new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+        var v3 = new DateOnly(period.Year, period.Month, 1) >= Version3From;
         return quarterly ? (v3 ? K3 : K2) : (v3 ? M3 : M2);
     }
 }
@@ -134,8 +140,8 @@ public static class JpkV7Builder
             if (ver.KsefMarkers) AddKsefMarker(row, ns, f);
             if (f.JpkDocumentType is { Length: > 0 } t) row.Add(E("TypDokumentu", t));
             foreach (var gtu in (f.GtuCodes ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) row.Add(E(gtu, "1"));
-            foreach (var proc in (f.Procedures ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) row.Add(E(proc.Trim(), "1"));
-            foreach (var fld in g.SelectMany(e => new[] { (e.JpkNetField, e.NetPln), (e.JpkTaxField, e.VatPln) }).Where(x => x.Item1 is not null)
+            foreach (var proc in VatRules.JpkProcedures(f.Procedures)) row.Add(E(proc, "1"));
+            foreach (var fld in g.SelectMany(e => VatRules.NetFields(e.JpkNetField).Select(n => ((string?)n, e.NetPln)).Append((e.JpkTaxField, e.VatPln))).Where(x => x.Item1 is not null)
                          .GroupBy(x => x.Item1!).OrderBy(x => int.Parse(x.Key[2..], Inv)))
                 row.Add(E(fld.Key, Money.Xml(fld.Sum(x => x.Item2))));
             ewidencja.Add(row);

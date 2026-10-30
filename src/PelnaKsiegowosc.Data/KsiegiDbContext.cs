@@ -86,6 +86,42 @@ public class KsiegiDbContext : DbContext
         b.Properties<string>().HaveMaxLength(1000);
     }
 
+    /// <summary>
+    /// Zapis księgowany bez bufora (storno, korekta, księgowanie z modułów) jest wstawiany jako bufor razem z pozycjami,
+    /// a status „zaksięgowany” ustawiany w tej samej transakcji po wstawieniu pozycji — wyzwalacze bazy bezwzględnie
+    /// zabraniają dopisywania pozycji do zapisu już zaksięgowanego.
+    /// </summary>
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var direct = DirectlyPosted();
+        if (direct.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        await using var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
+        int n;
+        foreach (var e in direct) e.Status = EntryStatus.Bufor;
+        try { n = await base.SaveChangesAsync(true, cancellationToken); }
+        finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
+        await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        if (own is not null) await own.CommitAsync(cancellationToken);
+        return n;
+    }
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        var direct = DirectlyPosted();
+        if (direct.Count == 0) return base.SaveChanges(acceptAllChangesOnSuccess);
+        using var own = Database.CurrentTransaction is null ? Database.BeginTransaction() : null;
+        int n;
+        foreach (var e in direct) e.Status = EntryStatus.Bufor;
+        try { n = base.SaveChanges(true); }
+        finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
+        base.SaveChanges(acceptAllChangesOnSuccess);
+        own?.Commit();
+        return n;
+    }
+
+    private List<JournalEntry> DirectlyPosted() => ChangeTracker.Entries<JournalEntry>()
+        .Where(e => e.State == EntityState.Added && e.Entity.Status == EntryStatus.Zaksiegowany).Select(e => e.Entity).ToList();
+
     protected override void OnModelCreating(ModelBuilder m)
     {
         // Identyfikatory GUID (v7) nadaje aplikacja — nowe obiekty podrzędne dodane do kolekcji są wstawiane (INSERT),

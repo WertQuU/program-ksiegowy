@@ -81,6 +81,9 @@ public static class DataDump
         var counts = new Dictionary<string, long>();
         db.ChangeTracker.AutoDetectChangesEnabled = false;
         await using var tx = await db.Database.BeginTransactionAsync(ct);
+        // Zapisy zaksięgowane wstawiane są najpierw jako bufor, a status przywracany po zaimportowaniu pozycji —
+        // wyzwalacze bazy nie pozwalają dopisać pozycji do zapisu już zaksięgowanego.
+        var posted = new List<Guid>();
         foreach (var et in OrderedEntityTypes(db))
         {
             var path = Path.Combine(directory, et.GetTableName() + ".jsonl");
@@ -93,6 +96,7 @@ public static class DataDump
                     if (string.IsNullOrWhiteSpace(line)) continue;
                     var entity = JsonSerializer.Deserialize(line, et.ClrType, Json)!;
                     ClearCollections(entity);
+                    if (entity is JournalEntry je && je.Status == EntryStatus.Zaksiegowany) { posted.Add(je.Id); je.Status = EntryStatus.Bufor; }
                     batch.Add(entity);
                     n++;
                     if (batch.Count >= 1000) await FlushAsync(db, batch, ct);
@@ -101,6 +105,8 @@ public static class DataDump
             }
             counts[et.GetTableName()!] = n;
         }
+        foreach (var chunk in posted.Chunk(500))
+            await db.JournalEntries.Where(e => chunk.Contains(e.Id)).ExecuteUpdateAsync(u => u.SetProperty(e => e.Status, EntryStatus.Zaksiegowany), ct);
         await tx.CommitAsync(ct);
         db.ChangeTracker.AutoDetectChangesEnabled = true;
         return counts;

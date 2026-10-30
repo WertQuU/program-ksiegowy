@@ -110,11 +110,11 @@ public class KsefAndJpkTests
 {
     private static XsdValidator Validator() => new(Path.Combine(AppContext.BaseDirectory, "schemas"));
 
-    private static async Task<Document> ApprovedSaleAsync(TestBooks t)
+    private static async Task<Document> ApprovedSaleAsync(TestBooks t, DateOnly? date = null, string code = "K001")
     {
-        var cp = await t.AddCounterpartyAsync("K001", "Klient sp. z o.o.", "7740001454");
+        var cp = await t.AddCounterpartyAsync(code, "Klient sp. z o.o.", "7740001454");
         var docs = new DocumentService(t.Db, t.User, t.Clock);
-        var d = new DateOnly(2026, 1, 15);
+        var d = date ?? new DateOnly(2026, 1, 15);
         var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, cp.Id, d, d,
             new[] { new DocumentLineInput("Usługa doradcza", 2, 1500m, "23", "usł."), new DocumentLineInput("Książka", 1, 100m, "5") }, DueDate: d.AddDays(14)));
         await docs.ApproveAsync(inv.Id);
@@ -220,18 +220,28 @@ public class KsefAndJpkTests
         var decl = await vat.ComputeDeclarationAsync(period);
         Assert.Throws<DomainException>(() => JpkV7Builder.Build(t.Company, period, sales, purchases, decl, false, t.Clock.UtcNow, Validator())); // brak e-maila
         t.Company.Email = "biuro@przyklad.pl";
-        // plik wytworzony przed 1.02.2026 — struktura (2), bez oznaczeń KSeF
-        var r2 = JpkV7Builder.Build(t.Company, period, sales, purchases, decl, false, t.Clock.UtcNow, Validator());
-        Assert.Equal(JpkV7Rules.M2.Ns, r2.Document.Root!.Name.Namespace);
-        Assert.Empty(r2.Document.Descendants(JpkV7Rules.M2.Ns + "BFK"));
-        Assert.True(r2.Validation.IsValid, string.Join(Environment.NewLine, r2.Validation.Errors));
-        // wytworzony od 1.02.2026 — struktura (3)
-        var r = JpkV7Builder.Build(t.Company, period, sales, purchases, decl, false, new DateTime(2026, 2, 10, 9, 0, 0, DateTimeKind.Utc), Validator());
+        // okres styczeń 2026 — zawsze struktura (2), także gdy plik (np. korekta) powstaje po 1.02.2026; bez oznaczeń KSeF
+        foreach (var generated in new[] { t.Clock.UtcNow, new DateTime(2026, 3, 10, 9, 0, 0, DateTimeKind.Utc) })
+        {
+            var r2 = JpkV7Builder.Build(t.Company, period, sales, purchases, decl, false, generated, Validator());
+            Assert.Equal(JpkV7Rules.M2.Ns, r2.Document.Root!.Name.Namespace);
+            Assert.Empty(r2.Document.Descendants(JpkV7Rules.M2.Ns + "BFK"));
+            Assert.True(r2.Validation.IsValid, string.Join(Environment.NewLine, r2.Validation.Errors));
+            Assert.Equal("690.00", r2.Document.Descendants(JpkV7Rules.M2.Ns + "K_20").Single().Value);
+        }
+        // okres luty 2026 — struktura (3) z oznaczeniami KSeF
+        var feb = new DateOnly(2026, 2, 1);
+        var invFeb = await ApprovedSaleAsync(t, new DateOnly(2026, 2, 16), "K002");
+        await docs.PostAsync(invFeb.Id);
+        var declFeb = await vat.ComputeDeclarationAsync(feb);
+        var r = JpkV7Builder.Build(t.Company, feb, await vat.RegisterAsync(VatRegisterType.Sprzedaz, feb), await vat.RegisterAsync(VatRegisterType.Zakup, feb), declFeb, false,
+            new DateTime(2026, 3, 10, 9, 0, 0, DateTimeKind.Utc), Validator());
         var ns = JpkV7Rules.Ns;
+        Assert.Equal(ns, r.Document.Root!.Name.Namespace);
         Assert.Single(r.Document.Descendants(ns + "SprzedazWiersz"));
         Assert.Equal("690.00", r.Document.Descendants(ns + "K_20").Single().Value);
         Assert.Equal("5.00", r.Document.Descendants(ns + "K_16").Single().Value); // 5%: K_15/K_16
-        Assert.Equal(decl.Payable.ToString("0", System.Globalization.CultureInfo.InvariantCulture), r.Document.Descendants(ns + "P_51").Single().Value);
+        Assert.Equal(declFeb.Payable.ToString("0", System.Globalization.CultureInfo.InvariantCulture), r.Document.Descendants(ns + "P_51").Single().Value);
         Assert.Equal("1", r.Document.Descendants(ns + "BFK").Single().Value); // faktura bez numeru KSeF
         Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors)); // oficjalny schemat JPK_V7M(3) z crd.gov.pl
     }
@@ -255,11 +265,12 @@ public class KsefAndJpkTests
 
         var janMonth = await vat.ComputeDeclarationAsync(jan, null, monthOnly: true);
         var rJan = JpkV7Builder.Build(t.Company, jan, await vat.RegisterAsync(VatRegisterType.Sprzedaz, jan), await vat.RegisterAsync(VatRegisterType.Zakup, jan), null, janMonth, false, feb10, Validator());
+        var nsJan = JpkV7Rules.K2.Ns; // za styczeń 2026 — struktura (2)
+        Assert.Empty(rJan.Document.Descendants(nsJan + "Deklaracja"));
+        Assert.Single(rJan.Document.Descendants(nsJan + "SprzedazWiersz"));
+        Assert.Equal("JPK_V7K (2)", rJan.Document.Descendants(nsJan + "KodFormularza").Single().Attribute("kodSystemowy")!.Value);
+        Assert.Equal("695.00", rJan.Document.Descendants(nsJan + "PodatekNalezny").Single().Value);
         XNamespace ns = "http://crd.gov.pl/wzor/2025/12/19/14089/";
-        Assert.Empty(rJan.Document.Descendants(ns + "Deklaracja"));
-        Assert.Single(rJan.Document.Descendants(ns + "SprzedazWiersz"));
-        Assert.Equal("JPK_V7K (3)", rJan.Document.Descendants(ns + "KodFormularza").Single().Attribute("kodSystemowy")!.Value);
-        Assert.Equal("695.00", rJan.Document.Descendants(ns + "PodatekNalezny").Single().Value);
 
         var q = await vat.ComputeDeclarationAsync(mar);
         Assert.True(q.Quarterly);

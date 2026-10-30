@@ -85,6 +85,22 @@ public static class VatRules
         return (gross - tax, tax);
     }
 
+    /// <summary>
+    /// Pola netto, w których wykazuje się pozycję. K_12 (usługi z art. 100 ust. 1 pkt 4) jest pozycją „w tym” K_11
+    /// (dostawa towarów i świadczenie usług poza terytorium kraju) — kwota trafia do obu pól.
+    /// </summary>
+    public static IEnumerable<string> NetFields(string? field) => field switch
+    {
+        null => Array.Empty<string>(),
+        "K_12" => new[] { "K_11", "K_12" },
+        _ => new[] { field }
+    };
+
+    /// <summary>Oznaczenia procedur dopuszczalne w JPK_V7(2)/(3). Oznaczenie „MPP” zniesiono od 1.07.2021 — nie trafia do JPK.</summary>
+    public static IEnumerable<string> JpkProcedures(string? procedures) =>
+        (procedures ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(p => !string.Equals(p, "MPP", StringComparison.OrdinalIgnoreCase));
+
     /// <summary>Pola ewidencji sprzedaży JPK_V7(3) — zgodnie z układem JPK_V7M(2)/(3) (K_10–K_36). Wymaga weryfikacji z XSD (3).</summary>
     public static JpkFieldMapping SalesMapping(string rateCode, VatTransactionType type) => (rateCode, type) switch
     {

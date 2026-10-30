@@ -103,6 +103,52 @@ public class LedgerEngineTests
     }
 
     [Fact]
+    public async Task Database_triggers_block_adding_or_moving_lines_and_protect_posting_metadata()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var ledger = t.Ledger();
+        var e = await ledger.CreateDraftAsync(TestBooks.Entry(Jan10, "PK/1", new("130-01", 50m, 0), new("801", 0, 50m)));
+        await ledger.PostAsync(e.Id);
+        var draft = await ledger.CreateDraftAsync(TestBooks.Entry(Jan10, "PK/2", new("130-01", 20m, 0), new("801", 0, 20m)));
+        var id = e.Id.ToString().ToUpperInvariant();
+        var draftId = draft.Id.ToString().ToUpperInvariant();
+        await t.Db.Database.OpenConnectionAsync(); // tabela tymczasowa żyje w obrębie połączenia
+
+        // dopisanie nowej pozycji do zapisu zaksięgowanego
+        await t.Db.Database.ExecuteSqlRawAsync("CREATE TEMP TABLE kopia AS SELECT * FROM JournalLines WHERE EntryId = {0} LIMIT 1", draftId);
+        await t.Db.Database.ExecuteSqlRawAsync("UPDATE kopia SET Id = {0}, EntryId = {1}", Guid.NewGuid().ToString().ToUpperInvariant(), id);
+        var ins = await Assert.ThrowsAnyAsync<Exception>(() => t.Db.Database.ExecuteSqlRawAsync("INSERT INTO JournalLines SELECT * FROM kopia"));
+        Assert.Contains("nie mozna dopisac", ins.Message);
+        // przeniesienie pozycji z bufora do zapisu zaksięgowanego
+        await Assert.ThrowsAnyAsync<Exception>(() => t.Db.Database.ExecuteSqlRawAsync("UPDATE JournalLines SET EntryId = {0} WHERE EntryId = {1}", id, draftId));
+        // pola nagłówka spoza pierwotnej listy
+        foreach (var sql in new[]
+        {
+            "UPDATE JournalEntries SET SourceDocumentId = '00000000-0000-0000-0000-000000000001' WHERE Id = {0}",
+            "UPDATE JournalEntries SET PostedAtUtc = '2020-01-01 00:00:00' WHERE Id = {0}",
+            "UPDATE JournalEntries SET CompanyId = '00000000-0000-0000-0000-000000000002' WHERE Id = {0}",
+            "UPDATE JournalEntries SET CorrectionReason = 'x' WHERE Id = {0}"
+        })
+            await Assert.ThrowsAnyAsync<Exception>(() => t.Db.Database.ExecuteSqlRawAsync(sql, id));
+
+        // normalna praca: księgowanie z bufora, księgowanie bez bufora, storno i korekta nadal działają
+        t.Db.ChangeTracker.Clear();
+        await ledger.PostAsync(draft.Id);
+        var direct = await ledger.CreateAndPostAsync(TestBooks.Entry(Jan10, "PK/3", new("130-01", 10m, 0), new("801", 0, 10m)));
+        Assert.Equal(2, direct.Lines.Count);
+        var rev = await ledger.ReverseAsync(e.Id, "Błąd");
+        Assert.Equal(2, await t.Db.JournalLines.CountAsync(l => l.EntryId == rev.Id));
+        await ledger.CorrectAsync(direct.Id, "Zła kwota", TestBooks.Entry(Jan10, "PK/3K", new("130-01", 12m, 0), new("801", 0, 12m)));
+        // również do zapisu zaksięgowanego bez bufora nie da się później dopisać pozycji
+        var lastId = direct.Id.ToString().ToUpperInvariant();
+        await t.Db.Database.ExecuteSqlRawAsync("UPDATE kopia SET Id = {0}, EntryId = {1}", Guid.NewGuid().ToString().ToUpperInvariant(), lastId);
+        await Assert.ThrowsAnyAsync<Exception>(() => t.Db.Database.ExecuteSqlRawAsync("INSERT INTO JournalLines SELECT * FROM kopia"));
+        t.Db.ChangeTracker.Clear();
+        var problems = await new IntegrityService(t.Db, t.Clock).CheckLedgerChainAsync(t.Year.Id);
+        Assert.Empty(problems);
+    }
+
+    [Fact]
     public async Task Integrity_check_detects_tampering_when_triggers_are_bypassed()
     {
         await using var t = await TestBooks.CreateAsync();
