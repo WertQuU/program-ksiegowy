@@ -40,12 +40,16 @@ def handle(url, depth=0, seen=set()):
                 save(os.path.basename(n), z.read(n))
         return
     if b"http://www.w3.org/2001/XMLSchema" in data[:4000]:
-        path = urllib.parse.urlparse(final).path
-        m = re.search(r"/wzor/(\d{4})/(\d\d)/(\d\d)/(\d+)/", path)
-        name = f"wzor-{m.group(1)}-{m.group(2)}-{m.group(3)}-{m.group(4)}.xsd" if m else (os.path.basename(path) or "schemat.xsd")
-        save(name if name.endswith(".xsd") else name + ".xsd", data)
+        u = urllib.parse.urlparse(final)
+        rel = os.path.join(u.netloc, u.path.lstrip("/"))
+        if not rel.endswith(".xsd"):
+            rel += ".xsd"
+        full = os.path.join(OUT, rel)
+        os.makedirs(os.path.dirname(full), exist_ok=True)
+        open(full, "wb").write(data)
+        log.append(f"ZAPISANO {full} ({len(data)} B)")
         for loc in re.findall(rb'schemaLocation="([^"]+)"', data):
-            handle(urllib.parse.urljoin(final, loc.decode()), depth + 1)
+            handle(urllib.parse.urljoin(final, loc.decode()), 0)
         return
     if data[:4] == b"%PDF":
         p = os.path.join(OUT, "doc.pdf")
