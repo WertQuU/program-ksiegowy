@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.StockView"
+             x:DataType="s:StockViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="Kartoteki i dokumenty">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding Code}" Watermark="kod" MinWidth="90" />
+            <TextBox Text="{Binding Name}" Watermark="nazwa" MinWidth="220" />
+            <TextBox Text="{Binding Unit}" MinWidth="60" />
+            <ComboBox ItemsSource="{Binding Kinds}" SelectedItem="{Binding Kind}" MinWidth="180" />
+            <Button Content="Dodaj pozycję" Command="{Binding AddItemCommand}" />
+          </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <ComboBox ItemsSource="{Binding MovementTypes}" SelectedItem="{Binding MovementType}" MinWidth="230" />
+            <TextBox Text="{Binding Date}" Watermark="data" MinWidth="100" />
+            <TextBox Text="{Binding Quantity}" Watermark="ilość" MinWidth="80" />
+            <TextBox Text="{Binding Price}" Watermark="cena (PZ/PW)" MinWidth="100" />
+            <TextBox Text="{Binding Reference}" Watermark="dokument źródłowy, np. FV/1/2026" MinWidth="180" />
+            <TextBox Text="{Binding OffsetAccount}" Watermark="konto przeciwstawne PZ/PW (opcjonalnie)" MinWidth="220" />
+            <Button Content="Zapisz dokument dla zaznaczonej" Command="{Binding RegisterCommand}" Classes="accent" />
+          </WrapPanel>
+          <c:TableView DockPanel.Dock="Top" Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" MaxHeight="260" />
+          <TextBlock DockPanel.Dock="Top" Text="Ostatnie dokumenty magazynowe" Classes="h2" />
+          <c:TableView Table="{Binding Movements}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="Stan i spis z natury">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Na dzień:" /><TextBox Text="{Binding AsOf}" MinWidth="100" />
+            <Button Content="Stan magazynu" Command="{Binding StateCommand}" />
+            <Button Content="Arkusz spisu z natury" Command="{Binding CountSheetCommand}" />
+            <Button Content="PDF…" Command="{Binding ExportPdfCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Report}" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

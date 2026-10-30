@@ -20,7 +20,14 @@ public static class JpkExport
         var kind = quarterly ? "JPK_V7K" : "JPK_V7M";
         var monthControl = await vat.ComputeDeclarationAsync(period, carriedForward, monthOnly: true);
         var decl = await vat.IsDeclarationMonthAsync(period) ? await vat.ComputeDeclarationAsync(period, carriedForward) : null;
-        var r = JpkV7Builder.Build(company, period, sales, purchases, decl, monthControl, correction, session.Clock.UtcNow, session.Validator);
+        JpkV7Builder.NaturalPerson? owner = null;
+        if (company.LegalForm == Domain.Companies.LegalForm.DzialalnoscGospodarczaOsobyFizycznej)
+        {
+            var persons = await db.ResponsiblePersons.AsNoTracking().Where(p => p.CompanyId == session.CompanyId && p.Pesel != null).ToListAsync();
+            var p = persons.FirstOrDefault(x => Domain.Validation.Identifiers.BirthDateFromPesel(x.Pesel) is not null);
+            if (p is not null) owner = new(p.FirstName, p.LastName, Domain.Validation.Identifiers.BirthDateFromPesel(p.Pesel)!.Value);
+        }
+        var r = JpkV7Builder.Build(company, period, sales, purchases, decl, monthControl, correction, session.Clock.UtcNow, session.Validator, owner);
         var target = await dialogs.SaveFileAsync($"Zapisz {kind}", $"{kind}-{period:yyyy-MM}{(correction ? "-korekta" : "")}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return false;
         r.Document.Save(target);

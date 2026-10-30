@@ -66,6 +66,19 @@ public static class Identifiers
         return (10 - sum % 10) % 10 == d[10] - '0';
     }
 
+    /// <summary>Data urodzenia zakodowana w numerze PESEL (miesiąc +80/+0/+20/+40/+60 dla lat 1800–2299).</summary>
+    public static DateOnly? BirthDateFromPesel(string? pesel)
+    {
+        if (!IsValidPesel(pesel)) return null;
+        var d = Digits(pesel);
+        var yy = int.Parse(d[..2]);
+        var mm = int.Parse(d[2..4]);
+        var dd = int.Parse(d[4..6]);
+        var (century, month) = mm switch { > 80 => (1800, mm - 80), > 60 => (2200, mm - 60), > 40 => (2100, mm - 40), > 20 => (2000, mm - 20), _ => (1900, mm) };
+        try { return new DateOnly(century + yy, month, dd); }
+        catch (ArgumentOutOfRangeException) { return null; }
+    }
+
     /// <summary>IBAN (ISO 13616, mod 97). Polski numer NRB (26 cyfr) jest akceptowany i traktowany jako PL.</summary>
     public static bool IsValidIban(string? iban)
     {

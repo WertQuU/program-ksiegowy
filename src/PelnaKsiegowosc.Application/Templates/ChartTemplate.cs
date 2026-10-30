@@ -148,6 +148,8 @@ public static class ChartTemplate
         new("409-04", "Inne koszty rodzajowe", AccountType.WynikoweKosztowe, ProfitLossLine: "R.B.VII", Cit: CitClassification.KosztPodatkowy),
 
         // Zespół 6 — rozliczenia międzyokresowe
+        new("490", "Zmiana stanu produktów", AccountType.WynikowePrzychodowe, ProfitLossLine: "R.A.II", Cit: CitClassification.PrzychodNiepodatkowy),
+        new("600", "Produkty gotowe", AccountType.Aktywne, "B.I.3"),
         new("640", "Czynne rozliczenia międzyokresowe kosztów", AccountType.Aktywne, "B.IV"),
 
         // Zespół 7 — przychody i koszty ich osiągnięcia

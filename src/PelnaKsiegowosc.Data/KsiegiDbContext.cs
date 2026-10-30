@@ -15,6 +15,7 @@ using PelnaKsiegowosc.Domain.Periods;
 using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Domain.Settlements;
 using PelnaKsiegowosc.Domain.Vat;
+using PelnaKsiegowosc.Domain.Warehouse;
 
 namespace PelnaKsiegowosc.Data;
 
@@ -55,6 +56,8 @@ public class KsiegiDbContext : DbContext
     public DbSet<CitAdvance> CitAdvances => Set<CitAdvance>();
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<StockItem> StockItems => Set<StockItem>();
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<PayrollList> PayrollLists => Set<PayrollList>();
     public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
     public DbSet<FixedAssetOperation> FixedAssetOperations => Set<FixedAssetOperation>();
@@ -191,6 +194,20 @@ public class KsiegiDbContext : DbContext
         });
         m.Entity<CitAdvance>(e => { e.HasIndex(x => new { x.FiscalYearId, x.PeriodNumber }).IsUnique(); e.Property(x => x.RatePercent).HasPrecision(7, 4); e.Property(x => x.WarningsText).HasMaxLength(int.MaxValue); });
         m.Entity<CitAdjustment>(e => e.HasIndex(x => x.FiscalYearId));
+
+        m.Entity<StockItem>(e =>
+        {
+            e.HasIndex(x => new { x.CompanyId, x.Code }).IsUnique();
+            e.Property(x => x.Quantity).HasPrecision(18, 4);
+        });
+
+        m.Entity<StockMovement>(e =>
+        {
+            e.HasIndex(x => new { x.CompanyId, x.StockItemId, x.Date });
+            e.Property(x => x.Quantity).HasPrecision(18, 4);
+            e.Property(x => x.QuantityAfter).HasPrecision(18, 4);
+            e.Property(x => x.UnitPrice).HasPrecision(18, 4);
+        });
 
         m.Entity<Employee>(e =>
         {

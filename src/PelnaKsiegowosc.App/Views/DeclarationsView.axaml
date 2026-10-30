@@ -25,6 +25,15 @@
       <Button Content="PDF…" Command="{Binding ExportPdfCommand}" />
       <Button Content="XLSX…" Command="{Binding ExportXlsxCommand}" />
     </WrapPanel>
+    <StackPanel DockPanel.Dock="Top" IsVisible="{Binding ShowPartners}" Spacing="4">
+      <TextBlock Classes="info" TextWrapping="Wrap" Text="Jedna osoba w wierszu: imię i nazwisko; udział %; skala albo liniowy; składki społeczne zapłacone w roku; składka zdrowotna; wpłacone zaliczki. Przykład: Jan Kowalski; 100; liniowy; 18000; 5000; 12000" />
+      <TextBox Text="{Binding Partners}" AcceptsReturn="True" MinHeight="70" />
+    </StackPanel>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar" IsVisible="{Binding ShowInventory}">
+      <TextBlock Text="Na dzień:" /><TextBox Text="{Binding AsOf}" MinWidth="100" />
+      <TextBlock Text="Konto kasy:" /><TextBox Text="{Binding CashAccount}" MinWidth="70" />
+      <TextBlock Text="Stan policzony w kasie:" /><TextBox Text="{Binding CashCounted}" MinWidth="100" />
+    </WrapPanel>
     <c:TableView Table="{Binding Preview}" />
   </DockPanel>
 </UserControl>

@@ -53,8 +53,11 @@ public static class JpkV7Builder
 
     /// <param name="declaration">Deklaracja (miesięczna lub kwartalna); <c>null</c> w 1. i 2. miesiącu kwartału (JPK_V7K bez deklaracji).</param>
     /// <param name="monthControl">Zestawienie z rejestrów samego miesiąca — sumy kontrolne ewidencji.</param>
+    /// <summary>Dane podatnika będącego osobą fizyczną (sekcja OsobaFizyczna).</summary>
+    public sealed record NaturalPerson(string FirstName, string LastName, DateOnly BirthDate);
+
     public static JpkResult Build(Company company, DateOnly period, IReadOnlyList<VatRegisterEntry> sales, IReadOnlyList<VatRegisterEntry> purchases,
-        VatDeclaration? declaration, VatDeclaration monthControl, bool correction, DateTime generatedUtc, XsdValidator validator)
+        VatDeclaration? declaration, VatDeclaration monthControl, bool correction, DateTime generatedUtc, XsdValidator validator, NaturalPerson? owner = null)
     {
         var quarterly = company.VatPeriod == VatSettlementPeriod.Kwartalny;
         var schemaFile = quarterly ? JpkV7Rules.SchemaFileQuarterly : JpkV7Rules.SchemaFile;
@@ -64,8 +67,8 @@ public static class JpkV7Builder
         if (quarterly && period.Month % 3 == 0 && declaration is null) throw new DomainException("W ostatnim miesiącu kwartału JPK_V7K musi zawierać deklarację za kwartał.");
         if (quarterly && period.Month % 3 != 0) declaration = null;
         if (!quarterly && declaration is null) throw new DomainException("JPK_V7M wymaga części deklaracyjnej.");
-        if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej)
-            throw new DomainException("Dla osoby fizycznej JPK wymaga sekcji OsobaFizyczna (imię, nazwisko, data urodzenia) — ten wariant nie jest jeszcze obsługiwany.");
+        if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej && owner is null)
+            throw new DomainException("Dla osoby fizycznej JPK wymaga imienia, nazwiska i daty urodzenia — dodaj właściciela z numerem PESEL w danych jednostki (osoby odpowiedzialne).");
         if (string.IsNullOrWhiteSpace(company.Email)) warnings.Add("Brak adresu e-mail jednostki — pole wymagane w Podmiot1.");
         if (declaration is not null) warnings.AddRange(declaration.Warnings);
         if (quarterly && declaration is null) warnings.Add($"JPK_V7K za {period:MM.yyyy}: tylko ewidencja — deklaracja za kwartał w pliku za {period.AddMonths(3 - (period.Month - 1) % 3 - 1):MM.yyyy}.");
@@ -80,7 +83,16 @@ public static class JpkV7Builder
             E("KodUrzedu", company.TaxOfficeCode),
             E("Rok", period.Year),
             E("Miesiac", period.Month));
-        var podmiot = new XElement(ns + "Podmiot1", new XAttribute("rola", "Podatnik"),
+        var podmiot = owner is not null
+            ? new XElement(ns + "Podmiot1", new XAttribute("rola", "Podatnik"),
+                new XElement(ns + "OsobaFizyczna",
+                    E("NIP", Identifiers.NormalizeNip(company.Nip)),
+                    E("ImiePierwsze", owner.FirstName),
+                    E("Nazwisko", owner.LastName),
+                    E("DataUrodzenia", owner.BirthDate.ToString("yyyy-MM-dd", Inv)),
+                    E("Email", company.Email ?? ""),
+                    string.IsNullOrWhiteSpace(company.Phone) ? null : E("Telefon", company.Phone)))
+            : new XElement(ns + "Podmiot1", new XAttribute("rola", "Podatnik"),
             new XElement(ns + "OsobaNiefizyczna",
                 E("NIP", Identifiers.NormalizeNip(company.Nip)),
                 E("PelnaNazwa", company.FullName),

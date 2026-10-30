@@ -14,7 +14,13 @@ Sumy kontrolne: `KSeF/FA3/SHA256SUMS`.
 
 ## Schematy, których nie dołączono
 
-Schematów JPK_V7M(3) (CRWDE 2025/12/19/14090) oraz e-Sprawozdań finansowych (JednostkaInnaWZlotych)
-nie udało się pobrać z tego środowiska (brak dostępu do crd.gov.pl / gov.pl). Aplikacja pozwala
-wczytać je w *Ustawienia → Schematy XSD*; do tego czasu pliki JPK/e-SF mają status
-„WYGENEROWANY — NIEZWALIDOWANY” i nie są oznaczane jako poprawne.
+Schematów JPK_V7M(3) (CRWDE 2025/12/19/14090), JPK_V7K(3), JPK_KR_PD (JPK_CIT) oraz e-Sprawozdań
+finansowych (JednostkaInnaWZlotych) nie udało się pobrać ze środowiska budowania (brak dostępu do crd.gov.pl / gov.pl).
+W programie: *Ustawienia → Schematy XSD*:
+
+- **Pobierz z serwera MF** — pobiera schemat JPK_V7M(3) z crd.gov.pl wraz ze schematami importowanymi
+  (tylko z domen gov.pl);
+- **Wczytaj z pliku…** — plik `.xsd` albo archiwum `.zip` pobrane ze strony MF (podatki.gov.pl).
+
+Program generuje pliki JPK w przestrzeni nazw odczytanej z wczytanego schematu. Do czasu wczytania schematu pliki
+JPK/e-SF mają status „WYGENEROWANY — NIEZWALIDOWANY” i nie są oznaczane jako poprawne.

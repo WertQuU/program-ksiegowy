@@ -225,4 +225,30 @@ public class FinancialStatementTests
         Assert.Contains(u.Rows, r => ((string?)r.Cells[1] ?? "").Contains(Money.Format(17160m)));
         foreach (var r in new[] { cit, ue, ift, u }) Assert.True(new PdfReportExporter().Export(r).Length > 100);
     }
+
+    [Fact]
+    public async Task Pit_partners_and_inventory_documents()
+    {
+        Assert.Equal(PitTaxForm.Liniowy, PitPartner.ParseLine("Jan Kowalski; 50; liniowy; 1000; 20000; 0").Form);
+        Assert.Throws<DomainException>(() => PitPartner.ParseLine("Jan; 50; ryczałt"));
+        Assert.Equal(0m, PitBusinessRules.Tax(30000m, PitTaxForm.Skala));
+        Assert.Equal(10800m, PitBusinessRules.Tax(120000m, PitTaxForm.Skala));
+        Assert.Equal(19000m, PitBusinessRules.Tax(100000m, PitTaxForm.Liniowy));
+
+        await using var t = await FullYearScenarioTests.BuildFullYearAsync(closeYear: false);
+        var rs = new ReportService(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => rs.PitPartnersAsync(t.Year.Id, new[] { PitPartner.ParseLine("A; 60; skala") }));
+        var pit = await rs.PitPartnersAsync(t.Year.Id, new[] { PitPartner.ParseLine("A; 50; skala"), PitPartner.ParseLine("B; 50; liniowy; 0; 20000; 100") });
+        Assert.Equal(2, pit.Rows.Count);
+        var b = pit.Rows[1];
+        Assert.Equal(PitBusinessRules.LinearHealthDeductionLimit, b.Cells[7]); // odliczenie zdrowotnej ograniczone limitem
+
+        var plan = await rs.InventoryPlanAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Contains(plan.Rows, r => (string?)r.Cells[0] == "130-01" && ((string?)r.Cells[4])!.StartsWith("potwierdzenie salda (bank)"));
+        var conf = await rs.BalanceConfirmationsAsync(t.Year.EndDate, true);
+        Assert.Contains(conf.Rows, r => ((string?)r.Cells[0] ?? "").StartsWith("Do: Dostawca"));
+        var cash = await rs.CashCountAsync(t.Year.Id, t.Year.EndDate, "130-01", 7500m);
+        Assert.False(cash.ControlsPassed);
+        Assert.Equal(40m, cash.Rows.Single(r => (string?)r.Cells[0] == "3").Cells[2]);
+    }
 }

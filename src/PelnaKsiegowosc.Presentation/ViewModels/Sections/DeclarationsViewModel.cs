@@ -22,6 +22,10 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
         new("VAT-UE — informacja podsumowująca", "25. dzień następnego miesiąca", "tutaj: Generuj (okres od–do)", AppArea.Vat, "VATUE"),
         new("IFT-2R / CIT-10Z — wypłaty dla nierezydentów", "koniec 3. miesiąca po roku", "tutaj: Generuj (rok)", AppArea.Cit, "IFT2R"),
         new("Uchwały: zatwierdzenie sprawozdania, podział zysku, absolutorium", "6 miesięcy po dniu bilansowym", "tutaj: Generuj", AppArea.Raporty, "UCHWALY"),
+        new("PIT-36 / PIT-36L — właściciel JDG / wspólnicy spółki osobowej", "30 kwietnia (zaliczki: 20. dnia)", "tutaj: wpisz wspólników i Generuj", AppArea.Cit, "PIT"),
+        new("Inwentaryzacja — składniki i metody (art. 26 UoR)", "koniec roku / do 15 stycznia", "tutaj: Generuj (na dzień)", AppArea.Zamkniecie, "INW"),
+        new("Potwierdzenia sald dla kontrahentów", "IV kwartał — do 15 stycznia", "tutaj: Generuj (na dzień)", AppArea.Kontrahenci, "SALDA"),
+        new("Protokół inwentaryzacji kasy", "ostatni dzień roku", "tutaj: konto kasy + stan policzony", AppArea.Bank, "KASA"),
         new("JPK_V7M / JPK_V7K — ewidencja i deklaracja VAT", "25. dzień następnego miesiąca", "sekcja VAT → Generuj JPK", AppArea.Vat, null),
         new("JPK_CIT (JPK_KR_PD) — księgi ze znacznikami", "koniec 7. miesiąca po roku", "sekcja CIT → JPK CIT", AppArea.Cit, null),
         new("Zaliczki CIT", "20. dzień następnego miesiąca", "sekcja CIT → wyliczenie zaliczki", AppArea.Cit, null),
@@ -36,6 +40,18 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
     [ObservableProperty] private string _from = "";
     [ObservableProperty] private string _to = "";
     [ObservableProperty] private string _profitDistribution = "";
+    [ObservableProperty] private string _partners = "";
+    [ObservableProperty] private string _asOf = "";
+    [ObservableProperty] private string _cashAccount = "100";
+    [ObservableProperty] private string _cashCounted = "";
+    public bool ShowPartners => Selected.Kind == "PIT";
+    public bool ShowInventory => Selected.Kind is "INW" or "SALDA" or "KASA";
+
+    partial void OnSelectedChanged(DeclarationInfo value)
+    {
+        OnPropertyChanged(nameof(ShowPartners));
+        OnPropertyChanged(nameof(ShowInventory));
+    }
     [ObservableProperty] private TableData _preview = TableData.Empty;
     private ReportDocument? _current;
 
@@ -46,6 +62,7 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
         var last = new DateOnly(today.Year, today.Month, 1).AddMonths(-1);
         if (string.IsNullOrEmpty(From)) From = $"{last.Month:00}.{last.Year}";
         if (string.IsNullOrEmpty(To)) To = From;
+        if (string.IsNullOrEmpty(AsOf)) AsOf = Session.CurrentYear.EndDate.ToPl();
         return Task.CompletedTask;
     }
 
@@ -65,6 +82,10 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
             "CIT8" => await r.Cit8Async(y.Id),
             "VATUE" => await r.VatUeAsync(Parse.Month(From, "Od"), Parse.Month(To, "Do")),
             "IFT2R" => await r.ForeignPaymentsAsync(y.EndDate.Year),
+            "PIT" => await r.PitPartnersAsync(y.Id, Partners.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(PitPartner.ParseLine).ToList()),
+            "INW" => await r.InventoryPlanAsync(y.Id, Parse.Date(AsOf, "Na dzień")),
+            "SALDA" => await r.BalanceConfirmationsAsync(Parse.Date(AsOf, "Na dzień"), true),
+            "KASA" => await r.CashCountAsync(y.Id, Parse.Date(AsOf, "Na dzień"), CashAccount.Trim(), Parse.Amount(CashCounted, "Stan policzony")),
             _ => await r.AnnualResolutionsAsync(y.Id, Parse.Trim(ProfitDistribution))
         };
         Preview = TableData.FromReport(_current);

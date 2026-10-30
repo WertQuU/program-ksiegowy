@@ -18,18 +18,27 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | UoR art. 23 | elementy zapisu, identyfikacja operatora | pola zapisu, operator = konto systemowe | Z |
 | UoR art. 24 ust. 4–5 | ochrona ksiąg komputerowych, sprawdzalność | blokada zmian, łańcuch skrótów, dziennik zdarzeń, kontrola integralności | Z/W |
 | UoR art. 25 | korekty zapisów | storno czerwone/czarne wg polityki, zapis korygujący | Z |
-| UoR art. 26–27 | inwentaryzacja | brak modułu inwentaryzacji | N |
+| UoR art. 26–27 | inwentaryzacja | zestawienie składników i metod, potwierdzenia sald, protokół kasy, arkusz spisu z natury, różnice inwentaryzacyjne w magazynie | Z/W |
+| UoR art. 34 ust. 4 | wycena rozchodu zapasów | magazyn: cena przeciętna ważona, PZ/WZ/RW/PW, automatyczne księgowanie rozchodu | Z/W |
 | UoR art. 28–35 | wycena aktywów i pasywów | ŚT (amortyzacja), waluty, rozrachunki; brak odpisów aktualizujących należności, rezerw automatycznych | Cz |
 | UoR art. 32 | amortyzacja bilansowa | metody liniowa, degresywna, jednorazowa | Z/W |
-| UoR art. 45–46, zał. nr 1 | bilans, RZiS | wariant porównawczy z danymi porównawczymi | Z/W |
-| UoR art. 45 ust. 1f | sprawozdanie w strukturze logicznej | XML bez informacji dodatkowej, bez walidacji XSD (schemat niedołączony) | Cz |
+| UoR art. 45–46, zał. nr 1 | bilans, RZiS | wariant porównawczy i kalkulacyjny (klucz podziału kosztów rodzajowych), dane porównawcze | Z/W |
+| UoR art. 48, 48a, 48b, zał. nr 1 | informacja dodatkowa, zestawienie zmian w kapitale, rachunek przepływów | tabele z ksiąg + opisy użytkownika; RPP metodą pośrednią z kontrolą zmiany środków pieniężnych | Z/W |
+| UoR art. 45 ust. 1f | sprawozdanie w strukturze logicznej | XML z RZiS (wariant wg polityki), zmianami w kapitale, RPP i informacją dodatkową (PDF); walidacja po wczytaniu schematu XSD | Z/W |
+| UoR art. 53, 69 | zatwierdzenie i złożenie sprawozdania | projekty uchwał (zatwierdzenie, podział zysku, absolutorium), terminy w kalendarzu | Z/W |
 | UoR art. 71–76 | ochrona i przechowywanie | szyfrowane kopie, weryfikacja, retencja, okresy przechowywania | Z/W |
 | VAT art. 106e | elementy faktury | generator FA(3) w zakresie typowych faktur krajowych i korekt | Z/W |
 | VAT art. 106ga i n. | KSeF | wysyłka i pobieranie (token), walidacja XSD FA(3); test na atrapie API | Z/W |
 | VAT art. 86 | prawo i termin odliczenia | wymagane potwierdzenie zakresu i okresu, kontrola terminów | Z/W |
 | VAT art. 109 ust. 3 | ewidencja VAT | rejestry z polami JPK | Z/W |
-| Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M | generator; mapowanie pól wymaga weryfikacji; bez walidacji XSD | Cz |
-| JPK_V7K, osoba fizyczna | kwartalny wariant, sekcja OsobaFizyczna | — | N |
+| Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | generator (miesięczny i kwartalny, osoba fizyczna i niefizyczna); przestrzeń nazw z wczytanego schematu; mapowanie pól wymaga weryfikacji | Z/W |
+| VAT art. 99 ust. 2, art. 103 ust. 2 | rozliczenie kwartalne | deklaracja za kwartał w ostatnim miesiącu, ewidencja miesięczna | Z/W |
+| VAT art. 100 | informacja podsumowująca VAT-UE | zestawienie WDT, WNT, usług (art. 100 ust. 1 pkt 4) wg kontrahentów | Z/W |
+| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD) | księgi ze znacznikami bilansowymi, RZiS i podatkowymi; nazwy elementów do weryfikacji schematem | Cz |
+| CIT art. 27 | zeznanie CIT-8, CIT-8/O | zestawienie kwot z uzgodnienia wyniku, zaliczek i odliczeń | Z/W |
+| CIT art. 26 ust. 3 | IFT-2R / CIT-10Z | zestawienie wypłat na rzecz nierezydentów (ocena WHT — użytkownik) | Cz |
+| PIT art. 8, 27, 30c, 44, 45 | dochód wspólników / właściciela, PIT-36, PIT-36L | podział dochodu wg udziałów, skala / liniowy, odliczenie składek | Z/W |
+| PIT art. 31–42, ustawa o sus | płatnik: zaliczki, ZUS, składka zdrowotna | listy płac (umowa o pracę, zlecenie, dzieło, powołanie), limit 30-krotności, próg 120 000 zł, PIT-2, ulga dla młodych, ryczałt do 200 zł; DRA/RCA, PIT-4R, PIT-8AR, PIT-11 | Z/W |
 | UoR art. 24 ust. 5 | bieżące prowadzenie ksiąg (przyjęty termin ujęcia operacji miesiąca: 15. dzień następnego miesiąca — do potwierdzenia w polityce) | asystent i kalendarz terminów | Z/W |
 | VAT art. 86a, 88 ust. 1 pkt 4 | ograniczenia odliczenia (samochody osobowe, noclegi, gastronomia) | kategorie wydatków z procentem odliczenia | Z/W |
 | VAT art. 89b, CIT art. 15b | korekta przy niezapłaconych zobowiązaniach (90 dni) | asystent: błąd dla zobowiązań > 90 dni po terminie | Z/W |

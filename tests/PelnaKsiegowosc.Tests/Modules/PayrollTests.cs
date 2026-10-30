@@ -68,6 +68,14 @@ public class PayrollTests
         Assert.Equal(180m, b.Health);
     }
 
+    [Fact]
+    public void Birth_date_is_read_from_pesel()
+    {
+        Assert.Equal(new DateOnly(1944, 5, 14), PelnaKsiegowosc.Domain.Validation.Identifiers.BirthDateFromPesel("44051401359"));
+        Assert.Equal(new DateOnly(2002, 7, 8), PelnaKsiegowosc.Domain.Validation.Identifiers.BirthDateFromPesel("02270803624"));
+        Assert.Null(PelnaKsiegowosc.Domain.Validation.Identifiers.BirthDateFromPesel("12345678901"));
+    }
+
     private static decimal R2(decimal v) => Math.Round(v, 2, MidpointRounding.AwayFromZero);
 
     [Fact]

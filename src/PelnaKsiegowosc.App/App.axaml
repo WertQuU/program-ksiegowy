@@ -28,6 +28,7 @@
     <DataTemplate DataType="s:RegulationsViewModel"><v:RegulationsView /></DataTemplate>
     <DataTemplate DataType="s:PayrollViewModel"><v:PayrollView /></DataTemplate>
     <DataTemplate DataType="s:DeclarationsViewModel"><v:DeclarationsView /></DataTemplate>
+    <DataTemplate DataType="s:StockViewModel"><v:StockView /></DataTemplate>
   </Application.DataTemplates>
 
   <Application.Resources>

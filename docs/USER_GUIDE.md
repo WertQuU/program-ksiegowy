@@ -70,12 +70,42 @@ każdy ma swój przycisk i pokazuje, czy jest zrobiony:
 7. Kopia zapasowa.
 8. Zamknięcie miesiąca.
 
+## Płace
+
+1. **Płace → Osoby i umowy**: wpisz osobę, rodzaj umowy (o pracę, zlecenie, dzieło, powołanie) i kwotę brutto;
+   zaznacz PIT-2, ulgę dla młodych lub status studenta, jeśli dotyczy. Ustaw stopę wypadkową z zawiadomienia ZUS.
+2. **Listy płac**: „Utwórz listę płac” za miesiąc z datą wypłaty — program wylicza ZUS, zdrowotną, zaliczkę PIT
+   i netto. Kwotę osoby (niepełny miesiąc, premia) zmienisz polem „Zmień brutto”. Następnie „Zaksięguj”.
+3. Wypłaty netto oraz przelewy do ZUS (do 15.) i US (do 20.) księgujesz w sekcji Bank (rodzaje operacji
+   „Wynagrodzenie”, „ZUS”, „PIT”).
+4. **ZUS i PIT**: zestawienia do DRA/RCA (co miesiąc) oraz PIT-4R, PIT-8AR i PIT-11 (raz w roku).
+
+## Magazyn
+
+Dla firm handlowych i produkcyjnych: dodaj pozycję (towar, materiał, produkt) i zapisuj dokumenty PZ, WZ, RW, PW.
+Wydania program wycenia ceną przeciętną ważoną i księguje (np. Wn 731 / Ma 330). Przyjęcie zakupu zaksięgowanego
+fakturą na koncie 330 zapisz bez konta przeciwstawnego (tylko ilości). Na koniec roku: „Arkusz spisu z natury”,
+różnice — „Niedobór” / „Nadwyżka”.
+
+## Deklaracje
+
+Sekcja **Deklaracje** zbiera wszystkie deklaracje z terminami. Wybierz pozycję i kliknij „Generuj / przejdź”:
+CIT-8 z CIT-8/O, VAT-UE, IFT-2R/CIT-10Z, PIT-36/PIT-36L (wspólnicy lub właściciel — jeden wiersz na osobę),
+uchwały roczne, inwentaryzacja (metody, potwierdzenia sald, protokół kasy). Pozostałe (JPK_V7M/V7K, JPK_CIT,
+ZUS, PIT-11) program otwiera we właściwej sekcji. Program przygotowuje kwoty i wydruki; deklaracje wysyłasz
+przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
+
 ## Koniec roku
 
-Zamknij wszystkie miesiące, wykonaj kopię, „Podgląd zamknięcia roku”, następnie „Zamknij rok obrotowy”
-i wpisz frazę potwierdzenia. Program przeksięguje wynik, zablokuje rok i utworzy rok następny z bilansem otwarcia.
-Bilans i RZiS: Raporty; plik XML sprawozdania: Raporty → „Sprawozdanie finansowe XML” (uzupełnij informację
-dodatkową i podpisy w narzędziu MF).
+1. Inwentaryzacja (Deklaracje → Inwentaryzacja, potwierdzenia sald, protokół kasy; Magazyn → spis z natury).
+2. Zamknij wszystkie miesiące, wykonaj kopię, „Podgląd zamknięcia roku”, następnie „Zamknij rok obrotowy”
+   i wpisz frazę potwierdzenia. Program przeksięguje wynik, zablokuje rok i utworzy rok następny z bilansem otwarcia.
+3. **Sprawozdanie** (Raporty): bilans, RZiS (porównawczy lub kalkulacyjny — klucz podziału kosztów ustawisz
+   w raporcie kalkulacyjnym), zestawienie zmian w kapitale, rachunek przepływów, informacja dodatkowa (opisy wpisz
+   w „Tekstach informacji dodatkowej”). „Sprawozdanie finansowe XML” tworzy plik e-Sprawozdania z dołączoną
+   informacją dodatkową; podpisuje się go w aplikacji MF.
+4. Schematy XSD do walidacji: Ustawienia → Schematy XSD → „Pobierz z serwera MF” lub „Wczytaj z pliku…”.
+5. CIT-8, JPK_CIT, uchwały i złożenie w KRS — sekcja Deklaracje (terminy na Pulpicie).
 
 ## Kopie zapasowe i bezpieczeństwo
 

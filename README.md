@@ -16,7 +16,11 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   w terminie, brak odliczenia VAT, faktury dla firm bez KSeF, duplikaty, płatności gotówkowe ponad 15 000 zł,
   niezapłacone faktury po 90 dniach, ujemna kasa, salda po złej stronie, brak wyciągów, amortyzacji, kopii…),
   objaśnia je prostym językiem i prowadzi do miejsca naprawy.
-- **Kalendarz terminów** — JPK_V7M i VAT, zaliczki CIT, zaksięgowanie miesiąca, sprawozdanie finansowe, CIT-8.
+- **Kalendarz terminów** — JPK_V7M/V7K i VAT, zaliczki CIT, ZUS i PIT od wynagrodzeń, PIT-4R/PIT-11, JPK_CIT,
+  zaksięgowanie miesiąca, sprawozdanie finansowe, CIT-8.
+- **Sekcja „Deklaracje”** — wszystkie deklaracje w jednym miejscu z terminami: CIT-8 z CIT-8/O, VAT-UE, IFT-2R/CIT-10Z,
+  PIT-36/PIT-36L (właściciel, wspólnicy), uchwały roczne, inwentaryzacja (metody, potwierdzenia sald, protokół kasy)
+  oraz skróty do JPK_V7, JPK_CIT, ZUS DRA/RCA, PIT-4R/PIT-8AR/PIT-11 i sprawozdania.
 - **Rodzaje wydatków** (paliwo, samochód osobowy, telefon, najem, hotel, restauracja, reprezentacja…) — program sam
   dobiera konto, procent odliczenia VAT i część kosztu nieuznawaną podatkowo.
 - **Kreator „Rozlicz miesiąc”** — dokumenty, bank, amortyzacja, VAT, JPK, zaliczka CIT, kopia i zamknięcie, każdy
@@ -36,12 +40,20 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   zatwierdzanie i dekretacja (propozycja + edycja), historia zmian.
 - **Forma prawna jednostki** wpływa na plan kont (nazwa kapitału podstawowego), politykę rachunkowości,
   kontrolę firmy i KRS, dostępność CIT (spółki osobowe i osoby fizyczne → PIT wspólników) i wymogi zdarzeń kapitałowych.
-- **VAT i JPK**: rejestry, wyliczenie deklaracji, rozliczenie na kontach, plik JPK_V7M; **KSeF 2.0** — faktury FA(3)
+- **VAT i JPK**: rejestry, wyliczenie deklaracji (miesięcznej i kwartalnej), rozliczenie na kontach, pliki JPK_V7M
+  i JPK_V7K (także dla osoby fizycznej), JPK_CIT (księgi ze znacznikami podatkowymi), VAT-UE; **KSeF 2.0** — faktury FA(3)
   walidowane z oficjalnym schematem, wysyłka i pobieranie faktur zakupowych.
 - **Bank i kasa**: import MT940 i CSV, dopasowanie do rozrachunków, księgowanie, operacje kasowe; rozrachunki
   z wiekowaniem i kompensatami.
-- **CIT** (zaliczki, uzgodnienie wyniku bilansowego z podatkowym), **środki trwałe** (amortyzacja bilansowa
-  i podatkowa), **kapitał i właściciele** (wkłady, podział zysku, dywidendy, pożyczki — po potwierdzeniu dokumentów).
+- **CIT** (zaliczki, uzgodnienie wyniku bilansowego z podatkowym, CIT-8), **PIT** właściciela i wspólników,
+  **płace** (umowa o pracę, zlecenie, dzieło, powołanie; ZUS, zdrowotna i PIT 2026, listy płac z księgowaniem,
+  DRA/RCA, PIT-4R, PIT-8AR, PIT-11), **magazyn** (PZ/WZ/RW/PW, cena przeciętna, spis z natury),
+  **środki trwałe** (amortyzacja bilansowa i podatkowa), **kapitał i właściciele** (wkłady, podział zysku, dywidendy, pożyczki — po potwierdzeniu dokumentów).
+- **Sprawozdanie finansowe**: bilans, RZiS porównawczy i kalkulacyjny (klucz podziału kosztów), zestawienie zmian
+  w kapitale, rachunek przepływów (metoda pośrednia), informacja dodatkowa (tabele z ksiąg + opisy), e-Sprawozdanie XML
+  z dołączoną informacją dodatkową; **schematy XSD** pobierane z serwera MF lub wczytywane z pliku.
+- **Monitor przepisów** — sprawdza zmiany ustaw (API Sejmu) i pokazuje je w panelu; **weryfikacja kontrahenta**
+  w bezpłatnych rejestrach (biała lista VAT, KRS — likwidacja/upadłość/restrukturyzacja, VIES).
 - **Raporty** z rzeczywistych zapisów: dziennik, księga główna, zestawienie obrotów i sald, bilans, RZiS,
   rejestry VAT, rozrachunki, środki trwałe, uzgodnienia, dziennik zdarzeń, kontrola integralności —
   eksport do **PDF, XLSX i CSV**; sprawozdanie finansowe w XML.
@@ -56,6 +68,8 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 | ![Wydatek](docs/zrzuty/wydatek.png) | ![Rozlicz miesiąc](docs/zrzuty/rozlicz-miesiac.png) |
 | **Kreator pierwszego uruchomienia** | **Faktura sprzedaży** |
 | ![Kreator](docs/zrzuty/kreator.png) | ![Faktura](docs/zrzuty/faktura-sprzedazy.png) |
+| **Płace** | **Deklaracje** |
+| ![Płace](docs/zrzuty/place.png) | ![Deklaracje](docs/zrzuty/deklaracje.png) |
 
 ## Pobranie i instalacja
 
@@ -89,13 +103,17 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 
 ## Znane ograniczenia
 
-- JPK_V7K (rozliczenie kwartalne), JPK dla osoby fizycznej (sekcja OsobaFizyczna) i zaliczki PIT — nieobsługiwane.
-- Schematy XSD JPK_V7M i e-Sprawozdania nie są dołączone — pliki mają status „niezwalidowany” do czasu
-  walidacji oficjalnym schematem (szczegóły: [schemas/README.md](schemas/README.md)).
+- Schematy XSD JPK_V7M/V7K, JPK_KR_PD i e-Sprawozdania nie mogły zostać dołączone do repozytorium (brak dostępu
+  do serwerów MF podczas budowania) — program pobiera je w *Ustawienia → Schematy XSD → Pobierz z serwera MF* albo
+  wczytuje z pliku. Do tego czasu pliki mają status „niezwalidowany” (szczegóły: [schemas/README.md](schemas/README.md)).
+- Deklaracje CIT-8, VAT-UE, PIT-36/36L, PIT-4R/8AR/11, DRA/RCA — program wylicza kwoty i drukuje zestawienia;
+  wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
+- Płace: bez PPK, zasiłków, urlopów i absencji (kwoty wynagrodzenia za niepełny miesiąc wpisuje się ręcznie).
+- Magazyn: wycena wyłącznie ceną przeciętną ważoną; brak FIFO/LIFO i wielu magazynów.
 - KSeF: uwierzytelnianie tokenem; podpis XAdES (kwalifikowany/Profil Zaufany) nieobsługiwany.
 - Biała lista VAT i kursy NBP: integracje sprawdzone testami na atrapach API (publiczne API MF i NBP).
-- Reguły kategorii wydatków odpowiadają typowym przypadkom — w nietypowej sytuacji procenty zmienia się ręcznie.
-- Wariant kalkulacyjny RZiS i informacja dodatkowa sprawozdania — nieobsługiwane.
+- Reguły kategorii wydatków odpowiadają typowym przypadkom — w nietypowej sytuacji procenty (VAT, NKUP) zmienia się
+  ręcznie w pozycji faktury.
 - Mapowania podatkowe i księgowe wymagają weryfikacji przez księgowego lub doradcę podatkowego
   ([docs/COMPLIANCE_MATRIX.md](docs/COMPLIANCE_MATRIX.md)).
 
