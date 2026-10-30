@@ -1,0 +1,9 @@
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/	https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/	https://podatki.gov.pl/media/ftdbiiqt/mf-cer-2.zip
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/	https://podatki.gov.pl/media/z10pa3iz/mf-cer.zip
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2020/05/08/9393/
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2020/05/08/9394/
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2021/12/27/11148/
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2021/12/27/11149/
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2025/12/19/14089/
+https://www.gov.pl/web/kas/struktury-jpk	http://crd.gov.pl/wzor/2025/12/19/14090/

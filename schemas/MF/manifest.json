@@ -1,0 +1,149 @@
+[
+ {
+  "url": "http://crd.gov.pl/wzor/2020/05/08/9393/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2020/05/08/9393/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2020/05/08/9393/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "76737257191841eabc98c3bd35be7a692af72e6f146061a019b3f2266f44e843"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2020/05/08/9394/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2020/05/08/9394/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2020/05/08/9394/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "47bf78f6e547e22f60a7b7b27e0118c2c6eb73641a1543b51bfa769cf7c5936a"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2021/12/27/11148/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2021/12/27/11148/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2021/12/27/11148/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "90cb53e1217449f3ebc671962922fd62f7a892cca26be46a6f5de3d0dc01b96b"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2021/12/27/11149/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2021/12/27/11149/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2021/12/27/11149/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "321d7f8e3c90065a40759d978087e952a73f9cdafec17281c27ba0ecda53e358"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2025/12/19/14089/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "3e7b70f30debf7ffe35127ac694b465004a45c0786b3267a92d91c7c29595d34"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2025/12/19/14090/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "1870324001ba1318f0535841b963571e970b45ef32ba5ca3d433f0dc5da412df"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/ElementarneTypyDanych_v6-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/ElementarneTypyDanych_v6-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "6dde449a89e2515d622ae23c0804d08d5e1c1fcd2b51ef5c342314744e7e9886"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/KodyKrajow_v6-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/KodyKrajow_v6-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "ab0be78e7874d819e42ce2c28ac8c46f6eef68110dff3644bb0d8c3fae7d85f8"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v6-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v6-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "e6c8f205620ae9f84a468f5f61bd78c332e0a37f8af462d2bab6cf6eb06b8e48"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/StrukturyDanych_v6-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/StrukturyDanych_v6-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "9102df97681d999091dcc2ae523497de9b65a6933078552192e92fd8d5ab2a08"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/ElementarneTypyDanych_v8-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/ElementarneTypyDanych_v8-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "bf2a183d31da73dfb5605e919302083db0a813ee96f86d2b562c886ecc7b371c"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/KodyKrajow_v8-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/KodyKrajow_v8-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "b7a3d01f05abdc7782e7fff6806859ed43d7883a12faf8c73ed69b817b7745ad"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v7-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v7-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "bb256afa9202c8db2fcdb01cb6d4f220011be5621e899a13e9125b82bd187ec9"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/StrukturyDanych_v8-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/StrukturyDanych_v8-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/06/08/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "ec0ee83d06b076c1ba4ad038f31aa0c35e3083fd19359fdb4c5cc20acaca4bba"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/",
+  "elements": [],
+  "sha256": "af27f583ea1ceb44ed37e0ec0d9bfdf2bfda74aadd5841ccbf0fc241175c2e91"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "01c45f7515f46cfa9bec843feef1409c126af3bee4d4e25f0325ae6323a9d512"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2023/09/06/eD/KodyKrajow/KodyKrajow_v13-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2023/09/06/eD/KodyKrajow/KodyKrajow_v13-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2023/09/06/eD/KodyKrajow/",
+  "elements": [],
+  "sha256": "447efc6e1a84de71d433666c60635856b8e01f090e5eedb3410b1afe545f8117"
+ },
+ {
+  "url": "https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip#fileMetrics.xsd",
+  "file": "podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip",
+  "targetNamespace": "http://meta.gtw.espr.apps.akmf.pl/2025/09/02",
+  "elements": [
+   "Metryka"
+  ],
+  "sha256": "83d9fec5607135f71d314b2df53c60a81380b126141e1e90af19ac9ad71f4f28"
+ },
+ {
+  "url": "https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip#metricsTypes.xsd",
+  "file": "podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip",
+  "targetNamespace": "http://types.meta.gtw.espr.apps.akmf.pl/2025/09/02",
+  "elements": [],
+  "sha256": "04d7771b1b3b97edd3fb1114de89269460a66bd5cbea6c789f5dcf671bd1f4c0"
+ }
+]
