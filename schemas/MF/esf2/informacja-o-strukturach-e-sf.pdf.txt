@@ -1,0 +1,173 @@
+  I.   Struktury danych przygotowane na podstawie Załącznika Nr 1 do ustawy z dnia 29 września
+       1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla jednostek
+       innych niż banki, zakłady ubezpieczeń i zakłady reasekuracji” znajdują się w plikach:
+       1) JednostkaInnaWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w złotych,
+       2) JednostkaInnaWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w zaokrągleniu do tysięcy złotych,
+       3) JednostkaInnaStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych
+           wersji.
+
+ II.   Struktury danych przygotowane na podstawie Załącznika Nr 2 do ustawy z dnia 29 września
+       1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla banków”
+       oraz zgodnie z Rozporządzeniem Ministra Rozwoju i Finansów z dnia 1 października 2010 r.
+       w sprawie szczególnych zasad rachunkowości banków (tj. Dz. U. z 2013 r. poz. 329 z późn. zm.)
+       znajdują się w plikach:
+       1) BankWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych
+           w złotych,
+       2) BankWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych
+           w zaokrągleniu do tysięcy złotych,
+       3) BankStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych wersji.
+
+III.   Struktury danych przygotowane na podstawie Załącznika Nr 3 do ustawy z dnia 29 września
+       1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla zakładów
+       ubezpieczeń i zakładów reasekuracji” oraz zgodnie z Rozporządzeniem Ministra Rozwoju
+       i Finansów z dnia 12 kwietnia 2016 r. w sprawie szczególnych zasad rachunkowości zakładów
+       ubezpieczeń i zakładów reasekuracji (Dz. U. z 2016r. poz. 562) znajdują się w plikach:
+       1) ZakladUbezpieczenWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych
+            liczbowych podanych w złotych,
+       2) ZakladUbezpieczenWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych
+            liczbowych podanych w zaokrągleniu do tysięcy złotych,
+       3) ZakladUbezpieczenStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu
+            powyższych wersji.
+
+IV.    Struktury danych przygotowane na podstawie Załącznika Nr 4 do ustawy z dnia 29 września
+       1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla jednostek
+       mikro” znajdują się w plikach:
+        1) JednostkaMikroWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w złotych,
+        2) JednostkaMikroWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych
+           liczbowych podanych w zaokrągleniu do tysięcy złotych,
+        3) JednostkaMikroStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu
+           powyższych wersji.
+
+  V.    Struktury danych przygotowane na podstawie Załącznika Nr 5 do ustawy z dnia 29 września
+        1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+        wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla jednostek
+        małych korzystających z uproszczeń odnoszących się do sprawozdania finansowego” znajdują
+        się w plikach:
+        1) JednostkaMalaWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+            podanych w złotych,
+        2) JednostkaMalaWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+            podanych w zaokrągleniu do tysięcy złotych,
+        3) JednostkaMalaStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych
+            wersji.
+
+ VI.    Struktury danych przygotowane na podstawie Załącznika Nr 6 do ustawy z dnia 29 września
+        1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) „Zakres informacji
+        wykazywanych w sprawozdaniu finansowym, o którym mowa w art. 45 ustawy, dla jednostek,
+        o których mowa w art. 3 ust. 2 ustawy z dnia 24 kwietnia 2003 r. o działalności pożytku
+        publicznego i o wolontariacie, z wyjątkiem spółek kapitałowych, oraz jednostek, o których mowa
+        w art. 3 ust. 3 pkt 1 i 2 tej ustawy” znajdują się w plikach:
+        1) JednostkaOpWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+            podanych w złotych,
+        2) JednostkaOpWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+            podanych w zaokrągleniu do tysięcy złotych,
+        3) JednostkaOpStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych
+            wersji.
+
+VII.    Struktury danych zawierające elementy wspólne dla poniższych plików:
+        1) JednostkaInnaStrukturyDanychSprFin_v1-0.xsd.xsd,
+        2) BankStrukturyDanychSprFin_v1-0.xsd.xsd,
+        3) ZakladUbezpieczenStrukturyDanychSprFin_v1-0.xsd.xsd,
+        4) JednostkaMikroStrukturyDanychSprFin_v1-0.xsd.xsd,
+        5) JednostkaMalaStrukturyDanychSprFin_v1-0.xsd.xsd,
+        6) JednostkaOpStrukturyDanychSprFin_v1-0.xsd.xsd,
+        znajdują się w pliku - StrukturyDanychSprFin_v1-0.xsd.xsd.
+
+VIII.   Struktury danych przygotowane zgodnie z Rozporządzeniem Ministra Rozwoju i Finansów z dnia
+        12 grudnia 2016 r. w sprawie zakresu informacji wykazywanych w sprawozdaniu finansowym
+        alternatywnych spółek inwestycyjnych (Dz. U. z 2016 r. poz. 2051) na podstawie ustawy z dnia
+        29 września 1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się w
+        plikach:
+        1) ASIWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych
+            w złotych,
+       2) ASIWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych
+          w zaokrągleniu do tysięcy złotych,
+       3) ASIStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych wersji
+
+IX.    Struktury danych przygotowane zgodnie z Załącznikiem Nr 1 Rozporządzeniem Ministra
+       Rozwoju i Finansów z dnia 28 grudnia 2009 r. w sprawie szczególnych zasad rachunkowości
+       domów maklerskich (tj. Dz. U. z 2017 r. poz. 123) „Sprawozdanie finansowe domu
+       maklerskiego” na podstawie ustawy z dnia 29 września 1994 r. o rachunkowości (tj. Dz. U. z
+       2018 r. poz. 395, z późn. zm.) znajdują się w plikach:
+       1) DomMaklerskiWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w złotych,
+       2) DomMaklerskiWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w zaokrągleniu do tysięcy złotych,
+       3) DomMaklerskiStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych
+           wersji
+
+ X.    Struktury danych przygotowane zgodnie z Załącznikiem Nr 2 do Rozporządzenia Ministra
+       Rozwoju i Finansów z dnia 28 grudnia 2009 r. w sprawie szczególnych zasad rachunkowości
+       domów maklerskich (tj. Dz. U. z 2017 r. poz. 123) „Skonsolidowane sprawozdanie finansowe
+       grupy kapitałowej domu maklerskiego” na podstawie ustawy z dnia 29 września 1994 r.
+       o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się w plikach:
+       1) SkonsolidowanyDomMaklerskiWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla
+           danych liczbowych podanych w złotych,
+       2) SkonsolidowanyDomMaklerskiWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla
+           danych liczbowych podanych w zaokrągleniu do tysięcy złotych,
+       3) SkonsolidowanyDomMaklerskiStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla
+           obu powyższych wersji
+
+XI.    Struktury danych przygotowane zgodnie z Załącznikiem Nr 2 do Rozporządzenia Ministra
+       Rozwoju i Finansów z dnia 19 stycznia 2018 r. w sprawie szczególnych zasad rachunkowości
+       spółdzielczych kas oszczędnościowo-kredytowych (Dz. U. z 2018 r. poz. 268) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym kasy” na podstawie ustawy z dnia 29 września
+       1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się w plikach:
+       1) SKOKWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych w
+           złotych,
+       2) SKOKWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych podanych
+           w zaokrągleniu do tysięcy złotych,
+       3) SKOKStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych wersji
+
+XII.   Struktury danych przygotowane zgodnie z Załącznikiem Nr 3 do Rozporządzenia Ministra
+       Rozwoju i Finansów z dnia 19 stycznia 2018 r. w sprawie szczególnych zasad rachunkowości
+       spółdzielczych kas oszczędnościowo-kredytowych (Dz. U. z 2018 r. poz. 268) „Zakres informacji
+       wykazywanych w sprawozdaniu finansowym małej kasy” na podstawie ustawy z dnia 29
+       września 1994 r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się
+       w plikach:
+       1) MalaSKOKWZlotych(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w złotych,
+        2) MalaSKOKWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla danych liczbowych
+           podanych w zaokrągleniu do tysięcy złotych,
+        3) MalaSKOKStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla obu powyższych
+           wersji
+
+XIII.   Struktury danych przygotowane zgodnie z Rozporządzenia Ministra Rozwoju i Finansów z dnia
+        25 września 2009 r. w sprawie szczegółowych zasad sporządzania przez jednostki inne niż banki,
+        zakłady ubezpieczeń i zakłady reasekuracji skonsolidowanych sprawozdań finansowych grup
+        kapitałowych (tj. Dz. U. z 2017 r. poz. 676) na podstawie ustawy z dnia 29 września 1994 r.
+        o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się w plikach:
+        1) SkonsolidowanaJednostkaInnaWZlotych(1)_v1-0.xsd.xsd ( 20 KB ) – sprawozdanie w wersji
+            dla danych liczbowych podanych w złotych,
+        2) SkonsolidowanaJednostkaInnaWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji dla
+            danych liczbowych podanych w zaokrągleniu do tysięcy złotych,
+        3) SkonsolidowanaJednostkaInnaStrukturyDanychSprFin_v1-0.xsd.xsd – element wspólny dla
+            obu powyższych wersji
+
+XIV.    Struktury danych przygotowane zgodnie z Rozporządzeniem Ministra Rozwoju i Finansów z dnia
+        12 kwietnia 2016 r. w sprawie szczególnych zasad rachunkowości zakładów ubezpieczeń
+        i zakładów reasekuracji (Dz. U. z 2016r. poz. 562) na podstawie ustawy z dnia 29 września 1994
+        r. o rachunkowości (tj. Dz. U. z 2018 r. poz. 395, z późn. zm.) znajdują się w plikach:
+        1) SkonsolidowanyZakladUbezpieczenStrukturyDanychSprFin_v1-0.xsd.xsd – sprawozdanie
+             w wersji dla danych liczbowych podanych w złotych,
+        2) SkonsolidowanyZakladUbezpieczenWTysiacach(1)_v1-0.xsd.xsd – sprawozdanie w wersji
+             dla danych liczbowych podanych w zaokrągleniu do tysięcy złotych,
+        3) SkonsolidowanyZakladUbezpieczenStrukturyDanychSprFin_v1-0.xsd.xsd                 –  element
+             wspólny dla obu powyższych wersji
+
+XV.     Struktury danych zawierające elementy wspólne dla poniższych plików:
+        1) ASIStrukturyDanychSprFin_v1-0.xsd.xsd,
+        2) DomMaklerskiStrukturyDanychSprFin_v1-0.xsd.xsd,
+        3) SkonsolidowanyDomMaklerskiStrukturyDanychSprFin_v1-0.xsd.xsd,
+        4) SKOKStrukturyDanychSprFin_v1-0.xsd.xsd,
+        5) MalaSKOKStrukturyDanychSprFin_v1-0.xsd.xsd,
+        6) SkonsolidowanaJednostkaInnaStrukturyDanychSprFin_v1-0.xsd.xsd,
+        7) SkonsolidowanyZakladUbezpieczenStrukturyDanychSprFin_v1-0.xsd.xsd,
+        znajdują się w pliku - StrukturyDanychSprFin_v1-1.xsd.xsd.
+

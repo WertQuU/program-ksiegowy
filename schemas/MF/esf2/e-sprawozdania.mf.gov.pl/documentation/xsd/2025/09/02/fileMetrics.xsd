@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://meta.gtw.espr.apps.akmf.pl/2025/09/02" xmlns:meta="http://meta.gtw.espr.apps.akmf.pl/2025/09/02" xmlns:types="http://types.meta.gtw.espr.apps.akmf.pl/2025/09/02" targetNamespace="http://meta.gtw.espr.apps.akmf.pl/2025/09/02" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" xml:lang="PL">
+	<xs:import namespace="http://types.meta.gtw.espr.apps.akmf.pl/2025/09/02" schemaLocation="https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/types/metricsTypes.xsd"/>
+	<xs:element name="Metryka">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="NumerIdentyfikacyjnyREGON" type="types:REGONType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="NumerIdentyfikacyjnyKRS" type="types:KRSType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="NumerIdentyfikacyjnyFunduszu" type="types:String32Type" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="NazwaPodmiotu" type="types:NazwaPodmiotuBase" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="DataSporzadzenia" type="types:DataCzasType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="NumerIdentyfikacyjnyNIP" type="types:NIPType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="DataWyslania" type="types:DataCzasType" minOccurs="1" maxOccurs="1"/>
+				<xs:element name="DataZatwierdzenia" type="types:DataType" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Data zatwierdzenia sprawozdania musi zostać wskazana, jeśli sprawozdanie finansowe zostało sporządzone przez podmiot niebędący osobą fizyczną prowadzącą działalność gospodarczą. Pomyślna wysyłka sprawozdania nie będzie możliwa, jeśli nie uzupełniono daty zatwierdzenia sprawozdania, a sprawozdanie zostało sporządzone przez podmiot inny niż osoba fizyczna prowadząca działalność gospodarczą.</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="SystemZrodlowy" type="types:String100Type" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="DataOd" type="types:DataType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="DataDo" type="types:DataType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Adres" type="types:AdresPolskiType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="Email" type="types:EmailType" minOccurs="0" maxOccurs="1"/>
+				<xs:element name="ListaPlikow" minOccurs="1" maxOccurs="1">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="MetrykaPliku" type="MetrykaPlikuBase" minOccurs="1" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+					<xs:unique name="ListaPlikowUnique1">
+						<xs:selector xpath="meta:MetrykaPliku"/>
+						<xs:field xpath="meta:NazwaPliku"/>
+					</xs:unique>
+				</xs:element>
+				<xs:element name="FirmaAudyt" minOccurs="0" maxOccurs="1">
+					<xs:annotation>
+						<xs:documentation>Wskazanie na numer identyfikacyjny firmy audytorskiej znajdujący się na liście firm audytorskich prowadzonej przez Polską Agencję Nadzoru Audytowego. Numer identyfikacyjny firmy audytorskiej musi zostać wskazany, jeśli sprawozdanie finansowe podlega obowiązkowi badania. Pomyślna wysyłka sprawozdania nie będzie możliwa, jeśli nie uzupełniono numeru identyfikacyjnego firmy audytorskiej, a sprawozdanie podlega obowiązkowi badania.</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="types:NonZeroIntType">
+							<xs:maxInclusive value="99999"/>
+						</xs:restriction>
+					</xs:simpleType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="MetrykaPlikuBase" abstract="true">
+		<xs:sequence>
+			<xs:element name="NazwaPliku" type="types:NazwaPlikuType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="SkrotPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="TypDokumentu" type="types:TypDokumentuType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MetrykaPlikuSprBase" abstract="true">
+		<xs:complexContent>
+			<xs:restriction base="MetrykaPlikuBase">
+				<xs:sequence>
+					<xs:element name="NazwaPliku" type="types:NazwaPlikuType" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="SkrotPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="TypDokumentu" type="types:TypDokumentuType" fixed="SprawozdanieFinansowe" minOccurs="1" maxOccurs="1"/>
+				</xs:sequence>
+			</xs:restriction>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MetrykaPlikuXMLType">
+		<xs:complexContent>
+			<xs:extension base="MetrykaPlikuSprBase">
+				<xs:sequence>
+					<xs:element name="SkrotPodpisanegoPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="NazwaSchemy" type="types:String128Type" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="PrzestrzenNazw" type="types:String512Type" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="KodSprawozdania" type="types:String64Type" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="KodSystemowy" type="types:String64Type" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="WersjaSchemy" type="types:String64Type" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="WariantSprawozdania" type="types:NonZeroIntType" minOccurs="1" maxOccurs="1"/>
+					<xs:element name="ListaPlikowPodpisuZewnetrznego" minOccurs="0" maxOccurs="1">
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="PlikPodpisuZewnetrznego" type="PlikPodpisuZewnetrznegoType" minOccurs="1" maxOccurs="50"/>
+							</xs:sequence>
+						</xs:complexType>
+						<xs:unique name="ListaPlikowPodpisuZewnetrznegoUnique1">
+							<xs:selector xpath="meta:PlikPodpisuZewnetrznego"/>
+							<xs:field xpath="meta:NazwaPliku"/>
+						</xs:unique>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="MetrykaPlikuInnyType">
+		<xs:complexContent>
+			<xs:extension base="MetrykaPlikuBase">
+				<xs:sequence>
+					<xs:element name="TypPliku" type="types:String128Type" minOccurs="1" maxOccurs="1"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="PlikPodpisuZewnetrznegoType">
+		<xs:sequence>
+			<xs:element name="NazwaPliku" type="types:NazwaPlikuType" minOccurs="1" maxOccurs="1"/>
+			<xs:element name="SkrotPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema 
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://types.meta.gtw.espr.apps.akmf.pl/2022/03/03"
+	targetNamespace="http://types.meta.gtw.espr.apps.akmf.pl/2022/03/03"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	version="1.0" xml:lang="PL"
+>
+
+	<xs:simpleType name="EmailType">
+	    <xs:restriction base="xs:string">
+	        <xs:pattern value="[\S]+@[\S]+\.[\S]+"/>
+	    </xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="NIPType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[1-9]((\d[1-9])|([1-9]\d))\d{7}" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="REGONType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="(\d{9})|(\d{14})" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="KRSType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\d{10}" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="TypDokumentuType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="SprawozdanieFinansowe" />
+			<xs:enumeration value="OpiniaBieglegoRewidentaSprawozdaniaFInansowego" />
+			<xs:enumeration value="UchwalaZatwierdzajacaSprawozdanie" />
+			<xs:enumeration value="UchwalaOPodzialeZyskuLubStraty" />
+			<xs:enumeration value="SprawozdanieZDzialalnosci" />
+			<xs:enumeration value="SprawozdaniePlatnosciNaRzeczAdministracjiPublicznej" />
+			<xs:enumeration value="SprawozdanieSkonsolidowaneRoczne" />
+			<xs:enumeration value="OpiniaBieglegoRewidentaSkonsolidowanegoSprawozdania" />
+			<xs:enumeration value="UchwalaZatwierdzajacaSkonsolidowanegoSprawozdania" />
+			<xs:enumeration value="SprawozdanieZDzialalnosciJednostkiDominujacej" />
+			<xs:enumeration value="SprawozdanieSkonsolidowaneZPlatnosciNaRzeczAdministracji" />
+			<xs:enumeration value="InformacjaOBrakuObowizkuSparzadzeniaSprawozdaniaROcznego" />
+			<xs:enumeration value="UzasadnienieOdmowyPodpisaniaSprawozdaniaFinansowego" />
+			<xs:enumeration value="OswiadczenieSprawozdanieFinansoweSpelniaWymaganiaZUstawyORachunkowosci" />
+			<xs:enumeration value="OdmowaZlozeniaOswiadczeniaSprawozdanieFinansoweSpelniaWymaganiaZUstawyORachunkowosci" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="NazwaPlikuType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[a-zA-Z0-9_\. ()\-]{5,100}"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="RozmiarPlikuType">
+		<xs:restriction base="xs:integer">
+			<xs:minExclusive value="0" />
+			<xs:maxInclusive value="104857600" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="SkrotPlikuType">
+		<xs:sequence>
+			<xs:element name="HashSHA" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:restriction base="HashSHAType">
+						    <xs:minLength value="44"/>
+						    <xs:maxLength value="44"/>
+						</xs:restriction>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="HashMD5" minOccurs="1" maxOccurs="1">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:restriction base="HashMD5Type">
+						    <xs:minLength value="24"/>
+						    <xs:maxLength value="24"/>
+						</xs:restriction>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="RozmiarPliku" type="RozmiarPlikuType" minOccurs="1" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+    <xs:complexType name="HashSHAType">
+        <xs:simpleContent>
+            <xs:extension base="xs:token">
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    <xs:complexType name="HashMD5Type">
+        <xs:simpleContent>
+            <xs:extension base="xs:token">
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+	<xs:simpleType name="RokMiesiacType" >
+		<xs:restriction base="xs:gYearMonth">
+			<xs:minInclusive value="1995-01"/>
+			<xs:maxInclusive value="2999-12"/>
+			<xs:pattern value="((\d{4})-(\d{2}))"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DataType" >
+		<xs:restriction base="xs:date">
+			<xs:minInclusive value="1995-01-01"/>
+			<xs:maxInclusive value="2999-12-31"/>
+			<xs:pattern value="((\d{4})-(\d{2})-(\d{2}))"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DataCzasType" >
+		<xs:restriction base="xs:dateTime">
+			<xs:whiteSpace value="collapse"/>
+			<xs:minInclusive value="1995-01-01T00:00:00Z"/>
+			<xs:maxInclusive value="2999-12-31T23:59:59Z"/>
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="Firma">
+		<xs:complexContent>
+			<xs:extension base="NazwaPodmiotuBase">
+				<xs:sequence>
+					<xs:element name="NazwaFirmy">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1" />
+								<xs:maxLength value="200" />
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="Osoba">
+		<xs:complexContent>
+			<xs:extension base="NazwaPodmiotuBase">
+				<xs:sequence>
+					<xs:element name="Imie">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1" />
+								<xs:maxLength value="50" />
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+					<xs:element name="Nazwisko">
+						<xs:simpleType>
+							<xs:restriction base="xs:string">
+								<xs:minLength value="1" />
+								<xs:maxLength value="100" />
+							</xs:restriction>
+						</xs:simpleType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="NazwaPodmiotuBase" abstract="true" />
+
+	<xs:complexType name="AdresPolskiType">
+		<xs:sequence>
+			<xs:element name="KodKraju" type="KodKrajuType" fixed="PL" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Wojewodztwo" type="String64Type" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Powiat" type="String64Type" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Gmina" type="String64Type" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Ulica" type="String210Type" minOccurs="0" maxOccurs="1" />
+			<xs:element name="NrDomu" type="String16Type" minOccurs="1" maxOccurs="1" />
+			<xs:element name="NrLokalu" type="String16Type" minOccurs="0" maxOccurs="1" />
+			<xs:element name="Miejscowosc" type="String90Type" minOccurs="1" maxOccurs="1" />
+			<xs:element name="KodPocztowy" type="KodPocztowyType" minOccurs="1" maxOccurs="1" />
+			<xs:element name="Poczta" type="String64Type" minOccurs="1" maxOccurs="1" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:simpleType name="TakNieType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Tak" />
+			<xs:enumeration value="Nie" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="KodKrajuType">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="[A-Z]{2}" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="KodPocztowyType">
+		<xs:restriction base="xs:string">
+			<xs:maxLength value="8" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String16Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="16" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String32Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="32" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:simpleType name="String64Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="64" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String90Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="90" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String100Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="100" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String128Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="128" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String210Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="210" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="String512Type">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="0" />
+			<xs:maxLength value="512" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="NonZeroIntType">
+		<xs:restriction base="xs:int">
+			<xs:minExclusive value="0" />
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

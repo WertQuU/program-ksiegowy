@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://response.exception.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+	xmlns:response.exception="http://response.exception.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" 
+	xmlns:types="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" 
+	targetNamespace="http://response.exception.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	version="1.0" xml:lang="PL"
+>
+	<xs:import namespace="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" schemaLocation="https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/gtwTypes.xsd" />
+
+	<xs:element name="ExceptionResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ServiceCode" type="types:ServiceCodeType" minOccurs="1" maxOccurs="1" />
+				<xs:element name="ServiceName" type="types:ServiceNameType" minOccurs="1" maxOccurs="1" />
+				<xs:element name="Timestamp" type="types:TimestampType" minOccurs="1" maxOccurs="1" />
+
+				<xs:element name="ReferenceNumber" type="types:String128Type" minOccurs="0" maxOccurs="1" />
+
+				<xs:element name="Exceptions" minOccurs="1" maxOccurs="1">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Exception" type="types:ExceptionType" minOccurs="1" maxOccurs="unbounded" />
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+</xs:schema>
