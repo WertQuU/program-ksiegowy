@@ -24,7 +24,7 @@ public sealed class SchemaLibrary
             "https://github.com/CIRFMF/ksef-docs", "Faktury wysyłane do KSeF (schemat dołączony do programu)"),
         new("JPK_V7M(3)", Jpk.JpkV7Rules.SchemaFile, "http://crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/jpk_vat-z-deklaracja/", "Ewidencja VAT z deklaracją — rozliczenie miesięczne"),
-        new("JPK_V7K(3)", Jpk.JpkV7Rules.SchemaFileQuarterly, null,
+        new("JPK_V7K(3)", Jpk.JpkV7Rules.SchemaFileQuarterly, "http://crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/jpk_vat-z-deklaracja/", "Ewidencja VAT z deklaracją — rozliczenie kwartalne"),
         new("JPK_CIT (JPK_KR_PD)", Jpk.JpkKrPdBuilder.SchemaFile, null,
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/", "Księgi rachunkowe ze znacznikami podatkowymi — CIT (od roku 2026 dla podatników JPK_V7)"),

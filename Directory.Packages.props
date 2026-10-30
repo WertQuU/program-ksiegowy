@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <PackageVersion Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <!-- UWAGA LICENCYJNA: SixLabors.Fonts 1.x = Apache-2.0; wersje 2.x mają licencję „Six Labors Split License” — nie podnosić bez analizy. -->
     <PackageVersion Include="SixLabors.Fonts" Version="1.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />

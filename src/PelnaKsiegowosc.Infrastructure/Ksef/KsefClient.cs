@@ -157,6 +157,11 @@ public sealed class KsefClient
         CryptographicOperations.ZeroMemory(payload);
         var init = await SendAsync<KsefDto.AuthInitResponse>("uwierzytelnienie tokenem", () => Req(HttpMethod.Post, "auth/ksef-token", null,
             new KsefDto.TokenAuthRequest(challenge.Challenge, new KsefDto.ContextIdentifier("Nip", nip), encrypted, keyId)), ct);
+        return await CompleteAuthAsync(init, ct);
+    }
+
+    private async Task<KsefDto.TokensResponse> CompleteAuthAsync(KsefDto.AuthInitResponse init, CancellationToken ct)
+    {
         for (var i = 0; i < 60; i++)
         {
             var st = await SendAsync<KsefDto.AuthStatusResponse>("status uwierzytelnienia", () => Req(HttpMethod.Get, $"auth/{init.ReferenceNumber}", init.AuthenticationToken.Token), ct);
@@ -167,6 +172,25 @@ public sealed class KsefClient
             if (i == 59) throw new KsefException("Przekroczono czas oczekiwania na uwierzytelnienie w KSeF.");
         }
         return await SendAsync<KsefDto.TokensResponse>("pobranie tokenów dostępowych", () => Req(HttpMethod.Post, "auth/token/redeem", init.AuthenticationToken.Token), ct);
+    }
+
+    /// <summary>
+    /// Uwierzytelnienie podpisem XAdES: challenge → AuthTokenRequest podpisany certyfikatem (kwalifikowany podpis/pieczęć,
+    /// certyfikat KSeF) → POST auth/xades-signature → status → redeem.
+    /// </summary>
+    public async Task<KsefDto.TokensResponse> AuthenticateWithCertificateAsync(string nip, System.Security.Cryptography.X509Certificates.X509Certificate2 certificate,
+        bool byFingerprint = false, CancellationToken ct = default)
+    {
+        var challenge = await SendAsync<KsefDto.ChallengeResponse>("wyzwanie uwierzytelnienia", () => Req(HttpMethod.Post, "auth/challenge"), ct);
+        var signed = XadesSigner.Sign(XadesSigner.AuthTokenRequest(challenge.Challenge, nip, byFingerprint), certificate, DateTimeOffset.UtcNow);
+        if (!XadesSigner.Verify(signed)) throw new KsefException("Podpis XAdES nie przeszedł kontroli własnej — sprawdź certyfikat.");
+        var xml = signed.OuterXml;
+        var init = await SendAsync<KsefDto.AuthInitResponse>("uwierzytelnienie podpisem XAdES", () =>
+        {
+            var r = new HttpRequestMessage(HttpMethod.Post, "auth/xades-signature") { Content = new StringContent(xml, Encoding.UTF8, "application/xml") };
+            return r;
+        }, ct);
+        return await CompleteAuthAsync(init, ct);
     }
 
     public Task<KsefDto.RefreshResponse> RefreshAsync(string refreshToken, CancellationToken ct = default) =>

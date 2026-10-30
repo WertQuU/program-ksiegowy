@@ -10,28 +10,33 @@ using PelnaKsiegowosc.Infrastructure.Xml;
 
 namespace PelnaKsiegowosc.Infrastructure.Jpk;
 
+/// <summary>Wersja struktury JPK_V7 (oficjalne schematy MF w katalogu schemas/MF).</summary>
+public sealed record JpkV7Version(string Name, XNamespace Ns, string SystemCode, string DeclarationSystemCode, string DeclarationVariant, string SchemaFile, bool KsefMarkers)
+{
+    public string Variant => SystemCode[^2..^1];
+}
+
 /// <summary>
-/// Parametry struktury JPK_V7M(3). Namespace i oznaczenia nagłówka pochodzą ze źródeł pośrednich (CRWDE 2025/12/19/14090) —
-/// WYMAGAJĄ potwierdzenia z oficjalnym schematem; plik nie jest oznaczany jako poprawny bez walidacji XSD.
+/// Parametry struktur JPK_V7M/V7K potwierdzone oficjalnymi schematami (crd.gov.pl): wersja (3) — rok od 2026, data wytworzenia
+/// od 1.02.2026, oznaczenia KSeF (NrKSeF/OFF/BFK/DI); wersja (2) — wcześniejsze okresy.
 /// </summary>
 public static class JpkV7Rules
 {
-    public const string Version = "JPK_V7M(3) — odwzorowanie wstępne 2026.02";
-    public static readonly XNamespace Ns = "http://crd.gov.pl/wzor/2025/12/19/14090/";
-    public const string SystemCode = "JPK_V7M (3)";
     public const string SchemaVersion = "1-0E";
-    public const string Variant = "3";
-    /// <summary>Wariant części deklaracyjnej VAT-7 — NIEPOTWIERDZONY dla struktury (3).</summary>
-    public const string DeclarationSystemCode = "VAT-7 (23)";
-    public const string DeclarationVariant = "23";
+    public static readonly JpkV7Version M3 = new("JPK_V7M(3)", "http://crd.gov.pl/wzor/2025/12/19/14090/", "JPK_V7M (3)", "VAT-7 (23)", "23", "Schemat_JPK_V7M(3)_v1-0E.xsd", true);
+    public static readonly JpkV7Version K3 = new("JPK_V7K(3)", "http://crd.gov.pl/wzor/2025/12/19/14089/", "JPK_V7K (3)", "VAT-7K (17)", "17", "Schemat_JPK_V7K(3)_v1-0E.xsd", true);
+    public static readonly JpkV7Version M2 = new("JPK_V7M(2)", "http://crd.gov.pl/wzor/2021/12/27/11148/", "JPK_V7M (2)", "VAT-7 (22)", "22", "Schemat_JPK_V7M(2)_v1-0E.xsd", false);
+    public static readonly JpkV7Version K2 = new("JPK_V7K(2)", "http://crd.gov.pl/wzor/2021/12/27/11149/", "JPK_V7K (2)", "VAT-7K (16)", "16", "Schemat_JPK_V7K(2)_v1-0E.xsd", false);
+    public static readonly XNamespace Ns = M3.Ns;
     public const string SchemaFile = "Schemat_JPK_V7M(3)_v1-0E.xsd";
     public const string SchemaFileQuarterly = "Schemat_JPK_V7K(3)_v1-0E.xsd";
-    public const string QuarterlySystemCode = "JPK_V7K (3)";
-    /// <summary>Wariant części deklaracyjnej VAT-7K — NIEPOTWIERDZONY dla struktury (3).</summary>
-    public const string QuarterlyDeclarationSystemCode = "VAT-7K (17)";
-    public const string QuarterlyDeclarationVariant = "17";
-    /// <summary>Zastępcza przestrzeń nazw JPK_V7K(3) — używana tylko, gdy nie wczytano oficjalnego schematu (plik i tak NIEZWALIDOWANY).</summary>
-    public const string QuarterlyNamespacePlaceholder = "urn:pelna-ksiegowosc:jpk_v7k-3:wczytaj-oficjalny-schemat";
+
+    /// <summary>Wersja struktury dla okresu i chwili wytworzenia pliku (granica ze schematu wersji 3).</summary>
+    public static JpkV7Version For(bool quarterly, DateOnly period, DateTime generatedUtc)
+    {
+        var v3 = period.Year >= 2026 && generatedUtc >= new DateTime(2026, 2, 1, 0, 0, 0, DateTimeKind.Utc);
+        return quarterly ? (v3 ? K3 : K2) : (v3 ? M3 : M2);
+    }
 }
 
 public sealed record JpkResult(XDocument Document, XsdValidationResult Validation, IReadOnlyList<string> Warnings)
@@ -60,23 +65,23 @@ public static class JpkV7Builder
         VatDeclaration? declaration, VatDeclaration monthControl, bool correction, DateTime generatedUtc, XsdValidator validator, NaturalPerson? owner = null)
     {
         var quarterly = company.VatPeriod == VatSettlementPeriod.Kwartalny;
-        var schemaFile = quarterly ? JpkV7Rules.SchemaFileQuarterly : JpkV7Rules.SchemaFile;
-        XNamespace ns = validator.TargetNamespace(schemaFile) ?? (quarterly ? JpkV7Rules.QuarterlyNamespacePlaceholder : JpkV7Rules.Ns.NamespaceName);
+        var ver = JpkV7Rules.For(quarterly, period, generatedUtc);
+        var ns = ver.Ns;
         var warnings = new List<string>();
+        if (string.IsNullOrWhiteSpace(company.Email)) throw new DomainException("Uzupełnij adres e-mail w danych jednostki — jest wymagany w JPK (Podmiot1).");
         if (string.IsNullOrWhiteSpace(company.TaxOfficeCode)) throw new DomainException("Uzupełnij kod urzędu skarbowego w danych jednostki (wymagany w nagłówku JPK).");
         if (quarterly && period.Month % 3 == 0 && declaration is null) throw new DomainException("W ostatnim miesiącu kwartału JPK_V7K musi zawierać deklarację za kwartał.");
         if (quarterly && period.Month % 3 != 0) declaration = null;
         if (!quarterly && declaration is null) throw new DomainException("JPK_V7M wymaga części deklaracyjnej.");
         if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej && owner is null)
             throw new DomainException("Dla osoby fizycznej JPK wymaga imienia, nazwiska i daty urodzenia — dodaj właściciela z numerem PESEL w danych jednostki (osoby odpowiedzialne).");
-        if (string.IsNullOrWhiteSpace(company.Email)) warnings.Add("Brak adresu e-mail jednostki — pole wymagane w Podmiot1.");
         if (declaration is not null) warnings.AddRange(declaration.Warnings);
         if (quarterly && declaration is null) warnings.Add($"JPK_V7K za {period:MM.yyyy}: tylko ewidencja — deklaracja za kwartał w pliku za {period.AddMonths(3 - (period.Month - 1) % 3 - 1):MM.yyyy}.");
 
         XElement E(string n, object? v) => new(ns + n, v);
         var naglowek = new XElement(ns + "Naglowek",
-            new XElement(ns + "KodFormularza", new XAttribute("kodSystemowy", quarterly ? JpkV7Rules.QuarterlySystemCode : JpkV7Rules.SystemCode), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "JPK_VAT"),
-            E("WariantFormularza", JpkV7Rules.Variant),
+            new XElement(ns + "KodFormularza", new XAttribute("kodSystemowy", ver.SystemCode), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), "JPK_VAT"),
+            E("WariantFormularza", ver.Variant),
             E("DataWytworzeniaJPK", generatedUtc.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", Inv)),
             E("NazwaSystemu", "Pełna Księgowość"),
             new XElement(ns + "CelZlozenia", new XAttribute("poz", "P_7"), correction ? "2" : "1"),
@@ -106,9 +111,10 @@ public static class JpkV7Builder
                 if (v != 0 || k is "P_38" or "P_51") pos.Add(E(k, v.ToString("0", Inv)));
             deklaracja = new XElement(ns + "Deklaracja",
                 new XElement(ns + "Naglowek",
-                    new XElement(ns + "KodFormularzaDekl", new XAttribute("kodSystemowy", quarterly ? JpkV7Rules.QuarterlyDeclarationSystemCode : JpkV7Rules.DeclarationSystemCode), new XAttribute("kodPodatku", "VAT"),
+                    new XElement(ns + "KodFormularzaDekl", new XAttribute("kodSystemowy", ver.DeclarationSystemCode), new XAttribute("kodPodatku", "VAT"),
                         new XAttribute("rodzajZobowiazania", "Z"), new XAttribute("wersjaSchemy", JpkV7Rules.SchemaVersion), quarterly ? "VAT-7K" : "VAT-7"),
-                    E("WariantFormularzaDekl", quarterly ? JpkV7Rules.QuarterlyDeclarationVariant : JpkV7Rules.DeclarationVariant)),
+                    E("WariantFormularzaDekl", ver.DeclarationVariant),
+                    quarterly ? E("Kwartal", (period.Month - 1) / 3 + 1) : null),
                 pos,
                 E("Pouczenia", "1"));
         }
@@ -125,7 +131,7 @@ public static class JpkV7Builder
                 E("DowodSprzedazy", f.DocumentNumber),
                 E("DataWystawienia", f.IssueDate.ToString("yyyy-MM-dd", Inv)));
             if (f.OperationDate != f.IssueDate) row.Add(E("DataSprzedazy", f.OperationDate.ToString("yyyy-MM-dd", Inv)));
-            AddKsefMarker(row, ns, f);
+            if (ver.KsefMarkers) AddKsefMarker(row, ns, f);
             if (f.JpkDocumentType is { Length: > 0 } t) row.Add(E("TypDokumentu", t));
             foreach (var gtu in (f.GtuCodes ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) row.Add(E(gtu, "1"));
             foreach (var proc in (f.Procedures ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)) row.Add(E(proc.Trim(), "1"));
@@ -146,7 +152,7 @@ public static class JpkV7Builder
                 E("DowodZakupu", f.DocumentNumber),
                 E("DataZakupu", f.IssueDate.ToString("yyyy-MM-dd", Inv)));
             if (f.ReceiptDate is { } rd && rd != f.IssueDate) row.Add(E("DataWplywu", rd.ToString("yyyy-MM-dd", Inv)));
-            AddKsefMarker(row, ns, f);
+            if (ver.KsefMarkers) AddKsefMarker(row, ns, f);
             if (f.JpkDocumentType is { Length: > 0 } t) row.Add(E("DokumentZakupu", t));
             foreach (var fld in g.SelectMany(e => new[] { (e.JpkNetField, e.NetPln), (e.JpkTaxField, e.DeductibleVatPln) }).Where(x => x.Item1 is not null)
                          .GroupBy(x => x.Item1!).OrderBy(x => int.Parse(x.Key[2..], Inv)))
@@ -157,7 +163,7 @@ public static class JpkV7Builder
 
         var doc = new XDocument(new XDeclaration("1.0", "UTF-8", null),
             new XElement(ns + "JPK", new XAttribute(XNamespace.Xmlns + "tns", ns.NamespaceName), naglowek, podmiot, deklaracja, ewidencja));
-        var validation = validator.Validate(doc, schemaFile, quarterly ? "JPK_V7K(3)" : "JPK_V7M(3)");
+        var validation = validator.Validate(doc, ver.SchemaFile, ver.Name);
         if (!validation.IsValid) warnings.Add("Plik JPK nie został zweryfikowany oficjalnym schematem XSD — nie wysyłaj go bez walidacji.");
         return new JpkResult(doc, validation, warnings);
     }
