@@ -6,7 +6,7 @@ socket.setdefaulttimeout(25)
 OUT = sys.argv[1] if len(sys.argv) > 1 else "schemas/MF/edek"
 os.makedirs(OUT, exist_ok=True)
 UA = {"User-Agent": "Mozilla/5.0 (pelna-ksiegowosc schema fetcher)"}
-FORMS = ["CIT-8", "PIT-11", "PIT-4R", "PIT-8AR", "VAT-UE", "IFT-2R", "CIT-ST", "PIT-36L", "PIT-36", "PIT-28", "CIT-8AB", "PIT/B"]
+FORMS = ["CIT-8", "PIT-11", "PIT-4R", "PIT-8AR", "VAT-UEK", "VAT-UE", "IFT-2R", "CIT-ST", "PIT-36L", "PIT-36", "PIT-28", "CIT-8AB", "PIT/B"]
 START = time.time()
 log, seen, links = [], set(), []
 
@@ -85,7 +85,7 @@ def anchors(text, base):
 
 
 def version(ctx, form):
-    found = [int(v) for v in re.findall(re.escape(form) + r"\s*\((\d+)\)", ctx)]
+    found = [int(v) for v in re.findall(r"(?<![A-Z])" + re.escape(form) + r"\s*\((\d+)\)", ctx)]
     return found[-1] if found else None
 
 
@@ -102,7 +102,8 @@ def scan(text, final):
                 continue
             for f in FORMS:
                 v = version(ctx[-260:], f)
-                if v is not None and (f not in best or v > best[f][0]):
+                # przy tej samej wersji formularza — najnowsza wersja schematu (późniejszy wzór CRWDE)
+                if v is not None and (f not in best or (v, m.group(1)) > best[f]):
                     best[f] = (v, m.group(1))
 
 
