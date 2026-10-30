@@ -28,7 +28,7 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | UoR art. 53, 69 | zatwierdzenie i złożenie sprawozdania | projekty uchwał (zatwierdzenie, podział zysku, absolutorium), terminy w kalendarzu | Z/W |
 | UoR art. 71–76 | ochrona i przechowywanie | szyfrowane kopie, weryfikacja, retencja, okresy przechowywania | Z/W |
 | VAT art. 106e | elementy faktury | generator FA(3) w zakresie typowych faktur krajowych i korekt | Z/W |
-| VAT art. 106ga i n. | KSeF | wysyłka i pobieranie (token), walidacja XSD FA(3); test na atrapie API | Z/W |
+| VAT art. 106ga i n. | KSeF | wyłącznie pobieranie faktur zakupu (sprawdzone w praktyce przez użytkownika); faktury sprzedaży wystawiane w KSeF poza programem, w programie wpisywany i walidowany numer KSeF; asystent ostrzega o fakturach dla firm bez numeru KSeF | Z |
 | VAT art. 86 | prawo i termin odliczenia | wymagane potwierdzenie zakresu i okresu, kontrola terminów | Z/W |
 | VAT art. 109 ust. 3 | ewidencja VAT | rejestry z polami JPK | Z/W |
 | Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | wersje (2) i (3) wg okresu, miesięczny i kwartalny, osoba fizyczna i niefizyczna; walidacja oficjalnymi schematami w testach | Z |

@@ -14,7 +14,8 @@ using PelnaKsiegowosc.Infrastructure.Xml;
 
 namespace PelnaKsiegowosc.Presentation.Services;
 
-public sealed record OpenResult(bool Success, string? Error, string? PreMigrationBackup);
+/// <param name="NewRecoveryKey">Klucz odzyskiwania wygenerowany przy otwarciu (brak klucza kopii na stanowisku) — do zanotowania przez użytkownika.</param>
+public sealed record OpenResult(bool Success, string? Error, string? PreMigrationBackup, string? NewRecoveryKey = null);
 
 /// <summary>
 /// Stan uruchomionego programu: ścieżki, konfiguracja stanowiska, magazyn sekretów, aktywna baza, bieżąca jednostka i rok.
@@ -104,34 +105,32 @@ public sealed class AppSession
         if (!test.Success)
             return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql
                 ? " Program nie przełącza się automatycznie na inną bazę." : ""), null);
-        string? backup = null;
+        string? backup = null, recoveryKey = null;
         if (test.PendingMigrations > 0 && !test.DatabaseEmpty)
-            backup = await PreMigrationBackupAsync(ct);
+            (backup, recoveryKey) = await PreMigrationBackupAsync(ct);
         await using (var db = OpenDb())
             await db.Database.MigrateAsync(ct);
         SaveConfig();
         await RefreshAsync(ct);
-        return new OpenResult(true, null, backup);
+        return new OpenResult(true, null, backup, recoveryKey);
     }
 
-    private async Task<string> PreMigrationBackupAsync(CancellationToken ct)
+    /// <summary>
+    /// Kopia przed aktualizacją schematu — zawsze szyfrowana (AES-256-GCM, jak każda kopia programu). Gdy na stanowisku nie ma
+    /// klucza kopii, program generuje nowy klucz, zapisuje go w magazynie sekretów systemu i zwraca klucz odzyskiwania do
+    /// zanotowania. Niezaszyfrowana kopia pliku bazy nie jest tworzona.
+    /// </summary>
+    private async Task<(string File, string? RecoveryKey)> PreMigrationBackupAsync(CancellationToken ct)
     {
-        if (StoredBackupKey() is not null)
+        string? recovery = null;
+        if (StoredBackupKey() is null)
         {
-            var r = await BackupAsync("przed aktualizacją schematu bazy", upload: false, ct);
-            return r.FilePath;
+            if (Profile.Engine != DatabaseEngine.Sqlite)
+                throw new DomainException("Aktualizacja schematu bazy wymaga wcześniejszej kopii zapasowej, a klucz kopii nie jest zapisany na tym stanowisku. Zapisz klucz w sekcji „Backupy” albo wykonaj kopię serwera narzędziami PostgreSQL.");
+            recovery = GenerateBackupKey();
         }
-        if (Profile.Engine != DatabaseEngine.Sqlite || Profile.SqlitePath is null)
-            throw new DomainException("Aktualizacja schematu bazy wymaga wcześniejszej kopii zapasowej, a klucz kopii nie jest zapisany na tym stanowisku. Zapisz klucz w sekcji „Backupy” albo wykonaj kopię serwera narzędziami PostgreSQL.");
-        var target = Path.Combine(BackupDirectory, $"przed-migracja-{Clock.UtcNow:yyyyMMdd-HHmmss}.db");
-        await using (var src = new SqliteConnection($"Data Source={Profile.SqlitePath};Mode=ReadOnly;Pooling=False"))
-        await using (var dst = new SqliteConnection($"Data Source={target};Pooling=False"))
-        {
-            await src.OpenAsync(ct);
-            await dst.OpenAsync(ct);
-            src.BackupDatabase(dst);
-        }
-        return target;
+        var r = await BackupAsync("przed aktualizacją schematu bazy", upload: false, ct);
+        return (r.FilePath, recovery);
     }
 
     /// <summary>Odczyt jednostki i lat obrotowych; wybór roku: dotychczas wybrany, pierwszy otwarty albo ostatni.</summary>

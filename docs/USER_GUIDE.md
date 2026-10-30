@@ -30,7 +30,7 @@ wybierz **rodzaj wydatku** (np. „Paliwo — samochód osobowy”, „Telefon, 
 **„Zapisz i zaksięguj”**. Program dobierze konto, odliczenie VAT i część kosztu, której nie uznaje urząd skarbowy.
 Pod tabelą pojawia się wyjaśnienie zasad dla wybranego rodzaju wydatku.
 
-**Faktura sprzedaży:** Sprzedaż → „+ Wystaw fakturę” → klient, pozycje → **„Zapisz i zaksięguj”** → „Wyślij do KSeF”.
+**Faktura sprzedaży:** Sprzedaż → „+ Wystaw fakturę” → klient, pozycje → **„Zapisz i zaksięguj”**. Fakturę dla firmy wystawia się w KSeF poza programem (np. Aplikacja Podatnika KSeF), a jej numer wpisuje przyciskiem „Numer KSeF…” — program tylko pobiera faktury z KSeF.
 
 **Nowy kontrahent:** Kontrahenci → „Nowy kontrahent” → wpisz NIP → **„Pobierz dane z białej listy”** → Zapisz.
 Przed przelewem powyżej 15 000 zł kliknij **„Sprawdź rachunek na białej liście”**.
@@ -43,7 +43,7 @@ opłatę, podatek, ZUS albo przelew własny wybierz z listy **„Co to za operac
 
 | Zadanie | Gdzie |
 |---|---|
-| Wystawienie faktury | Sprzedaż → Nowa faktura → Zapisz → Zatwierdź → Zaksięguj; KSeF: „Wyślij do KSeF” |
+| Faktura sprzedaży | Sprzedaż → Nowa faktura → Zapisz → Zatwierdź → Zaksięguj; KSeF: wystawienie poza programem, potem „Numer KSeF…” |
 | Korekta faktury | zaznacz zaksięgowaną fakturę → Wystaw korektę → wpisz **różnice** pozycji i przyczynę |
 | Faktura zakupu | Zakupy → Zarejestruj fakturę → Potwierdź odliczenie VAT (procent, okres) → Zatwierdź → Zaksięguj |
 | Import z KSeF | Zakupy → zakres dat → „Pobierz faktury z KSeF” (powstają dokumenty robocze) |

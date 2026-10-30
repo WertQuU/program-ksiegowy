@@ -13,7 +13,7 @@
       <Button Content="Wystaw korektę" Command="{Binding NewCorrectionCommand}" />
       <Button Content="Drukuj / PDF…" Command="{Binding PrintPdfCommand}" />
       <Button Content="Zapisz XML FA(3)…" Command="{Binding SaveXmlCommand}" />
-      <Button Content="Wyślij do KSeF" Command="{Binding SendToKsefCommand}" />
+      <Button Content="Numer KSeF…" Command="{Binding SetKsefNumberCommand}" ToolTip.Tip="Program tylko pobiera faktury z KSeF. Fakturę sprzedaży wystawioną w KSeF powiąż, wpisując jej numer KSeF." />
       <TextBox Text="{Binding Search}" Watermark="Szukaj (numer, kontrahent, opis)" />
       <Button Content="Szukaj" Command="{Binding SearchNowCommand}" />
       <CheckBox Content="Tylko bieżący rok" IsChecked="{Binding OnlyCurrentYear}" />

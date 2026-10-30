@@ -89,7 +89,7 @@ KUP i NKUP; część NKUP jest oznaczona w pozycji zapisu i uwzględniana w uzgo
 ## 10. Faktury i KSeF
 
 Faktury FA(3) z elementami art. 106e VAT (w zakresie obsługiwanym przez generator), walidowane z oficjalnym XSD;
-wysyłka do KSeF i zapis numeru KSeF (oznaczenie w JPK); pobieranie faktur zakupowych jako dokumentów roboczych.
+zapis numeru KSeF faktury wystawionej w KSeF poza programem (oznaczenie w JPK) — program nie wysyła faktur do KSeF; pobieranie faktur zakupowych jako dokumentów roboczych.
 Faktury z numerem KSeF nie mogą być anulowane — tylko korygowane.
 
 ## 11. CIT

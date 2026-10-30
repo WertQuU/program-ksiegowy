@@ -35,7 +35,7 @@ zapisuje zrzuty wszystkich ekranów.
 
 ## Testy ręczne przed wydaniem
 
-1. Środowisko testowe KSeF: wysyłka faktury, pobranie UPO i faktur zakupowych z prawdziwym tokenem.
+1. KSeF: pobranie faktur zakupowych z prawdziwym tokenem (wysyłka faktur nie jest funkcją programu).
 2. Konto OVHcloud Object Storage: test połączenia, kopia, retencja, pobranie i odtworzenie.
 3. Wyciągi z banków użytkownika (MT940/CSV) — profile importu.
 4. Walidacja JPK_V7M i sprawozdania finansowego oficjalnymi schematami i narzędziami MF.

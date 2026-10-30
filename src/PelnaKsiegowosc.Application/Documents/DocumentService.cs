@@ -729,6 +729,31 @@ public sealed class DocumentService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>Format numeru KSeF: NIP-RRRRMMDD-12 znaków szesnastkowych-2 znaki kontrolne.</summary>
+    public static readonly System.Text.RegularExpressions.Regex KsefNumberFormat = new(@"^\d{10}-\d{8}-[0-9A-F]{12}-[0-9A-F]{2}$");
+
+    /// <summary>
+    /// Program nie wysyła faktur do KSeF (wyłącznie pobiera faktury zakupu). Fakturę sprzedaży wystawioną w KSeF innym
+    /// narzędziem (np. Aplikacja Podatnika KSeF) wiąże się z dokumentem w księgach przez wpisanie jej numeru KSeF.
+    /// </summary>
+    public async Task SetKsefNumberAsync(Guid documentId, string ksefNumber, CancellationToken ct = default)
+    {
+        _user.Require(Permission.EditDocuments);
+        var number = (ksefNumber ?? "").Trim().ToUpperInvariant();
+        if (!KsefNumberFormat.IsMatch(number)) throw new DomainException("Numer KSeF ma postać NIP-RRRRMMDD-XXXXXXXXXXXX-XX (np. 5260250274-20260115-0123456789AB-CD).");
+        var doc = await _db.Documents.FirstAsync(d => d.Id == documentId && d.CompanyId == _user.CompanyId, ct);
+        if (doc.Kind is not (DocumentKind.FakturaSprzedazy or DocumentKind.KorektaSprzedazy)) throw new DomainException("Numer KSeF wpisuje się dla faktur sprzedaży (faktury zakupu pobiera się z KSeF).");
+        if (doc.KsefNumber is not null) throw new DomainException($"Dokument ma już numer KSeF {doc.KsefNumber}.");
+        if (await _db.Documents.AnyAsync(d => d.CompanyId == _user.CompanyId && d.KsefNumber == number, ct)) throw new DomainException("Ten numer KSeF jest już przypisany do innego dokumentu.");
+        var sellerNip = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.Nip).FirstAsync(ct);
+        if (!string.IsNullOrEmpty(sellerNip) && !number.StartsWith(new string(sellerNip.Where(char.IsDigit).ToArray())))
+            throw new DomainException("Numer KSeF faktury sprzedaży zaczyna się NIP-em sprzedawcy (Twojej spółki).");
+        doc.KsefNumber = number;
+        doc.KsefStatus = KsefStatus.Przyjeta;
+        await _audit.AddAsync(_user, "KSEF_NUMER_WPISANY", "Document", doc.Id.ToString(), $"{doc.Number} → {number}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     /// <summary>
     /// Harmonogram rat (płatność ratalna): suma rat = kwota brutto dokumentu, terminy rosnąco. Termin rozrachunku wskazuje
     /// najbliższą niezapłaconą ratę (wpłaty rozliczają raty od najstarszej), więc wiekowanie, przypomnienia i odpisy

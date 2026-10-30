@@ -374,8 +374,8 @@ public sealed partial class SalesViewModel : DocumentListBase
     {
         var doc = await SaveSaleAsync();
         var entry = await ApproveAndPostAsync(doc.Id);
-        var ksef = Session.Config.Ksef.Enabled && doc.KsefStatus == KsefStatus.DoWyslania
-            ? " Wyślij fakturę do KSeF przyciskiem „Wyślij do KSeF”." : "";
+        var ksef = doc.KsefStatus == KsefStatus.DoWyslania
+            ? " Fakturę dla firmy wystaw w KSeF (np. Aplikacja Podatnika KSeF) i wpisz jej numer przyciskiem „Numer KSeF…” — program nie wysyła faktur do KSeF." : "";
         StatusMessage = $"Wystawiono i zaksięgowano {doc.Number} ({entry}).{ksef}";
         if (ksef.Length > 0) await Dialogs.InfoAsync("KSeF", $"Faktura {doc.Number} jest zaksięgowana.{ksef}");
     }, "Faktura zapisana i zaksięgowana.");
@@ -411,20 +411,16 @@ public sealed partial class SalesViewModel : DocumentListBase
             : "Plik zapisano, ale NIE przeszedł walidacji XSD:" + Environment.NewLine + string.Join(Environment.NewLine, validation.Errors.Take(20)));
     });
 
+    /// <summary>Faktura wystawiona w KSeF poza programem — powiązanie przez numer KSeF (program nie wysyła faktur do KSeF).</summary>
     [RelayCommand]
-    private Task SendToKsefAsync() => ChangeAsync(async () =>
+    private Task SetKsefNumberAsync() => ChangeAsync(async () =>
     {
         var id = SelectedId;
-        if (!Session.Config.Ksef.Enabled) throw new DomainException("Integracja z KSeF jest wyłączona — skonfiguruj ją w sekcji „Integracje”.");
-        var credentials = Session.KsefCredentials();
-        if (!await Dialogs.ConfirmAsync("KSeF", $"Wysłać fakturę do KSeF (środowisko: {Session.Config.Ksef.Environment})?")) return;
+        var number = await Dialogs.PromptAsync("Numer KSeF", "Wpisz numer KSeF nadany fakturze wystawionej w KSeF (np. w Aplikacji Podatnika KSeF):");
+        if (string.IsNullOrWhiteSpace(number)) return;
         await using var db = Session.OpenDb();
-        using var http = new HttpClient { BaseAddress = KsefClient.BaseUrl(Session.Config.Ksef.Environment), Timeout = TimeSpan.FromSeconds(120) };
-        var ksef = new KsefService(db, Session.User, Session.Clock, Session.Validator);
-        var r = await ksef.SendAsync(id, new KsefClient(http), credentials);
-        if (r.Accepted) { Session.Config.Ksef.LastSuccessUtc = Session.Clock.UtcNow; Session.SaveConfig(); }
-        await Dialogs.InfoAsync("KSeF", r.Message + (r.KsefNumber is null ? "" : $"{Environment.NewLine}Numer KSeF: {r.KsefNumber}"));
-    }, "Zakończono operację KSeF.");
+        await new DocumentService(db, Session.User, Session.Clock).SetKsefNumberAsync(id, number);
+    }, "Zapisano numer KSeF.");
 }
 
 /// <summary>Faktury zakupu i rachunki: rejestracja, odliczenie VAT, import z KSeF.</summary>

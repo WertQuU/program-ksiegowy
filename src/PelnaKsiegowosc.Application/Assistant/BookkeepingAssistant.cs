@@ -132,10 +132,10 @@ public sealed class BookkeepingAssistant
         if (noKsef.Count > 0)
             Add("KSEF_BRAK", IssueSeverity.Ostrzezenie, $"{noKsef.Count} faktur sprzedaży dla firm bez numeru KSeF",
                 string.Join(", ", noKsef.Take(8).Select(d => d.Number)) + ". Od 2026 r. faktury dla firm krajowych wystawia się w KSeF (art. 106ga ustawy o VAT): najwięksi podatnicy od 1.02.2026, pozostali od 1.04.2026; podatnicy ze sprzedażą do 10 000 zł miesięcznie mogą do końca 2026 r. wystawiać faktury poza KSeF.",
-                "Sprzedaż → zaznacz fakturę → „Wyślij do KSeF”. Jeżeli faktura była wystawiona w trybie awaryjnym/offline — dośli ją w terminie.", AppArea.Sprzedaz);
+                "Wystaw fakturę w KSeF (np. Aplikacja Podatnika KSeF), a potem Sprzedaż → zaznacz fakturę → „Numer KSeF…”. Program nie wysyła faktur do KSeF — tylko pobiera faktury zakupu.", AppArea.Sprzedaz);
         foreach (var d in docs.Where(d => d.KsefStatus == KsefStatus.Odrzucona))
             Add("KSEF_ODRZUCONA", IssueSeverity.Blad, $"KSeF odrzucił fakturę {d.Number}", "Faktura nie została wystawiona w KSeF.",
-                "Sprawdź komunikat w Integracje → Dziennik integracji, popraw dane i wyślij ponownie.", AppArea.Sprzedaz, d.Id);
+                "Sprawdź komunikat w Integracje → Dziennik integracji i wystaw fakturę w KSeF ponownie (poza programem).", AppArea.Sprzedaz, d.Id);
 
         // Duplikaty zakupów
         foreach (var g in docs.Where(d => d.IsPurchase && !string.IsNullOrEmpty(d.ExternalNumber)).GroupBy(d => (d.CounterpartyId, d.ExternalNumber, d.Kind)).Where(g => g.Count() > 1))

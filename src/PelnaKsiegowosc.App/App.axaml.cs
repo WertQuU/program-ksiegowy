@@ -70,7 +70,10 @@ public partial class App : Avalonia.Application
                 if (opened.Success)
                 {
                     if (opened.PreMigrationBackup is { } b)
-                        await dialogs.InfoAsync("Aktualizacja bazy", $"Schemat bazy został zaktualizowany. Przed aktualizacją wykonano kopię: {b}");
+                        await dialogs.InfoAsync("Aktualizacja bazy", $"Schemat bazy został zaktualizowany. Przed aktualizacją wykonano zaszyfrowaną kopię: {b}");
+                    if (opened.NewRecoveryKey is { } rk)
+                        await dialogs.InfoAsync("Klucz odzyskiwania kopii", "Na tym stanowisku nie było klucza kopii zapasowych — program wygenerował nowy. " +
+                            $"ZAPISZ go w bezpiecznym miejscu (bez niego kopii nie da się odtworzyć):{Environment.NewLine}{Environment.NewLine}{rk}");
                     break;
                 }
                 var choice = await StartupErrorWindow.ShowAsync(current!, opened.Error ?? "Nie udało się otworzyć bazy.", session.Profile.Engine == Data.DatabaseEngine.PostgreSql);

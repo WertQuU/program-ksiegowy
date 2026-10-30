@@ -43,7 +43,7 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 - **VAT i JPK**: rejestry, wyliczenie deklaracji (miesięcznej i kwartalnej), rozliczenie na kontach, pliki JPK_V7M
   i JPK_V7K (wersje 2 i 3, także dla osoby fizycznej), JPK_CIT (JPK_KR_PD — księgi ze znacznikami MF), VAT-UE —
   **walidowane oficjalnymi schematami XSD Ministerstwa Finansów** dołączonymi do programu (`schemas/MF`);
-  **KSeF 2.0** — faktury FA(3) walidowane schematem, wysyłka i pobieranie faktur, logowanie tokenem lub certyfikatem (XAdES).
+  **KSeF 2.0** — wyłącznie pobieranie faktur zakupu (logowanie tokenem lub certyfikatem, XAdES); faktury sprzedaży wystawia się w KSeF poza programem i wpisuje ich numer KSeF. Plik FA(3) można zapisać (walidacja schematem).
 - **Bank i kasa**: import MT940 i CSV, dopasowanie do rozrachunków, księgowanie, operacje kasowe; rozrachunki
   z wiekowaniem i kompensatami.
 - **CIT** (zaliczki, uzgodnienie wyniku bilansowego z podatkowym, CIT-8), **PIT** właściciela i wspólników,

@@ -417,3 +417,81 @@ public class ReviewFixesTests
         Assert.Single(issues, i => i.Code == "KAPITAL_PSA_OBJECIE");
     }
 }
+
+/// <summary>Pełny miesiąc VAT: zgodność ewidencji, deklaracji, ksiąg i JPK_V7M dla typowych transakcji krajowych i zagranicznych.</summary>
+public class VatFullMonthScenarioTests
+{
+    [Fact]
+    public async Task Registers_declaration_ledger_and_jpk_agree_for_mixed_month()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        t.Company.Email = "biuro@przyklad.pl";
+        var pl = await t.AddCounterpartyAsync("K001", "Klient sp. z o.o.", "7740001454");
+        var supplier = await t.AddCounterpartyAsync("D001", "Dostawca S.A.", "5260250274");
+        Domain.Counterparties.Counterparty Eu(string code, string name, string country, string vat) =>
+            t.Db.Counterparties.Add(new Domain.Counterparties.Counterparty { CompanyId = t.Company.Id, Code = code, Name = name, CountryCode = country, VatEuNumber = vat }).Entity;
+        var euClient = Eu("UE1", "Kunde GmbH", "DE", "DE123456789");
+        var euSupplier = Eu("UE2", "Fournisseur SARL", "FR", "FR12345678901");
+        var cloud = Eu("UE3", "Cloud Ltd", "IE", "IE1234567X");
+        await t.Db.SaveChangesAsync();
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 2, 10);
+
+        async Task<Document> SaleAsync(Guid cp, decimal net, string rate, VatTransactionType type)
+        {
+            var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, cp, d, d,
+                new[] { new DocumentLineInput("Pozycja", 1, net, rate) }, DueDate: d.AddDays(14), VatTransactionType: type));
+            await docs.ApproveAsync(inv.Id);
+            await docs.PostAsync(inv.Id);
+            return inv;
+        }
+        async Task PurchaseAsync(Guid cp, decimal net, string number, decimal deduction, VatTransactionType type)
+        {
+            var doc = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp, d, d,
+                new[] { new DocumentLineInput("Zakup", 1, net, "23") }, DueDate: d.AddDays(14), ExternalNumber: number, ReceiptDate: d, VatTransactionType: type));
+            await docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (deduction, false) }, new DateOnly(2026, 2, 1));
+            await docs.ApproveAsync(doc.Id);
+            await docs.PostAsync(doc.Id);
+        }
+
+        var domestic = await SaleAsync(pl.Id, 10000m, "23", VatTransactionType.Krajowa);
+        await SaleAsync(euClient.Id, 5000m, "0WDT", VatTransactionType.WewnatrzwspolnotowaDostawaTowarow);
+        await SaleAsync(euClient.Id, 3000m, "npII", VatTransactionType.UslugiPozaKrajem);
+        // korekta sprzedaży krajowej in minus (rabat) w tym samym okresie
+        var corr = await docs.CreateCorrectionAsync(domestic.Id, "Rabat posprzedażowy", d, new[] { new DocumentLineInput("Pozycja", 1, -1000m, "23") });
+        await docs.ApproveAsync(corr.Id);
+        await docs.PostAsync(corr.Id);
+        await PurchaseAsync(supplier.Id, 2000m, "FZ/1", 50m, VatTransactionType.Krajowa);              // odliczenie 50% (np. samochód)
+        await PurchaseAsync(cloud.Id, 1000m, "INV-1", 100m, VatTransactionType.ImportUslug28b);        // import usług
+        await PurchaseAsync(euSupplier.Id, 2000m, "WNT-1", 100m, VatTransactionType.WewnatrzwspolnotoweNabycieTowarow);
+
+        var vat = new VatService(t.Db, t.User, t.Clock);
+        var feb = new DateOnly(2026, 2, 1);
+        var decl = await vat.ComputeDeclarationAsync(feb, 0m);
+        Assert.Equal(9000m, decl.Fields["P_19"]);
+        Assert.Equal(2070m, decl.Fields["P_20"]);
+        Assert.Equal(5000m, decl.Fields["P_21"]);
+        Assert.Equal(3000m, decl.Fields["P_11"]);
+        Assert.Equal(3000m, decl.Fields["P_12"]);
+        Assert.Equal(1000m, decl.Fields["P_29"]);
+        Assert.Equal(230m, decl.Fields["P_30"]);
+        Assert.Equal(2000m, decl.Fields["P_23"]);
+        Assert.Equal(460m, decl.Fields["P_24"]);
+        Assert.Equal(9000m + 5000m + 3000m + 1000m + 2000m, decl.Fields["P_37"]); // K_12 jest pozycją „w tym” K_11
+        Assert.Equal(2760m, decl.Fields["P_38"]);
+        Assert.Equal(230m + 230m + 460m, decl.Fields["P_43"]);                     // 50% z 460 + import usług + WNT
+        Assert.Equal(1840m, decl.Fields["P_51"]);
+
+        // księgi: VAT należny i naliczony odpowiadają deklaracji
+        Assert.Equal(-2760m, await t.BalanceAsync("221-01"));
+        Assert.Equal(920m, await t.BalanceAsync("221-02"));
+
+        var r = JpkV7Builder.Build(t.Company, feb, await vat.RegisterAsync(VatRegisterType.Sprzedaz, feb), await vat.RegisterAsync(VatRegisterType.Zakup, feb), decl, false,
+            new DateTime(2026, 3, 10, 9, 0, 0, DateTimeKind.Utc), new XsdValidator(Path.Combine(AppContext.BaseDirectory, "schemas")));
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors));
+        var ns = JpkV7Rules.Ns;
+        Assert.Equal("1840", r.Document.Descendants(ns + "P_51").Single().Value);
+        Assert.Equal("2760.00", r.Document.Descendants(ns + "PodatekNalezny").Single().Value);
+        Assert.Equal("920.00", r.Document.Descendants(ns + "PodatekNaliczony").Single().Value);
+    }
+}
