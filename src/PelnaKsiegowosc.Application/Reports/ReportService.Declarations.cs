@@ -114,15 +114,26 @@ public sealed partial class ReportService
         var entries = await _db.VatRegister.AsNoTracking().Where(v => v.CompanyId == _user.CompanyId && v.Register == VatRegisterType.Zakup && v.Period >= from && v.Period <= to && v.CounterpartyCountry != "PL").ToListAsync(ct);
         var r = await NewAsync("Wypłaty na rzecz podmiotów zagranicznych (IFT-2R / CIT-10Z)", $"rok {year}", true, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Kraj"), new ReportColumn("Kontrahent", ColumnKind.Text, 2), new ReportColumn("Numer identyfikacyjny", ColumnKind.Text, 1.4), new ReportColumn("Rodzaj"),
-            new ReportColumn("Liczba dokumentów", ColumnKind.Integer), new ReportColumn("Wartość netto (zł)", ColumnKind.Money) });
+            new ReportColumn("Liczba dokumentów", ColumnKind.Integer), new ReportColumn("Wartość netto (zł)", ColumnKind.Money),
+            new ReportColumn("WHT 20% bez certyfikatu", ColumnKind.Money), new ReportColumn("WHT przy umowie (zwykle 0%)", ColumnKind.Money) });
+        decimal services = 0, wht = 0;
         foreach (var g in entries.GroupBy(e => (e.CounterpartyCountry, e.CounterpartyName, e.CounterpartyNip, e.TransactionType)).OrderBy(g => g.Key.CounterpartyCountry))
-            r.Add(g.Key.CounterpartyCountry, g.Key.CounterpartyName, g.Key.CounterpartyNip, g.Key.TransactionType switch
+        {
+            var kind = g.Key.TransactionType switch
             {
                 VatTransactionType.ImportUslug or VatTransactionType.ImportUslug28b => "usługi",
                 VatTransactionType.WewnatrzwspolnotoweNabycieTowarow or VatTransactionType.ImportTowarow => "towary",
                 _ => "inne"
-            }, g.Select(e => e.DocumentId).Distinct().Count(), g.Sum(e => e.NetPln));
+            };
+            var net = g.Sum(e => e.NetPln);
+            // art. 21 ust. 1 pkt 2a ustawy o CIT: usługi niematerialne 20%; podatek wyliczany od kwoty brutto należności, w pełnych złotych
+            var tax = kind == "usługi" ? Math.Round(net * 0.20m, 0, MidpointRounding.AwayFromZero) : 0m;
+            if (kind == "usługi") { services += net; wht += tax; }
+            r.Add(g.Key.CounterpartyCountry, g.Key.CounterpartyName, g.Key.CounterpartyNip, kind, g.Select(e => e.DocumentId).Distinct().Count(), net, tax, 0m);
+        }
+        r.AddRow(new ReportRow("RAZEM usługi", null, null, null, null, services, wht, 0m) { IsTotal = true });
         r.Notes.Add("Zestawienie pomocnicze: IFT-2R składa się dla należności z art. 21 ust. 1 i art. 22 ust. 1 ustawy o CIT (m.in. usługi doradcze, księgowe, reklamowe, przetwarzania danych, licencje, odsetki, dywidendy) — do końca 3. miesiąca roku następnego; CIT-10Z, gdy pobrano podatek u źródła.");
+        r.Notes.Add("Kolumna „WHT 20%” — podatek do pobrania, gdy brak certyfikatu rezydencji kontrahenta (art. 21 ust. 1 pkt 2a i art. 26 ustawy o CIT): wpłata do 7. dnia miesiąca następującego po wypłacie, CIT-10Z do końca 3. miesiąca roku następnego. Przy certyfikacie i umowie o unikaniu podwójnego opodatkowania zwykle 0% — wówczas tylko IFT-2R. Dla wypłat ponad 2 mln zł rocznie do jednego podmiotu sprawdź mechanizm „pay and refund”.");
         r.Notes.Add("Zakupy towarów zwykle nie podlegają podatkowi u źródła. Ocenę, czy należność podlega WHT (certyfikat rezydencji, umowa o unikaniu podwójnego opodatkowania), wykonuje użytkownik.");
         return r;
     }

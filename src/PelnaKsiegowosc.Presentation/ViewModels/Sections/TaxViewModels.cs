@@ -115,6 +115,33 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private string _adjustmentBasis = "";
     public List<Choice<CitAdjustmentType>> AdjustmentTypes { get; } = Choices.Of<CitAdjustmentType>();
 
+    [RelayCommand]
+    private async Task DeferredTaxAsync()
+    {
+        var y = Session.CurrentYear;
+        var lossText = await Dialogs.PromptAsync("Podatek odroczony",
+            $"Na dzień {y.EndDate.ToPl()}. Kwota strat podatkowych do rozliczenia w przyszłości (jeśli prawdopodobne jest osiągnięcie dochodu; 0 — brak):", "0");
+        if (lossText is null) return;
+        await RunAsync(async () =>
+        {
+            await using var db = Session.OpenDb();
+            var policy = await db.AccountingPolicies.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
+            var svc = new DeferredTaxService(db, Session.User, Session.Clock);
+            var loss = Parse.Amount(lossText, "Straty");
+            var c = await svc.ComputeAsync(y.Id, y.EndDate, loss);
+            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: wartość bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} ({d.Basis})")) +
+                $"{Environment.NewLine}{Environment.NewLine}Stawka: {c.RatePercent:0}%{Environment.NewLine}" +
+                $"Dodatnie różnice przejściowe: {Money.Format(c.TaxableDifferences)} → rezerwa {Money.Format(c.Provision)} (zaksięgowano {Money.Format(c.BookedProvision)}){Environment.NewLine}" +
+                $"Ujemne różnice przejściowe: {Money.Format(c.DeductibleDifferences)} → aktywo {Money.Format(c.Asset)} (zaksięgowano {Money.Format(c.BookedAsset)}){Environment.NewLine}" +
+                $"Wpływ na wynik (podatek odroczony): {Money.Format(c.ResultCharge)}" +
+                (policy is { IsMicroEntity: true } or { IsSmallEntity: true } ? $"{Environment.NewLine}{Environment.NewLine}Jednostka mała/mikro może nie ustalać podatku odroczonego (art. 37 ust. 10 UoR) — zgodnie z polityką rachunkowości." : "");
+            if (c.ProvisionChange == 0 && c.AssetChange == 0) { await Dialogs.ShowTextAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Stan zaksięgowany jest aktualny."); return; }
+            if (!await Dialogs.ConfirmAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Zaksięgować zmianę (841 / 842 / 872)?")) return;
+            await svc.PostAsync(y.Id, y.EndDate, loss);
+            StatusMessage = "Podatek odroczony zaksięgowany.";
+        });
+    }
+
     protected override async Task LoadCoreAsync()
     {
         var form = Session.Company!.LegalForm;

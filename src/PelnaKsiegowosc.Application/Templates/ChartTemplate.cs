@@ -191,6 +191,7 @@ public static class ChartTemplate
         new("845", "Rozliczenia międzyokresowe przychodów", AccountType.Pasywne, BalanceCreditLine: "P.B.IV.2"),
         new("860", "Wynik finansowy", AccountType.WynikFinansowy, BalanceCreditLine: "P.A.VI"),
         new("870", "Podatek dochodowy od osób prawnych", AccountType.WynikoweKosztowe, ProfitLossLine: "R.J", Cit: CitClassification.KosztNiepodatkowy),
+        new("872", "Podatek dochodowy — część odroczona", AccountType.WynikoweKosztowe, ProfitLossLine: "R.J", Cit: CitClassification.KosztNiepodatkowy),
 
         // Zespół 9 — pozabilansowe
         new("990", "Konta pozabilansowe — zabezpieczenia, zobowiązania warunkowe", AccountType.Pozabilansowe),

@@ -251,7 +251,7 @@ public sealed class ValuationService
     }
 
     /// <summary>Dodaje brakujące konta z szablonu (plany kont utworzone przed wprowadzeniem modułu).</summary>
-    private async Task EnsureAccountsAsync(DateOnly date, CancellationToken ct, params string[] numbers)
+    internal async Task EnsureAccountsAsync(DateOnly date, CancellationToken ct, params string[] numbers)
     {
         var ledger = new LedgerService(_db, _user, _clock);
         var fy = await ledger.FiscalYearForDateAsync(date, ct);

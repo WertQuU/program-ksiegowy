@@ -105,6 +105,9 @@ wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
    spłaconych należności, spisanie należności nieściągalnych, rezerwy na zobowiązania (urlopowa — wyliczana
    z płac, emerytalna, na koszty okresu, gwarancyjne, sądowe). Odpisy i rezerwy są kosztem niepodatkowym; ich
    wykorzystanie lub rozwiązanie program uwzględnia w uzgodnieniu CIT automatycznie.
+   **Podatek odroczony** (CIT → „Podatek odroczony…”): program wylicza rezerwę i aktywo z różnic przejściowych
+   (środki trwałe — amortyzacja bilansowa ≠ podatkowa, odpisy na należności, rezerwy, straty podatkowe) i księguje
+   zmianę na kontach 841 / 842 / 872.
 2. Zamknij wszystkie miesiące, wykonaj kopię, „Podgląd zamknięcia roku”, następnie „Zamknij rok obrotowy”
    i wpisz frazę potwierdzenia. Program przeksięguje wynik, zablokuje rok i utworzy rok następny z bilansem otwarcia.
 3. **Sprawozdanie** (Raporty): bilans, RZiS (porównawczy lub kalkulacyjny — klucz podziału kosztów ustawisz

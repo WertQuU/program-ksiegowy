@@ -20,7 +20,7 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | UoR art. 25 | korekty zapisów | storno czerwone/czarne wg polityki, zapis korygujący | Z |
 | UoR art. 26–27 | inwentaryzacja | zestawienie składników i metod, potwierdzenia sald, protokół kasy, arkusz spisu z natury, różnice inwentaryzacyjne w magazynie | Z/W |
 | UoR art. 34 ust. 4 | wycena rozchodu zapasów | magazyn: cena przeciętna ważona, PZ/WZ/RW/PW, automatyczne księgowanie rozchodu | Z/W |
-| UoR art. 28–35 | wycena aktywów i pasywów | ŚT (amortyzacja), waluty, rozrachunki, odpisy aktualizujące należności (art. 35b — wiekowanie wg polityki, rozwiązanie, spisanie), rezerwy (art. 35d — urlopowa z płac, emerytalna, na koszty, inne) | Z/W |
+| UoR art. 28–35 | wycena aktywów i pasywów | ŚT (amortyzacja), waluty, rozrachunki, odpisy aktualizujące należności (art. 35b — wiekowanie wg polityki, rozwiązanie, spisanie), rezerwy (art. 35d — urlopowa z płac, emerytalna, na koszty, inne), podatek odroczony (art. 37 — środki trwałe, odpisy, rezerwy, straty) | Z/W |
 | UoR art. 32 | amortyzacja bilansowa | metody liniowa, degresywna, jednorazowa | Z/W |
 | UoR art. 45–46, zał. nr 1 | bilans, RZiS | wariant porównawczy i kalkulacyjny (klucz podziału kosztów rodzajowych), dane porównawcze | Z/W |
 | UoR art. 48, 48a, 48b, zał. nr 1 | informacja dodatkowa, zestawienie zmian w kapitale, rachunek przepływów | tabele z ksiąg + opisy użytkownika; RPP metodą pośrednią z kontrolą zmiany środków pieniężnych | Z/W |
