@@ -15,7 +15,7 @@ namespace PelnaKsiegowosc.Infrastructure.Xml;
 /// rachunek przepływów (metoda pośrednia), informację dodatkową (plik PDF) i informację dotyczącą podatku dochodowego.
 /// Struktura SFJINZ może być stosowana także przez jednostki małe i mikro, które nie korzystają z uproszczeń.
 /// </summary>
-public static class FinancialStatementXmlBuilder
+public static partial class FinancialStatementXmlBuilder
 {
     public static readonly XNamespace Ns = "http://crd.gov.pl/wzor/2025/08/07/13817/";
     public static readonly XNamespace Jin = "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/07/31/eD/JednostkaInnaStruktury/";
@@ -42,7 +42,7 @@ public static class FinancialStatementXmlBuilder
         string? GoingConcern = null, string? Policies = null,
         byte[]? NotesPdf = null, string NotesFileName = "informacja-dodatkowa.pdf",
         decimal AverageEmployment = 0m, bool AuditRequired = false, IncomeTaxInfo? IncomeTax = null, IncomeTaxInfo? IncomeTaxPrev = null,
-        bool GoingConcernThreatened = false);
+        bool GoingConcernThreatened = false, StatementScope Scope = StatementScope.Inna, string? Simplifications = null);
 
     public static string FormaPrawna(LegalForm f) => f switch
     {
@@ -83,28 +83,40 @@ public static class FinancialStatementXmlBuilder
         return p.Count > 0 ? p : new[] { fallback };
     }
 
-    public static Result Build(Company company, DateOnly from, DateOnly to, DateOnly prepared, StatementValues bs, StatementValues? bsPrev,
-        StatementValues pl, StatementValues? plPrev, XsdValidator validator, Extras? extras = null)
+    private static XElement P1B(XNamespace ns, Company company)
     {
-        extras ??= new Extras();
-        var notImplemented = new List<string>();
-        if (string.IsNullOrWhiteSpace(company.PkdCode)) throw new DomainException("Uzupełnij kod PKD przeważającej działalności w danych jednostki (np. 6920Z) — jest wymagany w e-Sprawozdaniu.");
+        var forma = FormaPrawna(company.LegalForm);
+        return forma.Length > 0
+            ? new XElement(ns + "P_1B", new XElement(ns + "FormaPrawna", forma))
+            : new XElement(ns + "P_1B", new XElement(ns + "InneWybor", "1"), new XElement(ns + "InneNazwa", LegalForms.Name(company.LegalForm)));
+    }
+
+    private static XElement Siedziba(Company company)
+    {
+        XElement F(string n, params object?[] c) => new(Dtsf + n, c);
         if (string.IsNullOrWhiteSpace(company.Voivodeship) || string.IsNullOrWhiteSpace(company.County) || string.IsNullOrWhiteSpace(company.Commune))
             throw new DomainException("Uzupełnij województwo, powiat i gminę siedziby w danych jednostki — są wymagane w e-Sprawozdaniu.");
-        XElement T(string n, params object?[] c) => new(Ns + n, c);
-        XElement F(string n, params object?[] c) => new(Dtsf + n, c);
-
-        // Wprowadzenie
-        var forma = FormaPrawna(company.LegalForm);
-        var p1b = forma.Length > 0
-            ? T("P_1B", T("FormaPrawna", forma))
-            : T("P_1B", T("InneWybor", "1"), T("InneNazwa", LegalForms.Name(company.LegalForm)));
-        var siedziba = F("Siedziba", F("AdresPol",
+        return F("Siedziba", F("AdresPol",
             F("KodKraju", "PL"), F("Wojewodztwo", company.Voivodeship!.Trim()), F("Powiat", company.County!.Trim()), F("Gmina", company.Commune!.Trim()),
             string.IsNullOrWhiteSpace(company.Street) ? null : F("Ulica", company.Street.Trim()),
             F("NrDomu", company.BuildingNumber.Trim()),
             string.IsNullOrWhiteSpace(company.ApartmentNumber) ? null : F("NrLokalu", company.ApartmentNumber!.Trim()),
             F("Miejscowosc", company.City.Trim()), F("KodPocztowy", company.PostalCode.Trim())));
+    }
+
+    public static Result Build(Company company, DateOnly from, DateOnly to, DateOnly prepared, StatementValues bs, StatementValues? bsPrev,
+        StatementValues pl, StatementValues? plPrev, XsdValidator validator, Extras? extras = null)
+    {
+        extras ??= new Extras();
+        if (extras.Scope != StatementScope.Inna) return BuildSimplified(company, from, to, prepared, bs, bsPrev, pl, plPrev, validator, extras);
+        var notImplemented = new List<string>();
+        if (string.IsNullOrWhiteSpace(company.PkdCode)) throw new DomainException("Uzupełnij kod PKD przeważającej działalności w danych jednostki (np. 6920Z) — jest wymagany w e-Sprawozdaniu.");
+        var siedziba = Siedziba(company);
+        XElement T(string n, params object?[] c) => new(Ns + n, c);
+        XElement F(string n, params object?[] c) => new(Dtsf + n, c);
+
+        // Wprowadzenie
+        var p1b = P1B(Ns, company);
         var policies = Paragraphs(extras.Policies, "Zgodnie z polityką rachunkowości jednostki.").ToList();
         var wprowadzenie = T("WprowadzenieDoSprawozdaniaFinansowego",
             T("P_1",
@@ -160,15 +172,15 @@ public static class FinancialStatementXmlBuilder
                         wprowadzenie,
                         T("Bilans", aktywa, pasywa),
                         T("RZiS", rzisVariant),
-                        Equity(extras.Equity, extras.EquityPrev, notImplemented),
-                        CashFlow(extras.CashFlow, extras.CashFlowPrev, notImplemented),
-                        Notes(extras, notImplemented)))));
+                        Equity(Ns + "ZestZmianWKapitale", extras.Equity, extras.EquityPrev, notImplemented),
+                        CashFlow(Ns + "RachPrzeplywow", extras.CashFlow, extras.CashFlowPrev, notImplemented),
+                        Notes(Ns + "DodatkoweInformacjeIObjasnieniaJednostkaInna", Ns + "DodatkoweInformacjeIObjasnienia", extras, notImplemented)))));
         var validation = validator.Validate(doc, SchemaFile, "e-Sprawozdanie SFJINZ(2)");
         notImplemented.Add("Podpisy kierownika jednostki i osoby sporządzającej (podpis kwalifikowany / profil zaufany / e-dowód) — w aplikacji e-Sprawozdania MF lub e-KRS");
         return new Result(doc, validation, notImplemented);
     }
 
-    private static XElement? Equity(EquityChanges? eq, EquityChanges? prev, List<string> notImplemented)
+    private static XElement? Equity(XName container, EquityChanges? eq, EquityChanges? prev, List<string> notImplemented)
     {
         if (eq is null)
         {
@@ -195,7 +207,7 @@ public static class FinancialStatementXmlBuilder
         var viip = R(prev, "P.A.VII");
         decimal Pos(decimal x) => Math.Max(0, x);
         decimal Neg(decimal x) => Math.Max(0, -x);
-        return new XElement(Ns + "ZestZmianWKapitale",
+        return new XElement(container,
             J("I", eq.Opening, prev?.Opening ?? 0),
             J("IA", eq.Opening, prev?.Opening ?? 0,
                 Capital("IA_1", "P.A.I"),
@@ -212,7 +224,7 @@ public static class FinancialStatementXmlBuilder
             J("III", eq.Closing, prev?.Closing ?? 0));
     }
 
-    private static XElement? CashFlow(CashFlowStatement? cf, CashFlowStatement? prev, List<string> notImplemented)
+    private static XElement? CashFlow(XName container, CashFlowStatement? cf, CashFlowStatement? prev, List<string> notImplemented)
     {
         if (cf is null)
         {
@@ -230,7 +242,7 @@ public static class FinancialStatementXmlBuilder
         decimal InvOut(CashFlowStatement? s) => Out(s, "B.I") + Out(s, "B.II") + Out(s, "B.III");
         decimal FinIn(CashFlowStatement? s) => In(s, "C.I") + In(s, "C.II");
         decimal FinOut(CashFlowStatement? s) => Out(s, "C.I") + Out(s, "C.II") + Out(s, "C.III");
-        return new XElement(Ns + "RachPrzeplywow", new XElement(Jin + "PrzeplywyPosr",
+        return new XElement(container, new XElement(Jin + "PrzeplywyPosr",
             new XElement(Jin + "A",
                 J("A_I", G(cf, "A.I"), G(prev, "A.I")),
                 ops,
@@ -258,16 +270,16 @@ public static class FinancialStatementXmlBuilder
             J("G", G(cf, "G"), G(prev, "G"))));
     }
 
-    private static XElement Notes(Extras extras, List<string> notImplemented)
+    private static XElement Notes(XName container, XName item, Extras extras, List<string> notImplemented)
     {
         XElement F(string n, params object?[] c) => new(Dtsf + n, c);
-        var info = new XElement(Ns + "DodatkoweInformacjeIObjasnieniaJednostkaInna");
+        var info = new XElement(container);
         if (extras.NotesPdf is { Length: > 0 } pdf)
-            info.Add(new XElement(Ns + "DodatkoweInformacjeIObjasnienia", F("Opis", "Informacja dodatkowa (dodatkowe informacje i objaśnienia)"),
+            info.Add(new XElement(item, F("Opis", "Informacja dodatkowa (dodatkowe informacje i objaśnienia)"),
                 F("Plik", F("Nazwa", extras.NotesFileName), F("Zawartosc", Convert.ToBase64String(pdf)))));
         else
         {
-            info.Add(new XElement(Ns + "DodatkoweInformacjeIObjasnienia", F("Opis", "Informacja dodatkowa — do uzupełnienia")));
+            info.Add(new XElement(item, F("Opis", "Informacja dodatkowa — do uzupełnienia")));
             notImplemented.Add("Dodatkowe informacje i objaśnienia — nie dołączono pliku");
         }
         if (extras.IncomeTax is { } t)
@@ -275,7 +287,7 @@ public static class FinancialStatementXmlBuilder
             var p = extras.IncomeTaxPrev;
             XElement Okres(string n, decimal a, decimal? b) => F(n, F("RB", M(a)), b is { } bv ? F("RP", M(bv)) : null);
             XElement Poz(string n, decimal a, decimal? b) => F(n, F("Kwota", F("RB", F("KwotaA", M(a))), b is { } bv ? F("RP", F("KwotaA", M(bv))) : null));
-            info.Add(new XElement(Ns + "InformacjaDodatkowaDotyczacaPodatkuDochodowego",
+            info.Add(new XElement(container.Namespace + "InformacjaDodatkowaDotyczacaPodatkuDochodowego",
                 Okres("P_ID_1", t.ProfitBeforeTax, p?.ProfitBeforeTax),
                 Poz("P_ID_2", t.ExemptRevenue, p?.ExemptRevenue),
                 Poz("P_ID_3", t.NonTaxableRevenue, p?.NonTaxableRevenue),

@@ -224,6 +224,7 @@ public sealed partial class ReportsViewModel : SectionViewModel
         var key = await reports.CostAllocationKeyAsync();
         var calc = policy?.ProfitAndLossVariant == Domain.Companies.ProfitAndLossVariant.Kalkulacyjny;
         var simplified = policy is { IsMicroEntity: true } or { IsSmallEntity: true };
+        var scope = policy is { IsMicroEntity: true } ? StatementScope.Mikro : policy is { IsSmallEntity: true } ? StatementScope.Mala : StatementScope.Inna;
         var notesTexts = await new FinancialStatementNotes(new Application.Setup.SettingsService(db, Session.Clock), Session.CompanyId).GetAsync(y.Name);
         var notesPdf = new PdfReportExporter().Export(await reports.NotesAsync(y.Id, y.EndDate));
         var extras = new FinancialStatementXmlBuilder.Extras(
@@ -235,7 +236,8 @@ public sealed partial class ReportsViewModel : SectionViewModel
             simplified || prev is null ? null : await sb.CashFlowAsync(prev.Id, prev.EndDate),
             notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf",
             AverageEmployment: await AverageEmploymentAsync(db, y.StartDate, y.EndDate), AuditRequired: AuditRequired,
-            IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null);
+            IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null,
+            Scope: scope);
         var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
         var target = await Dialogs.SaveFileAsync("Sprawozdanie finansowe (XML)", $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
@@ -243,6 +245,6 @@ public sealed partial class ReportsViewModel : SectionViewModel
         await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
             (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane / do wykonania poza programem:" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
             string.Join(Environment.NewLine, r.Validation.Errors.Take(30)) +
-            $"{Environment.NewLine}Struktura: SFJINZ(2) (MF, sprawozdania sporządzane od 1.01.2026). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");
+            $"{Environment.NewLine}Struktura: {scope switch { StatementScope.Mikro => "SFJMIZ(2) — jednostka mikro, zał. nr 4 UoR", StatementScope.Mala => "SFJMAZ(2) — jednostka mała, zał. nr 5 UoR", _ => "SFJINZ(2) — zał. nr 1 UoR" }} (MF, sprawozdania sporządzane od 1.01.2026; uproszczenia wybiera się w polityce rachunkowości). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");
     });
 }

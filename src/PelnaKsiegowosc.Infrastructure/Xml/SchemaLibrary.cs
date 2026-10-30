@@ -30,6 +30,10 @@ public sealed class SchemaLibrary
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/", "Księgi rachunkowe ze znacznikami podatkowymi — CIT (od roku 2026 dla podatników JPK_V7)"),
         new("e-Sprawozdanie SFJINZ(2) — jednostka inna, w złotych", FinancialStatementXmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie finansowe w formie elektronicznej (art. 45 ust. 1g UoR)"),
+        new("e-Sprawozdanie SFJMAZ(2) — jednostka mała, w złotych", FinancialStatementXmlBuilder.SchemaFileMala, "http://crd.gov.pl/wzor/2025/08/07/13818/schemat.xsd",
+            "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki małej korzystającej z uproszczeń (zał. nr 5 UoR)"),
+        new("e-Sprawozdanie SFJMIZ(2) — jednostka mikro, w złotych", FinancialStatementXmlBuilder.SchemaFileMikro, "http://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd",
+            "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki mikro (zał. nr 4 UoR)"),
     };
 
     private readonly string _userDirectory;

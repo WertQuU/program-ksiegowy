@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Text;
@@ -134,6 +135,29 @@ public class FinancialStatementTests
             extras with { CalculationVariant = await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default) });
         Assert.True(xk.Validation.IsValid, string.Join(Environment.NewLine, xk.Validation.Errors.Take(15)));
         Assert.Equal("4277.00", xk.Document.Root!.Descendants(jin + "RZiSKalk").Single().Element(jin + "O")!.Element(dtsf + "KwotaA")!.Value);
+
+        // jednostka mała (SFJMAZ) — porównawczy i kalkulacyjny, bez zestawienia zmian w kapitale i RPP
+        var small = extras with { Scope = StatementScope.Mala, Equity = null, CashFlow = null };
+        var jma = FinancialStatementXmlBuilder.Jma;
+        var xm = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, small);
+        Assert.True(xm.Validation.IsValid, string.Join(Environment.NewLine, xm.Validation.Errors.Take(15)));
+        Assert.Equal("17160.00", xm.Document.Root!.Descendants(jma + "Aktywa").Single().Element(dtsf + "KwotaA")!.Value);
+        Assert.Equal("4277.00", xm.Document.Root!.Descendants(jma + "RZiSPor").Single().Element(jma + "J")!.Element(dtsf + "KwotaA")!.Value);
+        var xmk = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator,
+            small with { CalculationVariant = await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default) });
+        Assert.True(xmk.Validation.IsValid, string.Join(Environment.NewLine, xmk.Validation.Errors.Take(15)));
+        Assert.Equal("4277.00", xmk.Document.Root!.Descendants(jma + "RZiSKalk").Single().Element(jma + "L")!.Element(dtsf + "KwotaA")!.Value);
+        // jednostka mikro (SFJMIZ) — PKD nie jest wymagane
+        company.PkdCode = null;
+        var xi = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, small with { Scope = StatementScope.Mikro });
+        Assert.True(xi.Validation.IsValid, string.Join(Environment.NewLine, xi.Validation.Errors.Take(15)));
+        var jmi = FinancialStatementXmlBuilder.Jmi;
+        var rz = xi.Document.Root!.Descendants(FinancialStatementXmlBuilder.NsMikro + "RZiSJednostkaMikro").Single();
+        decimal V(string n) => decimal.Parse(rz.Element(jmi + n)!.Element(dtsf + "KwotaA")!.Value, CultureInfo.InvariantCulture);
+        Assert.Equal(4277m, V("F"));
+        Assert.Equal(V("A") - V("B") + V("C") - V("D") - V("E"), V("F"));
+        var ma = xi.Document.Root!.Descendants(jmi + "Aktywa").Single();
+        Assert.Equal("17160.00", ma.Element(dtsf + "KwotaA")!.Value);
     }
 
     private sealed class Fake(Func<string, (HttpStatusCode, string)> f) : HttpMessageHandler
