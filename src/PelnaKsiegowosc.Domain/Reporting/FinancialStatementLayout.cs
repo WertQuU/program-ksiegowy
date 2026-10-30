@@ -15,7 +15,7 @@ public sealed class StatementLine
 
 /// <summary>
 /// Układ bilansu i rachunku zysków i strat (wariant porównawczy) wg załącznika nr 1 do ustawy o rachunkowości
-/// (jednostki inne niż banki, zakłady ubezpieczeń). Kody: aktywa „A…/B…/C/D”, pasywa „P.A…/P.B…”, RZiS „R.A…”.
+/// (jednostki inne niż banki, zakłady ubezpieczeń). Kody: aktywa „A…/B…/C/D”, pasywa „P.A…/P.B…”, RZiS „R.A…” (porównawczy) i „K.A…” (kalkulacyjny).
 /// Treść pozycji odtworzona według załącznika — WYMAGA porównania z aktualnym tekstem jednolitym ustawy.
 /// </summary>
 public static class FinancialStatementLayout
@@ -166,9 +166,49 @@ R.K|Pozostałe obowiązkowe zmniejszenia zysku (zwiększenia straty)
 R.L|Zysk (strata) netto (I − J − K)|=R.I-R.J-R.K
 """;
 
+    private const string CalculationText = """
+K.A|Przychody netto ze sprzedaży produktów, towarów i materiałów
+K.A.I|Przychody netto ze sprzedaży produktów
+K.A.II|Przychody netto ze sprzedaży towarów i materiałów
+K.B|Koszty sprzedanych produktów, towarów i materiałów
+K.B.I|Koszt wytworzenia sprzedanych produktów
+K.B.II|Wartość sprzedanych towarów i materiałów
+K.C|Zysk (strata) brutto ze sprzedaży (A − B)|=K.A-K.B
+K.D|Koszty sprzedaży
+K.E|Koszty ogólnego zarządu
+K.F|Zysk (strata) ze sprzedaży (C − D − E)|=K.C-K.D-K.E
+K.G|Pozostałe przychody operacyjne
+K.G.I|Zysk z tytułu rozchodu niefinansowych aktywów trwałych
+K.G.II|Dotacje
+K.G.III|Aktualizacja wartości aktywów niefinansowych
+K.G.IV|Inne przychody operacyjne
+K.H|Pozostałe koszty operacyjne
+K.H.I|Strata z tytułu rozchodu niefinansowych aktywów trwałych
+K.H.II|Aktualizacja wartości aktywów niefinansowych
+K.H.III|Inne koszty operacyjne
+K.I|Zysk (strata) z działalności operacyjnej (F + G − H)|=K.F+K.G-K.H
+K.J|Przychody finansowe
+K.J.I|Dywidendy i udziały w zyskach
+K.J.II|Odsetki
+K.J.III|Zysk z tytułu rozchodu aktywów finansowych
+K.J.IV|Aktualizacja wartości aktywów finansowych
+K.J.V|Inne
+K.K|Koszty finansowe
+K.K.I|Odsetki
+K.K.II|Strata z tytułu rozchodu aktywów finansowych
+K.K.III|Aktualizacja wartości aktywów finansowych
+K.K.IV|Inne
+K.L|Zysk (strata) brutto (I + J − K)|=K.I+K.J-K.K
+K.M|Podatek dochodowy
+K.N|Pozostałe obowiązkowe zmniejszenia zysku (zwiększenia straty)
+K.O|Zysk (strata) netto (L − M − N)|=K.L-K.M-K.N
+""";
+
     public static readonly IReadOnlyList<StatementLine> Assets = Parse(AssetsText, null);
     public static readonly IReadOnlyList<StatementLine> Liabilities = Parse(LiabilitiesText, "P");
     public static readonly IReadOnlyList<StatementLine> ProfitLoss = Parse(ProfitLossText, "R");
+    /// <summary>RZiS w wariancie kalkulacyjnym (kody „K…”).</summary>
+    public static readonly IReadOnlyList<StatementLine> ProfitLossCalculation = Parse(CalculationText, "K");
 
     public static readonly IReadOnlyDictionary<string, StatementLine> All =
         Flatten(Assets).Concat(Flatten(Liabilities)).Concat(Flatten(ProfitLoss)).ToDictionary(l => l.Code);

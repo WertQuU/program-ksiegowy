@@ -14,7 +14,8 @@ namespace PelnaKsiegowosc.Presentation.ViewModels.Sections;
 
 public enum ReportKind
 {
-    Dziennik, KsiegaGlowna, ZestawienieObrotowISald, ZestawienieSaldKontPomocniczych, BilansOtwarcia, Bilans, RachunekZyskowIStrat,
+    Dziennik, KsiegaGlowna, ZestawienieObrotowISald, ZestawienieSaldKontPomocniczych, BilansOtwarcia, Bilans, RachunekZyskowIStrat, RachunekZyskowIStratKalkulacyjny,
+    ZestawienieZmianWKapitale, RachunekPrzeplywow, InformacjaDodatkowa,
     RejestrVatSprzedazy, RejestrVatZakupow, Naleznosci, Zobowiazania, EwidencjaSrodkowTrwalych, PlanAmortyzacjiBilansowej, PlanAmortyzacjiPodatkowej,
     UzgodnienieBanku, UzgodnienieCit, DziennikZmian, KontrolaIntegralnosci, OpisSystemuInformatycznego
 }
@@ -36,6 +37,10 @@ public sealed partial class ReportsViewModel : SectionViewModel
         ReportKind.BilansOtwarcia => "Bilans otwarcia",
         ReportKind.Bilans => "Bilans",
         ReportKind.RachunekZyskowIStrat => "Rachunek zysków i strat (porównawczy)",
+        ReportKind.RachunekZyskowIStratKalkulacyjny => "Rachunek zysków i strat (kalkulacyjny)",
+        ReportKind.ZestawienieZmianWKapitale => "Zestawienie zmian w kapitale własnym",
+        ReportKind.RachunekPrzeplywow => "Rachunek przepływów pieniężnych (pośredni)",
+        ReportKind.InformacjaDodatkowa => "Informacja dodatkowa",
         ReportKind.RejestrVatSprzedazy => "Rejestr VAT sprzedaży",
         ReportKind.RejestrVatZakupow => "Rejestr VAT zakupów",
         ReportKind.Naleznosci => "Należności (wiekowanie)",
@@ -59,12 +64,68 @@ public sealed partial class ReportsViewModel : SectionViewModel
     [ObservableProperty] private string _reportHeader = "";
     private ReportDocument? _current;
 
-    protected override Task LoadCoreAsync()
+    // Klucz podziału kosztów (RZiS kalkulacyjny)
+    [ObservableProperty] private string _keyProduction = "";
+    [ObservableProperty] private string _keySelling = "";
+    [ObservableProperty] private string _keyAdmin = "";
+
+    // Teksty informacji dodatkowej
+    public List<Choice<string>> NotesSections { get; } = FinancialStatementNotes.Sections.Select(x => new Choice<string>(x.Key, x.Title)).ToList();
+    [ObservableProperty] private Choice<string>? _notesSection;
+    [ObservableProperty] private string _notesText = "";
+    private Dictionary<string, string> _notes = new();
+    [ObservableProperty] private bool _showCostKey;
+    [ObservableProperty] private bool _showNotesEditor;
+
+    partial void OnReportChanged(Choice<ReportKind> value)
     {
+        ShowCostKey = value.Value == ReportKind.RachunekZyskowIStratKalkulacyjny;
+        ShowNotesEditor = value.Value == ReportKind.InformacjaDodatkowa;
+    }
+
+    partial void OnNotesSectionChanging(Choice<string>? value)
+    {
+        if (NotesSection is { } old) _notes[old.Value] = NotesText;
+    }
+
+    partial void OnNotesSectionChanged(Choice<string>? value) => NotesText = value is null ? "" : _notes.GetValueOrDefault(value.Value, "");
+
+    [RelayCommand]
+    private Task SaveCostKeyAsync() => RunAsync(async () =>
+    {
+        var key = new CostAllocationKey(Parse.Amount(KeyProduction, "Koszt wytworzenia %"), Parse.Amount(KeySelling, "Koszty sprzedaży %"), Parse.Amount(KeyAdmin, "Koszty zarządu %"));
+        await using var db = Session.OpenDb();
+        await new ReportService(db, Session.User, Session.Clock).SaveCostAllocationKeyAsync(key);
+        await Session.AuditAsync("KLUCZ_PODZIALU_KOSZTOW", "Setting", null, key.ToString());
+        StatusMessage = $"Zapisano klucz podziału kosztów: {key}";
+    });
+
+    [RelayCommand]
+    private Task SaveNotesAsync() => RunAsync(async () =>
+    {
+        if (NotesSection is { } cur) _notes[cur.Value] = NotesText;
+        await using var db = Session.OpenDb();
+        await new FinancialStatementNotes(new Application.Setup.SettingsService(db, Session.Clock), Session.CompanyId).SaveAsync(Session.CurrentYear.Name, _notes);
+        await db.SaveChangesAsync();
+        await Session.AuditAsync("INFORMACJA_DODATKOWA_ZAPISANA", "Setting", null, Session.CurrentYear.Name);
+        StatusMessage = "Zapisano teksty informacji dodatkowej — wygeneruj raport, aby zobaczyć całość.";
+    });
+
+    protected override async Task LoadCoreAsync()
+    {
+        await using (var db = Session.OpenDb())
+        {
+            var key = await new ReportService(db, Session.User, Session.Clock).CostAllocationKeyAsync();
+            KeyProduction = key.ProductionPercent.ToString("0.##");
+            KeySelling = key.SellingPercent.ToString("0.##");
+            KeyAdmin = key.AdministrationPercent.ToString("0.##");
+            _notes = await new FinancialStatementNotes(new Application.Setup.SettingsService(db, Session.Clock), Session.CompanyId).GetAsync(Session.CurrentYear.Name);
+        }
+        NotesSection ??= NotesSections[0];
+        NotesText = _notes.GetValueOrDefault(NotesSection.Value, "");
         var y = Session.CurrentYear;
         if (string.IsNullOrEmpty(From) || !y.Contains(Parse.OptionalDate(From, "Od") ?? default)) From = y.StartDate.ToPl();
         if (string.IsNullOrEmpty(To) || !y.Contains(Parse.OptionalDate(To, "Do") ?? default)) To = (Session.Clock.Today < y.EndDate && Session.Clock.Today >= y.StartDate ? Session.Clock.Today : y.EndDate).ToPl();
-        return Task.CompletedTask;
     }
 
     [RelayCommand]
@@ -84,6 +145,10 @@ public sealed partial class ReportsViewModel : SectionViewModel
             ReportKind.BilansOtwarcia => await r.OpeningBalanceAsync(y.Id),
             ReportKind.Bilans => await r.BalanceSheetAsync(y.Id, to),
             ReportKind.RachunekZyskowIStrat => await r.ProfitAndLossAsync(y.Id, to),
+            ReportKind.RachunekZyskowIStratKalkulacyjny => await r.ProfitAndLossCalculationAsync(y.Id, to),
+            ReportKind.ZestawienieZmianWKapitale => await r.EquityChangesAsync(y.Id, to),
+            ReportKind.RachunekPrzeplywow => await r.CashFlowAsync(y.Id, to),
+            ReportKind.InformacjaDodatkowa => await r.NotesAsync(y.Id, to),
             ReportKind.RejestrVatSprzedazy => await r.VatRegisterAsync(VatRegisterType.Sprzedaz, new DateOnly(from.Year, from.Month, 1)),
             ReportKind.RejestrVatZakupow => await r.VatRegisterAsync(VatRegisterType.Zakup, new DateOnly(from.Year, from.Month, 1)),
             ReportKind.Naleznosci => await r.AgingAsync(OpenItemSide.Naleznosc, to, OverdueOnly),
@@ -129,12 +194,27 @@ public sealed partial class ReportsViewModel : SectionViewModel
         var pl = await sb.ProfitAndLossAsync(y.Id, y.EndDate);
         var bsPrev = prev is null ? null : await sb.BalanceSheetAsync(prev.Id, prev.EndDate);
         var plPrev = prev is null ? null : await sb.ProfitAndLossAsync(prev.Id, prev.EndDate);
-        var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator);
+        var policy = await db.AccountingPolicies.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
+        var reports = new ReportService(db, Session.User, Session.Clock);
+        var key = await reports.CostAllocationKeyAsync();
+        var calc = policy?.ProfitAndLossVariant == Domain.Companies.ProfitAndLossVariant.Kalkulacyjny;
+        var simplified = policy is { IsMicroEntity: true } or { IsSmallEntity: true };
+        var notesTexts = await new FinancialStatementNotes(new Application.Setup.SettingsService(db, Session.Clock), Session.CompanyId).GetAsync(y.Name);
+        var notesPdf = new PdfReportExporter().Export(await reports.NotesAsync(y.Id, y.EndDate));
+        var extras = new FinancialStatementXmlBuilder.Extras(
+            calc ? await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, key) : null,
+            calc && prev is not null ? await sb.ProfitAndLossCalculationAsync(prev.Id, prev.EndDate, key) : null,
+            simplified ? null : await sb.EquityChangesAsync(y.Id, y.EndDate),
+            simplified || prev is null ? null : await sb.EquityChangesAsync(prev.Id, prev.EndDate),
+            simplified ? null : await sb.CashFlowAsync(y.Id, y.EndDate),
+            simplified || prev is null ? null : await sb.CashFlowAsync(prev.Id, prev.EndDate),
+            notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf");
+        var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
         var target = await Dialogs.SaveFileAsync("Sprawozdanie finansowe (XML)", $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
         r.Document.Save(target);
         await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
-            (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane (uzupełnij w innym narzędziu):" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
+            (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane / do wykonania poza programem:" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
             string.Join(Environment.NewLine, r.Validation.Errors.Take(30)) +
             $"{Environment.NewLine}Sprawozdanie wymaga informacji dodatkowej, podpisów kierownika jednostki i osoby sporządzającej oraz weryfikacji z aktualną strukturą logiczną.");
     });

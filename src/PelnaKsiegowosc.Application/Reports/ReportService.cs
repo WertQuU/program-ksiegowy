@@ -21,7 +21,7 @@ using PelnaKsiegowosc.Domain.Vat;
 namespace PelnaKsiegowosc.Application.Reports;
 
 /// <summary>Generator raportów księgowych. Każdy raport powstaje z bieżących zapisów — brak wartości stałych/przykładowych.</summary>
-public sealed class ReportService
+public sealed partial class ReportService
 {
     private readonly KsiegiDbContext _db;
     private readonly ICurrentUser _user;
@@ -245,7 +245,7 @@ public sealed class ReportService
         return r;
     }
 
-    private static string Label(string code) => code.StartsWith("P.") ? code[2..] : code.StartsWith("R.") ? code[2..] : code;
+    private static string Label(string code) => code.StartsWith("P.") || code.StartsWith("R.") || code.StartsWith("K.") ? code[2..] : code;
 
     public async Task<ReportDocument> VatRegisterAsync(VatRegisterType register, DateOnly period, CancellationToken ct = default)
     {

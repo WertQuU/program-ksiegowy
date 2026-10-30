@@ -25,6 +25,7 @@ public static class JpkV7Rules
     public const string DeclarationSystemCode = "VAT-7 (23)";
     public const string DeclarationVariant = "23";
     public const string SchemaFile = "Schemat_JPK_V7M(3)_v1-0E.xsd";
+    public const string SchemaFileQuarterly = "Schemat_JPK_V7K(3)_v1-0E.xsd";
 }
 
 public sealed record JpkResult(XDocument Document, XsdValidationResult Validation, IReadOnlyList<string> Warnings)

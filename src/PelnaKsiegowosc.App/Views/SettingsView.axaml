@@ -15,6 +15,26 @@
           <TextBlock Text="Motyw:" VerticalAlignment="Center" />
           <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" />
         </StackPanel>
+        <TextBlock Text="Schematy XSD (walidacja JPK, e-Faktur, e-Sprawozdań)" Classes="h2" />
+        <TextBlock Classes="info" TextWrapping="Wrap" Text="Pliki wysyłane do MF są sprawdzane oficjalnym schematem XSD. Brakujący schemat pobierz z serwera MF (crd.gov.pl) albo ze strony MF i wczytaj z pliku (.xsd lub .zip). Walidacja działa potem bez Internetu." />
+        <ListBox ItemsSource="{Binding Schemas}" SelectedItem="{Binding SelectedSchema}" MaxHeight="220">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="s:SchemaItem">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                  <TextBlock Text="{Binding State}" Foreground="{DynamicResource PkMuted}" />
+                </StackPanel>
+                <TextBlock Text="{Binding Purpose}" Foreground="{DynamicResource PkMuted}" FontSize="12" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <WrapPanel Classes="toolbar">
+          <Button Content="Pobierz z serwera MF" Command="{Binding DownloadSchemasCommand}" />
+          <Button Content="Wczytaj z pliku…" Command="{Binding ImportSchemaCommand}" />
+          <Button Content="Otwórz stronę MF zaznaczonego schematu" Command="{Binding OpenSchemaPageCommand}" />
+        </WrapPanel>
         <TextBlock Text="Baza danych" Classes="h2" />
                 <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
           <TextBlock Text="Plik bazy" /><TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />

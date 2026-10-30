@@ -297,8 +297,8 @@ public class AccountingPolicy : CompanyEntity
             r.Error("Polityka rachunkowości nie została zatwierdzona przez kierownika jednostki (art. 10 ust. 2 UoR).");
         if (Content.Contains("[DO UZUPEŁNIENIA", StringComparison.OrdinalIgnoreCase))
             r.Error("Polityka rachunkowości zawiera niewypełnione pola oznaczone [DO UZUPEŁNIENIA].");
-        if (ProfitAndLossVariant == ProfitAndLossVariant.Kalkulacyjny)
-            r.Warning("Wariant kalkulacyjny RZiS nie jest jeszcze obsługiwany przez raporty aplikacji.");
+        if (ProfitAndLossVariant == ProfitAndLossVariant.Kalkulacyjny && !CostsByFunction)
+            r.Warning("Wariant kalkulacyjny RZiS bez kont zespołu 5: koszty rodzajowe są dzielone kluczem podziału (Raporty → Klucz podziału kosztów) — opisz klucz w polityce rachunkowości.");
         if (IsMicroEntity && IsSmallEntity) r.Error("Jednostka nie może być jednocześnie mikro i małą — wybierz jeden wariant uproszczeń.");
         return r;
     }

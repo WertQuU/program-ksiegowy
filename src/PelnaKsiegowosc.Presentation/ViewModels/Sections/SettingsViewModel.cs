@@ -28,8 +28,69 @@ public sealed partial class SettingsViewModel : SectionViewModel
         if (!_loadingTheme && value != Session.Config.Theme) Session.SetTheme(value);
     }
 
+    /// <summary>Stan oficjalnych schematów XSD (dostępny / brak) — do walidacji JPK, e-Faktur i e-Sprawozdań.</summary>
+    [ObservableProperty] private List<SchemaItem> _schemas = new();
+    [ObservableProperty] private SchemaItem? _selectedSchema;
+
+    private Infrastructure.Xml.SchemaLibrary Library(HttpClient? http = null) =>
+        new(Session.Paths.SchemasDirectory, http, Infrastructure.Xml.XsdValidator.BundledSchemasDirectory);
+
+    private void RefreshSchemas() =>
+        Schemas = Library().Status().Select(x => new SchemaItem(x.Schema.Name, x.Available ? "✔ dostępny" : "✖ brak — plik nie zostanie zwalidowany", x.Schema.Purpose, x.Schema.InfoUrl, x.Schema.DownloadUrl is not null, x.Schema)).ToList();
+
+    [RelayCommand]
+    private Task DownloadSchemasAsync() => RunAsync(async () =>
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(60) };
+        var lib = Library(http);
+        var log = new List<string>();
+        foreach (var st in lib.Status().Where(x => !x.Available && x.Schema.DownloadUrl is not null))
+        {
+            try
+            {
+                var files = await lib.DownloadAsync(st.Schema);
+                log.Add($"✔ {st.Schema.Name}: pobrano {files.Count} plik(i)");
+            }
+            catch (Exception e) when (e is HttpRequestException or TaskCanceledException or InvalidOperationException or System.Xml.XmlException)
+            {
+                log.Add($"✖ {st.Schema.Name}: {e.Message} — pobierz ręcznie ze strony {st.Schema.InfoUrl}");
+            }
+        }
+        foreach (var st in lib.Status().Where(x => !x.Available && x.Schema.DownloadUrl is null))
+            log.Add($"• {st.Schema.Name}: pobierz ze strony {st.Schema.InfoUrl} i użyj „Wczytaj z pliku…”");
+        if (log.Count == 0) log.Add("Wszystkie znane schematy są już dostępne.");
+        var missing = lib.MissingImports();
+        if (missing.Count > 0) log.Add("Brakujące schematy importowane: " + string.Join(", ", missing));
+        RefreshSchemas();
+        await Session.AuditAsync("SCHEMATY_POBRANE", "Schema", null, string.Join("; ", log));
+        await Dialogs.ShowTextAsync("Schematy XSD", string.Join(Environment.NewLine, log));
+    });
+
+    [RelayCommand]
+    private Task ImportSchemaAsync() => RunAsync(async () =>
+    {
+        var f = await Dialogs.OpenFileAsync("Schemat XSD lub archiwum ZIP ze strony MF", new FileFilter("Schemat XSD / ZIP", "*.xsd", "*.zip"));
+        if (f is null) return;
+        var lib = Library();
+        List<string> saved;
+        try { saved = lib.Import(new[] { f }); }
+        catch (InvalidOperationException e) { throw new DomainException(e.Message); }
+        var missing = lib.MissingImports();
+        RefreshSchemas();
+        await Session.AuditAsync("SCHEMAT_WCZYTANY", "Schema", null, string.Join(", ", saved));
+        await Dialogs.InfoAsync("Schematy XSD", $"Wczytano: {string.Join(", ", saved)}" +
+            (missing.Count > 0 ? $"{Environment.NewLine}Brakuje jeszcze schematów importowanych: {string.Join(", ", missing)} — wczytaj je lub użyj „Pobierz z serwera MF”." : ""));
+    });
+
+    [RelayCommand]
+    private void OpenSchemaPage()
+    {
+        if (SelectedSchema is { } s) Dialogs.OpenInSystem(s.InfoUrl);
+    }
+
     protected override Task LoadCoreAsync()
     {
+        RefreshSchemas();
         var p = Session.Profile;
         ActiveInfo = $"Aktywna baza: {Session.DatabaseDescription}" + (p.Engine == DatabaseEngine.PostgreSql ? $" (rola: {Display.Enum(p.Role)})" : "") +
                      ". Program nie przełącza się samoczynnie między bazami — zmiana wymaga Twojej decyzji i ponownego uruchomienia.";
@@ -143,3 +204,5 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private void OpenDataFolder() => Dialogs.OpenInSystem(Session.Paths.Root);
 }
+
+public sealed record SchemaItem(string Name, string State, string Purpose, string InfoUrl, bool CanDownload, Infrastructure.Xml.KnownSchema Schema);

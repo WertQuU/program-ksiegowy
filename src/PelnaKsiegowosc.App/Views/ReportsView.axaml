@@ -21,6 +21,27 @@
       <Button Content="Eksport CSV…" Command="{Binding ExportCsvCommand}" />
       <Button Content="Sprawozdanie finansowe XML…" Command="{Binding FinancialStatementXmlCommand}" />
     </WrapPanel>
+    <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding ShowCostKey}" Margin="0,4">
+      <StackPanel Spacing="6">
+        <TextBlock Text="Klucz podziału kosztów rodzajowych (wariant kalkulacyjny)" FontWeight="SemiBold" />
+        <TextBlock Classes="info" TextWrapping="Wrap" Text="Koszty z zespołu 4 (bez wartości sprzedanych towarów) dzielone są procentowo. Suma musi wynosić 100%. Klucz opisz w polityce rachunkowości." />
+        <WrapPanel Classes="toolbar">
+          <TextBlock Text="Koszt wytworzenia %:" /><TextBox Text="{Binding KeyProduction}" MinWidth="70" />
+          <TextBlock Text="Koszty sprzedaży %:" /><TextBox Text="{Binding KeySelling}" MinWidth="70" />
+          <TextBlock Text="Koszty zarządu %:" /><TextBox Text="{Binding KeyAdmin}" MinWidth="70" />
+          <Button Content="Zapisz klucz" Command="{Binding SaveCostKeyCommand}" />
+        </WrapPanel>
+      </StackPanel>
+    </Border>
+    <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding ShowNotesEditor}" Margin="0,4">
+      <StackPanel Spacing="6">
+        <TextBlock Text="Teksty informacji dodatkowej (rok bieżący)" FontWeight="SemiBold" />
+        <TextBlock Classes="info" TextWrapping="Wrap" Text="Tabele (środki trwałe, należności, przychody, podatek) program wylicza sam. Tu wpisz opisy — wybierz punkt, popraw tekst i kliknij „Zapisz teksty”. Pola [DO UZUPEŁNIENIA] trzeba wypełnić." />
+        <ComboBox ItemsSource="{Binding NotesSections}" SelectedItem="{Binding NotesSection}" MinWidth="420" />
+        <TextBox Text="{Binding NotesText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" MaxHeight="160" />
+        <Button Content="Zapisz teksty" Command="{Binding SaveNotesCommand}" />
+      </StackPanel>
+    </Border>
     <TextBlock DockPanel.Dock="Top" Text="{Binding ReportHeader}" Classes="h2" />
     <c:TableView Table="{Binding Preview}" />
   </DockPanel>

@@ -21,7 +21,7 @@ public sealed class StatementValues
 /// Wyliczenie bilansu i rachunku zysków i strat (wariant porównawczy) z ksiąg. Salda kont rozrachunkowych
 /// prezentowane są per kontrahent bez kompensat (art. 7 ust. 3 UoR): saldo Wn → aktywa, saldo Ma → pasywa.
 /// </summary>
-public sealed class StatementBuilder
+public sealed partial class StatementBuilder
 {
     /// <summary>Pary pozycji prezentowanych per saldo (zysk/strata na rozchodzie).</summary>
     private static readonly (string gain, string loss)[] NettingPairs = { ("R.D.I", "R.E.I"), ("R.G.III", "R.H.II") };
@@ -44,11 +44,22 @@ public sealed class StatementBuilder
                 select new { l.AccountId, l.CounterpartyId, l.Debit, l.Credit, e.Kind }).ToListAsync(ct))
         .Select(x => (x.AccountId, x.CounterpartyId, x.Debit, x.Credit, x.Kind)).ToList();
 
-    public async Task<StatementValues> BalanceSheetAsync(Guid fiscalYearId, DateOnly asOf, CancellationToken ct = default)
+    public Task<StatementValues> BalanceSheetAsync(Guid fiscalYearId, DateOnly asOf, CancellationToken ct = default) =>
+        BalanceSheetCoreAsync(fiscalYearId, asOf, openingOnly: false, ct);
+
+    /// <summary>Bilans otwarcia roku — wyłącznie zapisy BO (stan na początek okresu do zestawienia zmian w kapitale i RPP).</summary>
+    public async Task<StatementValues> OpeningBalanceSheetAsync(Guid fiscalYearId, CancellationToken ct = default)
+    {
+        var fy = await _db.FiscalYears.AsNoTracking().FirstAsync(f => f.Id == fiscalYearId, ct);
+        return await BalanceSheetCoreAsync(fiscalYearId, fy.EndDate, openingOnly: true, ct);
+    }
+
+    private async Task<StatementValues> BalanceSheetCoreAsync(Guid fiscalYearId, DateOnly asOf, bool openingOnly, CancellationToken ct)
     {
         var (accounts, parents) = await ChartAsync(fiscalYearId, ct);
         var byId = accounts.ToDictionary(a => a.Id);
         var lines = await LinesAsync(fiscalYearId, asOf, ct);
+        if (openingOnly) lines = lines.Where(l => l.Kind == EntryKind.BilansOtwarcia).ToList();
         var v = new StatementValues { AsOf = asOf };
 
         void AddTo(string code, decimal amount) => v.Lines[code] = v.Lines.GetValueOrDefault(code) + amount;
