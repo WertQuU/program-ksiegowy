@@ -38,7 +38,7 @@ UA = {"User-Agent": "Mozilla/5.0 (pelna-ksiegowosc schema fetcher)"}
 XS = "{http://www.w3.org/2001/XMLSchema}"
 
 
-def get(url, timeout=60):
+def get(url, timeout=25):
     req = urllib.request.Request(url, headers=UA)
     with urllib.request.urlopen(req, timeout=timeout) as r:
         return r.read(), r.geturl()
@@ -106,7 +106,7 @@ KEYWORDS = ("struktur", "jpk", "sprawozd", "schemat", "xsd", "kr_pd", "kr-pd", "
 all_hrefs = []
 queue = [(p, 0) for p in PAGES]
 visited = set()
-while queue:
+while queue and len(visited) < 150:
     page, depth = queue.pop(0)
     if page in visited:
         continue
@@ -128,7 +128,7 @@ while queue:
         all_hrefs.append(f"{page}\t{full}")
         if low.endswith(".xsd") or low.endswith(".zip") or "crd.gov.pl/wzor" in low or "/attachment/" in low or "/media/" in low and not low.endswith((".jpg", ".png", ".pdf", ".svg")):
             links.append((page, full))
-        elif depth < 2 and urllib.parse.urlparse(full).netloc.endswith(("podatki.gov.pl", "www.gov.pl", "podatki-arch.mf.gov.pl", "mf.gov.pl")) and any(k in low for k in KEYWORDS):
+        elif depth < 2 and urllib.parse.urlparse(full).netloc in ("podatki.gov.pl", "www.podatki.gov.pl", "www.gov.pl", "podatki-arch.mf.gov.pl") and any(k in low for k in KEYWORDS) and ("sprawozd" in low or "struktur" in low or depth == 0):
             queue.append((full, depth + 1))
 links = list(dict.fromkeys(links))
 
@@ -157,9 +157,48 @@ for page, link in links:
 for s in SEEDS:
     fetch_xsd(s)
 
+# Dokumenty PDF MF opisujące struktury (np. „informacja o strukturach e-SF”) — odnośniki ze środka PDF
+PDFS = [l for _, l in links if l.lower().endswith(".pdf") and ("struktur" in l.lower() or "sprawozd" in l.lower())]
+PDFS += ["https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf"]
+pdf_text = []
+for pdf in dict.fromkeys(PDFS):
+    try:
+        data, _ = get(pdf)
+        import subprocess, tempfile
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tf:
+            tf.write(data)
+        txt = subprocess.run(["pdftotext", "-layout", tf.name, "-"], capture_output=True, text=True).stdout
+        pdf_text.append(f"===== {pdf}\n{txt}")
+        urls = set(re.findall(r'https?://[^\s<>")]+', txt))
+        print(f"PDF {pdf}: {len(urls)} adresów")
+        for u in sorted(urls):
+            u = u.rstrip(".,;")
+            print("   ", u)
+            low = u.lower()
+            if low.endswith(".xsd"):
+                fetch_xsd(u)
+            elif low.endswith(".zip"):
+                fetch_zip(u)
+            elif "/attachment/" in low or "crd.gov.pl/wzor" in low or "/schematy/" in low:
+                try:
+                    d2, _ = get(u if not ("crd.gov.pl/wzor" in low and not low.endswith(".xsd")) else u.rstrip("/") + "/schemat.xsd")
+                    if d2[:2] == b"PK":
+                        z = zipfile.ZipFile(io.BytesIO(d2))
+                        for n in z.namelist():
+                            if n.lower().endswith(".xsd"):
+                                save_xsd(u + "#" + n, z.read(n))
+                    elif b"http://www.w3.org/2001/XMLSchema" in d2[:3000]:
+                        save_xsd(u, d2)
+                except Exception as e:
+                    print(f"  ! {u}: {e}")
+    except Exception as e:
+        print(f"PDF {pdf}: {e}")
+
 os.makedirs(OUT, exist_ok=True)
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as f:
     json.dump(sorted(manifest, key=lambda m: m["url"]), f, ensure_ascii=False, indent=1)
+with open(os.path.join(OUT, "pdf-struktury.txt"), "w", encoding="utf-8") as f:
+    f.write("\n".join(pdf_text))
 with open(os.path.join(OUT, "odnosniki.txt"), "w", encoding="utf-8") as f:
     f.write("\n".join(sorted(set(all_hrefs))))
 with open(os.path.join(OUT, "strony.txt"), "w", encoding="utf-8") as f:

@@ -17,7 +17,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Narzędzia
+        run: sudo apt-get install -y poppler-utils >/dev/null
       - name: Pobranie schematów
+        timeout-minutes: 25
         run: python3 tools/fetch-schemas.py schemas/MF
       - name: Zapis w repozytorium
         run: |
