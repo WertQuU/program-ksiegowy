@@ -57,6 +57,27 @@
         <c:TableView Table="{Binding ManualAdjustments}" SelectedRow="{Binding SelectedManualAdjustment}" />
       </DockPanel></TabItem>
       <TabItem Header="Zaliczki"><c:TableView Table="{Binding Advances}" SelectedRow="{Binding SelectedAdvance}" /></TabItem>
+      <TabItem Header="Straty z lat ubiegłych">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="info" TextWrapping="Wrap"
+                     Text="Art. 7 ust. 5 ustawy o CIT: stratę odlicza się w 5 kolejnych latach — w roku do 50% straty albo jednorazowo do 5 mln zł; straty ze źródła „zyski kapitałowe” tylko od dochodu z tego źródła." />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding LossYear}" Watermark="rok straty (np. 2025)" MinWidth="120" />
+            <TextBox Text="{Binding LossYearEnd}" Watermark="koniec roku dd.mm.rrrr" MinWidth="140" />
+            <CheckBox Content="zyski kapitałowe" IsChecked="{Binding LossCapital}" />
+            <TextBox Text="{Binding LossAmount}" Watermark="kwota straty" />
+            <Button Content="Zarejestruj stratę" Command="{Binding AddLossCommand}" IsEnabled="{Binding IsApplicable}" />
+            <Button Content="Przenieś stratę z poprzedniego roku (z programu)" Command="{Binding RegisterPreviousYearLossCommand}" IsEnabled="{Binding IsApplicable}" />
+          </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding LossDeduction}" Watermark="kwota odliczenia w bieżącym roku" MinWidth="200" />
+            <TextBox Text="{Binding LossFromPeriod}" Watermark="od okresu nr" MinWidth="90" />
+            <CheckBox Content="jednorazowo (do 5 mln zł)" IsChecked="{Binding LossOneTime}" />
+            <Button Content="Odlicz zaznaczoną stratę" Command="{Binding DeductLossCommand}" IsEnabled="{Binding IsApplicable}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Losses}" SelectedRow="{Binding SelectedLoss}" />
+        </DockPanel>
+      </TabItem>
     </TabControl>
   </DockPanel>
 </UserControl>

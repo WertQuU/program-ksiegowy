@@ -294,6 +294,29 @@ public sealed class CitService
             }
             r.Adjustments.Add(new($"Korekta: {a.Description}", a.Type is CitAdjustmentType.ZmniejszeniePrzychodow or CitAdjustmentType.DodatkowyKUP or CitAdjustmentType.OdliczenieOdDochodu ? -a.Amount : a.Amount, a.LegalBasis ?? "korekta ręczna"));
         }
+        // straty z lat ubiegłych (art. 7 ust. 5) — odrębnie dla źródeł; odliczenia także w zaliczkach od wskazanego okresu
+        var lossDeductions = await (from d in _db.TaxLossDeductions.AsNoTracking()
+                                    join l in _db.TaxLosses.AsNoTracking() on d.TaxLossId equals l.Id
+                                    where d.FiscalYearId == fy.Id && d.PeriodNumber <= uptoPeriod
+                                    select new { d.Amount, l.CapitalGains, l.YearLabel }).ToListAsync(ct);
+        var opDeductions = r.Deductions + lossDeductions.Where(x => !x.CapitalGains).Sum(x => x.Amount);
+        var capDeductions = lossDeductions.Where(x => x.CapitalGains).Sum(x => x.Amount);
+        foreach (var x in lossDeductions)
+            r.Adjustments.Add(new($"Odliczenie straty z roku {x.YearLabel}{(x.CapitalGains ? " (zyski kapitałowe)" : "")}", -x.Amount, "art. 7 ust. 5 ustawy o CIT"));
+        r.Deductions = opDeductions + capDeductions;
+
+        // limit kosztów finansowania dłużnego (art. 15c): nadwyżka ponad 3 mln zł albo 30% podatkowej EBITDA
+        var interestCosts = tb.Where(t => t.IsLeaf && (t.Account.Number.StartsWith("751-01") || t.Account.Number.StartsWith("751-05"))).Sum(t => t.CumulativeDebit - t.CumulativeCredit);
+        var interestIncome = tb.Where(t => t.IsLeaf && t.Account.Number.StartsWith("750-01")).Sum(t => t.CumulativeCredit - t.CumulativeDebit);
+        var netFinancing = interestCosts - interestIncome;
+        if (netFinancing > 3_000_000m)
+        {
+            var ebitda = (taxRev - interestIncome) - (taxCost - interestCosts - taxDep);
+            var limit = Math.Max(3_000_000m, Money.Round(0.3m * ebitda));
+            if (netFinancing > limit)
+                r.Warnings.Add($"Art. 15c: nadwyżka kosztów finansowania dłużnego {Money.Format(netFinancing)} zł przekracza limit {Money.Format(limit)} zł o {Money.Format(netFinancing - limit)} zł — wprowadź korektę NKUP (nadwyżkę można rozliczyć w 5 kolejnych latach).");
+        }
+
         r.TaxRevenue = taxRev + capRev;
         r.TaxCosts = taxCost + capCost;
         r.Rpd = new CitRpd(k1, k2, k3, k4, k5, k6, k7, k8);
@@ -314,8 +337,10 @@ public sealed class CitService
         // limit dotyczy wszystkich przychodów osiągniętych w roku podatkowym (obu źródeł)
         r.Rate = CitCalculator.DecideRate(small || fy.IsFirstYear, excluded, eurRate,
             CitCalculator.FullMonths(fy.StartDate, fy.EndDate), taxRev + capRev);
-        r.Operating = CitCalculator.Compute(taxRev, taxCost, r.Deductions, r.Rate.RatePercent);
-        r.CapitalGains = CitCalculator.Compute(capRev, capCost, 0m, CitCalculator.StandardRate);
+        r.Operating = CitCalculator.Compute(taxRev, taxCost, opDeductions, r.Rate.RatePercent);
+        r.CapitalGains = CitCalculator.Compute(capRev, capCost, capDeductions, CitCalculator.StandardRate);
+        if (opDeductions > r.Operating.Income || capDeductions > r.CapitalGains.Income)
+            r.Warnings.Add("Odliczenia przekraczają dochód ze źródła — nadwyżka nie zmniejsza podatku (pomniejsz kwotę odliczenia straty w tym roku).");
         r.Computation = new CitComputation(r.Operating.TaxRevenue + r.CapitalGains.TaxRevenue, r.Operating.TaxCosts + r.CapitalGains.TaxCosts,
             r.Operating.Income + r.CapitalGains.Income, r.Operating.Loss + r.CapitalGains.Loss, r.Deductions,
             r.Operating.TaxBase + r.CapitalGains.TaxBase, r.Rate.RatePercent, r.Operating.Tax + r.CapitalGains.Tax);
@@ -325,7 +350,7 @@ public sealed class CitService
             r.Warnings.Add($"Uzupełnij kurs euro NBP z pierwszego dnia roboczego roku podatkowego ({fy.StartDate.ToPl()} lub następny dzień roboczy) — bez niego wyliczenia nie można zapisać jako zaliczki.");
         if (capRev != 0 || capCost != 0)
             r.Warnings.Add($"Zyski kapitałowe rozliczono odrębnie po 19%: dochód {Money.Format(r.CapitalGains.Income)}, strata {Money.Format(r.CapitalGains.Loss)} (straty nie kompensuje się między źródłami; odliczenia przypisano do innych źródeł).");
-        r.Warnings.Add("Wyliczenie nie uwzględnia automatycznie: limitów kosztów finansowania dłużnego, strat z lat ubiegłych (wprowadź jako korektę), ulg — wymagana weryfikacja przez doradcę podatkowego.");
+        r.Warnings.Add("Wyliczenie nie uwzględnia automatycznie ulg (np. B+R, IP Box, darowizny — wprowadź jako odliczenie) ani limitu art. 15e — wymagana weryfikacja przez doradcę podatkowego.");
         return r;
     }
 
@@ -551,6 +576,66 @@ public sealed class CitService
         CompanyId = fy.CompanyId, FiscalYearId = fy.Id, OpenItemId = itemId, Reference = reference, Kind = kind, Date = date,
         AmountOperating = op, AmountCapital = cap, RecordedAtUtc = _clock.UtcNow
     };
+
+    // ---- straty podatkowe (art. 7 ust. 5) ----
+
+    public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (amount <= 0) throw new DomainException("Kwota straty musi być dodatnia.");
+        if (string.IsNullOrWhiteSpace(yearLabel)) throw new DomainException("Podaj rok podatkowy straty.");
+        if (await _db.TaxLosses.AnyAsync(l => l.CompanyId == _user.CompanyId && l.YearEnd == yearEnd && l.CapitalGains == capitalGains, ct))
+            throw new DomainException("Strata z tego roku i źródła jest już zarejestrowana.");
+        var loss = new TaxLoss
+        {
+            CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
+            Note = note, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+        };
+        _db.TaxLosses.Add(loss);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ZAREJESTROWANA", "TaxLoss", loss.Id.ToString(), $"{yearLabel} {(capitalGains ? "zyski kapitałowe" : "inne źródła")}: {Money.Xml(amount)}", ct);
+        await _db.SaveChangesAsync(ct);
+        return loss;
+    }
+
+    /// <summary>Rejestracja straty z rocznego wyliczenia zamkniętego roku (oba źródła).</summary>
+    public async Task<List<TaxLoss>> RegisterLossesFromYearAsync(Guid fiscalYearId, CancellationToken ct = default)
+    {
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        var rec = await ReconcileAsync(fy.Id, fy.Periods.Count, ct);
+        var result = new List<TaxLoss>();
+        if (rec.Operating.Loss > 0) result.Add(await AddLossAsync(fy.Name, fy.EndDate, false, rec.Operating.Loss, "z rocznego wyliczenia CIT", ct));
+        if (rec.CapitalGains.Loss > 0) result.Add(await AddLossAsync(fy.Name, fy.EndDate, true, rec.CapitalGains.Loss, "z rocznego wyliczenia CIT", ct));
+        if (result.Count == 0) throw new DomainException("W tym roku nie wystąpiła strata podatkowa.");
+        return result;
+    }
+
+    public async Task<TaxLossDeduction> DeductLossAsync(Guid lossId, Guid fiscalYearId, int fromPeriod, decimal amount, bool oneTime, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        var loss = await _db.TaxLosses.FirstAsync(l => l.Id == lossId && l.CompanyId == _user.CompanyId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        if (fromPeriod < 1 || fromPeriod > fy.Periods.Count) throw new DomainException("Nieprawidłowy okres.");
+        await EnsureManualPeriodEditableAsync(fiscalYearId, fromPeriod, ct);
+        var previous = await _db.TaxLossDeductions.Where(d => d.TaxLossId == lossId).ToListAsync(ct);
+        if (previous.Any(d => d.FiscalYearId == fiscalYearId)) throw new DomainException("Odliczenie tej straty w tym roku jest już wprowadzone.");
+        TaxLossRules.Validate(loss, previous, fy.StartDate, fy.EndDate, Money.Round(amount), oneTime);
+        var d = new TaxLossDeduction
+        {
+            CompanyId = _user.CompanyId, TaxLossId = lossId, FiscalYearId = fiscalYearId, PeriodNumber = fromPeriod, Amount = Money.Round(amount), OneTime = oneTime,
+            UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+        };
+        _db.TaxLossDeductions.Add(d);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ODLICZONA", "TaxLossDeduction", d.Id.ToString(), $"strata {loss.YearLabel}: {Money.Xml(amount)} w roku {fy.Name}{(oneTime ? " (jednorazowo)" : "")}", ct);
+        await _db.SaveChangesAsync(ct);
+        return d;
+    }
+
+    public async Task<List<(TaxLoss Loss, decimal Used, DateOnly DeductibleUntil)>> LossesAsync(CancellationToken ct = default)
+    {
+        var losses = await _db.TaxLosses.AsNoTracking().Where(l => l.CompanyId == _user.CompanyId).OrderBy(l => l.YearEnd).ToListAsync(ct);
+        var used = (await _db.TaxLossDeductions.AsNoTracking().Where(d => d.CompanyId == _user.CompanyId).ToListAsync(ct)).GroupBy(d => d.TaxLossId).ToDictionary(g => g.Key, g => g.Sum(d => d.Amount));
+        return losses.Select(l => (l, used.GetValueOrDefault(l.Id), l.YearEnd.AddYears(5))).ToList();
+    }
 
     /// <summary>Jednostki transparentne podatkowo (spółka jawna, partnerska, cywilna, osoba fizyczna) nie są podatnikami CIT.</summary>
     public static void EnsureCitTaxpayer(Company company)

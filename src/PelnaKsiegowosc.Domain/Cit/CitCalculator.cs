@@ -64,6 +64,55 @@ public class CitLiabilityAdjustment : CompanyEntity
     public DateTime RecordedAtUtc { get; set; }
 }
 
+/// <summary>Strata podatkowa z roku podatkowego (art. 7 ust. 5 ustawy o CIT) — odrębnie dla źródła „inne” i „zyski kapitałowe”.</summary>
+public class TaxLoss : CompanyEntity
+{
+    public string YearLabel { get; set; } = "";
+    /// <summary>Ostatni dzień roku podatkowego, w którym poniesiono stratę.</summary>
+    public DateOnly YearEnd { get; set; }
+    public bool CapitalGains { get; set; }
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
+    public Guid UserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+/// <summary>Odliczenie straty w roku podatkowym (od okresu <see cref="PeriodNumber"/> — także w zaliczkach).</summary>
+public class TaxLossDeduction : CompanyEntity
+{
+    public Guid TaxLossId { get; set; }
+    public Guid FiscalYearId { get; set; }
+    public int PeriodNumber { get; set; } = 1;
+    public decimal Amount { get; set; }
+    /// <summary>Jednorazowe obniżenie do 5 000 000 zł (art. 7 ust. 5 pkt 2) — tylko raz dla danej straty.</summary>
+    public bool OneTime { get; set; }
+    public Guid UserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+/// <summary>Zasady odliczania strat (art. 7 ust. 5 ustawy o CIT).</summary>
+public static class TaxLossRules
+{
+    public const decimal OneTimeLimit = 5_000_000m;
+
+    /// <summary>Sprawdzenie odliczenia: 5 kolejnych lat po roku straty; jednorazowo do 5 mln zł (raz) albo do 50% straty w roku; łącznie nie więcej niż strata.</summary>
+    public static void Validate(TaxLoss loss, IReadOnlyCollection<TaxLossDeduction> previous, DateOnly deductionYearStart, DateOnly deductionYearEnd, decimal amount, bool oneTime)
+    {
+        if (amount <= 0) throw new DomainException("Kwota odliczenia musi być dodatnia.");
+        if (deductionYearStart <= loss.YearEnd) throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
+        if (deductionYearEnd > loss.YearEnd.AddYears(5)) throw new DomainException($"Stratę z roku {loss.YearLabel} można odliczać przez 5 kolejnych lat podatkowych (do {loss.YearEnd.AddYears(5).ToPl()}).");
+        var used = previous.Sum(d => d.Amount);
+        if (used + amount > loss.Amount) throw new DomainException($"Odliczenia przekroczyłyby stratę ({Money.Format(loss.Amount)} zł; odliczono już {Money.Format(used)} zł).");
+        if (oneTime)
+        {
+            if (previous.Any(d => d.OneTime)) throw new DomainException("Jednorazowe obniżenie (do 5 mln zł) z tej straty już wykorzystano.");
+            if (amount > OneTimeLimit) throw new DomainException("Jednorazowo można odliczyć najwyżej 5 000 000 zł (art. 7 ust. 5 pkt 2).");
+        }
+        else if (amount > Money.Round(loss.Amount * 0.5m))
+            throw new DomainException($"W roku podatkowym można odliczyć najwyżej 50% straty ({Money.Format(Money.Round(loss.Amount * 0.5m))} zł) — albo skorzystać z jednorazowego obniżenia do 5 mln zł.");
+    }
+}
+
 /// <summary>Zaliczka CIT za okres (zapis wykonanego wyliczenia).</summary>
 public class CitAdvance : CompanyEntity
 {

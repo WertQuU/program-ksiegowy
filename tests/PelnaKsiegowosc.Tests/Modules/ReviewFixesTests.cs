@@ -566,3 +566,34 @@ public class OperatorAccessTests
         Assert.True(await t.Db.AuditEvents.CountAsync(a => a.Action.StartsWith("OPERATOR_")) >= 4); // założyciel, nowy operator, dwie zmiany ról
     }
 }
+
+public class TaxLossTests
+{
+    [Fact]
+    public async Task Losses_are_deducted_within_five_years_up_to_half_or_once_up_to_five_million_and_per_source()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 1, 20), "PK/1", new("130-01", 20000m, 0), new("700-01", 0, 20000m)));
+        await t.Db.SaveChangesAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        var loss = await cit.AddLossAsync("2025", new DateOnly(2025, 12, 31), false, 10000m, "CIT-8 za 2025");
+        var old = await cit.AddLossAsync("2019", new DateOnly(2019, 12, 31), false, 4000m, "CIT-8 za 2019");
+        var capital = await cit.AddLossAsync("2024", new DateOnly(2024, 12, 31), true, 3000m, null);
+
+        await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(loss.Id, t.Year.Id, 1, 6000m, oneTime: false)); // > 50%
+        await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(old.Id, t.Year.Id, 1, 1000m, oneTime: false));  // po 5 latach
+        await cit.DeductLossAsync(loss.Id, t.Year.Id, 1, 5000m, oneTime: false);
+        await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(loss.Id, t.Year.Id, 1, 1000m, oneTime: true)); // drugie odliczenie w roku
+        await cit.DeductLossAsync(capital.Id, t.Year.Id, 1, 1500m, oneTime: false);
+
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(15000m, rec.Operating.TaxBase);                     // strata z innych źródeł pomniejsza tylko ich dochód
+        Assert.Equal(0m, rec.CapitalGains.TaxBase);
+        Assert.Contains(rec.Warnings, w => w.Contains("przekraczają dochód ze źródła")); // brak dochodu z zysków kapitałowych
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 7 ust. 5"));
+        var (_, used, until) = (await cit.LossesAsync()).Single(x => x.Loss.Id == loss.Id);
+        Assert.Equal(5000m, used);
+        Assert.Equal(new DateOnly(2030, 12, 31), until);
+        Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), 5_000_001m, oneTime: true));
+    }
+}

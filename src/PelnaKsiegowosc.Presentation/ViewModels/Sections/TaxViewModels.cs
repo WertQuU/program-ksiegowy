@@ -104,6 +104,15 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private bool _isApplicable = true;
     [ObservableProperty] private string _uptoPeriod = "";
     [ObservableProperty] private string _eurRate = "";
+    [ObservableProperty] private TableData _losses = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedLoss;
+    [ObservableProperty] private string _lossYear = "";
+    [ObservableProperty] private string _lossYearEnd = "";
+    [ObservableProperty] private bool _lossCapital;
+    [ObservableProperty] private string _lossAmount = "";
+    [ObservableProperty] private string _lossDeduction = "";
+    [ObservableProperty] private string _lossFromPeriod = "1";
+    [ObservableProperty] private bool _lossOneTime;
     [ObservableProperty] private string _statusEurRate = "";
     [ObservableProperty] private string _rateLabels = "";
     [ObservableProperty] private bool _reducedRateExcluded;
@@ -203,6 +212,12 @@ public sealed partial class CitViewModel : SectionViewModel
         foreach (var a in await db.CitAdvances.AsNoTracking().Where(a => a.FiscalYearId == year.Id).OrderBy(a => a.PeriodNumber).ToListAsync())
             adv.Add(a.Id, a.PeriodNumber, a.PeriodEnd, a.CumulativeIncome, a.TaxBase, a.CumulativeTax, a.PreviouslyDue, a.AdvanceDue, a.PaymentDeadline, a.IsApproved);
         Advances = adv;
+
+        var losses = new TableData(new TableColumn("Rok straty"), new TableColumn("Źródło", Width: 1.2), new TableColumn("Strata", ColumnKind.Money),
+            new TableColumn("Odliczono", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money), new TableColumn("Odliczenie do", ColumnKind.Date));
+        foreach (var (l, used, until) in await svc.LossesAsync())
+            losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used, until);
+        Losses = losses;
     }
 
     [RelayCommand]
@@ -252,6 +267,32 @@ public sealed partial class CitViewModel : SectionViewModel
     }, "Zapisano kwalifikację art. 18f.");
 
     [RelayCommand] private Task RecalculateAsync() => LoadAsync();
+
+    /// <summary>Strata z lat sprzed prowadzenia ksiąg w programie (z zeznania CIT-8).</summary>
+    [RelayCommand]
+    private Task AddLossAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).AddLossAsync(LossYear, Parse.Date(LossYearEnd, "Koniec roku straty"), LossCapital, Parse.Amount(LossAmount, "Strata"), "wprowadzona ręcznie (zeznanie CIT-8)");
+        LossYear = LossYearEnd = LossAmount = "";
+    }, "Zarejestrowano stratę podatkową.");
+
+    [RelayCommand]
+    private Task RegisterPreviousYearLossAsync() => ChangeAsync(async () =>
+    {
+        var prev = Session.Years.LastOrDefault(y => y.EndDate < Session.CurrentYear.StartDate) ?? throw new DomainException("Brak poprzedniego roku obrotowego w programie — wprowadź stratę ręcznie.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).RegisterLossesFromYearAsync(prev.Id);
+    }, "Zarejestrowano stratę z poprzedniego roku.");
+
+    [RelayCommand]
+    private Task DeductLossAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedLoss?.Tag is not Guid id) throw new DomainException("Zaznacz stratę na liście.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).DeductLossAsync(id, Session.CurrentYear.Id, Parse.Int(LossFromPeriod, "Od okresu"), Parse.Amount(LossDeduction, "Kwota odliczenia"), LossOneTime);
+        LossDeduction = "";
+    }, "Odliczenie straty uwzględniono w wyliczeniu CIT.");
 
     [RelayCommand]
     private Task SaveRateConditionsAsync() => ChangeAsync(async () =>

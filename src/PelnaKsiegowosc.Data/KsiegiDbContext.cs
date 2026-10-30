@@ -55,6 +55,8 @@ public class KsiegiDbContext : DbContext
     public DbSet<CitAdjustment> CitAdjustments => Set<CitAdjustment>();
     public DbSet<CitAdvance> CitAdvances => Set<CitAdvance>();
     public DbSet<CitLiabilityAdjustment> CitLiabilityAdjustments => Set<CitLiabilityAdjustment>();
+    public DbSet<TaxLoss> TaxLosses => Set<TaxLoss>();
+    public DbSet<TaxLossDeduction> TaxLossDeductions => Set<TaxLossDeduction>();
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
     public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<StockItem> StockItems => Set<StockItem>();
@@ -240,6 +242,8 @@ public class KsiegiDbContext : DbContext
             e.HasOne<OpenItem>().WithMany().HasForeignKey(x => x.OpenItemId).OnDelete(DeleteBehavior.Restrict);
         });
         m.Entity<CitLiabilityAdjustment>(e => { e.HasIndex(x => x.FiscalYearId); e.HasIndex(x => x.OpenItemId); });
+        m.Entity<TaxLoss>(e => e.HasIndex(x => x.CompanyId));
+        m.Entity<TaxLossDeduction>(e => { e.HasIndex(x => x.TaxLossId); e.HasIndex(x => new { x.TaxLossId, x.FiscalYearId }).IsUnique(); });
 
         m.Entity<ReceivableAllowance>(e => e.HasIndex(x => new { x.CompanyId, x.OpenItemId }));
         m.Entity<Provision>(e => e.HasIndex(x => new { x.CompanyId, x.Date }));
