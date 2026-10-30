@@ -96,7 +96,7 @@ public class ScreensTests
         var (session, dialogs) = SelfTestScenario.CreateSession(root.Path);
         await SelfTestScenario.RunWizardAsync(session, dialogs);
         var main = new MainViewModel(session, dialogs);
-        Assert.Equal(20, main.Sections.Count);
+        Assert.Equal(Enum.GetValues<PelnaKsiegowosc.Application.Assistant.AppArea>().Length, main.Sections.Count);
         foreach (var s in main.Sections)
         {
             await s.LoadAsync();

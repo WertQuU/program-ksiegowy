@@ -100,6 +100,7 @@ public abstract partial class SectionViewModel : ViewModelBase
         ["BackupsViewModel"] = "Kopie zapasowe ksiąg. Klucz odzyskiwania przechowuj poza komputerem — bez niego kopii nie da się odtworzyć.",
         ["IntegrationsViewModel"] = "Połączenie z KSeF i kopią w chmurze OVHcloud. Tokeny i klucze są przechowywane bezpiecznie w systemie.",
         ["SettingsViewModel"] = "Gdzie są przechowywane księgi (ten komputer albo serwer) i przeniesienie ich na serwer.",
+        ["RegulationsViewModel"] = "Przepisy, na których opiera się program (stawki, terminy, limity), z podstawą prawną. Program codziennie sprawdza w oficjalnym serwisie Sejmu, czy ustawy się zmieniły, i pokazuje nowe zmiany do przejrzenia.",
         ["HelpViewModel"] = "Informacje o programie, licencja i pełna kontrola integralności ksiąg.",
     };
 

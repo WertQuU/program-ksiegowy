@@ -36,9 +36,9 @@ public static class ExpenseCategories
         new("AUTO_OSOBOWY", "Samochód osobowy — serwis, opony, myjnia, parking (użytek mieszany)", "Samochód", new[] { "402-06", "402" }, 50, 25,
             "Użytek mieszany: 50% VAT (art. 86a ustawy o VAT), 75% kosztu w KUP (art. 16 ust. 1 pkt 51 ustawy o CIT)."),
         new("AUTO_UBEZPIECZENIE", "Samochód osobowy — ubezpieczenie OC/AC", "Samochód", new[] { "409-03" }, 0, 0,
-            "Ubezpieczenie jest zwolnione z VAT. Składka OC nie podlega ograniczeniu 75% (art. 16 ust. 5f ustawy o CIT). Składka AC przy samochodzie droższym niż 150 000 zł (100 000 zł dla aut spalinowych o wysokiej emisji) jest kosztem tylko proporcjonalnie (art. 16 ust. 1 pkt 49) — wtedy wpisz procent NKUP ręcznie.", DefaultVatRate: "zw"),
+            "Ubezpieczenie jest zwolnione z VAT. Składka OC nie podlega ograniczeniu 75% (art. 16 ust. 5f ustawy o CIT). Składka AC przy samochodzie droższym niż limit (od 2026 r.: 225 000 / 150 000 / 100 000 zł zależnie od napędu i emisji) jest kosztem tylko proporcjonalnie (art. 16 ust. 1 pkt 49) — wtedy wpisz procent NKUP ręcznie.", DefaultVatRate: "zw"),
         new("AUTO_LEASING", "Leasing samochodu osobowego (rata, użytek mieszany)", "Samochód", new[] { "402-06", "402" }, 50, 25,
-            "50% VAT i 75% KUP; dodatkowo limit wartości samochodu (100 000/150 000 zł, art. 16 ust. 1 pkt 49a ustawy o CIT) — przy droższym aucie zwiększ procent NKUP po konsultacji z księgowym."),
+            "50% VAT i 75% KUP; od 2026 r. limit wartości samochodu: 225 000 zł (elektryczny), 150 000 zł (emisja < 50 g CO2/km), 100 000 zł (pozostałe) — art. 16 ust. 1 pkt 49a ustawy o CIT. Przy droższym aucie zwiększ procent NKUP proporcjonalnie."),
         new("TELEFON", "Telefon, internet", "Usługi", new[] { "402-01", "402" }, 100, 0, "Pełne odliczenie VAT i koszt podatkowy."),
         new("CZYNSZ", "Czynsz, najem lokalu lub biura", "Usługi", new[] { "402-02", "402" }, 100, 0, "Najem lokalu użytkowego — 23% VAT; najem mieszkalny jest zwolniony."),
         new("KSIEGOWOSC", "Księgowość, prawnik, doradztwo", "Usługi", new[] { "402-03", "402" }, 100, 0, "Usługi profesjonalne — pełne odliczenie."),
@@ -71,7 +71,7 @@ public static class ExpenseCategories
         new("SRODEK_TRWALY", "Środek trwały — sprzęt, maszyna (powyżej 10 000 zł netto)", "Towary i majątek", new[] { "080" }, 100, 0,
             "Zakup trafia na konto 080. Następnie przyjmij środek w sekcji „Środki trwałe” (OT) z kontem przeciwstawnym 080 — koszt powstanie przez amortyzację.", FixedAsset: true),
         new("SAMOCHOD_ZAKUP", "Zakup samochodu osobowego (użytek mieszany)", "Towary i majątek", new[] { "080" }, 50, 0,
-            "Odliczenie 50% VAT (art. 86a ustawy o VAT); VAT nieodliczony zwiększa wartość auta. Następnie przyjmij auto w „Środki trwałe” (konto 080). Amortyzacja jest kosztem tylko do limitu 150 000 zł (100 000 zł dla aut o wysokiej emisji, art. 16 ust. 1 pkt 4) i w 75% przy użytku mieszanym — wpisz część NKUP w ewidencji środka trwałego.", FixedAsset: true),
+            "Odliczenie 50% VAT (art. 86a ustawy o VAT); VAT nieodliczony zwiększa wartość auta. Następnie przyjmij auto w „Środki trwałe” (konto 080). Amortyzacja jest kosztem tylko do limitu (od 2026 r.: 225 000 zł elektryczne, 150 000 zł przy emisji < 50 g CO2/km, 100 000 zł pozostałe — art. 16 ust. 1 pkt 4) i w 75% przy użytku mieszanym — wpisz część NKUP w ewidencji środka trwałego.", FixedAsset: true),
     };
 
     public static ExpenseCategory? Find(string? code) => code is null ? null : All.FirstOrDefault(c => c.Code == code);

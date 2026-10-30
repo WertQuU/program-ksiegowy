@@ -34,7 +34,7 @@ public enum IssueSeverity
 public enum AppArea
 {
     Pulpit, Jednostka, Dokumenty, Sprzedaz, Zakupy, Ksiegowosc, PlanKont, Kontrahenci, Bank, Vat, Cit, SrodkiTrwale, Kapital,
-    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc
+    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc, Przepisy
 }
 
 /// <summary>Wykryty problem: co jest nie tak, dlaczego to ważne i jak to naprawić.</summary>
@@ -255,6 +255,17 @@ public sealed class BookkeepingAssistant
         if (openOld.Count > 0)
             Add("OKRESY_OTWARTE", IssueSeverity.Wskazowka, $"{openOld.Count} zakończonych miesięcy nie jest zamkniętych", string.Join(", ", openOld.Select(p => p.Name)),
                 "Zamknięcie okresu chroni przed przypadkowymi zmianami. Użyj przycisku „Rozlicz miesiąc” na Pulpicie.", AppArea.Zamkniecie);
+
+        // --- Przepisy ---
+        var changes = (await new Legal.LegalUpdates(_db, _clock).ListAsync(ct)).Where(c => !c.Seen).ToList();
+        if (changes.Count > 0)
+            Add("PRZEPISY_ZMIANY", IssueSeverity.Ostrzezenie, $"Zmiany w przepisach: {changes.Count} nowych aktów do przejrzenia",
+                string.Join("; ", changes.Take(4).Select(c => $"{c.ActName}: {c.Title}")),
+                "Przepisy → przejrzyj zmiany; jeżeli dotyczą reguł programu, sprawdź dostępność aktualizacji programu i skonsultuj się z księgowym.", AppArea.Przepisy);
+        var age = today.DayNumber - Domain.Legal.LegalRules.VerifiedOn.DayNumber;
+        if (age > 120)
+            Add("PRZEPISY_WERYFIKACJA", IssueSeverity.Wskazowka, $"Rejestr przepisów programu zweryfikowano {age} dni temu",
+                $"Wersja {Domain.Legal.LegalRules.Version} z {Domain.Legal.LegalRules.VerifiedOn.ToPl()}.", "Sprawdź, czy jest nowsza wersja programu.", AppArea.Przepisy);
 
         // --- Kopie ---
         if (lastBackupUtc is null || _clock.UtcNow - lastBackupUtc.Value > TimeSpan.FromDays(7))

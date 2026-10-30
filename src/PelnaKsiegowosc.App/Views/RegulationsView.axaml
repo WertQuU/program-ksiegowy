@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.RegulationsView"
+             x:DataType="s:RegulationsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Info}" Classes="info" />
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <Button Content="Sprawdź zmiany teraz" Command="{Binding CheckNowCommand}" Classes="accent" />
+      <Button Content="Oznacz wszystkie jako przejrzane" Command="{Binding MarkAllSeenCommand}" />
+    </WrapPanel>
+    <TabControl>
+      <TabItem Header="Zmiany w ustawach">
+        <ScrollViewer>
+          <ItemsControl ItemsSource="{Binding Changes}" Margin="0,8,0,0">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="s:LegalChangeItem">
+                <Border Classes="issue" BorderBrush="{Binding Color}">
+                  <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Spacing="3">
+                      <TextBlock Text="{Binding Header}" FontWeight="SemiBold" />
+                      <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding Dates}" Classes="cardnote" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                      <Button Content="Otwórz tekst" Command="{Binding OpenCommand}" />
+                      <Button Content="Przejrzane" Command="{Binding SeenCommand}" IsVisible="{Binding IsNew}" />
+                    </StackPanel>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </TabItem>
+      <TabItem Header="Reguły stosowane w programie">
+        <c:TableView Table="{Binding Rules}" />
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

@@ -38,7 +38,8 @@ public sealed partial class MainViewModel : ViewModelBase
             new BackupsViewModel(session, dialogs),
             new IntegrationsViewModel(session, dialogs),
             new SettingsViewModel(session, dialogs),
-            new HelpViewModel(session, dialogs)
+            new HelpViewModel(session, dialogs),
+            new RegulationsViewModel(session, dialogs)
         };
         SectionViewModel S(PelnaKsiegowosc.Application.Assistant.AppArea a) => Sections[(int)a];
         MenuItems = new List<object>
@@ -50,7 +51,7 @@ public sealed partial class MainViewModel : ViewModelBase
             new MenuHeader("KSIĘGI"),
             S(AA.Dokumenty), S(AA.Ksiegowosc), S(AA.PlanKont), S(AA.SrodkiTrwale), S(AA.Kapital),
             new MenuHeader("FIRMA I PROGRAM"),
-            S(AA.Jednostka), S(AA.Backupy), S(AA.Archiwum), S(AA.Integracje), S(AA.Ustawienia), S(AA.Pomoc)
+            S(AA.Jednostka), S(AA.Przepisy), S(AA.Backupy), S(AA.Archiwum), S(AA.Integracje), S(AA.Ustawienia), S(AA.Pomoc)
         };
         session.ContextChanged += (_, _) => RefreshHeader();
         session.NavigationRequested += (area, action) => _ = NavigateAsync(area, action);

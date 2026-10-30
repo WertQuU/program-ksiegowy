@@ -25,6 +25,7 @@
     <DataTemplate DataType="s:IntegrationsViewModel"><v:IntegrationsView /></DataTemplate>
     <DataTemplate DataType="s:SettingsViewModel"><v:SettingsView /></DataTemplate>
     <DataTemplate DataType="s:HelpViewModel"><v:HelpView /></DataTemplate>
+    <DataTemplate DataType="s:RegulationsViewModel"><v:RegulationsView /></DataTemplate>
   </Application.DataTemplates>
 
   <Application.Styles>

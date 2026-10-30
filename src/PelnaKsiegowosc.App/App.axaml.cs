@@ -11,6 +11,7 @@ using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Infrastructure.Secrets;
 using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Presentation.ViewModels;
+using PelnaKsiegowosc.Presentation.ViewModels.Sections;
 using PelnaKsiegowosc.Presentation.ViewModels.Wizard;
 
 namespace PelnaKsiegowosc.App;
@@ -88,6 +89,7 @@ public partial class App : Avalonia.Application
             _backupTimer.Tick += async (_, _) => await mainVm.AutomaticBackupAsync();
             _backupTimer.Start();
             await mainVm.AutomaticBackupAsync();
+            _ = Task.Run(() => RegulationsCheck.RunDailyAsync(session));
             main.ClosingAccepted += async () => await mainVm.BackupOnExitAsync();
         }
         catch (Exception ex)
