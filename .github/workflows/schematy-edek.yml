@@ -1,0 +1,38 @@
+name: Schematy e-Deklaracji
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/fetch-edek.py'
+      - '.github/workflows/schematy-edek.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: schematy-edek
+  cancel-in-progress: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pobranie
+        timeout-minutes: 10
+        run: python3 tools/fetch-edek.py schemas/MF/edek
+      - name: Zapis w repozytorium
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas/MF/edek
+          if git diff --cached --quiet; then echo "Bez zmian"; exit 0; fi
+          git commit -m "Schematy e-Deklaracji i KEDU (pobrane automatycznie)"
+          for i in 1 2 3; do
+            git pull --no-rebase -X ours origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep 5
+          done
+          exit 1
