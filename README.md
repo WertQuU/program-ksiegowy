@@ -41,13 +41,15 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 - **Forma prawna jednostki** wpływa na plan kont (nazwa kapitału podstawowego), politykę rachunkowości,
   kontrolę firmy i KRS, dostępność CIT (spółki osobowe i osoby fizyczne → PIT wspólników) i wymogi zdarzeń kapitałowych.
 - **VAT i JPK**: rejestry, wyliczenie deklaracji (miesięcznej i kwartalnej), rozliczenie na kontach, pliki JPK_V7M
-  i JPK_V7K (także dla osoby fizycznej), JPK_CIT (księgi ze znacznikami podatkowymi), VAT-UE; **KSeF 2.0** — faktury FA(3)
-  walidowane z oficjalnym schematem, wysyłka i pobieranie faktur zakupowych.
+  i JPK_V7K (wersje 2 i 3, także dla osoby fizycznej), JPK_CIT (JPK_KR_PD — księgi ze znacznikami MF), VAT-UE —
+  **walidowane oficjalnymi schematami XSD Ministerstwa Finansów** dołączonymi do programu (`schemas/MF`);
+  **KSeF 2.0** — faktury FA(3) walidowane schematem, wysyłka i pobieranie faktur, logowanie tokenem lub certyfikatem (XAdES).
 - **Bank i kasa**: import MT940 i CSV, dopasowanie do rozrachunków, księgowanie, operacje kasowe; rozrachunki
   z wiekowaniem i kompensatami.
 - **CIT** (zaliczki, uzgodnienie wyniku bilansowego z podatkowym, CIT-8), **PIT** właściciela i wspólników,
-  **płace** (umowa o pracę, zlecenie, dzieło, powołanie; ZUS, zdrowotna i PIT 2026, listy płac z księgowaniem,
-  DRA/RCA, PIT-4R, PIT-8AR, PIT-11), **magazyn** (PZ/WZ/RW/PW, cena przeciętna, spis z natury),
+  **płace** (umowa o pracę, zlecenie, dzieło, powołanie; ZUS, zdrowotna i PIT 2026, PPK, choroba, urlop bezpłatny,
+  listy płac z księgowaniem, DRA/RCA, PIT-4R, PIT-8AR, PIT-11), **magazyn** (PZ/WZ/RW/PW, cena przeciętna lub FIFO,
+  spis z natury),
   **środki trwałe** (amortyzacja bilansowa i podatkowa), **kapitał i właściciele** (wkłady, podział zysku, dywidendy, pożyczki — po potwierdzeniu dokumentów).
 - **Sprawozdanie finansowe**: bilans, RZiS porównawczy i kalkulacyjny (klucz podziału kosztów), zestawienie zmian
   w kapitale, rachunek przepływów (metoda pośrednia), informacja dodatkowa (tabele z ksiąg + opisy), e-Sprawozdanie XML
@@ -108,9 +110,10 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
   wczytuje z pliku. Do tego czasu pliki mają status „niezwalidowany” (szczegóły: [schemas/README.md](schemas/README.md)).
 - Deklaracje CIT-8, VAT-UE, PIT-36/36L, PIT-4R/8AR/11, DRA/RCA — program wylicza kwoty i drukuje zestawienia;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
-- Płace: bez PPK, zasiłków, urlopów i absencji (kwoty wynagrodzenia za niepełny miesiąc wpisuje się ręcznie).
-- Magazyn: wycena wyłącznie ceną przeciętną ważoną; brak FIFO/LIFO i wielu magazynów.
-- KSeF: uwierzytelnianie tokenem; podpis XAdES (kwalifikowany/Profil Zaufany) nieobsługiwany.
+- Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie
+  chorobowe pracodawcy; urlop wypoczynkowy przy stałej pensji nie zmienia wynagrodzenia.
+- KSeF: logowanie tokenem albo certyfikatem (.pfx — podpis kwalifikowany, pieczęć, certyfikat KSeF). Profil Zaufany
+  wymaga podpisania pliku na stronie gov.pl — program przyjmuje wtedy certyfikat KSeF.
 - Biała lista VAT i kursy NBP: integracje sprawdzone testami na atrapach API (publiczne API MF i NBP).
 - Reguły kategorii wydatków odpowiadają typowym przypadkom — w nietypowej sytuacji procenty (VAT, NKUP) zmienia się
   ręcznie w pozycji faktury.
