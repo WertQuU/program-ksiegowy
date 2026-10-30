@@ -1,6 +1,6 @@
 # Stan prac
 
-Wersja: 0.9.0 (przed pierwszym wydaniem 1.0).
+Wersja: 1.0.0 (pierwsze wydanie).
 
 ## Zrealizowane
 
