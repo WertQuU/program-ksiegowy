@@ -122,6 +122,35 @@ public abstract partial class DocumentListBase : SectionViewModel
     });
 
     [RelayCommand]
+    private async Task InstallmentsAsync()
+    {
+        Guid id;
+        try { id = SelectedId; } catch (DomainException ex) { await Dialogs.ErrorAsync("Raty", ex.Message); return; }
+        string current = "";
+        await RunAsync(async () =>
+        {
+            await using var db = Session.OpenDb();
+            current = string.Join("; ", (await new DocumentService(db, Session.User, Session.Clock).InstallmentsAsync(id)).Select(i => $"{i.DueDate.ToPl()} {Money.Format(i.Amount)}"));
+        });
+        var text = await Dialogs.PromptAsync("Płatność w ratach",
+            "Podaj raty jako „termin kwota” oddzielone średnikami, np.: 31.01.2026 1000,00; 28.02.2026 1000,00; 31.03.2026 460,00. " +
+            "Suma rat = kwota brutto. Puste pole usuwa harmonogram.", current);
+        if (text is null) return;
+        await ChangeAsync(async () =>
+        {
+            var list = new List<(DateOnly, decimal)>();
+            foreach (var part in text.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                var bits = part.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (bits.Length != 2) throw new DomainException($"Nieprawidłowa rata „{part}” — oczekiwano „termin kwota”.");
+                list.Add((Parse.Date(bits[0], "Termin raty"), Parse.Amount(bits[1], "Kwota raty")));
+            }
+            await using var db = Session.OpenDb();
+            await new DocumentService(db, Session.User, Session.Clock).SetInstallmentsAsync(id, list);
+        }, "Zapisano harmonogram rat.");
+    }
+
+    [RelayCommand]
     private Task ApproveAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
@@ -362,7 +391,7 @@ public sealed partial class SalesViewModel : DocumentListBase
         var corrected = d.CorrectedDocumentId is { } cid ? await svc.GetAsync(cid) : null;
         var target = await Dialogs.SaveFileAsync("Zapisz fakturę (PDF)", $"{d.Number.Replace('/', '-')}.pdf", new FileFilter("PDF", "*.pdf"));
         if (target is null) return;
-        await File.WriteAllBytesAsync(target, Infrastructure.Export.InvoicePdf.Build(d, company, corrected));
+        await File.WriteAllBytesAsync(target, Infrastructure.Export.InvoicePdf.Build(d, company, corrected, await svc.InstallmentsAsync(id)));
         StatusMessage = $"Zapisano {target}";
         Dialogs.OpenInSystem(target);
     });

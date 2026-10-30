@@ -59,6 +59,8 @@ public class KsiegiDbContext : DbContext
     public DbSet<StockItem> StockItems => Set<StockItem>();
     public DbSet<ReceivableAllowance> ReceivableAllowances => Set<ReceivableAllowance>();
     public DbSet<Provision> Provisions => Set<Provision>();
+    public DbSet<Absence> Absences => Set<Absence>();
+    public DbSet<DocumentInstallment> DocumentInstallments => Set<DocumentInstallment>();
     public DbSet<StockMovement> StockMovements => Set<StockMovement>();
     public DbSet<PayrollList> PayrollLists => Set<PayrollList>();
     public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
@@ -199,6 +201,8 @@ public class KsiegiDbContext : DbContext
 
         m.Entity<ReceivableAllowance>(e => e.HasIndex(x => new { x.CompanyId, x.OpenItemId }));
         m.Entity<Provision>(e => e.HasIndex(x => new { x.CompanyId, x.Date }));
+        m.Entity<Absence>(e => e.HasIndex(x => new { x.CompanyId, x.EmployeeId, x.From }));
+        m.Entity<DocumentInstallment>(e => e.HasIndex(x => new { x.DocumentId, x.No }).IsUnique());
 
         m.Entity<StockItem>(e =>
         {

@@ -43,6 +43,27 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private string _voivodeship = "";
     [ObservableProperty] private string _county = "";
     [ObservableProperty] private string _commune = "";
+    [ObservableProperty] private string _annualLeaveDays = "26";
+    [ObservableProperty] private string _leaveCarriedOver = "";
+    [ObservableProperty] private string _medicalExamUntil = "";
+    [ObservableProperty] private string _bhpTrainingUntil = "";
+    public List<Choice<AbsenceKind>> AbsenceKinds { get; } = new()
+    {
+        new(Domain.Payroll.AbsenceKind.UrlopWypoczynkowy, "Urlop wypoczynkowy"), new(Domain.Payroll.AbsenceKind.UrlopNaZadanie, "Urlop na żądanie"),
+        new(Domain.Payroll.AbsenceKind.Choroba, "Choroba (L4)"), new(Domain.Payroll.AbsenceKind.UrlopBezplatny, "Urlop bezpłatny"),
+        new(Domain.Payroll.AbsenceKind.Opieka, "Opieka (zasiłek ZUS)"), new(Domain.Payroll.AbsenceKind.UrlopOkolicznosciowy, "Urlop okolicznościowy"),
+        new(Domain.Payroll.AbsenceKind.NieobecnoscNieusprawiedliwiona, "Nieobecność nieusprawiedliwiona"),
+    };
+    [ObservableProperty] private List<Choice<Guid>> _employeeChoices = new();
+    [ObservableProperty] private Choice<Guid>? _absenceEmployee;
+    [ObservableProperty] private Choice<AbsenceKind>? _absenceKind;
+    [ObservableProperty] private string _absenceFrom = "";
+    [ObservableProperty] private string _absenceTo = "";
+    [ObservableProperty] private string _absenceNotes = "";
+    [ObservableProperty] private TableData _absences = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedAbsence;
+    [ObservableProperty] private TableData _leaveBalances = TableData.Empty;
+    [ObservableProperty] private string _hrReminders = "";
     [ObservableProperty] private string _iban = "";
     [ObservableProperty] private string _taxOffice = "";
     [ObservableProperty] private Choice<ContractType> _contract;
@@ -80,7 +101,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
         {
             await using var db = Session.OpenDb();
             var e = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id);
-            FirstName = e.FirstName; LastName = e.LastName; Pesel = e.Pesel ?? ""; Street = e.Street ?? ""; HouseNumber = e.HouseNumber ?? ""; FlatNumber = e.FlatNumber ?? ""; PostalCode = e.PostalCode ?? ""; City = e.City ?? ""; Voivodeship = e.Voivodeship ?? ""; County = e.County ?? ""; Commune = e.Commune ?? ""; Iban = e.BankAccountIban ?? ""; TaxOffice = e.TaxOfficeCode ?? "";
+            FirstName = e.FirstName; LastName = e.LastName; Pesel = e.Pesel ?? ""; Street = e.Street ?? ""; HouseNumber = e.HouseNumber ?? ""; FlatNumber = e.FlatNumber ?? ""; PostalCode = e.PostalCode ?? ""; City = e.City ?? ""; Voivodeship = e.Voivodeship ?? ""; County = e.County ?? ""; Commune = e.Commune ?? "";
+            AnnualLeaveDays = e.AnnualLeaveDays.ToString(); LeaveCarriedOver = e.LeaveCarriedOver == 0 ? "" : e.LeaveCarriedOver.ToString("0.##", Money.Pl);
+            MedicalExamUntil = e.MedicalExamUntil?.ToPl() ?? ""; BhpTrainingUntil = e.BhpTrainingUntil?.ToPl() ?? ""; Iban = e.BankAccountIban ?? ""; TaxOffice = e.TaxOfficeCode ?? "";
             Contract = ContractTypes.First(c => c.Value == e.ContractType); Costs = CostTypes.First(c => c.Value == e.Costs);
             Gross = e.Gross.ToString("N2", Money.Pl); Fraction = e.WorkTimeFraction.ToString("0.####", Money.Pl);
             StartDate = e.StartDate.ToPl(); EndDate = e.EndDate?.ToPl() ?? "";
@@ -121,6 +144,10 @@ public sealed partial class PayrollViewModel : SectionViewModel
         foreach (var x in await db.Employees.AsNoTracking().Where(x => x.CompanyId == Session.CompanyId).OrderBy(x => x.LastName).ToListAsync())
             e.Add(x.Id, x.FullName, ContractTypes.First(c => c.Value == x.ContractType).Label, x.Gross, x.StartDate, x.EndDate, x.Pit2, x.IsActive);
         Employees = e;
+        EmployeeChoices = (await db.Employees.AsNoTracking().Where(x => x.CompanyId == Session.CompanyId && x.IsActive).OrderBy(x => x.LastName).ToListAsync())
+            .Select(x => new Choice<Guid>(x.Id, x.FullName)).ToList();
+        AbsenceKind ??= AbsenceKinds[0];
+        await LoadHrAsync(db);
         var l = new TableData(new TableColumn("Numer"), new TableColumn("Za miesiąc"), new TableColumn("Wypłata", ColumnKind.Date), new TableColumn("Status"),
             new TableColumn("Brutto", ColumnKind.Money), new TableColumn("Netto", ColumnKind.Money));
         foreach (var x in await db.PayrollLists.AsNoTracking().Include(x => x.Items).Where(x => x.CompanyId == Session.CompanyId).OrderByDescending(x => x.PaymentDate).ToListAsync())
@@ -134,6 +161,8 @@ public sealed partial class PayrollViewModel : SectionViewModel
         Id = id ?? Guid.CreateVersion7(),
         FirstName = FirstName.Trim(), LastName = LastName.Trim(), Pesel = Parse.Trim(Pesel), Street = Parse.Trim(Street), HouseNumber = Parse.Trim(HouseNumber), FlatNumber = Parse.Trim(FlatNumber), PostalCode = Parse.Trim(PostalCode), City = Parse.Trim(City),
         Voivodeship = Parse.Trim(Voivodeship), County = Parse.Trim(County), Commune = Parse.Trim(Commune),
+        AnnualLeaveDays = string.IsNullOrWhiteSpace(AnnualLeaveDays) ? 26 : Parse.Int(AnnualLeaveDays, "Wymiar urlopu"), LeaveCarriedOver = Parse.Amount(LeaveCarriedOver, "Urlop zaległy"),
+        MedicalExamUntil = Parse.OptionalDate(MedicalExamUntil, "Badania lekarskie do"), BhpTrainingUntil = Parse.OptionalDate(BhpTrainingUntil, "Szkolenie BHP do"),
         Address = Parse.Trim(string.Join(", ", new[] { $"{Street} {HouseNumber}{(string.IsNullOrWhiteSpace(FlatNumber) ? "" : "/" + FlatNumber)}".Trim(), $"{PostalCode} {City}".Trim() }.Where(x => x.Length > 0))), BankAccountIban = Parse.Trim(Iban),
         TaxOfficeCode = Parse.Trim(TaxOffice), ContractType = Contract.Value, Costs = Costs.Value, Gross = Parse.Amount(Gross, "Wynagrodzenie brutto"),
         WorkTimeFraction = Parse.Amount(Fraction, "Wymiar etatu"), StartDate = Parse.Date(StartDate, "Data rozpoczęcia"), EndDate = Parse.OptionalDate(EndDate, "Data zakończenia"),
@@ -204,6 +233,52 @@ public sealed partial class PayrollViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         await new PayrollService(db, Session.User, Session.Clock).PostAsync(id);
     }, "Lista płac zaksięgowana. Wypłaty i przelewy do ZUS/US zaksięgujesz w sekcji Bank.");
+
+    private async Task LoadHrAsync(Data.KsiegiDbContext db)
+    {
+        var year = Parse.Int(string.IsNullOrWhiteSpace(ReportYear) ? Session.Clock.Today.Year.ToString() : ReportYear, "Rok");
+        var hr = new HrService(db, Session.User, Session.Clock);
+        var names = EmployeeChoices.ToDictionary(c => c.Value, c => c.Label);
+        var a = new TableData(new TableColumn("Pracownik", Width: 1.6), new TableColumn("Rodzaj", Width: 1.3), new TableColumn("Od", ColumnKind.Date), new TableColumn("Do", ColumnKind.Date),
+            new TableColumn("Dni robocze", ColumnKind.Integer, 0.6), new TableColumn("Uwagi", Width: 1.2));
+        foreach (var x in await hr.AbsencesAsync(year))
+            a.Add(x.Id, names.GetValueOrDefault(x.EmployeeId, "?"), AbsenceKinds.First(k => k.Value == x.Kind).Label, x.From, x.To, HrService.WorkingDays(x.From, x.To), x.Notes);
+        Absences = a;
+        var b = new TableData(new TableColumn("Pracownik", Width: 1.6), new TableColumn("Wymiar", ColumnKind.Money), new TableColumn("Zaległy", ColumnKind.Money),
+            new TableColumn("Wykorzystany", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money));
+        foreach (var x in await hr.LeaveBalancesAsync(year)) b.Add(x.EmployeeId, x.Employee, x.Entitlement, x.CarriedOver, x.Used, x.Remaining);
+        LeaveBalances = b;
+        var rem = await hr.RemindersAsync();
+        HrReminders = rem.Count == 0 ? "Brak zbliżających się terminów kadrowych (badania, BHP, koniec umów)." : "Terminy: " + string.Join("; ", rem.Select(r => $"{r.Employee} — {r.What} ({r.Date.ToPl()})"));
+    }
+
+    [RelayCommand]
+    private Task RefreshHrAsync() => RunAsync(async () => { await using var db = Session.OpenDb(); await LoadHrAsync(db); });
+
+    [RelayCommand]
+    private Task AddAbsenceAsync() => RunAsync(async () =>
+    {
+        if (AbsenceEmployee is null) throw new DomainException("Wybierz pracownika.");
+        await using var db = Session.OpenDb();
+        await new HrService(db, Session.User, Session.Clock).AddAbsenceAsync(AbsenceEmployee.Value, (AbsenceKind ?? AbsenceKinds[0]).Value,
+            Parse.Date(AbsenceFrom, "Od"), Parse.Date(string.IsNullOrWhiteSpace(AbsenceTo) ? AbsenceFrom : AbsenceTo, "Do"), Parse.Trim(AbsenceNotes));
+        AbsenceNotes = "";
+        await LoadHrAsync(db);
+    }, "Nieobecność zapisana.");
+
+    [RelayCommand]
+    private Task DeleteAbsenceAsync() => RunAsync(async () =>
+    {
+        if (SelectedAbsence?.Tag is not Guid id) throw new DomainException("Zaznacz nieobecność.");
+        await using var db = Session.OpenDb();
+        await new HrService(db, Session.User, Session.Clock).DeleteAbsenceAsync(id);
+        await LoadHrAsync(db);
+    }, "Nieobecność usunięta.");
+
+    [RelayCommand] private Task SalaryCardAsync() => SelectedEmployee?.Tag is Guid id
+        ? ShowReportAsync(r => r.SalaryCardAsync(id, Parse.Int(ReportYear, "Rok")))
+        : RunAsync(() => throw new DomainException("Zaznacz osobę na liście w zakładce „Osoby i umowy”."));
+    [RelayCommand] private Task LeaveReportAsync() => ShowReportAsync(r => r.LeaveReportAsync(Parse.Int(ReportYear, "Rok")));
 
     private Task ShowReportAsync(Func<ReportService, Task<ReportDocument>> build) => RunAsync(async () =>
     {

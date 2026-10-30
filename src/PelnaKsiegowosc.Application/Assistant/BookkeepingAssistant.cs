@@ -272,6 +272,11 @@ public sealed class BookkeepingAssistant
             Add("KOPIA", IssueSeverity.Ostrzezenie, lastBackupUtc is null ? "Nie wykonano jeszcze kopii zapasowej" : $"Ostatnia kopia zapasowa: {lastBackupUtc.Value.ToPlDateTime()}",
                 "Kopia chroni księgi przed utratą (awaria dysku, kradzież, błąd).", "Backupy → „Wykonaj kopię teraz”; włącz kopie automatyczne.", AppArea.Backupy);
 
+        // --- Kadry ---
+        foreach (var h in await new Payroll.HrService(_db, _user, _clock).RemindersAsync(30, ct))
+            Add("KADRY", h.Date < today ? IssueSeverity.Ostrzezenie : IssueSeverity.Wskazowka, $"{h.Employee}: {h.What} ({h.Date.ToPl()})",
+                "Termin z kartoteki pracownika.", "Zaktualizuj datę w sekcji Płace → Osoby po wykonaniu badania / szkolenia / przedłużeniu umowy.", AppArea.Place, h.EmployeeId);
+
         return issues.OrderBy(i => i.Severity).ThenBy(i => i.Area).ToList();
     }
 

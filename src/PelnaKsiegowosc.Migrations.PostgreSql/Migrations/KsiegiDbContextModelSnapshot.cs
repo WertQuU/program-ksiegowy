@@ -1462,6 +1462,32 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.ToTable("DocumentHistory");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentInstallment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("No")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId", "No")
+                        .IsUnique();
+
+                    b.ToTable("DocumentInstallments");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2143,6 +2169,42 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.ToTable("JournalLines");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Payroll.Absence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly>("To")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "EmployeeId", "From");
+
+                    b.ToTable("Absences");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Payroll.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2152,9 +2214,15 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<int>("AnnualLeaveDays")
+                        .HasColumnType("integer");
+
                     b.Property<string>("BankAccountIban")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly?>("BhpTrainingUntil")
+                        .HasColumnType("date");
 
                     b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("date");
@@ -2220,6 +2288,13 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal>("LeaveCarriedOver")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateOnly?>("MedicalExamUntil")
+                        .HasColumnType("date");
 
                     b.Property<string>("Pesel")
                         .HasMaxLength(1000)

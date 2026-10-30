@@ -27,7 +27,8 @@ public static class Fa3InvoiceBuilder
 
     private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
 
-    public sealed record Input(Document Invoice, Company Seller, Counterparty Buyer, Document? CorrectedInvoice, DateTime GeneratedUtc);
+    public sealed record Input(Document Invoice, Company Seller, Counterparty Buyer, Document? CorrectedInvoice, DateTime GeneratedUtc,
+        IReadOnlyList<DocumentInstallment>? Installments = null);
 
     public static XDocument Build(Input input)
     {
@@ -131,7 +132,8 @@ public static class Fa3InvoiceBuilder
                 l.GtuCode is null ? null : E("GTU", "GTU_" + l.GtuCode)));
         }
         var platnosc = new List<object?>();
-        if (d.DueDate is { } due) platnosc.Add(E("TerminPlatnosci", E("Termin", D(due))));
+        if (input.Installments is { Count: > 0 } raty) foreach (var r in raty.OrderBy(r => r.DueDate)) platnosc.Add(E("TerminPlatnosci", E("Termin", D(r.DueDate))));
+        else if (d.DueDate is { } due) platnosc.Add(E("TerminPlatnosci", E("Termin", D(due))));
         platnosc.Add(E("FormaPlatnosci", d.PaymentMethod switch { PaymentMethod.Gotowka => "1", PaymentMethod.Karta => "2", PaymentMethod.Kompensata => "6", _ => "6" }));
         if (!string.IsNullOrWhiteSpace(d.BankAccountIban))
         {

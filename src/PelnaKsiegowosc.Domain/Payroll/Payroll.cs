@@ -64,6 +64,13 @@ public class Employee : CompanyEntity
     public decimal PpkEmployeeRate { get; set; } = 2m;
     public decimal PpkEmployerRate { get; set; } = 1.5m;
     public Guid CounterpartyId { get; set; }
+    /// <summary>Roczny wymiar urlopu wypoczynkowego (20 lub 26 dni — art. 154 KP), dla pełnego etatu.</summary>
+    public int AnnualLeaveDays { get; set; } = 26;
+    /// <summary>Urlop zaległy przeniesiony z okresu przed rozpoczęciem ewidencji w programie (dni).</summary>
+    public decimal LeaveCarriedOver { get; set; }
+    /// <summary>Ważność badań lekarskich okresowych i szkolenia BHP.</summary>
+    public DateOnly? MedicalExamUntil { get; set; }
+    public DateOnly? BhpTrainingUntil { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; }
 
@@ -129,4 +136,29 @@ public class PayrollItem : Entity
 
     public decimal SocialEmployee => PensionEmployee + DisabilityEmployee + SicknessEmployee;
     public decimal EmployerCost => PensionEmployer + DisabilityEmployer + Accident + LaborFund + Fgsp;
+}
+
+/// <summary>Rodzaj nieobecności w ewidencji czasu pracy.</summary>
+public enum AbsenceKind
+{
+    UrlopWypoczynkowy,
+    UrlopNaZadanie,
+    Choroba,
+    UrlopBezplatny,
+    Opieka,
+    UrlopOkolicznosciowy,
+    NieobecnoscNieusprawiedliwiona
+}
+
+/// <summary>Nieobecność pracownika (od–do, włącznie). Choroba i urlop bezpłatny trafiają automatycznie na listę płac.</summary>
+public class Absence : CompanyEntity
+{
+    public Guid EmployeeId { get; set; }
+    public AbsenceKind Kind { get; set; }
+    public DateOnly From { get; set; }
+    public DateOnly To { get; set; }
+    public string? Notes { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+
+    public bool IsLeave => Kind is AbsenceKind.UrlopWypoczynkowy or AbsenceKind.UrlopNaZadanie;
 }

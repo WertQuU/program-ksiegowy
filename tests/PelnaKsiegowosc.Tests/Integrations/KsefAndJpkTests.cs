@@ -122,6 +122,34 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Installment_invoice_moves_due_date_with_payments_and_stays_valid_in_ksef()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var inv = await ApprovedSaleAsync(t); // brutto 3795,00
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => docs.SetInstallmentsAsync(inv.Id, new[] { (inv.IssueDate.AddDays(10), 1000m), (inv.IssueDate.AddDays(40), 1000m) }));
+        var r1 = inv.IssueDate.AddDays(14); var r2 = inv.IssueDate.AddDays(44); var r3 = inv.IssueDate.AddDays(74);
+        await docs.SetInstallmentsAsync(inv.Id, new[] { (r1, 1265m), (r2, 1265m), (r3, 1265m) });
+        var (xml, validation) = await new KsefService(t.Db, t.User, t.Clock, Validator()).BuildAsync(inv.Id);
+        Assert.True(validation.IsValid, string.Join(Environment.NewLine, validation.Errors));
+        Assert.Equal(3, XDocument.Parse(Encoding.UTF8.GetString(xml)).Descendants().Count(e => e.Name.LocalName == "TerminPlatnosci"));
+
+        await docs.PostAsync(inv.Id);
+        var item = await t.Db.OpenItems.AsNoTracking().SingleAsync(o => o.DocumentId == inv.Id);
+        Assert.Equal(r1, item.DueDate);
+        // wpłata pierwszej raty i części drugiej — termin przechodzi na ratę 2, po spłacie 2 rat — na ratę 3
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(r1, "WB/1", new PelnaKsiegowosc.Application.Ledger.LineInput("130-01", 1500m, 0),
+            new PelnaKsiegowosc.Application.Ledger.LineInput(item.AccountNumber, 0, 1500m, item.CounterpartyId, OpenItemId: item.Id)));
+        await docs.RefreshPaymentStatusAsync(inv.Id);
+        Assert.Equal(r2, (await t.Db.OpenItems.AsNoTracking().SingleAsync(o => o.Id == item.Id)).DueDate);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(r2, "WB/2", new PelnaKsiegowosc.Application.Ledger.LineInput("130-01", 1030m, 0),
+            new PelnaKsiegowosc.Application.Ledger.LineInput(item.AccountNumber, 0, 1030m, item.CounterpartyId, OpenItemId: item.Id)));
+        await docs.RefreshPaymentStatusAsync(inv.Id);
+        Assert.Equal(r3, (await t.Db.OpenItems.AsNoTracking().SingleAsync(o => o.Id == item.Id)).DueDate);
+        Assert.Equal(PaymentStatus.CzesciowoOplacony, (await docs.GetAsync(inv.Id)).PaymentStatus);
+    }
+
+    [Fact]
     public async Task Fa3_invoice_is_valid_against_bundled_official_schema()
     {
         await using var t = await TestBooks.CreateAsync();

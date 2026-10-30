@@ -49,7 +49,8 @@ public sealed class KsefService
         var company = await _db.Companies.FirstAsync(c => c.Id == doc.CompanyId, ct);
         var buyer = await _db.Counterparties.FirstAsync(c => c.Id == doc.CounterpartyId, ct);
         var corrected = doc.CorrectedDocumentId is { } cid ? await _db.Documents.FirstAsync(d => d.Id == cid, ct) : null;
-        var x = Fa3InvoiceBuilder.Build(new Fa3InvoiceBuilder.Input(doc, company, buyer, corrected, _clock.UtcNow));
+        var installments = await _db.DocumentInstallments.AsNoTracking().Where(i => i.DocumentId == doc.Id).ToListAsync(ct);
+        var x = Fa3InvoiceBuilder.Build(new Fa3InvoiceBuilder.Input(doc, company, buyer, corrected, _clock.UtcNow, installments));
         var v = Fa3InvoiceBuilder.Validate(x, _validator);
         return (Fa3InvoiceBuilder.ToBytes(x), v);
     }

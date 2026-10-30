@@ -31,6 +31,7 @@
     </Expander>
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
       <Button Content="Szczegóły" Command="{Binding DetailsCommand}" />
+      <Button Content="Raty…" Command="{Binding InstallmentsCommand}" />
       <Button Content="Zatwierdź" Command="{Binding ApproveCommand}" />
       <Button Content="Cofnij zatwierdzenie…" Command="{Binding UnapproveCommand}" />
       <Button Content="Proponuj dekretację" Command="{Binding ProposePostingCommand}" />

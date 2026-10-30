@@ -230,6 +230,13 @@ public sealed class ValuationService
     public Task<List<Provision>> ProvisionsAsync(CancellationToken ct = default) =>
         _db.Provisions.AsNoTracking().Where(p => p.CompanyId == _user.CompanyId).OrderByDescending(p => p.Date).ToListAsync(ct);
 
+    /// <summary>Rezerwa urlopowa z ewidencji kadrowej — pozostały urlop każdego pracownika na koniec roku.</summary>
+    public async Task<List<HolidayProvisionRow>> HolidayProvisionFromLeaveAsync(int year, CancellationToken ct = default)
+    {
+        var balances = await new HrService(_db, _user, _clock).LeaveBalancesAsync(year, ct);
+        return await HolidayProvisionAsync(balances.Where(b => b.Remaining > 0).ToDictionary(b => b.EmployeeId, b => b.Remaining), year, ct);
+    }
+
     /// <summary>
     /// Rezerwa na niewykorzystane urlopy: dni × (wynagrodzenie + składki pracodawcy) / współczynnik urlopowy
     /// (średnia liczba dni roboczych w miesiącu roku). Liczbę zaległych dni podaje użytkownik (ewidencja urlopów).

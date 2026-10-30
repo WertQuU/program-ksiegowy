@@ -577,9 +577,10 @@ public sealed class DocumentService
         {
             var ledger = new LedgerService(_db, _user, _clock);
             var entry = await ledger.CreateAndPostAsync(input, ct);
+            var firstInstallment = await _db.DocumentInstallments.AsNoTracking().Where(i => i.DocumentId == doc.Id).OrderBy(i => i.DueDate).Select(i => (DateOnly?)i.DueDate).FirstOrDefaultAsync(ct);
             foreach (var oi in _db.OpenItems.Local.Where(o => o.JournalEntryId == entry.Id))
             {
-                oi.DueDate = doc.DueDate;
+                oi.DueDate = firstInstallment ?? doc.DueDate;
                 oi.DocumentId = doc.Id;
             }
             if (doc.IsInvoice && !doc.ExcludedFromVatRegister) await AddVatRegisterAsync(doc, ct);
@@ -728,6 +729,38 @@ public sealed class DocumentService
         await _db.SaveChangesAsync(ct);
     }
 
+    /// <summary>
+    /// Harmonogram rat (płatność ratalna): suma rat = kwota brutto dokumentu, terminy rosnąco. Termin rozrachunku wskazuje
+    /// najbliższą niezapłaconą ratę (wpłaty rozliczają raty od najstarszej), więc wiekowanie, przypomnienia i odpisy
+    /// aktualizujące liczą zwłokę od właściwej raty. Pusta lista usuwa harmonogram (jeden termin płatności).
+    /// </summary>
+    public async Task SetInstallmentsAsync(Guid documentId, IReadOnlyList<(DateOnly DueDate, decimal Amount)> installments, CancellationToken ct = default)
+    {
+        _user.Require(Permission.EditDocuments);
+        var doc = await _db.Documents.FirstAsync(d => d.Id == documentId && d.CompanyId == _user.CompanyId, ct);
+        if (doc.Status == DocumentStatus.Anulowany) throw new DomainException("Dokument jest anulowany.");
+        var ordered = installments.OrderBy(i => i.DueDate).ToList();
+        if (ordered.Count == 1) throw new DomainException("Harmonogram ratalny wymaga co najmniej dwóch rat — dla jednej płatności ustaw termin płatności.");
+        if (ordered.Any(i => i.Amount <= 0)) throw new DomainException("Kwota raty musi być dodatnia.");
+        if (ordered.Count > 0 && ordered[0].DueDate < doc.IssueDate) throw new DomainException("Termin raty nie może być wcześniejszy niż data wystawienia.");
+        if (ordered.Select(i => i.DueDate).Distinct().Count() != ordered.Count) throw new DomainException("Dwie raty mają ten sam termin.");
+        var total = Math.Abs(doc.GrossAmount);
+        if (ordered.Count > 0 && Money.Round(ordered.Sum(i => i.Amount)) != Money.Round(total))
+            throw new DomainException($"Suma rat ({Money.Format(ordered.Sum(i => i.Amount))}) musi być równa kwocie brutto dokumentu ({Money.Format(total)}).");
+        _db.DocumentInstallments.RemoveRange(await _db.DocumentInstallments.Where(i => i.DocumentId == documentId).ToListAsync(ct));
+        var no = 1;
+        foreach (var (due, amount) in ordered)
+            _db.DocumentInstallments.Add(new DocumentInstallment { DocumentId = documentId, No = no++, DueDate = due, Amount = Money.Round(amount) });
+        if (ordered.Count > 0) doc.DueDate = ordered[^1].DueDate;
+        AddHistory(doc, "RATY", ordered.Count == 0 ? "usunięto harmonogram rat" : string.Join("; ", ordered.Select((i, n) => $"rata {n + 1}: {i.DueDate.ToPl()} {Money.Format(i.Amount)}")));
+        await _audit.AddAsync(_user, "DOKUMENT_RATY", "Document", doc.Id.ToString(), $"{doc.Number}; {ordered.Count} rat", ct);
+        await _db.SaveChangesAsync(ct);
+        await RefreshPaymentStatusAsync(documentId, ct);
+    }
+
+    public Task<List<DocumentInstallment>> InstallmentsAsync(Guid documentId, CancellationToken ct = default) =>
+        _db.DocumentInstallments.AsNoTracking().Where(i => i.DocumentId == documentId).OrderBy(i => i.No).ToListAsync(ct);
+
     public async Task RefreshPaymentStatusAsync(Guid documentId, CancellationToken ct = default)
     {
         var doc = await _db.Documents.FirstAsync(d => d.Id == documentId, ct);
@@ -745,6 +778,23 @@ public sealed class DocumentService
             : paid == 0 ? PaymentStatus.Nieoplacony
             : Math.Sign(remaining) != Math.Sign(due) ? PaymentStatus.Nadplacony
             : PaymentStatus.CzesciowoOplacony;
+        // płatność ratalna: termin rozrachunku = najbliższa niezapłacona rata (wpłaty pokrywają raty od najstarszej)
+        var installments = await _db.DocumentInstallments.AsNoTracking().Where(i => i.DocumentId == documentId).OrderBy(i => i.DueDate).ToListAsync(ct);
+        if (installments.Count > 0)
+        {
+            foreach (var o in items)
+            {
+                var settled = o.Currency == "PLN" ? o.SettledAmountPln : o.SettledAmount;
+                decimal cumulative = 0;
+                DateOnly? next = null;
+                foreach (var i in installments)
+                {
+                    cumulative += i.Amount;
+                    if (cumulative > settled) { next = i.DueDate; break; }
+                }
+                o.DueDate = next ?? installments[^1].DueDate;
+            }
+        }
         await _db.SaveChangesAsync(ct);
     }
 

@@ -143,6 +143,25 @@ public sealed partial class ValuationViewModel : ViewModelBase
     [RelayCommand]
     private async Task HolidayAsync()
     {
+        // ewidencja urlopów (Płace → Kadry) — gdy jest prowadzona, rezerwa liczy się bez pytań
+        List<HolidayProvisionRow> fromLeave = new();
+        await RunAsync(async () =>
+        {
+            await using var db = _session.OpenDb();
+            if (await db.Absences.AnyAsync(a => a.CompanyId == _session.CompanyId))
+                fromLeave = await Service(db).HolidayProvisionFromLeaveAsync(Parse.Date(Date, "Data").Year);
+        });
+        if (fromLeave.Count > 0)
+        {
+            var total = fromLeave.Sum(r => r.Amount);
+            Kind = Kinds[0];
+            Description = $"Niewykorzystane urlopy na {Parse.Date(Date, "Data").ToPl()} (ewidencja urlopów)";
+            Amount = Money.Format(total);
+            await Dialogs.ShowTextAsync("Rezerwa urlopowa — z ewidencji urlopów",
+                string.Join(Environment.NewLine, fromLeave.Select(r => $"{r.Employee}: {r.UnusedDays:0.##} dni × {Money.Format(r.DailyRate)} = {Money.Format(r.Amount)}")) +
+                $"{Environment.NewLine}{Environment.NewLine}Razem: {Money.Format(total)} zł. Kwotę wpisano w formularz — sprawdź i kliknij „Utwórz rezerwę”.");
+            return;
+        }
         var employees = new List<(Guid Id, string Name)>();
         if (!await RunAsync(async () =>
             {

@@ -123,9 +123,18 @@ public sealed class PayrollService
         };
         var rules = PayrollRules.For(paymentDate.Year);
         var accident = await AccidentRateAsync(ct);
+        var hr = new HrService(_db, _user, _clock);
+        var workingDays = Domain.Cit.PolishHolidays.WorkingDays(m.Year, m.Month);
         foreach (var e in employees)
         {
-            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident);
+            // nieobecności z ewidencji kadrowej (choroba, urlop bezpłatny) — tylko umowa o pracę
+            PayrollAbsence? absence = null;
+            if (e.ContractType == ContractType.UmowaOPrace)
+            {
+                var (sick, unpaid) = await hr.MonthAbsencesAsync(e.Id, m, ct);
+                if (sick > 0 || unpaid > 0) absence = new PayrollAbsence(sick, unpaid, workingDays);
+            }
+            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident, absence);
             it.PayrollListId = list.Id;
             list.Items.Add(it);
         }

@@ -310,3 +310,12 @@ public class NumberSequence : CompanyEntity
     public long LastValue { get; set; }
     public Guid Version { get; set; } = Guid.NewGuid();
 }
+
+/// <summary>Rata płatności dokumentu (harmonogram spłaty, kwota brutto w walucie dokumentu).</summary>
+public class DocumentInstallment : Entity
+{
+    public Guid DocumentId { get; set; }
+    public int No { get; set; }
+    public DateOnly DueDate { get; set; }
+    public decimal Amount { get; set; }
+}

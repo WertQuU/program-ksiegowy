@@ -18,7 +18,7 @@ public static class InvoicePdf
 {
     static InvoicePdf() => SystemFontResolver.EnsureRegistered();
 
-    public static byte[] Build(Document d, Company seller, Document? corrected = null)
+    public static byte[] Build(Document d, Company seller, Document? corrected = null, IReadOnlyList<DocumentInstallment>? installments = null)
     {
         if (!d.IsSales) throw new DomainException("Wydruk dotyczy faktur sprzedaży.");
         var doc = new MDocument();
@@ -43,6 +43,12 @@ public static class InvoicePdf
         var dates = s.AddParagraph($"Data wystawienia: {d.IssueDate.ToPl()}    Data sprzedaży: {d.OperationDate.ToPl()}" +
                                    (d.DueDate is { } due ? $"    Termin płatności: {due.ToPl()}" : ""));
         dates.Format.SpaceAfter = 10;
+        if (installments is { Count: > 0 })
+        {
+            var raty = s.AddParagraph("Płatność w ratach: " + string.Join("; ", installments.OrderBy(i => i.DueDate)
+                .Select(i => $"{i.No}) {i.DueDate.ToPl()} — {Money.Format(i.Amount)} {d.Currency}")));
+            raty.Format.SpaceAfter = 10;
+        }
         if (d.IsCorrection && corrected is not null)
         {
             var c = s.AddParagraph($"Dotyczy faktury nr {corrected.Number} z dnia {corrected.IssueDate.ToPl()}" +

@@ -9,7 +9,7 @@
     <TabControl>
       <TabItem Header="1. Osoby i umowy">
         <DockPanel>
-          <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+          <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding FirstName}" />
             <TextBlock Grid.Column="2" Text="Nazwisko" /><TextBox Grid.Column="3" Text="{Binding LastName}" />
             <TextBlock Grid.Column="4" Text="PESEL" /><TextBox Grid.Column="5" Text="{Binding Pesel}" />
@@ -28,7 +28,11 @@
             <TextBlock Grid.Row="4" Text="Województwo" /><TextBox Grid.Row="4" Grid.Column="1" Text="{Binding Voivodeship}" />
             <TextBlock Grid.Row="4" Grid.Column="2" Text="Powiat" /><TextBox Grid.Row="4" Grid.Column="3" Text="{Binding County}" />
             <TextBlock Grid.Row="4" Grid.Column="4" Text="Gmina" /><TextBox Grid.Row="4" Grid.Column="5" Text="{Binding Commune}" />
-            <WrapPanel Grid.Row="5" Grid.ColumnSpan="6" Classes="toolbar">
+            <TextBlock Grid.Row="5" Text="Urlop roczny / zaległy" />
+            <Grid Grid.Row="5" Grid.Column="1" ColumnDefinitions="*,*"><TextBox Text="{Binding AnnualLeaveDays}" Watermark="20 lub 26" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding LeaveCarriedOver}" Watermark="zaległy (dni)" Margin="0,2,12,2" /></Grid>
+            <TextBlock Grid.Row="5" Grid.Column="2" Text="Badania lekarskie do" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding MedicalExamUntil}" />
+            <TextBlock Grid.Row="5" Grid.Column="4" Text="Szkolenie BHP do" /><TextBox Grid.Row="5" Grid.Column="5" Text="{Binding BhpTrainingUntil}" />
+            <WrapPanel Grid.Row="6" Grid.ColumnSpan="6" Classes="toolbar">
               <CheckBox Content="Złożył PIT-2 (kwota zmniejszająca 300 zł)" IsChecked="{Binding Pit2}" />
               <CheckBox Content="Ulga dla młodych (do 26 lat)" IsChecked="{Binding YouthRelief}" />
               <CheckBox Content="Uczeń/student do 26 lat (zlecenie bez ZUS)" IsChecked="{Binding Student}" />
@@ -36,7 +40,7 @@
               <CheckBox Content="Zwolnienie z FP/FGŚP" IsChecked="{Binding ExemptFromFp}" />
               <CheckBox Content="Uczestnik PPK (2% + 1,5%)" IsChecked="{Binding Ppk}" />
             </WrapPanel>
-            <WrapPanel Grid.Row="6" Grid.ColumnSpan="6" Classes="toolbar">
+            <WrapPanel Grid.Row="7" Grid.ColumnSpan="6" Classes="toolbar">
               <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />
               <Button Content="Zapisz zmiany zaznaczonej" Command="{Binding SaveEmployeeCommand}" />
               <TextBlock Text="Stopa wypadkowa %:" /><TextBox Text="{Binding AccidentRate}" MinWidth="70" />
@@ -74,9 +78,32 @@
             <TextBlock Text="Rok:" /><TextBox Text="{Binding ReportYear}" MinWidth="70" />
             <Button Content="PIT-4R i PIT-8AR" Command="{Binding Pit4RCommand}" />
             <Button Content="PIT-11" Command="{Binding Pit11Command}" />
+            <Button Content="Karta wynagrodzeń zaznaczonej osoby" Command="{Binding SalaryCardCommand}" />
+            <Button Content="Ewidencja urlopów" Command="{Binding LeaveReportCommand}" />
             <Button Content="Zapisz PDF…" Command="{Binding ExportReportPdfCommand}" />
           </WrapPanel>
           <c:TableView Table="{Binding Report}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="4. Kadry: nieobecności i urlopy">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="info" TextWrapping="Wrap" Text="Choroba i urlop bezpłatny trafiają automatycznie na listę płac danego miesiąca. Urlopy pomniejszają wymiar; pozostały urlop na koniec roku służy do wyliczenia rezerwy urlopowej (Zamknięcie → Odpisy i rezerwy)." />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <ComboBox ItemsSource="{Binding EmployeeChoices}" SelectedItem="{Binding AbsenceEmployee}" MinWidth="200" PlaceholderText="pracownik" />
+            <ComboBox ItemsSource="{Binding AbsenceKinds}" SelectedItem="{Binding AbsenceKind}" MinWidth="200" />
+            <TextBox Text="{Binding AbsenceFrom}" Watermark="od" Width="110" />
+            <TextBox Text="{Binding AbsenceTo}" Watermark="do" Width="110" />
+            <TextBox Text="{Binding AbsenceNotes}" Watermark="uwagi (np. nr L4)" MinWidth="160" />
+            <Button Content="Dodaj nieobecność" Command="{Binding AddAbsenceCommand}" Classes="accent" />
+            <Button Content="Usuń zaznaczoną" Command="{Binding DeleteAbsenceCommand}" />
+            <TextBlock Text="Rok:" /><TextBox Text="{Binding ReportYear}" MinWidth="70" />
+            <Button Content="Odśwież" Command="{Binding RefreshHrCommand}" />
+          </WrapPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{Binding HrReminders}" Classes="info" TextWrapping="Wrap" />
+          <Grid ColumnDefinitions="1.3*,12,*">
+            <c:TableView Table="{Binding Absences}" SelectedRow="{Binding SelectedAbsence}" />
+            <c:TableView Grid.Column="2" Table="{Binding LeaveBalances}" />
+          </Grid>
         </DockPanel>
       </TabItem>
     </TabControl>

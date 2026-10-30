@@ -1457,6 +1457,32 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.ToTable("DocumentHistory");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentInstallment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("No")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DocumentId", "No")
+                        .IsUnique();
+
+                    b.ToTable("DocumentInstallments");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentLine", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2138,6 +2164,42 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.ToTable("JournalLines");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Payroll.Absence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("From")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("To")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "EmployeeId", "From");
+
+                    b.ToTable("Absences");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Payroll.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2147,8 +2209,14 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("AnnualLeaveDays")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("BankAccountIban")
                         .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("BhpTrainingUntil")
                         .HasColumnType("TEXT");
 
                     b.Property<DateOnly?>("BirthDate")
@@ -2214,6 +2282,13 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("LeaveCarriedOver")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("MedicalExamUntil")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Pesel")

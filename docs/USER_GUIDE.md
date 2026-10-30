@@ -80,6 +80,20 @@ każdy ma swój przycisk i pokazuje, czy jest zrobiony:
    „Wynagrodzenie”, „ZUS”, „PIT”).
 4. **ZUS i PIT**: zestawienia do DRA/RCA (co miesiąc) oraz PIT-4R, PIT-8AR i PIT-11 (raz w roku).
 
+### Kadry (Płace → zakładka 4)
+
+Ewidencja nieobecności: urlop wypoczynkowy i na żądanie (limit 4 dni), choroba, urlop bezpłatny, opieka, okolicznościowy,
+nieobecność nieusprawiedliwiona. Choroba i urlop bezpłatny trafiają automatycznie na listę płac miesiąca. Stan urlopów:
+wymiar 20/26 dni (proporcjonalnie w roku zatrudnienia i do etatu), zaległy z poprzedniego roku, wykorzystany, pozostały —
+pozostały urlop zasila rezerwę urlopową. W kartotece ustawiasz terminy badań lekarskich i szkolenia BHP — Pulpit
+przypomina o nich (oraz o końcu umów) 30 dni wcześniej. Raporty: karta wynagrodzeń osoby (rok), ewidencja urlopów.
+
+### Płatność w ratach
+
+Przycisk „Raty…” przy dokumencie (sprzedaż, zakupy) zapisuje harmonogram („termin kwota; termin kwota…”, suma = brutto).
+Księgowanie pozostaje jednym rozrachunkiem, a jego termin wskazuje najbliższą niezapłaconą ratę — wiekowanie, przypomnienia
+i odpisy liczą zwłokę od właściwej raty. Raty są na wydruku faktury i w e-fakturze FA(3) (terminy płatności).
+
 ## Magazyn
 
 Dla firm handlowych i produkcyjnych: dodaj pozycję (towar, materiał, produkt) i zapisuj dokumenty PZ, WZ, RW, PW.

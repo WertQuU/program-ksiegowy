@@ -1,3 +1,4 @@
+using PelnaKsiegowosc.Application.Payroll;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Payroll;
@@ -161,5 +162,39 @@ public sealed partial class ReportService
                 string.IsNullOrWhiteSpace(e.City) ? null : new Pit11Address(e.Voivodeship, e.County, e.Commune, e.Street, e.HouseNumber, e.FlatNumber, e.City!, e.PostalCode)));
         }
         return result.OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToList();
+    }
+
+    /// <summary>Karta wynagrodzeń pracownika za rok (dokumentacja płacowa, art. 149 KP / § 10 rozporządzenia o dokumentacji pracowniczej).</summary>
+    public async Task<ReportDocument> SalaryCardAsync(Guid employeeId, int year, CancellationToken ct = default)
+    {
+        var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
+        var items = (await PostedItemsAsync(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31), ct)).Where(x => x.Item.EmployeeId == employeeId)
+            .OrderBy(x => x.List.PaymentDate).ToList();
+        var r = await NewAsync($"Karta wynagrodzeń — {e.FullName}", $"rok {year}; PESEL {e.Pesel}", true, ct);
+        r.Columns.AddRange(new[]
+        {
+            new ReportColumn("Lista / za miesiąc", ColumnKind.Text, 1.4), new ReportColumn("Wypłata", ColumnKind.Date), new ReportColumn("Brutto", ColumnKind.Money),
+            new ReportColumn("w tym chorobowe", ColumnKind.Money), new ReportColumn("Dni chor. / bezpł.", ColumnKind.Text, 0.7), new ReportColumn("Składki prac.", ColumnKind.Money),
+            new ReportColumn("Zdrowotna", ColumnKind.Money), new ReportColumn("Zaliczka PIT", ColumnKind.Money), new ReportColumn("PPK prac.", ColumnKind.Money),
+            new ReportColumn("Netto", ColumnKind.Money), new ReportColumn("Składki pracodawcy", ColumnKind.Money)
+        });
+        foreach (var (l, i) in items)
+            r.Add($"{l.Number} ({l.Month:MM.yyyy})", l.PaymentDate, i.Gross, i.SickPay, $"{i.SickDays} / {i.UnpaidDays}", i.SocialEmployee, i.Health, i.TaxAdvance, i.PpkEmployee, i.Net, i.EmployerCost);
+        r.AddRow(new ReportRow("RAZEM", null, items.Sum(x => x.Item.Gross), items.Sum(x => x.Item.SickPay), null, items.Sum(x => x.Item.SocialEmployee),
+            items.Sum(x => x.Item.Health), items.Sum(x => x.Item.TaxAdvance), items.Sum(x => x.Item.PpkEmployee), items.Sum(x => x.Item.Net), items.Sum(x => x.Item.EmployerCost)) { IsTotal = true });
+        r.Notes.Add("Kartę wynagrodzeń przechowuje się w dokumentacji płacowej przez 10 lat (zatrudnienie od 2019 r.).");
+        return r;
+    }
+
+    /// <summary>Zestawienie urlopów wypoczynkowych (wymiar, zaległy, wykorzystany, pozostały).</summary>
+    public async Task<ReportDocument> LeaveReportAsync(int year, CancellationToken ct = default)
+    {
+        var r = await NewAsync("Ewidencja urlopów wypoczynkowych", $"rok {year}", false, ct);
+        r.Columns.AddRange(new[] { new ReportColumn("Pracownik", ColumnKind.Text, 2), new ReportColumn("Wymiar", ColumnKind.Money), new ReportColumn("Zaległy", ColumnKind.Money),
+            new ReportColumn("Wykorzystany", ColumnKind.Money), new ReportColumn("w tym na żądanie", ColumnKind.Money), new ReportColumn("Pozostało", ColumnKind.Money) });
+        foreach (var b in await new HrService(_db, _user, _clock).LeaveBalancesAsync(year, ct))
+            r.Add(b.Employee, b.Entitlement, b.CarriedOver, b.Used, b.OnDemandUsed, b.Remaining);
+        r.Notes.Add("Urlop zaległy należy udzielić najpóźniej do 30 września następnego roku (art. 168 KP). Wymiar w roku podjęcia pracy — proporcjonalnie (art. 155¹ KP).");
+        return r;
     }
 }
