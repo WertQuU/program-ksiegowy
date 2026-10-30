@@ -36,6 +36,222 @@
   "sha256": "321d7f8e3c90065a40759d978087e952a73f9cdafec17281c27ba0ecda53e358"
  },
  {
+  "url": "http://crd.gov.pl/wzor/2023/11/10/12986/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/11/10/12986/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/11/10/12986/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "34527d848eb30930850c7a427a77645e9da20d36ec2bcef8d11b86b5bca1fa6a"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/11/10/12987/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/11/10/12987/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/11/10/12987/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "6957df98b10da563449cb569117de9902e7f315ae0c0d38d33b7873da345c270"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/11/13/12993/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/11/13/12993/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/11/13/12993/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "e9b65a0f53f863a1fb3027548a6c42bbda6a45cb38b6eab427605d5c1177d60a"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/11/20/13010/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/11/20/13010/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/11/20/13010/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "a76bb576054737279d36ac6c5f8a90e54efd5cfbf5706c5107aeaca57b2954ec"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/12/13057/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/12/13057/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/12/13057/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "7610a22c02ba2e19a1c0af186173deee5957bbc7688a909929607d5730cfeaf1"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/12/13060/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/12/13060/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/12/13060/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "051ea3bdd07f339da82a4ab7daa2af84e03221d799e1d55088aa49d754dc4dc6"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/13/13067/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/13/13067/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/13/13067/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "a1a52230e27ed9fdbc50bd83971cab0fd378ceee981905fd9ab1ab57f917d7e9"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/13/13068/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/13/13068/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/13/13068/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "1e6498869dbf546f30648a2f459e714ed509405d0dc6511835b7ba8454ee7f4e"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/13/13069/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/13/13069/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/13/13069/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "169f9614f38392b4f313c6c5e1fc6b6c7ac3177bdc825de0d30c7c8c04ec8a00"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2023/12/13/13070/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2023/12/13/13070/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2023/12/13/13070/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "cff655312e943cff5b083465b39995e37b39a92f909ba50506504c3423b9badc"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/01/11/13140/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/01/11/13140/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/01/11/13140/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "1598d3284e5a9c91b08ebdc76ffc2b668e4d81dd96a527f582d4dd1e6bf75598"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/01/11/13141/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/01/11/13141/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/01/11/13141/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "721fe294357b74710c8f914e8b9abec684cb97d75a038d2504a65db91e1322d8"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/03/13506/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/03/13506/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/03/13506/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "372a77aeb4d02c0d4848af8eaed68b16d6d4fd6dc32a031b927d10943a9a37a2"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/03/13507/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/03/13507/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/03/13507/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f367a19db8205990bbc88233d8598450bdb1121479045c2f8419cefbf046dc62"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/04/13508/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/04/13508/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/04/13508/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "76bd8bcc9a97765ebf55e5e6909dd08203c9bdd5d9218fbf70b5164321861e14"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/04/13509/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/04/13509/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/04/13509/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "da03c7ad38cff1befd5ccf2783d70182cb7eae5b4d7c594ed9719e2eec02b072"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/07/13512/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/07/13512/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/07/13512/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "4c2e869c9ff978f336ca2c22f9d4242bd7c1ff13423cafd40dd4a786202d93a5"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/07/13513/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/07/13513/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/07/13513/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "4f4fc88e24810682e7fe93c13dcb1f64fb512931ab9eb3fb62aade99f97bd941"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/08/13516/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/08/13516/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/08/13516/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "12308ef0e9477ad18107301b8adbab3270119899a6d97cc674d9d90d12785064"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/08/13517/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/08/13517/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/08/13517/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "3ab6cecc14735e43cb85600470392066b8e206be9c9b4cd86e90ca647abdd9f5"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/09/13519/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/09/13519/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13519/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f1d121916f25546f15b8e710acb942f2558fe9c693348a1e556c41185e62480c"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/09/13520/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/09/13520/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13520/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "163584a60e7bc778ea19f3b345768c7de367fb9e864b4481c467ba0461d93c02"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/09/13521/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/09/13521/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13521/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "0b08ed931aca46f548f8a0c7816ee372a24d08f3f5d12f0e8267857a23bf9722"
+ },
+ {
+  "url": "http://crd.gov.pl/wzor/2024/10/10/13524/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2024/10/10/13524/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/10/13524/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "b5524ba6a35ac477a16d28679f0c636248b9890efa0aac4e43ed4a720e8222ce"
+ },
+ {
   "url": "http://crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
   "file": "crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
   "targetNamespace": "http://crd.gov.pl/wzor/2025/12/19/14089/",
@@ -52,6 +268,106 @@
    "JPK"
   ],
   "sha256": "1870324001ba1318f0535841b963571e970b45ef32ba5ca3d433f0dc5da412df"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/adres/2009/11/09/adres.xsd",
+  "file": "crd.gov.pl/xml/schematy/adres/2009/11/09/adres.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/adres/2009/11/09/",
+  "elements": [
+   "Adres",
+   "KodPocztowy",
+   "Poczta",
+   "Miejscowosc",
+   "Ulica",
+   "Budynek",
+   "Lokal",
+   "SkrytkaPocztowa",
+   "Kraj",
+   "TERC",
+   "SIMC",
+   "ULIC",
+   "Wojewodztwo",
+   "Powiat",
+   "Gmina",
+   "Uwagi",
+   "Kontakt",
+   "Telefon",
+   "Faks",
+   "Email",
+   "URIKontakt",
+   "InnyKontakt"
+  ],
+  "sha256": "4e09bc5931caba664bc11060e4d23296554af79ff0c56eb42f413be3a4a3a443"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/KodyCechKrajow_v3-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/KodyCechKrajow_v3-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/05/23/eD/KodyCECHKRAJOW/",
+  "elements": [],
+  "sha256": "4087f29027b69099397d34b276f9e26c7d6c1d835d988105b0f96df754ab321c"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/ElementarneTypyDanych_v4-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/ElementarneTypyDanych_v4-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "f755041536245044d113306a7611c1a44a7f6a1024a00cf11ec05973b11bf039"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/KodyKrajow_v4-1E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/KodyKrajow_v4-1E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "02275945cbdbca7b3f92e6d6ef034987ccd029b73a2c0d015294a2872e141d28"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v4-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v4-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "f12b96a080f32cf1b07e42764680c3c3983433e516342c50060b9738d671bc0a"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "a552ffb48be94a6825e4633f32fbed49e0b9f7684a987798ea80f19dbb640dbc"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/KodyNaczelnikowUrzedowSkarbowych_v4-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/KodyNaczelnikowUrzedowSkarbowych_v4-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/",
+  "elements": [],
+  "sha256": "16f37bb5b26f543e8d6c9950f6c11e7d520d1c2890fcd0d5a6f40d614b6fcc87"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/ElementarneTypyDanych_v5-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/ElementarneTypyDanych_v5-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "6d83d644472a03f95fdc63f7022be923f2884db4d78651ab6381f85313d0c4df"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/KodyKrajow_v5-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/KodyKrajow_v5-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "e6983b43f92901d1357daba5b0921c007f556bab45a9d0aa847378aec0436bab"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v5-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/KodyUrzedowSkarbowych_v5-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "61bb3f3c25012167ce8ea2adc31423fbd70db0d8f984238f600bbcf92bf40e59"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "11c0a7d3d18fd07f87e3fb51eecfa31b87915bc708bca6b8868f465ae5791365"
  },
  {
   "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/ElementarneTypyDanych_v6-0E.xsd",
@@ -110,6 +426,34 @@
   "sha256": "ec0ee83d06b076c1ba4ad038f31aa0c35e3083fd19359fdb4c5cc20acaca4bba"
  },
  {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/KodyWalut_v1-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/KodyWalut_v1-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/",
+  "elements": [],
+  "sha256": "e2c3f52200d28de21681afc908e8c1b7ab660caca381334cac6cf2e147dbaa1f"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/ElementarneTypyDanych_v10-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/ElementarneTypyDanych_v10-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "8a531cb181d3e298d11b28766655ae91fee2d7851440095932ffc82137ed2be1"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/KodyKrajow_v10-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/KodyKrajow_v10-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "1d41a1b3184188f2d20a51d3afde26204dda182ec5dacf018204dcc9870dc644"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/StrukturyDanych_v10-0E.xsd",
+  "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/StrukturyDanych_v10-0E.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/",
+  "elements": [],
+  "sha256": "1137ce6e3c11c2b9ef3f05e4e72d6dcd6b4fa94908ea558f2ba15de0259bb2aa"
+ },
+ {
   "url": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd",
   "file": "crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/KodyUrzedowSkarbowych_v8-0E.xsd",
   "targetNamespace": "http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/KodyUrzedowSkarbowych/",
@@ -131,6 +475,149 @@
   "sha256": "447efc6e1a84de71d433666c60635856b8e01f090e5eedb3410b1afe545f8117"
  },
  {
+  "url": "http://crd.gov.pl/xml/schematy/instytucja/2009/11/16/instytucja.xsd",
+  "file": "crd.gov.pl/xml/schematy/instytucja/2009/11/16/instytucja.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/instytucja/2009/11/16/",
+  "elements": [
+   "Instytucja",
+   "IdInstytucji",
+   "KRS",
+   "NIP",
+   "REGON",
+   "InnyIdentyfikator",
+   "Funkcja",
+   "NazwaInstytucji",
+   "Poziom",
+   "Jednostka",
+   "Pracownik"
+  ],
+  "sha256": "9ac928bc1c91449e14cf4c9c04e8e2ea616e393e4cf47cc9691f6ad028f93ca3"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/meta/2009/11/16/meta.xsd",
+  "file": "crd.gov.pl/xml/schematy/meta/2009/11/16/meta.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/meta/2009/11/16/",
+  "elements": [
+   "Data",
+   "Grupowanie",
+   "Podmiot",
+   "Dostep",
+   "Identyfikator",
+   "Status",
+   "RodzajDokumentu",
+   "Relacja",
+   "Jezyk",
+   "Kwalifikacja",
+   "OpisDokumentu",
+   "Uprawnienia",
+   "ZnakSprawy",
+   "Tworca",
+   "Tworcy"
+  ],
+  "sha256": "fe9e92f38474318a3891313bd427f14b415f7ded295c88eaec3d010b2e41884e"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/osoba/2009/11/16/osoba.xsd",
+  "file": "crd.gov.pl/xml/schematy/osoba/2009/11/16/osoba.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/osoba/2009/11/16/",
+  "elements": [
+   "Osoba",
+   "IdOsoby",
+   "PESEL",
+   "NIP",
+   "InnyIdentyfikator",
+   "Imie",
+   "ImieDrugie",
+   "ImieOjca",
+   "ImieMatki",
+   "Nazwisko",
+   "NazwiskoRodowe",
+   "NazwiskoRodoweOjca",
+   "NazwiskoRodoweMatki",
+   "NazwiskoPoprzednie",
+   "MiejsceUrodzenia",
+   "DataUrodzenia",
+   "Plec",
+   "RodzajDowoduTozsamosci",
+   "NrDowoduTozsamosci",
+   "DataWydaniaDowoduTozsamosci",
+   "Obywatelstwo",
+   "Narodowosc",
+   "StopienPokrewienstwa",
+   "StanCywilny",
+   "WyksztalceniePoziom",
+   "WyksztalcenieOpis",
+   "Zawod"
+  ],
+  "sha256": "98ddc0fc996380f0f1b7077fe0d5247638393d9e8f2faa504178e4d019a351f6"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/struktura/2009/11/16/struktura.xsd",
+  "file": "crd.gov.pl/xml/schematy/struktura/2009/11/16/struktura.xsd",
+  "targetNamespace": "http://crd.gov.pl/xml/schematy/struktura/2009/11/16/",
+  "elements": [
+   "CID",
+   "DaneDokumentu",
+   "Naglowek",
+   "Adresaci",
+   "Nadawcy",
+   "TrescDokumentu",
+   "OpisDokumentu",
+   "Zalaczniki",
+   "Zalacznik",
+   "NumerDokumentu"
+  ],
+  "sha256": "43357b41167c34efb3780fccdb68030bce75de9a9b8fb0ff0ed9092cf6b878c6"
+ },
+ {
+  "url": "http://crd.gov.pl/xml/schematy/zewnetrzne/2008/05/09/CountryCode.xsd",
+  "file": "crd.gov.pl/xml/schematy/zewnetrzne/2008/05/09/CountryCode.xsd",
+  "targetNamespace": "http://www.unece.org/etrades/unedocs/repository/codelists/xml/CountryCode.xsd",
+  "elements": [],
+  "sha256": "bda9c6135f36fa70b7f395d58c71eaaaebbb078f607762b6bf42981b5d57c365"
+ },
+ {
+  "url": "http://www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd",
+  "file": "www.w3.org/TR/xmldsig-core/xmldsig-core-schema.xsd",
+  "targetNamespace": "http://www.w3.org/2000/09/xmldsig#",
+  "elements": [
+   "Signature",
+   "SignatureValue",
+   "SignedInfo",
+   "CanonicalizationMethod",
+   "SignatureMethod",
+   "Reference",
+   "Transforms",
+   "Transform",
+   "DigestMethod",
+   "DigestValue",
+   "KeyInfo",
+   "KeyName",
+   "MgmtData",
+   "KeyValue",
+   "RetrievalMethod",
+   "X509Data",
+   "PGPData",
+   "SPKIData",
+   "Object",
+   "Manifest",
+   "SignatureProperties",
+   "SignatureProperty",
+   "DSAKeyValue",
+   "RSAKeyValue"
+  ],
+  "sha256": "d102ad3df7664c307e0c2c776ba4a90513b1969974d8a940bae1a77f9f21e15d"
+ },
+ {
+  "url": "https://crd.gov.pl/wzor/2025/12/12/14064/schemat.xsd",
+  "file": "crd.gov.pl/wzor/2025/12/12/14064/schemat.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2025/12/12/14064/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f3444240ed2ccabec2defb892ef90237cd647e5d0a35f145d3a206324f557dfb"
+ },
+ {
   "url": "https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip#fileMetrics.xsd",
   "file": "podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip",
   "targetNamespace": "http://meta.gtw.espr.apps.akmf.pl/2025/09/02",
@@ -145,5 +632,524 @@
   "targetNamespace": "http://types.meta.gtw.espr.apps.akmf.pl/2025/09/02",
   "elements": [],
   "sha256": "04d7771b1b3b97edd3fb1114de89269460a66bd5cbea6c789f5dcf671bd1f4c0"
+ },
+ {
+  "url": "https://podatki.gov.pl/media/qord0r0j/schemat_jpk_v7m-3-_v1-0e.xsd",
+  "file": "podatki.gov.pl/media/qord0r0j/schemat_jpk_v7m-3-_v1-0e.xsd",
+  "targetNamespace": "http://crd.gov.pl/wzor/2025/06/18/06181/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "6f963d46c6fa714530c1a0daa28786d1d8dbc97aeeb8579f0b3b6455d3beba96"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/07315f76-eb8d-4273-8256-738ed0a1f223",
+  "file": "www.gov.pl/attachment/07315f76-eb8d-4273-8256-738ed0a1f223",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2019/08/12/08121/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "0011331da290acc3dc9694c27df570263a4e9f732fca30afb62cb2bab8e95293"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/0f07a5b7-25d1-49de-80b8-d334e351798e",
+  "file": "www.gov.pl/attachment/0f07a5b7-25d1-49de-80b8-d334e351798e",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "e52b5e775df586eb70d84c71bf8b6bb5562a84c290f0b1ce98cb875a1c688b5d"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/0f612ecb-4fa7-4336-b969-ee9414d57af0",
+  "file": "www.gov.pl/attachment/0f612ecb-4fa7-4336-b969-ee9414d57af0",
+  "targetNamespace": "http://crd.gov.pl/wzor/2019/05/17/7672/",
+  "elements": [
+   "Dokument"
+  ],
+  "sha256": "0c2a20dad917bce7d51235ea15ab9d4099838b993ec391ef8ad0f146d5cc9176"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/1abeab45-4e71-4616-b8d5-6b71699e86f8",
+  "file": "www.gov.pl/attachment/1abeab45-4e71-4616-b8d5-6b71699e86f8",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2019/09/27/09271/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "4e9e6681f98d87d88d0176167048d7ae107d6316ec6f0d9803d9c6bfa75944ca"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/1b8600fe-a96d-4763-9699-10120e3af04b",
+  "file": "www.gov.pl/attachment/1b8600fe-a96d-4763-9699-10120e3af04b",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/04/13508/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "76bd8bcc9a97765ebf55e5e6909dd08203c9bdd5d9218fbf70b5164321861e14"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/24fbf979-062b-4437-8170-7b4648ab425f",
+  "file": "www.gov.pl/attachment/24fbf979-062b-4437-8170-7b4648ab425f",
+  "targetNamespace": null,
+  "elements": [
+   "Potwierdzenie"
+  ],
+  "sha256": "be98c34d6bcfaecf56f7bebd849a06dcf8f252cb7eb87c6a5660816c7414a814"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/27ecb838-7ab3-4627-837f-93a6b08f9552",
+  "file": "www.gov.pl/attachment/27ecb838-7ab3-4627-837f-93a6b08f9552",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13519/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f1d121916f25546f15b8e710acb942f2558fe9c693348a1e556c41185e62480c"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/2e909ad2-c834-458f-a100-127e664fdba2",
+  "file": "www.gov.pl/attachment/2e909ad2-c834-458f-a100-127e664fdba2",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/10/26/10262/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "74f25166b471ea4aa3716f96f8e98f8ed588f82fbb546300bf4f3d89e86b65ba"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/336fb09b-ea93-475d-a895-0ef5b8b72a0b",
+  "file": "www.gov.pl/attachment/336fb09b-ea93-475d-a895-0ef5b8b72a0b",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2024/04/24/04242/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "2e82f260f04595e2e25d6db1634e3fc1ebe46a2ca4ec38e591754c71f5ac80d1"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/338627d4-24c7-4da9-a77e-b00cfd8d1e20",
+  "file": "www.gov.pl/attachment/338627d4-24c7-4da9-a77e-b00cfd8d1e20",
+  "targetNamespace": "http://e-dokumenty.mf.gov.pl",
+  "elements": [
+   "InitUpload"
+  ],
+  "sha256": "b82903b06c5ea415183047f26be042a32058e52b4f1af13d2abee305bb97b0db"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/33c64277-840b-458d-9830-fd82beb07078",
+  "file": "www.gov.pl/attachment/33c64277-840b-458d-9830-fd82beb07078",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2023/11/09/Mdr1/",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "1c9cb3baebbcfe197e1066d1f3c7e981241156356e5ff1d2dad9f65c72abfccb"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/36679802-1e06-4b15-9b50-1cf3a340bca0",
+  "file": "www.gov.pl/attachment/36679802-1e06-4b15-9b50-1cf3a340bca0",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2023/11/09/Mdr3/",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "3d8b604f729009e13066bb4c04f85e8595721b76f7e8ac07311e181888e0fd96"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/394f23e9-bf16-4347-8b4b-005677704057",
+  "file": "www.gov.pl/attachment/394f23e9-bf16-4347-8b4b-005677704057",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr2",
+  "elements": [
+   "Zawiadomienie"
+  ],
+  "sha256": "5517c24ab510f57d3127e526aa5c4f7a4d727e545a22f8dca38edfb3a68f11ae"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/3b8a2f0c-b6a3-4a15-ac65-a2e1d3317d02",
+  "file": "www.gov.pl/attachment/3b8a2f0c-b6a3-4a15-ac65-a2e1d3317d02",
+  "targetNamespace": "http://dpi.mf.gov.pl/FR/2024/06/17/06171/",
+  "elements": [
+   "Formularz"
+  ],
+  "sha256": "17af15b5d596a53d66fd700426dc937d1a2e7c003b8aab62c6b1ce25fdea6aad"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/4afcac6d-4c7a-491b-bbb6-3da82a2a211b",
+  "file": "www.gov.pl/attachment/4afcac6d-4c7a-491b-bbb6-3da82a2a211b",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2017/11/13/1113/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "f411769fd117710eeaf168fc183118012b9f6b5a9ceaec5b59330609c63bc744"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/4d1da1ff-c27e-46e2-bf0b-fdc976b1c7b9",
+  "file": "www.gov.pl/attachment/4d1da1ff-c27e-46e2-bf0b-fdc976b1c7b9",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2022/02/01/02011/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "1a69488beea8b34cc57c28eeeecb06b6ddc931821bc069b7c2288379de6bdd66"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/4ec8f106-032c-42f2-9fb5-15b5ec5ca670",
+  "file": "www.gov.pl/attachment/4ec8f106-032c-42f2-9fb5-15b5ec5ca670",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2024/09/04/09041/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "251bab822af09d638225068538dcd64c0b3b56c11a13a0c7cda0f709e0d5063a"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/641d528c-84e7-4bed-80ae-3e163eda35f6",
+  "file": "www.gov.pl/attachment/641d528c-84e7-4bed-80ae-3e163eda35f6",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/10/13524/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "b5524ba6a35ac477a16d28679f0c636248b9890efa0aac4e43ed4a720e8222ce"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/64e92ac8-22d3-4f4a-b89a-2d5d1be079cf",
+  "file": "www.gov.pl/attachment/64e92ac8-22d3-4f4a-b89a-2d5d1be079cf",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/03/13506/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "372a77aeb4d02c0d4848af8eaed68b16d6d4fd6dc32a031b927d10943a9a37a2"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/6609c42b-5d9c-418d-b05c-b064a49273cb",
+  "file": "www.gov.pl/attachment/6609c42b-5d9c-418d-b05c-b064a49273cb",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2025/11/24/11242/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "e404a1c23bcf1a707c0b286e7141156f7bff7aa2feb0cbeb14ff8fad2ff973f2"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/67b55c59-e05c-42f0-be4c-28afcca460b6",
+  "file": "www.gov.pl/attachment/67b55c59-e05c-42f0-be4c-28afcca460b6",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2024/10/30/10301/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "0061478a2af63894bf2ea6293eaf6ebd3da18a26ab43076899a20d3c3f32a79b"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/6fe929f1-398d-45ac-baa3-e4a12a336a42",
+  "file": "www.gov.pl/attachment/6fe929f1-398d-45ac-baa3-e4a12a336a42",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03091/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "eeda7c0924b4c889933083af92706a0f5f0c54155251e5063108c6ace4dcf9c1"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/70b78fa0-9183-400d-a967-eeacdcb87e57",
+  "file": "www.gov.pl/attachment/70b78fa0-9183-400d-a967-eeacdcb87e57",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2024/10/30/10302/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "a09c8f5f0812fa78fb103366d77fd8e31b45e9f9cfdb0bdb33a3950e578a4498"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/7ccd9aa9-3fd4-4404-a564-6191fdb8edc2",
+  "file": "www.gov.pl/attachment/7ccd9aa9-3fd4-4404-a564-6191fdb8edc2",
+  "targetNamespace": "http://crd.gov.pl/wzor/2025/12/12/14064/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f3444240ed2ccabec2defb892ef90237cd647e5d0a35f145d3a206324f557dfb"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/7e129fc5-b9c4-415b-8d93-41a22393859b",
+  "file": "www.gov.pl/attachment/7e129fc5-b9c4-415b-8d93-41a22393859b",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03093/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "d2da9c60d0f61c1b4ede1ea4fe596217dbf28764465c152bf3963179b22435af"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/842f4d91-afb7-4baa-8180-46d48be3d940",
+  "file": "www.gov.pl/attachment/842f4d91-afb7-4baa-8180-46d48be3d940",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13521/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "0b08ed931aca46f548f8a0c7816ee372a24d08f3f5d12f0e8267857a23bf9722"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/85d4fac7-3c0f-4258-84fb-f8cb5ddb9d70",
+  "file": "www.gov.pl/attachment/85d4fac7-3c0f-4258-84fb-f8cb5ddb9d70",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/03/13507/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "f367a19db8205990bbc88233d8598450bdb1121479045c2f8419cefbf046dc62"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/88e3a24b-c545-4184-ba81-1ad6b5ec3a2d",
+  "file": "www.gov.pl/attachment/88e3a24b-c545-4184-ba81-1ad6b5ec3a2d",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/08/13516/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "12308ef0e9477ad18107301b8adbab3270119899a6d97cc674d9d90d12785064"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/8cebafb2-5782-445e-b73a-2051b7081d10",
+  "file": "www.gov.pl/attachment/8cebafb2-5782-445e-b73a-2051b7081d10",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03096/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "23e1434df0ea090e6872a492c6f7ed26000b325ec4a028d32a85e7c272b94f38"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/9c188eea-f429-44dc-97ba-4ffe2598d755",
+  "file": "www.gov.pl/attachment/9c188eea-f429-44dc-97ba-4ffe2598d755",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/09/13520/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "163584a60e7bc778ea19f3b345768c7de367fb9e864b4481c467ba0461d93c02"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/a533f872-6d51-41a1-b683-64a5e6f7fc19",
+  "file": "www.gov.pl/attachment/a533f872-6d51-41a1-b683-64a5e6f7fc19",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03092/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "a2d141b5a6dd79388b309f8e5e3e26cbc1151906bf70d7f15c40e76861c52dd5"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/a582e8b8-d103-41f5-b0b7-f92ab4c75063",
+  "file": "www.gov.pl/attachment/a582e8b8-d103-41f5-b0b7-f92ab4c75063",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03097/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "99609a92c676e99d17df192a059bc427633638a3d83365d802e61ae9d9be8a39"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/a92e65a5-1327-47b7-b642-3fe5a474b62c",
+  "file": "www.gov.pl/attachment/a92e65a5-1327-47b7-b642-3fe5a474b62c",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr1",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "3482e88d921dc9bd08535d582cc22eb5b0ab486ec72aacbe28bc5836149689e0"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/aa2ea22c-afdf-42bb-a607-8907afd321a6",
+  "file": "www.gov.pl/attachment/aa2ea22c-afdf-42bb-a607-8907afd321a6",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2024/11/26/11262/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "e2f063617fb2c4ec5e477be992f9818a7f270939cb8d35915157d0a15f6fbe0d"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/aaa27be2-3663-46cd-bf53-f8925f0170b3",
+  "file": "www.gov.pl/attachment/aaa27be2-3663-46cd-bf53-f8925f0170b3",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2022/02/17/02171/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "7ad0a6fb0476345b5af604c9a7ce4c967f97852592e7bd01e668ba2ab668dc51"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/ac1a5018-3513-4346-a91a-c6ec956d57f8",
+  "file": "www.gov.pl/attachment/ac1a5018-3513-4346-a91a-c6ec956d57f8",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2021/01/25/01251/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "4e9a21f265c7867436f4cfabef34b72ec562ad139d3147fd5b784add8978a9fe"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/b6302e17-a911-472b-bc1c-3a5f17f4e513",
+  "file": "www.gov.pl/attachment/b6302e17-a911-472b-bc1c-3a5f17f4e513",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr3",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "8ab3a5d1c0ea845e1fcfe7fc56be1784a991274133a26c5e3ac482c02420700c"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/b93d56fe-99c6-48f5-bfec-cdd71990c56b",
+  "file": "www.gov.pl/attachment/b93d56fe-99c6-48f5-bfec-cdd71990c56b",
+  "targetNamespace": "http://dpi.mf.gov.pl/FR/2024/06/17/06172/",
+  "elements": [
+   "Deklaracja"
+  ],
+  "sha256": "b3f7307ab9005b21fb3bc3889e2faaef3bd0f61a698e0444c28e6d580fcfc9e7"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/b95dd79e-f3ed-4ffc-9f7e-395f296fd8be",
+  "file": "www.gov.pl/attachment/b95dd79e-f3ed-4ffc-9f7e-395f296fd8be",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/07/13512/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "4c2e869c9ff978f336ca2c22f9d4242bd7c1ff13423cafd40dd4a786202d93a5"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/bafb1879-14fb-4bf3-9ba1-704087e91d8d",
+  "file": "www.gov.pl/attachment/bafb1879-14fb-4bf3-9ba1-704087e91d8d",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2023/11/07/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "e1691cc54a8ce04f3b99d8810f3def282a422282bd72c6b6037bfb5330fd4bf2"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/bf0a29de-fcec-4cdd-b2d9-f2375680bc6d",
+  "file": "www.gov.pl/attachment/bf0a29de-fcec-4cdd-b2d9-f2375680bc6d",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/08/13517/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "3ab6cecc14735e43cb85600470392066b8e206be9c9b4cd86e90ca647abdd9f5"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/c298ebda-0acc-4088-a9ac-945bd3518366",
+  "file": "www.gov.pl/attachment/c298ebda-0acc-4088-a9ac-945bd3518366",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr4",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "5c119593954a5d206fe8e55bac09e0217b6aa2d82b3e6a46ac87fb9fc5e15fa9"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/c9895eff-d1d3-412e-9b8c-aa7b4fd0ddae",
+  "file": "www.gov.pl/attachment/c9895eff-d1d3-412e-9b8c-aa7b4fd0ddae",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr3",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "6de445a1837f661e29a6da90d72e1a8592ec28197f2afae63c08d71e43f7e5f3"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/cadcdd1e-c45e-4d9a-af1c-50fb322c3b2b",
+  "file": "www.gov.pl/attachment/cadcdd1e-c45e-4d9a-af1c-50fb322c3b2b",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2019/03/21/03211/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "bcd7d3c1547c27bfd36cb46e683a79d2fc48cef84ba16bb0ddff3b946ffad6d9"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/ddd11d46-c396-4175-be7f-f52dda99d84c",
+  "file": "www.gov.pl/attachment/ddd11d46-c396-4175-be7f-f52dda99d84c",
+  "targetNamespace": "http://jpk.mf.gov.pl/wzor/2016/03/09/03095/",
+  "elements": [
+   "JPK"
+  ],
+  "sha256": "dfb8c59ff1674d4e92220d0551a7fcd70069e762b9166b14e1cef39f517bc551"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/df535dce-db18-449f-b1da-7097a693968e",
+  "file": "www.gov.pl/attachment/df535dce-db18-449f-b1da-7097a693968e",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/04/13509/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "da03c7ad38cff1befd5ccf2783d70182cb7eae5b4d7c594ed9719e2eec02b072"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/e12532df-733d-457d-9960-02202e6159ea",
+  "file": "www.gov.pl/attachment/e12532df-733d-457d-9960-02202e6159ea",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr1",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "37f3de92c170440ce5f091f18c6415238befeb8ee4bbffe7308a6cfd3977af09"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/e2c39ceb-994e-4210-acc3-cfcf380c76c9",
+  "file": "www.gov.pl/attachment/e2c39ceb-994e-4210-acc3-cfcf380c76c9",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr2",
+  "elements": [
+   "Zawiadomienie"
+  ],
+  "sha256": "e3f3ab705d9067d10b4252cb54573952dbd80c24657e0e5eb450594ac86997bd"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/e2e7ff59-d8a0-4957-9bf9-5acc39fbbbf3",
+  "file": "www.gov.pl/attachment/e2e7ff59-d8a0-4957-9bf9-5acc39fbbbf3",
+  "targetNamespace": "http://crd.gov.pl/wzor/2024/10/07/13513/",
+  "elements": [
+   "Wniosek"
+  ],
+  "sha256": "4f4fc88e24810682e7fe93c13dcb1f64fb512931ab9eb3fb62aade99f97bd941"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/fd111d76-3669-4b30-9be9-a6d42bb47581",
+  "file": "www.gov.pl/attachment/fd111d76-3669-4b30-9be9-a6d42bb47581",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/Mdr4",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "e3a2e0d341db097103e25e718a6777353f7343a3c07b8fe70ee0de87a58c3c5a"
+ },
+ {
+  "url": "https://www.gov.pl/attachment/fd545b97-bfb5-4232-b259-e96542fe936f",
+  "file": "www.gov.pl/attachment/fd545b97-bfb5-4232-b259-e96542fe936f",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "26179203c72b854d6b2b649c2ac68c6a9545ea9b27ceb9254281ab01c35a6dcb"
+ },
+ {
+  "url": "https://www.gov.pl/documents/2034621/2182793/mdr_v1-1.xsd",
+  "file": "www.gov.pl/documents/2034621/2182793/mdr_v1-1.xsd",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "26179203c72b854d6b2b649c2ac68c6a9545ea9b27ceb9254281ab01c35a6dcb"
+ },
+ {
+  "url": "https://www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/mdr_v2-0.xsd",
+  "file": "www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/mdr_v2-0.xsd",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "9998286355dfd22e89389034864b365b917d8fa730bded74b3ff486478efcab3"
+ },
+ {
+  "url": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr1/mdr-1_v2-0.xsd",
+  "file": "www.gov.pl/static/finanse/MDR/2020/07/01/Mdr1/mdr-1_v2-0.xsd",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr1/",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "3eb263d3d00676b8ad0403b98dfdda1da05a072e12527f79943b9fb62ff18170"
+ },
+ {
+  "url": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr2/mdr-2_v2-0.xsd",
+  "file": "www.gov.pl/static/finanse/MDR/2020/07/01/Mdr2/mdr-2_v2-0.xsd",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr2/",
+  "elements": [
+   "Zawiadomienie"
+  ],
+  "sha256": "b937b307b6bbccb5157fe836da09af61aaac95d3a7dc1b5524620ae27ddf8f2b"
+ },
+ {
+  "url": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr3/mdr-3_v2-0.xsd",
+  "file": "www.gov.pl/static/finanse/MDR/2020/07/01/Mdr3/mdr-3_v2-0.xsd",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr3/",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "fae96c2787901bef42f783a660321402317a4c6a122442fcf19bc6193af6270a"
+ },
+ {
+  "url": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr4/mdr-4_v2-0.xsd",
+  "file": "www.gov.pl/static/finanse/MDR/2020/07/01/Mdr4/mdr-4_v2-0.xsd",
+  "targetNamespace": "https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr4/",
+  "elements": [
+   "Informacja"
+  ],
+  "sha256": "c935b4ab64e42d96f23b6a0f6b5a1519e9d64f2d2ec94c70e46d92021adbf22a"
+ },
+ {
+  "url": "https://www.mf.gov.pl/documents/764034/6625111/mdr.xsd",
+  "file": "www.mf.gov.pl/documents/764034/6625111/mdr.xsd",
+  "targetNamespace": "http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/",
+  "elements": [],
+  "sha256": "e52b5e775df586eb70d84c71bf8b6bb5562a84c290f0b1ce98cb875a1c688b5d"
  }
 ]

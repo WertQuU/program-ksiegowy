@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" xmlns:mdr="https://www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/" xmlns:tns="https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr4/" targetNamespace="https://www.gov.pl/static/finanse/MDR/2020/07/01/Mdr4/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/StrukturyDanych_v6-0E.xsd"/>
+	<xsd:import namespace="https://www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/" schemaLocation="https://www.gov.pl/static/finanse/MDR/2020/07/01/DefinicjeTypyMdr/mdr_v2-0.xsd"/>
+	<!--Zasady walidacji biznesowej:
+1.	W przypadku złożenia uzupełnienia wypełnienie pola "DodatkoweWyjasnienia" jest obowiązkowe.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek informacji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:annotation>
+					<xsd:documentation>Kod formularza</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="MDR-4"/>
+					<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="2-0"/>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia" type="etd:TWybor1">
+				<xsd:annotation>
+					<xsd:documentation>Cel złożenia</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:sequence>
+				<xsd:annotation>
+					<xsd:documentation>Kwartał, którego dotyczy informacja</xsd:documentation>
+				</xsd:annotation>
+				<xsd:element name="DataOd">
+					<xsd:annotation>
+						<xsd:documentation>Data początku kwartału</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TData">
+							<xsd:minInclusive value="2018-04-01"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="DataDo">
+					<xsd:annotation>
+						<xsd:documentation>Data końca kwartału</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TData">
+							<xsd:minInclusive value="2018-06-30"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TRodzajSkladajacego">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj składającego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="Promotor" type="etd:TWybor1">
+				<xsd:annotation>
+					<xsd:documentation>Promotor</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Wspomagajacy" type="etd:TWybor1">
+				<xsd:annotation>
+					<xsd:documentation>Wspomagający</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:element name="Informacja">
+		<xsd:annotation>
+			<xsd:documentation>MDR-4 - Kwartalna informacja o udostępnieniu schematu podatkowego standaryzowanego na podstawie art. 86f § 4 ustawy z dnia 29 sierpnia 1997 r. Ordynacja podatkowa</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek informacji</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TNaglowek"/>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="ZakresZgloszenia" type="mdr:TZakresZgloszenia">
+					<xsd:annotation>
+						<xsd:documentation>Cel złożenia informacji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PosiadanieNSP">
+					<xsd:annotation>
+						<xsd:documentation>Informacja o posiadaniu numeru schematu podatkowego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:choice>
+							<xsd:element name="NSP" type="mdr:TNrMDR">
+								<xsd:annotation>
+									<xsd:documentation>Numer schematu podatkowego innego niż transgraniczny</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="NSPT">
+								<xsd:annotation>
+									<xsd:documentation>Numer schematu podatkowego transgranicznego</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:string">
+										<xsd:pattern value="[A-Z]{2}A([2][0][2-9]{1}[0-9]{1})([0][1-9]|[1][0-2])([0][1-9]|[1-2][0-9]|[3][0|1])[A-Z0-9]{6}"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="UPO" type="mdr:TId">
+								<xsd:annotation>
+									<xsd:documentation>Identyfikator dokumentu UPO, w którym zgłoszono schemat podatkowy, jeśli schematowi nie nadano jeszcze NSP</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:choice>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="DaneSkladajacego">
+					<xsd:annotation>
+						<xsd:documentation>Dane składającego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="mdr:TDanePodmiotu">
+								<xsd:sequence>
+									<xsd:element name="RodzajSkladajacego" type="tns:TRodzajSkladajacego">
+										<xsd:annotation>
+											<xsd:documentation>Rodzaj składającego</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="LiczbaPodmiotow" type="etd:TNaturalny">
+					<xsd:annotation>
+						<xsd:documentation>Liczba podmiotów, którym schemat podatkowy standaryzowany został udostępniony</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DaneKorzystajacego" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Wykaz podmiotów, które zwolniły promotora / wspomagającego z obowiązku zachowania prawnie chronionej tajemnicy zawodowej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="mdr:TDanePodmiotu">
+								<xsd:sequence>
+									<xsd:element name="WskazanieDokonanychCzynnosci">
+										<xsd:annotation>
+											<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym, wraz ze wskazaniem dnia, w którym została lub zostanie dokonana pierwsza czynność, służąca wdrożeniu tego schematu</xsd:documentation>
+										</xsd:annotation>
+										<xsd:complexType>
+											<xsd:sequence>
+												<xsd:element name="Data">
+													<xsd:annotation>
+														<xsd:documentation>Dzień, w którym została lub zostanie dokonana pierwsza czynność służąca wdrożeniu tego schematu</xsd:documentation>
+													</xsd:annotation>
+													<xsd:simpleType>
+														<xsd:restriction base="etd:TData">
+															<xsd:minInclusive value="2018-06-26"/>
+														</xsd:restriction>
+													</xsd:simpleType>
+												</xsd:element>
+												<xsd:element name="Czynnosc" type="mdr:TTekstowyMDR3" maxOccurs="unbounded">
+													<xsd:annotation>
+														<xsd:documentation>Wskazanie dokonanych czynności, które skutkowały przekazaniem informacji o schemacie podatkowym</xsd:documentation>
+													</xsd:annotation>
+												</xsd:element>
+											</xsd:sequence>
+										</xsd:complexType>
+									</xsd:element>
+									<xsd:element name="PowiazanizKorzystajacym" minOccurs="0" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Podmioty powiązane z korzystającym zgodnie z art. 86a § 1 pkt 7 o których mowa w art. 86f § 1 pkt 1</xsd:documentation>
+										</xsd:annotation>
+										<xsd:complexType>
+											<xsd:complexContent>
+												<xsd:extension base="mdr:TDanePodmiotu">
+													<xsd:sequence>
+														<xsd:element name="SchematWplywaNaPodmiotPowiazany" type="etd:TWybor1_2">
+															<xsd:annotation>
+																<xsd:documentation>Wskazanie czy schemat podatkowy ma wpływ na podmiot powiązany z korzystającym (1 - TAK, 2 - NIE)</xsd:documentation>
+															</xsd:annotation>
+														</xsd:element>
+													</xsd:sequence>
+												</xsd:extension>
+											</xsd:complexContent>
+										</xsd:complexType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Uczestnicy" type="mdr:TDanePodmiotu" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Wskazanie innych podmiotów uczestniczących w schemacie podatkowym, mających uczestniczyć w schemacie podatkowym lub na które może mieć wpływ schemat podatkowy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DodatkoweWyjasnienia" type="mdr:TTekstowyMDR5" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dodatkowe wyjaśnienia. Pole wymagane w przypadku złożenia uzupełnienia.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="KlauzulaRODO" type="xsd:string" fixed="KLAUZULA INFORMACYJNA dotycząca przetwarzania danych osobowych w związku z przekazaniem drogą elektroniczną do Szefa Krajowej Administracji Skarbowej informacji lub zawiadomienia o schemacie podatkowym. W związku z obowiązkiem stosowania od dnia 25 maja 2018 r. rozporządzenia Parlamentu Europejskiego i Rady (UE) 2016/679 z dnia 27 kwietnia 2016 r. w sprawie ochrony osób fizycznych w związku z przetwarzaniem danych osobowych i w sprawie swobodnego przepływu takich danych oraz uchylenia dyrektywy 95/46/WE (ogólne rozporządzenie o ochronie danych) (Dz. Urz. UE L 119 z 4.05.2016, str. 1., z późn. zm.) zwanego dalej RODO, poniżej przedstawiamy informacje o zasadach przetwarzania Pani/Pana danych osobowych oraz o przysługujących Pani/Panu prawach z tym związanych: 1. Administratorem Pani/Pana danych osobowych jest Szef Krajowej Administracji Skarbowej, ul. Świętokrzyska 12, Warszawa 00-916. Zgodnie z art. 12e ustawy z dnia 16 listopada 2016 r. o Krajowej Administracji Skarbowej (Dz. U. z 2018 r. poz. 508, z późn. zm.) współadministratorem Pani/Pana danych osobowych jest Minister Finansów z siedzibą w Warszawie przy ul. Świętokrzyskiej 12, 00-916 Warszawa. 2. Minister Finansów oraz Szef Krajowej Administracji Skarbowej wyznaczył Inspektora Ochrony Danych, adres e- mail: IOD@mf.gov.pl. 3. Podstawę prawną przetwarzania Pana/Pani danych osobowych stanowią obowiązujące przepisy prawa, tj. ustawa z dnia 29 sierpnia 1997 r. Ordynacja podatkowa (Dz. U. z 2018 r., poz. 800, z późn. zm.) (art. 6 lit. c RODO). 4. Pani/Pana dane osobowe są przetwarzane w celu wypełnienia obowiązków prawnych ustanowionych w przepisach prawnych, o których mowa w pkt 3, związanych z przekazaniem informacji lub zawiadomienia o schemacie podatkowym. 5. W związku z przetwarzaniem Pani/Pana danych osobowych w celu, o którym mowa w pkt 4, Pani/Pana dane osobowe: • mogą być przekazywane do organów administracji publicznej lub innych podmiotów upoważnionych na podstawie przepisów prawa lub wykonujących zadania realizowane w interesie publicznym, lub w ramach sprawowania władzy publicznej; • nie będą podlegały zautomatyzowanemu podejmowaniu decyzji, w tym profilowaniu. 6. Pani/Pana dane osobowe będą przechowywane przez okres niezbędny do realizacji celu określonego w pkt 4, a po tym czasie archiwizowane, zgodnie z obowiązującymi przepisami prawa. 7. Podanie przez Panią/Pana danych osobowych w zakresie niezbędnym do realizacji celu, o którym mowa w pkt 4, wynika z obowiązujących przepisów prawa wskazanych w pkt 3. 8. Przetwarzane dane osobowe obejmują w szczególności imię i nazwisko, PESEL, datę i miejsce urodzenia, numer i serię dokumentu stwierdzającego tożsamość, adres oraz inne dane podane w złożonej do Szefa Krajowej Administracji Skarbowej informacji lub zawiadomieniu o schemacie podatkowym. 9. W związku z przetwarzaniem Pani/Pana danych osobowych przysługują Pani/Panu następujące uprawnienia: • prawo dostępu do swoich danych osobowych, • prawo żądania sprostowania swoich danych osobowych, • prawo żądania ograniczenia przetwarzania danych osobowych. 10. Przysługuje Pani/Panu także prawo wniesienia skargi do organu nadzorczego, tj. Prezesa Urzędu Ochrony Danych Osobowych.">
+					<xsd:annotation>
+						<xsd:documentation>Klauzula Informacyjna RODO</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podpisujacy">
+					<xsd:annotation>
+						<xsd:documentation>Podpisujący informację</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:choice>
+							<xsd:element name="OP" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>Informacja podpisana osobiście przez podatnika będącego osobą fizyczną lub zgodnie z zasadami reprezentacji osoby prawnej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="PPO" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>Informacja podpisana przez pełnomocnika ogólnego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:element name="PPS" type="etd:TWybor1">
+									<xsd:annotation>
+										<xsd:documentation>Informacja podpisana przez pełnomocnika szczególnego</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="ZakresPelno" type="mdr:TTekstowyMDR3">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowe informacje o podpisującym oraz dacie złożenia pełnomocnictwa</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:choice>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

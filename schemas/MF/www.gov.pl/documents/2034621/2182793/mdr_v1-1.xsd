@@ -1,0 +1,1461 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:mdr="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" targetNamespace="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2019/04/19/DefinicjeTypyMdr/" attributeFormDefault="unqualified" version="1.1" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<xsd:complexType name="TSchematTransakcje">
+		<xsd:annotation>
+			<xsd:documentation>Schemat podatkowy obejmuje następujące transakcje / zdarzenia (1 - TAK, 2 - NIE)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="T_P1" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Dywidendy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P2" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Należności licencyjne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P3" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Odsetki - w tym od obligacji</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P4" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wynagrodzenie z tytułu świadczenia usług</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P5" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wartość firmy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P6" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Strata podatkowa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P7" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Świadczenie złożone</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P8" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Świadczenia niepodlegające opodatkowaniu podatkiem od towarów i usług na terytorium RP</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P9" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Mechanizm odwróconego podatku</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P10" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Znaki towarowe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P11" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Własność intelektualna</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P12" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Licencje</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P13" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Czynności o charakterze bezpłatnym</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P14" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Ulga badawczo-rozwojowa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P15" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Ciche rezerwy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P16" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Obrót towarami wrażliwymi, o których mowa w załączniku do ustawy o podatku od towarów i usług</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P17" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Programy motywacyjne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P18" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Definicja pojęcia budowla/budynek na gruncie podatku od nieruchomości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P19" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Zwolnienia w podatku od nieruchomości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P20" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Zwolnienia (skorzystanie ze zwolnienia o charakterze podmiotowym, przedmiotowym lub o charakterze mieszanym)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P21" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Zmiana stawek z wyższej na niższą (Podatek od towarów i usług, Podatek akcyzowy)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P22" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wskaźnik proporcji (Instytucje publiczne, Instytucje prywatne)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P23" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Leasing/najem/dzierżawa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P24" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Przeniesienie zorganizowanej części przedsiębiorstwa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P25" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Przekwalifikowanie typu przychodów/dochodów</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P26" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wykorzystanie samozatrudnienia </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P27" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Instrumenty pochodne </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P28" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Działalność gospodarcza w specjalnej strefie ekonomicznej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_P29" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Amortyzacja </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="T_INNE" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Wskazanie innych rodzajów transakcji / zdarzeń</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="2000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TSchematPodmioty">
+		<xsd:annotation>
+			<xsd:documentation>W schemacie podatkowym występuje którykolwiek ze wskazanych podmiotów (1 - TAK, 2 - NIE)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="P_P1" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatkowa grupa kapitałowa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P2" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Fundusz inwestycyjny</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P3" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Oddział, Przedstawicielstwo</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P4" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Fundacja</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P5" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Zakład zagraniczny</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P6" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Spółka transparentna podatkowo</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P7" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Trust</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P8" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Stowarzyszenie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P9" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Spółka holdingowa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P10" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Spółka nabyta od innego podmiotu</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P11" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Kontrolowana spółka zagraniczna</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P12" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Spółka specjalnego przeznaczenia (tzw. SPV)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P13" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Firma inwestycyjna</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_P14" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Spółka założona w okresie ostatnich 6 m-cy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P_INNE" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Wskazanie innych rodzajów podmiotów</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="2000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TCechaRozpoznawczaInna">
+		<xsd:annotation>
+			<xsd:documentation>Inna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="C_P21" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 1 lit. a)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P22" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 1 lit. b)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P23" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 1 lit. c)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P24" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 1 lit. d)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TCechaRozpoznawczaSzcze">
+		<xsd:annotation>
+			<xsd:documentation>Szczególna cecha rozpoznawcza schematu podatkowego (1 - TAK, 2 - NIE) </xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="C_P12" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. a)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P13" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. b) </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P14" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. c)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P15" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. d)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P16" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. e)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P17" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. f) </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P18" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. g)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P19" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. h)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P20" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 13 lit. i)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TCechaRozpoznawczaOgol">
+		<xsd:annotation>
+			<xsd:documentation>Ogólna cecha rozpoznawcza schematu podatkowego oraz kryterium głównej korzyści (1 - TAK, 2 - NIE)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="C_P25" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Schemat spełnia kryterium głównej korzyści</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P1" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. a)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P2" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. b)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P3" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. c)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P4" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. d)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P5" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. e)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P6" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. f)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P7" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. g)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P8" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. h)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P9" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. i)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P10" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. j)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="C_P11" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>art. 86a § 1 pkt 6 lit. k)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TDataO">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla dat definiujących okres, za który jest składana informacja</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2016-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TDataP">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla dat złożenia wniosku oraz przekazania informacji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2017-01-31"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TZakresZgloszenia">
+		<xsd:annotation>
+			<xsd:documentation>Zakres zgłoszenia </xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="P1" type="xsd:string" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Złożenie informacji</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P2">
+				<xsd:annotation>
+					<xsd:documentation>Uzupełnienie informacji. Uwaga! W polu "Dodatkowe wyjaśnienia" należy wskazać powód złożenia uzupełnienia. </xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="UPO" type="mdr:TId">
+							<xsd:annotation>
+								<xsd:documentation>Identyfikator uzupełnianego dokumentu (podany w UPO)</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="TOsobaZagranicznaFizyczna">
+		<xsd:annotation>
+			<xsd:documentation>Dane identyfikacyjne osoby fizycznej niemającej miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="etd:TIdentyfikatorOsobyFizycznejZagranicznej">
+				<xsd:sequence>
+					<xsd:element name="KodKrajuUrodzenia" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kod kraju urodzenia [Country code of birth]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:simpleContent>
+								<xsd:extension base="etd:TKodKraju"/>
+							</xsd:simpleContent>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:sequence minOccurs="0">
+						<xsd:element name="NrIdTIN">
+							<xsd:annotation>
+								<xsd:documentation>Numer identyfikacji podatkowej [Tax identification number]</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:simpleContent>
+									<xsd:extension base="etd:TNrIdentyfikacjiPodatkowej"/>
+								</xsd:simpleContent>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:element name="KodkrajuWydaniaNrId">
+							<xsd:annotation>
+								<xsd:documentation>Kraj wydania numeru identyfikacji podatkowej [Country of issue of tax identification number]</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:simpleContent>
+									<xsd:extension base="etd:TKodKrajuWydania"/>
+								</xsd:simpleContent>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:sequence>
+					<xsd:element name="NrDokumentuTozsamosci">
+						<xsd:annotation>
+							<xsd:documentation>Numer i seria dokumentu stwierdzającego tożsamość [Number and series identity document]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:simpleContent>
+								<xsd:extension base="etd:TNrDokumentuStwierdzajacegoTozsamosc"/>
+							</xsd:simpleContent>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="RodzajDokumentuTozsamosci" type="mdr:TRodzajDokToz">
+						<xsd:annotation>
+							<xsd:documentation>Rodzaj dokumentu stwierdzającego tożsamość [Type of identity document]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="KodKrajuWydaniaDokumentuTozsamosci">
+						<xsd:annotation>
+							<xsd:documentation>Kod kraju wydania dokumentu stwierdzającego tożsamość [Country code of issue of identity document]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:simpleContent>
+								<xsd:extension base="etd:TKodKraju"/>
+							</xsd:simpleContent>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="TIdOsobyFizycznejPL">
+		<xsd:annotation>
+			<xsd:documentation>Dane identyfikacyjne osoby fizycznej mającej miejsce zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexContent>
+			<xsd:extension base="etd:TIdentyfikatorOsobyFizycznej1">
+				<xsd:sequence>
+					<xsd:element name="MiejsceUrodzenia" type="etd:TMiejscowosc">
+						<xsd:annotation>
+							<xsd:documentation>Miejsce urodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:simpleType name="TRodzajDokToz">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj Identyfikatora Zagranicznego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>dokument ubezpieczeniowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>paszport</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>urzędowy dokument stwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="8">
+				<xsd:annotation>
+					<xsd:documentation>inny rodzaj identyfikacji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="9">
+				<xsd:annotation>
+					<xsd:documentation>inny dokument potwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TIdOsobyNiefizycznejMDR">
+		<xsd:annotation>
+			<xsd:documentation>Dane podmiotu niebędącego osobą fizyczną</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="NazwaPelna">
+				<xsd:annotation>
+					<xsd:documentation>Firma / Nazwa pełna</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="2000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:choice>
+				<xsd:sequence>
+					<xsd:element name="NrIdTIN">
+						<xsd:annotation>
+							<xsd:documentation>Numer identyfikacji podatkowej [Tax identification number]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:simpleContent>
+								<xsd:extension base="etd:TNrIdentyfikacjiPodatkowej"/>
+							</xsd:simpleContent>
+						</xsd:complexType>
+					</xsd:element>
+					<xsd:element name="KodkrajuWydaniaNrId">
+						<xsd:annotation>
+							<xsd:documentation>Kraj wydania numeru identyfikacji podatkowej [Country of issue of tax identification number]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:simpleContent>
+								<xsd:extension base="etd:TKodKrajuWydania"/>
+							</xsd:simpleContent>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="NIP" type="etd:TNrNIP">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy NIP </xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TAdres">
+		<xsd:annotation>
+			<xsd:documentation>Adres zamieszkania / siedziby</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="AdresPl">
+				<xsd:annotation>
+					<xsd:documentation>Adres polski</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="KodKraju" type="etd:TKodKraju" fixed="PL">
+							<xsd:annotation>
+								<xsd:documentation>Kraj</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Wojewodztwo" type="etd:TJednAdmin">
+							<xsd:annotation>
+								<xsd:documentation>Województwo</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Powiat" type="etd:TJednAdmin">
+							<xsd:annotation>
+								<xsd:documentation>Powiat</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Gmina" type="etd:TJednAdmin">
+							<xsd:annotation>
+								<xsd:documentation>Gmina</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Nazwa ulicy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="NrDomu" type="etd:TNrBudynku">
+							<xsd:annotation>
+								<xsd:documentation>Numer budynku</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Numer lokalu</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+							<xsd:annotation>
+								<xsd:documentation>Nazwa miejscowości</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="KodPocztowy" type="etd:TKodPocztowy">
+							<xsd:annotation>
+								<xsd:documentation>Kod pocztowy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Poczta" type="etd:TMiejscowosc" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Nazwa urzędu pocztowego</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="AdresZagr">
+				<xsd:annotation>
+					<xsd:documentation>Adres zagraniczny</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="KodKraju">
+							<xsd:annotation>
+								<xsd:documentation>Kod Kraju [Country Code]</xsd:documentation>
+							</xsd:annotation>
+							<xsd:simpleType>
+								<xsd:restriction base="etd:TKodKraju">
+									<xsd:pattern value="P[A-KM-Z]"/>
+									<xsd:pattern value="[A-OQ-Z][A-Z]"/>
+								</xsd:restriction>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Nazwa ulicy [Street]</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="NrDomu" type="etd:TNrBudynku" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Numer budynku [Building number]</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Numer lokalu [Flat number]</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+							<xsd:annotation>
+								<xsd:documentation>Nazwa miejscowości [City]</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="KodPocztowy" type="etd:TKodPocztowy" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>Kod pocztowy [Postal code]</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="TSchematDot">
+		<xsd:annotation>
+			<xsd:documentation>1 - TAK, 2 - NIE </xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="D_P1" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wkład niepieniężny (Aport)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P2" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podział</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P3" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wydzielenie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P4" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Połączenie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P5" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Likwidacja</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P6" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Wymiana udziałów</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P7" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Przeniesienie składników majątkowych</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P8" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Zmiana rezydencji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_P9" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Przekształcenie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="D_INNE" minOccurs="0" maxOccurs="unbounded">
+				<xsd:annotation>
+					<xsd:documentation>Wskazanie innych działań</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="2000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TRodzajPodatku">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj podatku (1 - TAK, 2 - NIE)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="CIT" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek dochodowy od osób prawnych</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="PIT" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek dochodowy od osób fizycznych</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="VAT" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek od towarów i usług</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="AKC" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek akcyzowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="PCC" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek od czynności cywilnoprawnych</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="SD" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek od spadków i darowizn </xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="ORD" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Ordynacja podatkowa</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="SPW" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Podatek od wydobycia niektórych kopalin, specjalny podatek węglowodorowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="INNE" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Wskazanie innych ustaw podatkowych</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="2000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TUmowyUnikPodOpodatkowanie">
+		<xsd:annotation>
+			<xsd:documentation>Słownik umów o unikaniu podwójnego opodatkowania</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="U_P1" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Albanii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 5.03.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P2" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Algierskiej Republiki Ludowo-Demokratycznej w sprawie unikania podwójnego opodatkowania i ustalenia zasad wzajemnej pomocy w zakresie podatków od dochodu i od majątku
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P3" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Królestwem Arabii Saudyjskiej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu oraz Protokół do tej Konwencji, podpisane w Rijadzie dnia 22.02.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P4" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Armenii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Warszawie dnia 14.07.1999 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P5" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Australią w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Canberze dnia 7.05.1991 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P6" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Austrii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i od majątku, podpisana w Wiedniu dnia 13.01.2004 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P7" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Azerbejdżańskiej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Warszawie dnia 26.08.1997 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P8" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Ludowej Republiki Bangladeszu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 8.07.1997 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P9" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Królestwem Belgii w sprawie unikania podwójnego opodatkowania oraz zapobiegania oszustwom podatkowym i uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Warszawie dnia 20.08.2001 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P10" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Białoruś w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Mińsku dnia 18.11.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P11" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Bośnią i Hercegowiną w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Sarajewie dnia 4.06.2014 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P12" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Bułgarii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 11.04.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P13" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Chile w sprawie unikania podwójnego opodatkowania  i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i od majątku, podpisana w Santiago de Chile dnia 10.03.2000 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P14" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Chińskiej Republiki Ludowej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Pekinie dnia 7.06.1988 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P15" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Chorwacji w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 19.10.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P16" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Cypru w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 4.06.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P17" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Federalnym Rządem Federalnej Republiki Jugosławii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 12.06.1997 r.
+ (Czarnogóra)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P18" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Czeską w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 13.09.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P19" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Królestwem Danii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 6.12.2001 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P20" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Arabskiej Republiki Egiptu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 24.06.1996 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P21" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Estońską w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Tallinie dnia 9.05.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P22" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Federalną Demokratyczną Republiką Etiopii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Addis Abebie dnia 13.07.2015 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P23" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Filipin w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Manili dnia 9.09.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P24" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Finlandii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Helsinkach dnia 8.06.2009 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P25" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Republiki Francuskiej w sprawie zapobieżenia podwójnemu opodatkowaniu w zakresie podatków od dochodu i majątku
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P26" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Republiki Greckiej w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Atenach dnia 20.11.1987 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P27" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Gruzji w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i od majątku, podpisana w Warszawie dnia 5.11.1999 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P28" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Baliwatem Guernsey w sprawie unikania podwójnego opodatkowania w odniesieniu do przedsiębiorstw eksploatujących statki morskie lub statki powietrzne w transporcie międzynarodowym, podpisana w Londynie dnia 8.10.2013 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P29" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Baliwatem Guernsey w sprawie unikania podwójnego opodatkowania niektórych kategorii dochodów osób fizycznych, podpisana w Londynie dnia 8.10.2013 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P30" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Hiszpanii o unikaniu podwójnego opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Madrycie dnia 15.11.1979 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P31" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Królestwem Niderlandów w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Warszawie dnia 13.02.2002 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P32" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Republiki Indii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 21.06.1989 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P33" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Indonezji w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 6.10.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P34" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Islamskiej Republiki Iranu w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, podpisana w Teheranie dnia 2.10.1998 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P35" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Irlandii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Madrycie dnia 13.11.1995 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P36" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Islandii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Reykjaviku dnia 19.06.1998 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P37" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Państwa Izrael w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Jerozolimie dnia 22 maja 1991 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P38" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Polską Rzecząpospolitą Ludową a Japonią o unikaniu podwójnego opodatkowania w zakresie podatków od dochodu, podpisana w Tokio dnia 20.02.1980 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P39" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Jersey w sprawie unikania podwójnego opodatkowania w odniesieniu do przedsiębiorstw eksploatujących statki morskie lub statki powietrzne w transporcie międzynarodowym, sporządzona w Londynie dnia 2.12.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P40" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Jersey w sprawie unikania podwójnego opodatkowania osób fizycznych, sporządzona w Londynie dnia 2.12.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P41" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Haszymidzkiego Królestwa Jordanii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Ammanie dnia 4.10.1997 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P42" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Kanadą w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu wraz z Protokołem, podpisane w Ottawie dnia 14.05.2012 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P43" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Państwa Kataru w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Doha dnia 18.11.2008 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P44" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Kazachstanu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu majątku, sporządzona w Ałmaty dnia 21.09.1995 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P45" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Kirgiskiej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Warszawie dnia 19.11.1998 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P46" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Korei w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Seulu dnia 21.06.1991 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P47" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Państwem Kuwejtu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Kuwejcie dnia 16.11.1996 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P48" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Libańską w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i od majątku, podpisana w Bejrucie dnia 26.07.1999 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P49" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Litewskiej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 20.01.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P50" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Wielkim Księstwem Luksemburga w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Luksemburgu dnia 14.06.1995 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P51" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Łotewską w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 17.11.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P52" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Macedońskim w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Skopje dnia 28.11.1996 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P53" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Malezji o uniknięciu podwójnego opodatkowania i zapobieżeniu uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Warszawie dnia 16.09.1977 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P54" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Malty w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w La Valetta dnia 7.01.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P55" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Królestwa Maroka w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Rabacie dnia 24.10.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P56" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Meksykańskich Stanów Zjednoczonych w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Mexico City dnia 30.11.1998 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P57" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Mołdowa w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 16.11.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P58" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Mongolii w sprawie unikania podwójnego opodatkowania oraz zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i od majątku, sporządzona w Warszawie dnia 18.04.1997 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P59" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Federalną Niemiec w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i od majątku, podpisana w Berlinie dnia 14.05.2003 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P60" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Federacyjnej Republiki Nigerii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i sprzedaży majątku
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P61" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Królestwem Norwegii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu oraz Protokół do tej Konwencji, podpisane w Warszawie dnia 9.09.2009 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P62" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Nową Zelandią w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Warszawie dnia 21.04.2005 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P63" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa pomiędzy Polską Rzecząpospolitą Ludową i Muzułmańską Republiką Pakistanu o zapobieżeniu podwójnemu opodatkowaniu dochodu, podpisana w Warszawie dnia 25.10.1974 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P64" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Portugalską w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Lizbonie dnia 9.05.1995 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P65" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Południowej Afryki w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 10.11.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P66" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Federacji Rosyjskiej w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Moskwie dnia 22.05.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P67" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Rumunii w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 23 czerwca 1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P68" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Federalnym Rządem Federalnej Republiki Jugosławii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 12.06.1997 r.
+ (Serbia)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P69" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Singapuru w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu oraz protokół do tej umowy, podpisane w Singapurze dnia 4.11.2012 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P70" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Słowacką w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 18.08.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P71" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Słowenii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Lublanie dnia 28.06.1996 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P72" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Demokratyczno-Socjalistycznej Republiki Sri Lanki o unikaniu podwójnego opodatkowania i zapobieżeniu uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Colombo dnia 25.04.1980 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P73" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Stanów Zjednoczonych Ameryki o uniknięciu podwójnego opodatkowania i zapobieżeniu uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Waszyngtonie dnia 8.10.1974 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P74" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Syryjskiej Republiki Arabskiej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Damaszku dnia 15.08.2001 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P75" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Konfederacją Szwajcarską w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Bernie dnia 2.09.1991 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P76" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Królestwa Szwecji w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, podpisana w Sztokholmie dnia 19.11.2004 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P77" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Republiką Tadżykistanu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, podpisana w Warszawie dnia 27.05.2003 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P78" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Królestwa Tajlandii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, podpisana w Bangkoku dnia 8.12.1978 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P79" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Ustawa z dnia 15.12.2016 r. o zasadach unikania podwójnego opodatkowania oraz zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu stosowanych przez Rzeczpospolitą Polską i terytorium, do którego stosuje się prawo podatkowe należące do właściwości Ministra Finansów Tajwanu
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P80" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Tunezyjskiej w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, sporządzona w Tunisie dnia 29.03.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P81" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Tureckiej w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 3.11.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P82" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Ukrainy w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Kijowie dnia 12.01.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P83" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rządem Rzeczypospolitej Polskiej a Rządem Wschodniej Republiki Urugwaju w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P84" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Uzbekistanu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Warszawie dnia 11.01.1995 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P85" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Republiką Węgierską w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i majątku, sporządzona w Budapeszcie dnia 23.09.1992 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P86" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Konwencja między Rzecząpospolitą Polską a Zjednoczonym Królestwem Wielkiej Brytanii i Irlandii Północnej w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu i od zysków majątkowych, podpisana w Londynie dnia 20.07.2006 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P87" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Socjalistycznej Republiki Wietnamu w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie podatków od dochodu, sporządzona w Warszawie dnia 31.08.1994 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P88" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Polskiej Rzeczypospolitej Ludowej a Rządem Republiki Włoskiej w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu i zapobiegania uchylaniu się od opodatkowania, sporządzona w Rzymie dnia 21.06.1985 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P89" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Wyspą Man w sprawie unikania podwójnego opodatkowania w odniesieniu do przedsiębiorstw eksploatujących statki morskie lub statki powietrzne w transporcie międzynarodowym, podpisana w Londynie dnia 7.03.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P90" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą Polską a Wyspą Man w sprawie unikania podwójnego opodatkowania niektórych kategorii dochodów osób fizycznych, podpisana w Londynie dnia 7.03.2011 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P91" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rzecząpospolitą a Rządem Republiki Zambii w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, majątku i zysków majątkowych
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P92" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Republiki Zimbabwe w sprawie unikania podwójnego opodatkowania w zakresie podatków od dochodu, majątku i zysków majątkowych, sporządzona w Harare dnia 9.07.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="U_P93" type="etd:TWybor1_2">
+				<xsd:annotation>
+					<xsd:documentation>Umowa między Rządem Rzeczypospolitej Polskiej a Rządem Zjednoczonych Emiratów Arabskich w sprawie unikania podwójnego opodatkowania i zapobiegania uchylaniu się od opodatkowania w zakresie  podatków od dochodu, sporządzona w Abu Zabi dnia 31.01.1993 r.
+</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TNrMDR">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="MDR[0-9]{7}/[0-9]{2}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TId">
+		<xsd:restriction base="xsd:string">
+			<xsd:minLength value="32"/>
+			<xsd:maxLength value="32"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TWartoscKorzysci">
+		<xsd:annotation>
+			<xsd:documentation>Szacunkowa wartość korzyści podatkowej lub przybliżona wartość aktywa w podatku odroczonym, jeśli występuje i jest znana lub możliwa do oszacowania przez składającego informację, w złotych.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="WartoscKwotowa" type="etd:TKwotaC">
+				<xsd:annotation>
+					<xsd:documentation>Szacunkowa wartość korzyści podatkowej lub przybliżona wartość aktywa w podatku odroczonym, w złotych.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="BrakSzacowania" type="etd:TWybor1" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Brak możliwości oszacowania wartości korzyści podatkowej lub przybliżonej wartości aktywa w podatku odroczonym.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="BrakKorzysci" type="etd:TWybor1" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Brak korzyści podatkowej lub przybliżonej wartości aktywa w podatku odroczonym w złotych.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:simpleType name="TKwotaCWiekszaOdZera">
+		<xsd:annotation>
+			<xsd:documentation>Wartość kwotowa nieujemna wykazana w zł większa od zera</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TKwotaC">
+			<xsd:minInclusive value="1"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TWartoscPrzedmiotu">
+		<xsd:annotation>
+			<xsd:documentation>Wartość przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy.</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="WartKwotPrzed" type="mdr:TKwotaCWiekszaOdZera">
+				<xsd:annotation>
+					<xsd:documentation>Wartość przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy wyrażona w złotych.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="BrakSzacPrzed" type="etd:TWybor1" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Brak możliwości oszacowania wartości przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="BrakWartPrzed" type="etd:TWybor1" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Brak wartości przedmiotu czynności uzgodnienia stanowiącego schemat podatkowy.</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+</xsd:schema>

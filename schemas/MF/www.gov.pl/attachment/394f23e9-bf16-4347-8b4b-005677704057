@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2015 (http://www.altova.com) by MF (Ministerstwo Finansów) -->
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr2" xmlns:mdr="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" targetNamespace="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/Mdr2" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<xsd:import namespace="http://www.mf.gov.pl/schematy/MDR/DefinicjeTypy/2018/12/14/DefinicjeTypyMdr/" schemaLocation="https://www.mf.gov.pl/documents/764034/6625111/mdr.xsd"/>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:annotation>
+					<xsd:documentation>Kod formularza</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="MDR-2"/>
+					<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0"/>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia" type="xsd:string" fixed="1">
+				<xsd:annotation>
+					<xsd:documentation>Cel złożenia</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataZdarzenia" type="etd:TData">
+				<xsd:annotation>
+					<xsd:documentation>Data zdarzenia powodująca obowiązek złożenia: dzień – miesiąc – rok</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TZakresZgloszenia">
+		<xsd:annotation>
+			<xsd:documentation>Zakres zgłoszenia MDR-2</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="P1" type="etd:TWybor1">
+				<xsd:annotation>
+					<xsd:documentation>Złożenie zawiadomienia</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="P2">
+				<xsd:annotation>
+					<xsd:documentation>Uzupełnienie zawiadomienia</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:choice>
+							<xsd:element name="NSP" type="mdr:TNrMDR">
+								<xsd:annotation>
+									<xsd:documentation>Numer schematu podatkowego </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="UPO" type="mdr:TId">
+								<xsd:annotation>
+									<xsd:documentation>Identyfikator dokumentu UPO</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:choice>
+						<xsd:element name="NSPstatus" type="etd:TWybor1_2">
+							<xsd:annotation>
+								<xsd:documentation>Czy składający posiada NSP schematu podatkowego, którego dotyczy składana informacja / uzupełnienie informacji. 1 - TAK, 2 - NIE</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="TRodzajZawiadamiajacego">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj zawiadamiającego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:element name="Promotor">
+				<xsd:annotation>
+					<xsd:documentation>Promotor</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:sequence>
+						<xsd:element name="P24">
+							<xsd:annotation>
+								<xsd:documentation>Data udostępnienia schematu podatkowego lub dokonania pierwszej czynności związanej z wdrażaniem schematu podatkowego</xsd:documentation>
+							</xsd:annotation>
+							<xsd:simpleType>
+								<xsd:restriction base="etd:TData"/>
+							</xsd:simpleType>
+						</xsd:element>
+						<xsd:element name="P26">
+							<xsd:annotation>
+								<xsd:documentation>Liczba podmiotów poinformowanych o obowiązku przekazania informacji o schemacie podatkowym</xsd:documentation>
+							</xsd:annotation>
+							<xsd:simpleType>
+								<xsd:restriction base="xsd:integer"/>
+							</xsd:simpleType>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Wspomagajacy">
+				<xsd:annotation>
+					<xsd:documentation>Wspomagający</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:choice>
+						<xsd:element name="BrakInformacjiNSP">
+							<xsd:annotation>
+								<xsd:documentation>Wspomagający nie został poinformowany o NSP zgodnie z art. 86d § 1 ustawy (art. 86d § 3 ustawy)</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="P28">
+										<xsd:annotation>
+											<xsd:documentation>Dzień, w którym wspomagający powziął wątpliwości, że uzgodnienie stanowi schemat podatkowy (art. 86d § 3 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TData"/>
+										</xsd:simpleType>
+									</xsd:element>
+									<xsd:element name="P30">
+										<xsd:annotation>
+											<xsd:documentation>Liczba podmiotów, do których wspomagający wystąpił o przekazanie pisemnego oświadczenia, że uzgodnienie nie stanowi schematu podatkowego (art. 86d § 3 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:integer"/>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:element name="TajemnicaZawodowaNSP">
+							<xsd:annotation>
+								<xsd:documentation>Wspomagający nie został poinformowany o NSP zgodnie z art. 86d § 1 ustawy (art. 86d § 3 ustawy) oraz przekazanie przez wspomagającego informacji o schemacie podatkowym naruszałoby obowiązek zachowania prawnie chronionej tajemnicy zawodowej (art. 86d § 5 ustawy)</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="P32">
+										<xsd:annotation>
+											<xsd:documentation>Dzień, w którym wspomagający dostrzegł, że uzgodnienie stanowi schemat podatkowy (art. 86d § 5 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TData"/>
+										</xsd:simpleType>
+									</xsd:element>
+									<xsd:element name="P34">
+										<xsd:annotation>
+											<xsd:documentation>Liczba podmiotów, które wspomagający poinformował o obowiązku przekazania informacji Szefowi KAS (art. 86d § 5 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:integer"/>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:element name="BrakInformacji86b3">
+							<xsd:annotation>
+								<xsd:documentation>Wspomagającemu nie została przekazana informacja, o której mowa w art. 86b § 3 ustawy (art. 86d § 3 ustawy)</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="P28A">
+										<xsd:annotation>
+											<xsd:documentation>Dzień, w którym wspomagający powziął wątpliwości, że uzgodnienie stanowi schemat podatkowy (art. 86d § 3 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TData"/>
+										</xsd:simpleType>
+									</xsd:element>
+									<xsd:element name="P30A">
+										<xsd:annotation>
+											<xsd:documentation>Liczba podmiotów, do których wspomagający wystąpił o przekazanie pisemnego oświadczenia, że uzgodnienie nie stanowi schematu podatkowego (art. 86d § 3 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:integer"/>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+						<xsd:element name="TajemnicaZawodowa86b3">
+							<xsd:annotation>
+								<xsd:documentation>Wspomagającemu nie została przekazana informacja, o której mowa w art. 86b § 3 ustawy (art. 86d § 3 ustawy) oraz przekazanie informacji przez wspomagającego o schemacie podatkowym naruszałoby obowiązek zachowania prawnie chronionej tajemnicy zawodowej (art. 86d § 5 ustawy)</xsd:documentation>
+							</xsd:annotation>
+							<xsd:complexType>
+								<xsd:sequence>
+									<xsd:element name="P32A">
+										<xsd:annotation>
+											<xsd:documentation>Dzień, w którym wspomagający dostrzegł, że uzgodnienie stanowi schemat podatkowy (art. 86d § 5 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TData"/>
+										</xsd:simpleType>
+									</xsd:element>
+									<xsd:element name="P34A">
+										<xsd:annotation>
+											<xsd:documentation>Liczba podmiotów, które wspomagający poinformował o obowiązku przekazania informacji Szefowi KAS (art. 86d § 5 ustawy)</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:integer"/>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:complexType>
+						</xsd:element>
+					</xsd:choice>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:element name="Zawiadomienie">
+		<xsd:annotation>
+			<xsd:documentation>MDR-2 zawiadomienie dotyczące schematu podatkowego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek zawiadomienia</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="ZakresZgloszenia" type="tns:TZakresZgloszenia">
+					<xsd:annotation>
+						<xsd:documentation>Cel złożenia zawiadomienia</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="DaneZawiadamiajacego">
+					<xsd:annotation>
+						<xsd:documentation>Dane zawiadamiającego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="RodzajZawiadamiajacego" type="tns:TRodzajZawiadamiajacego">
+								<xsd:annotation>
+									<xsd:documentation>Informacje dotyczace poinformowania przez zawiadamiającego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="IdOsobyFizycznej" type="mdr:TIdOsobyFizycznejPL">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej mającej miejsce zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyFizycznejZag" type="mdr:TOsobaZagranicznaFizyczna">
+									<xsd:annotation>
+										<xsd:documentation>Dane identyfikacyjne osoby fizycznej niemającej miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="IdOsobyNiefizycznej">
+									<xsd:annotation>
+										<xsd:documentation>Dane podmiotu niebędącego osobą fizyczną</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexType>
+										<xsd:complexContent>
+											<xsd:extension base="mdr:TIdOsobyNiefizycznejMDR"/>
+										</xsd:complexContent>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="AdresZamieszkaniaSiedziby" type="mdr:TAdres">
+								<xsd:annotation>
+									<xsd:documentation>Adres zamieszkania / siedziby</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="DodatkoweWyjasnienia" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dodatkowe wyjaśnienia. Pole wymagane w przypadku złożenia uzupełnienia.</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:maxLength value="10000"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

@@ -1,0 +1,448 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" xmlns:knus="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/" xmlns:tns="http://crd.gov.pl/wzor/2024/10/04/13508/" targetNamespace="http://crd.gov.pl/wzor/2024/10/04/13508/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/02/06/eD/KodyNaczelnikowUrzedowSkarbowych/KodyNaczelnikowUrzedowSkarbowych_v4-0E.xsd"/>
+	<xsd:simpleType name="OfficialCopyFileType_Type">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="application/pdf"/>
+			<xsd:enumeration value="image/jpeg"/>
+			<xsd:enumeration value="image/tiff"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="FileAttachment_Type">
+		<xsd:sequence>
+			<xsd:element name="TypPliku" type="tns:OfficialCopyFileType_Type">
+				<xsd:annotation>
+					<xsd:documentation>Typ pliku [File type]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NazwaPliku">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa pliku (bez ścieżki) [File name (no path)]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+						<xsd:pattern value="[A-Za-z0-9\-_:().,\+ ]*"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OpisPliku" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Opis pliku [File description]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="256"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek wniosku</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="WH-WOZ (4)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="CIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="4"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TCelZlozenia">
+						<xsd:enumeration value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TLDataP">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_3"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TLDataK">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="knus:TKodNaczUS">
+				<xsd:annotation>
+					<xsd:documentation>Naczelnik urzędu skarbowego, do którego jest adresowany wniosek [Head of the tax office to where the application is addressed]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="WH-WOZ"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TTekstowy">
+		<xsd:annotation>
+			<xsd:documentation>Typ znakowy ograniczony do 2000 znaków [The character type is limited to 2000 characters]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:minLength value="1"/>
+			<xsd:maxLength value="2000"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TPlikuZalacznika">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="application/pdf"/>
+			<xsd:enumeration value="image/jpeg"/>
+			<xsd:enumeration value="image/tiff"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TSzczegolowyCelZlozenia">
+		<xsd:annotation>
+			<xsd:documentation>Szczegółowy cel złożenia wniosku [Detailed purpose of submitting the application]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>złożenie wniosku [submitting the application]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>korekta wniosku [correction of the application]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>uzupełnienie wniosku [addition to the application]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TZalacznika">
+		<xsd:sequence>
+			<xsd:element name="TypPliku" type="tns:TPlikuZalacznika">
+				<xsd:annotation>
+					<xsd:documentation>Typ pliku [File type]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NazwaPliku">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa pliku (bez ścieżki) [File name (no path)]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="40"/>
+						<xsd:pattern value="[A-Za-z0-9\-_:().,\+ ]*"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OpisPliku" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Opis pliku [File description]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:maxLength value="256"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TIdentyfikatorOsobyFizycznej1">
+		<xsd:sequence>
+			<xsd:choice>
+				<xsd:element name="NIP" type="etd:TNrNIP">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy NIP [Tax Identification Number NIP]</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PESEL" type="etd:TNrPESEL">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy numer PESEL [Tax identification number PESEL]</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:element name="ImiePierwsze" type="etd:TImie">
+				<xsd:annotation>
+					<xsd:documentation>Pierwsze imię [First name]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Nazwisko" type="etd:TNazwisko">
+				<xsd:annotation>
+					<xsd:documentation>Nazwisko [Surname]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataUrodzenia" type="etd:TData" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Data urodzenia [Date of birth]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TIdentyfikatorOsobyNiefizycznej1">
+		<xsd:sequence>
+			<xsd:element name="NIP" type="etd:TNrNIP">
+				<xsd:annotation>
+					<xsd:documentation>Identyfikator podatkowy NIP [Tax Identification Number NIP]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="PelnaNazwa">
+				<xsd:annotation>
+					<xsd:documentation>Pełna nazwa [Full name]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="240"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TPodmiotDowolnyBezAdresu">
+		<xsd:choice>
+			<xsd:element name="OsobaFizyczna" type="tns:TIdentyfikatorOsobyFizycznej1"/>
+			<xsd:element name="OsobaNiefizyczna" type="tns:TIdentyfikatorOsobyNiefizycznej1"/>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:simpleType name="TNrUPO">
+		<xsd:annotation>
+			<xsd:documentation>Typ dedykowany dla UPO [Type dedicated for UPO]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:token">
+			<xsd:pattern value="[a-f0-9]{32}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLDataP">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty początku okresu [Restriction for the start date of the period]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2022-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLDataK">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty końca okresu [Restriction for the end date of the period]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2022-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Wniosek">
+		<xsd:annotation>
+			<xsd:documentation>WNIOSEK PODATNIKA O WYDANIE OPINII O STOSOWANIU PREFERENCJI W POBORZE ZRYCZAŁTOWANEGO PODATKU DOCHODOWEGO OD NALEŻNOŚCI WYPŁACANYCH NA RZECZ PODATNIKA [APPLICATION OF THE TAXPAYER TO ISSUE AN OPINION ON THE APPLICATION OF AN EXEMPTION]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek wniosku</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne podatnika [Tax payer data]</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OsobaNiefizyczna">
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="tns:TIdentyfikatorOsobyNiefizycznej1">
+											<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne płatnika [identification data of tax remitter]</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TPodmiotDowolnyBezAdresu">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Płatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Rodzaj dochodu, treść wniosku, dane kontaktowe, oświadczenie, informacja o załączonych kopiach dokumentów [Type of income, content of the application, contact details, statement, information on attached copies of documents]</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence>
+								<xsd:element name="P_5" type="tns:TSzczegolowyCelZlozenia">
+									<xsd:annotation>
+										<xsd:documentation>Szczegółowy cel złożenia wniosku [Detailed purpose of submitting the application]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_6" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Uzupełnienie/korekta poprzednio złożonego wniosku [Addition/correction to a previously submitted application form]: 1 - tak [1 - yes], 2 - nie [2 - no]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_6A" type="tns:TNrUPO" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Numer referencyjny UPO poprzednio złożonego wniosku, którego dotyczy uzupełnienie/korekta. [The number of the Official Confirmation of Receipt (UPO) of the submitted application to which the addition/correction applies.]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:element name="P_24_1" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj dochodu [Type of income]: 1 - dywidendy [dividends]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_24_2" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj dochodu [Type of income]: 2 - należności licencyjne [royalities]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_24_3" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj dochodu [Type of income]: 3 - odsetki [interest]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_25" type="tns:TTekstowy">
+								<xsd:annotation>
+									<xsd:documentation>Treść wniosku [Content of the application]</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_26" type="tns:TTekstowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Uzupełnienie treści wniosku [Addition to the content of the application]</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_27" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Podstawa wnioskowanego zwolnienia [Basis for the requested exemption]: 1 - ustawa o CIT [CIT Act], 2 - umowa o unikaniu podwójnego opodatkowania [double taxation treaty]</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<!--DANE KONTAKTOWE [CONTACT DETAILS]-->
+								<xsd:element name="P_28" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nr telefonu [Phone number]</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TZnakowy">
+											<xsd:maxLength value="16"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_29" type="etd:TAdresEmail" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Adres e-mail [E-mail address]</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="VATRefundApplication" minOccurs="0">
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="Zalaczniki" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Załączniki [Attachements]</xsd:documentation>
+											</xsd:annotation>
+											<!--Nazwa pliku powinna:
+- być krótka,
+- zawierać rozszerzenie pliku,
+- dokładnie odpowiadać nazwie pliku zawartego w archiwum ZIP(również pod względem wielkości liter),
+- nie zawierać znaków diakrytycznych (np. polskich lub obcych liter narodowych)
+- nie zawierać nazwy archiwum ZIP,
+- muszą zostać wymienione wszystkie pliki zawarte w dołączanym archiwum „ZIP”.
+W przypadku niezastosowania się do powyższych zaleceń wniosek nie zostanie przyjęty.
+
+Kopia dokumentów ZIP powinna:
+- zawierać jeden załącznik w postaci archiwum (algorytm DEFLATE), 
+- zawierać wszystkie opisane pliki, 
+- nie zawierać podkatalogów, 
+- nie może być chroniona hasłem ani zaszyfrowana.
+
+[The file name should:
+- be short,
+- contain the file extension,
+- exactly correspond to the name of the file contained in the ZIP archive(also in terms of the size of the letters),
+- contain no diacritical marks (e.g. Polish or foreign national letters)
+- not contain the name of the ZIP archive,
+- must list all files contained in the attached "ZIP" archive.
+If you do not comply with the above recommendations, the application will not be accepted.
+
+The copy of ZIP documents should:
+- contain one archive attachment (DEFLATE algorithm), 
+- contain all described files, 
+- not contain subdirectories, 
+- not be password protected or encrypted.]-->
+											<xsd:complexType>
+												<xsd:sequence>
+													<xsd:element name="InfOKopiiDokumentu" type="tns:FileAttachment_Type" minOccurs="0" maxOccurs="unbounded">
+														<xsd:annotation>
+															<xsd:documentation>Informacja o załączonej kopii dokumentu [information on attached copies of documents]</xsd:documentation>
+														</xsd:annotation>
+													</xsd:element>
+												</xsd:sequence>
+											</xsd:complexType>
+											<xsd:unique name="KopiaDokumentu_Unique">
+												<xsd:selector xpath="./tns:InfOKopiiDokumentu"/>
+												<xsd:field xpath="tns:NazwaPliku"/>
+											</xsd:unique>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Oswiadczenie">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i złożenia poniższego oświadczenia (1 - tak):
+						Oświadczam, że fakty przedstawione we wniosku o wydanie opinii o stosowaniu preferencji są zgodne z prawdą, oraz że dokumentacja załączona do wniosku jest zgodna z oryginałem.
+						
+						[I declare that the facts presented in the application for an opinion on the application of an exemption are true, and that the documentation attached to the application is consistent with the original.]</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP">
+			<xsd:selector xpath="*"/>
+			<xsd:field xpath="tns:OsobaFizyczna/tns:NIP|tns:OsobaNiefizyczna/etd:NIP"/>
+		</xsd:unique>
+	</xsd:element>
+</xsd:schema>
