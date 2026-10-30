@@ -45,7 +45,7 @@ public sealed partial class MainViewModel : ViewModelBase
             new StockViewModel(session, dialogs)
         };
         SectionViewModel S(PelnaKsiegowosc.Application.Assistant.AppArea a) => Sections[(int)a];
-        MenuItems = new List<object>
+        _fullMenu = new List<object>
         {
             new MenuHeader("NA CO DZIEŃ"),
             S(AA.Pulpit), S(AA.Sprzedaz), S(AA.Zakupy), S(AA.Bank), S(AA.Kontrahenci),
@@ -64,8 +64,10 @@ public sealed partial class MainViewModel : ViewModelBase
     public AppSession Session { get; }
     public IReadOnlyList<SectionViewModel> Sections { get; }
 
+    private readonly List<object> _fullMenu;
+
     /// <summary>Menu z nagłówkami grup (nagłówki nie są wybieralne).</summary>
-    public IReadOnlyList<object> MenuItems { get; }
+    public IReadOnlyList<object> MenuItems => _fullMenu;
 
     public object? SelectedMenuItem
     {

@@ -117,6 +117,7 @@ public sealed partial class DashboardViewModel : SectionViewModel
 
     [RelayCommand] private void NewSale() => Session.Navigate(AppArea.Sprzedaz, "nowy");
     [RelayCommand] private void NewPurchase() => Session.Navigate(AppArea.Zakupy, "nowy");
+    [RelayCommand] private void KsefDownload() => Session.Navigate(AppArea.Zakupy);
     [RelayCommand] private void ImportStatement() => Session.Navigate(AppArea.Bank);
     [RelayCommand] private void CloseMonth() => Session.Navigate(AppArea.Zamkniecie);
     [RelayCommand] private void OpenReports() => Session.Navigate(AppArea.Raporty);

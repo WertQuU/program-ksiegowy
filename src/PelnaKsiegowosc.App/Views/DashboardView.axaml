@@ -46,7 +46,8 @@
         <StackPanel Spacing="8">
           <TextBlock Text="Co chcesz zrobić?" Classes="h2" Margin="0" />
           <WrapPanel Classes="quick">
-            <Button Command="{Binding NewSaleCommand}" Classes="accent"><StackPanel><TextBlock Text="Wystaw fakturę" FontWeight="SemiBold" /><TextBlock Text="sprzedaż dla klienta" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding KsefDownloadCommand}" Classes="accent"><StackPanel><TextBlock Text="Pobierz faktury z KSeF" FontWeight="SemiBold" /><TextBlock Text="faktury zakupowe od dostawców" Classes="cardnote" /></StackPanel></Button>
+            <Button Command="{Binding NewSaleCommand}"><StackPanel><TextBlock Text="Wystaw fakturę" FontWeight="SemiBold" /><TextBlock Text="sprzedaż dla klienta" Classes="cardnote" /></StackPanel></Button>
             <Button Command="{Binding NewPurchaseCommand}"><StackPanel><TextBlock Text="Dodaj wydatek" FontWeight="SemiBold" /><TextBlock Text="faktura, rachunek od dostawcy" Classes="cardnote" /></StackPanel></Button>
             <Button Command="{Binding ImportStatementCommand}"><StackPanel><TextBlock Text="Wyciąg z banku" FontWeight="SemiBold" /><TextBlock Text="import i rozliczenie wpłat" Classes="cardnote" /></StackPanel></Button>
             <Button Command="{Binding CloseMonthCommand}"><StackPanel><TextBlock Text="Rozlicz miesiąc" FontWeight="SemiBold" /><TextBlock Text="VAT, JPK, CIT krok po kroku" Classes="cardnote" /></StackPanel></Button>
