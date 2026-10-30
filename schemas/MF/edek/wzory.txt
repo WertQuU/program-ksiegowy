@@ -20,3 +20,11 @@ PIT-36L(17)	http://crd.gov.pl/wzor/2021/02/12/10402/schemat.xsd	crd.gov.pl/wzor/
 PIT-4R(12)	http://crd.gov.pl/wzor/2021/04/02/10568/schemat.xsd	crd.gov.pl/wzor/2021/04/02/10568/schemat.xsd
 PIT-8AR(12)	http://crd.gov.pl/wzor/2022/04/15/11486/schemat.xsd	crd.gov.pl/wzor/2022/04/15/11486/schemat.xsd
 VAT-UE(5)	http://crd.gov.pl/wzor/2020/07/03/9690/schemat.xsd	crd.gov.pl/wzor/2020/07/03/9690/schemat.xsd
+CIT-8(31)	http://crd.gov.pl/wzor/2022/07/27/11655/schemat.xsd	crd.gov.pl/wzor/2022/07/27/11655/schemat.xsd
+CIT-8AB(6)	http://crd.gov.pl/wzor/2022/03/23/11434/schemat.xsd	crd.gov.pl/wzor/2022/03/23/11434/schemat.xsd
+CIT-ST(8)	http://crd.gov.pl/wzor/2021/04/23/10619/schemat.xsd	crd.gov.pl/wzor/2021/04/23/10619/schemat.xsd
+IFT-2R(10)	http://crd.gov.pl/wzor/2022/06/24/11588/schemat.xsd	crd.gov.pl/wzor/2022/06/24/11588/schemat.xsd
+PIT-11(29)	http://crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd	crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd
+PIT-28(25)	http://crd.gov.pl/wzor/2023/02/06/12109/schemat.xsd	crd.gov.pl/wzor/2023/02/06/12109/schemat.xsd
+PIT-36(28)	http://crd.gov.pl/wzor/2021/01/21/10311/schemat.xsd	crd.gov.pl/wzor/2021/01/21/10311/schemat.xsd
+PIT-36L(17)	http://crd.gov.pl/wzor/2021/02/12/10402/schemat.xsd	crd.gov.pl/wzor/2021/02/12/10402/schemat.xsd
