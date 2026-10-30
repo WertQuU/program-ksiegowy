@@ -22,6 +22,7 @@
       <TextBlock Text="VAT-UE od / do (mm.rrrr):" /><TextBox Text="{Binding From}" MinWidth="80" /><TextBox Text="{Binding To}" MinWidth="80" />
       <TextBox Text="{Binding ProfitDistribution}" Watermark="podział zysku do uchwały, np. „na kapitał zapasowy”" MinWidth="300" />
       <Button Content="Generuj / przejdź" Command="{Binding GenerateCommand}" Classes="accent" />
+      <Button Content="Plik XML…" Command="{Binding XmlCommand}" />
       <Button Content="PDF…" Command="{Binding ExportPdfCommand}" />
       <Button Content="XLSX…" Command="{Binding ExportXlsxCommand}" />
     </WrapPanel>

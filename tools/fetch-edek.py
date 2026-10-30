@@ -27,6 +27,10 @@ def store_xsd(final, data, label=""):
     log.append(f"ZAPISANO {full} ({len(data)} B) {label}")
     if label:
         open(os.path.join(OUT, "wzory.txt"), "a", encoding="utf-8").write(f"{label}\t{final}\t{rel}\n")
+        ver = re.search(rb'wersjaSchemy"[^>]*fixed="([^"]+)"', data)
+        named = os.path.join(OUT, "nazwane", f"Schemat_{label.replace('/', '_')}_v{ver.group(1).decode() if ver else '1-0E'}.xsd")
+        os.makedirs(os.path.dirname(named), exist_ok=True)
+        open(named, "wb").write(data)
     for loc in re.findall(rb'schemaLocation="([^"]+)"', data):
         fetch_xsd(urllib.parse.urljoin(final, loc.decode()))
 
@@ -51,6 +55,11 @@ def fetch_xsd(url, label=""):
                 log.append(f"ZAPISANO {p} {label}")
         return
     if b"http://www.w3.org/2001/XMLSchema" in data[:8000]:
+        req = os.path.basename(urllib.parse.urlparse(url).path)
+        if not label and req.endswith(".xsd") and req != "schemat.xsd":
+            # kopia pod nazwą z schemaLocation — walidator programu rozwiązuje importy po nazwie pliku
+            os.makedirs(os.path.join(OUT, "nazwane"), exist_ok=True)
+            open(os.path.join(OUT, "nazwane", req), "wb").write(data)
         store_xsd(final, data, label)
     else:
         log.append(f"? {url} -> {final} [{ctype}] {len(data)} B (nie XSD)")

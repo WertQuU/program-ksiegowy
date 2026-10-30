@@ -3,6 +3,8 @@ using CommunityToolkit.Mvvm.Input;
 using PelnaKsiegowosc.Application.Assistant;
 using PelnaKsiegowosc.Application.Reports;
 using PelnaKsiegowosc.Domain.Common;
+using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Infrastructure.Declarations;
 using PelnaKsiegowosc.Infrastructure.Export;
 using PelnaKsiegowosc.Presentation.Services;
 
@@ -19,7 +21,7 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
     public List<DeclarationInfo> Catalog { get; } = new()
     {
         new("CIT-8 z CIT-8/O — zeznanie roczne", "koniec 3. miesiąca po roku", "tutaj: Generuj", AppArea.Cit, "CIT8"),
-        new("VAT-UE — informacja podsumowująca", "25. dzień następnego miesiąca", "tutaj: Generuj (okres od–do)", AppArea.Vat, "VATUE"),
+        new("VAT-UE — informacja podsumowująca", "25. dzień następnego miesiąca", "tutaj: Generuj (okres od–do), plik XML za miesiąc", AppArea.Vat, "VATUE"),
         new("IFT-2R / CIT-10Z — wypłaty dla nierezydentów", "koniec 3. miesiąca po roku", "tutaj: Generuj (rok)", AppArea.Cit, "IFT2R"),
         new("Uchwały: zatwierdzenie sprawozdania, podział zysku, absolutorium", "6 miesięcy po dniu bilansowym", "tutaj: Generuj", AppArea.Raporty, "UCHWALY"),
         new("PIT-36 / PIT-36L — właściciel JDG / wspólnicy spółki osobowej", "30 kwietnia (zaliczki: 20. dnia)", "tutaj: wpisz wspólników i Generuj", AppArea.Cit, "PIT"),
@@ -92,6 +94,34 @@ public sealed partial class DeclarationsViewModel : SectionViewModel
         StatusMessage = _current.ControlsPassed ? _current.Title : "UWAGA: uzupełnij pozycje wskazane pod tabelą.";
         await Session.AuditAsync("DEKLARACJA_PRZYGOTOWANA", "Declaration", null, _current.Title);
     });
+
+    [RelayCommand]
+    private Task XmlAsync() => RunAsync(async () =>
+    {
+        var y = Session.Years.FirstOrDefault(f => f.Name == Year.Trim()) ?? Session.CurrentYear;
+        await using var db = Session.OpenDb();
+        var company = await db.Companies.AsNoTracking().FirstAsync(c => c.Id == Session.CompanyId);
+        var person = await DeclarationXmlExport.OwnerAsync(db, company);
+        var r = new ReportService(db, Session.User, Session.Clock);
+        switch (Selected.Kind)
+        {
+            case "VATUE":
+                var month = Parse.Month(From, "Od");
+                if (Parse.Month(To, "Do") != month) throw new DomainException("VAT-UE składa się za miesiąc — ustaw ten sam miesiąc w polach Od i Do.");
+                var x = VatUeXmlBuilder.Build(company, month, await r.VatUeLinesAsync(month, month), Session.Validator, person);
+                await DeclarationXmlExport.SaveAsync(Session, Dialogs, "VAT-UE(5)", $"VAT-UE-{month:yyyy-MM}.xml", x,
+                    "Plik wyślij przez e-Deklaracje (bramka MF) lub e-Urząd Skarbowy — podpis przy wysyłce. Program nie wysyła deklaracji.");
+                break;
+            default:
+                throw new DomainException(XmlUnavailable(Selected.Kind));
+        }
+    });
+
+    private static string XmlUnavailable(string? kind) => kind switch
+    {
+        null => "Ten dokument przygotowuje się w innej sekcji — użyj przycisku „Generuj / przejdź”.",
+        _ => "Dla tego dokumentu program przygotowuje zestawienie kwot (PDF/XLSX) — przepisz je do formularza w e-Urzędzie Skarbowym."
+    };
 
     [RelayCommand] private Task ExportPdfAsync() => ExportAsync(new PdfReportExporter());
     [RelayCommand] private Task ExportXlsxAsync() => ExportAsync(new XlsxReportExporter());

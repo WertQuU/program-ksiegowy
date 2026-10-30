@@ -63,30 +63,44 @@ public sealed partial class ReportService
         return r;
     }
 
+    /// <summary>Pozycja VAT-UE: część (C — dostawy, D — nabycia, E — usługi), kraj, numer VAT bez prefiksu, kontrahent, wartość w pełnych złotych.</summary>
+    public sealed record VatUeLine(string Part, string Country, string VatNumber, string Counterparty, decimal Value);
+
+    public async Task<List<VatUeLine>> VatUeLinesAsync(DateOnly periodFrom, DateOnly periodTo, CancellationToken ct = default)
+    {
+        var p0 = new DateOnly(periodFrom.Year, periodFrom.Month, 1);
+        var p1 = new DateOnly(periodTo.Year, periodTo.Month, 1);
+        var entries = await _db.VatRegister.AsNoTracking().Where(v => v.CompanyId == _user.CompanyId && v.Period >= p0 && v.Period <= p1).ToListAsync(ct);
+        IEnumerable<VatUeLine> Part(string code, IEnumerable<VatRegisterEntry> list) =>
+            list.GroupBy(e => (e.CounterpartyCountry, Nip: (e.CounterpartyNip ?? "").Replace(" ", "").Replace("-", "").ToUpperInvariant())).OrderBy(g => g.Key.CounterpartyCountry).ThenBy(g => g.Key.Nip)
+                .Select(g => new VatUeLine(code, g.Key.CounterpartyCountry,
+                    g.Key.Nip.StartsWith(g.Key.CounterpartyCountry, StringComparison.OrdinalIgnoreCase) ? g.Key.Nip[g.Key.CounterpartyCountry.Length..] : g.Key.Nip,
+                    g.First().CounterpartyName, Math.Round(g.Sum(e => e.NetPln), 0, MidpointRounding.AwayFromZero)));
+        return Part("C", entries.Where(e => e.Register == VatRegisterType.Sprzedaz && e.TransactionType == VatTransactionType.WewnatrzwspolnotowaDostawaTowarow))
+            .Concat(Part("D", entries.Where(e => e.Register == VatRegisterType.Zakup && e.TransactionType == VatTransactionType.WewnatrzwspolnotoweNabycieTowarow)))
+            .Concat(Part("E", entries.Where(e => e.Register == VatRegisterType.Sprzedaz && e.JpkNetField == "K_12" && EuCountries.Contains(e.CounterpartyCountry))))
+            .ToList();
+    }
+
     /// <summary>VAT-UE: wewnątrzwspólnotowe dostawy (C), nabycia (D) i świadczenie usług (E) za miesiąc lub kwartał.</summary>
     public async Task<ReportDocument> VatUeAsync(DateOnly periodFrom, DateOnly periodTo, CancellationToken ct = default)
     {
         var p0 = new DateOnly(periodFrom.Year, periodFrom.Month, 1);
         var p1 = new DateOnly(periodTo.Year, periodTo.Month, 1);
-        var entries = await _db.VatRegister.AsNoTracking().Where(v => v.CompanyId == _user.CompanyId && v.Period >= p0 && v.Period <= p1).ToListAsync(ct);
+        var lines = await VatUeLinesAsync(p0, p1, ct);
         var r = await NewAsync("VAT-UE — informacja podsumowująca", p0 == p1 ? $"{p0:MM.yyyy}" : $"{p0:MM.yyyy} – {p1:MM.yyyy}", false, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Część"), new ReportColumn("Kod kraju"), new ReportColumn("Numer VAT kontrahenta", ColumnKind.Text, 1.5), new ReportColumn("Kontrahent", ColumnKind.Text, 2), new ReportColumn("Wartość (zł)", ColumnKind.Money) });
-        void Section(string code, string title, IEnumerable<VatRegisterEntry> list)
+        foreach (var (code, title) in new[] { ("C", "Wewnątrzwspólnotowe dostawy towarów"), ("D", "Wewnątrzwspólnotowe nabycia towarów"), ("E", "Wewnątrzwspólnotowe świadczenie usług (art. 100 ust. 1 pkt 4)") })
         {
             r.AddRow(new ReportRow(code, title, null, null, null) { IsHeader = true });
-            var any = false;
-            foreach (var g in list.GroupBy(e => (e.CounterpartyCountry, Nip: (e.CounterpartyNip ?? "").Replace(" ", ""))).OrderBy(g => g.Key.CounterpartyCountry))
+            var part = lines.Where(l => l.Part == code).ToList();
+            foreach (var l in part)
             {
-                any = true;
-                var nip = g.Key.Nip.StartsWith(g.Key.CounterpartyCountry, StringComparison.OrdinalIgnoreCase) ? g.Key.Nip[g.Key.CounterpartyCountry.Length..] : g.Key.Nip;
-                r.Add(code, g.Key.CounterpartyCountry, string.IsNullOrEmpty(nip) ? "BRAK — uzupełnij" : nip, g.First().CounterpartyName, Math.Round(g.Sum(e => e.NetPln), 0, MidpointRounding.AwayFromZero));
-                if (string.IsNullOrEmpty(nip)) r.ControlsPassed = false;
+                r.Add(code, l.Country, string.IsNullOrEmpty(l.VatNumber) ? "BRAK — uzupełnij" : l.VatNumber, l.Counterparty, l.Value);
+                if (string.IsNullOrEmpty(l.VatNumber)) r.ControlsPassed = false;
             }
-            if (!any) r.Add(code, null, null, "brak transakcji", null);
+            if (part.Count == 0) r.Add(code, null, null, "brak transakcji", null);
         }
-        Section("C", "Wewnątrzwspólnotowe dostawy towarów", entries.Where(e => e.Register == VatRegisterType.Sprzedaz && e.TransactionType == VatTransactionType.WewnatrzwspolnotowaDostawaTowarow));
-        Section("D", "Wewnątrzwspólnotowe nabycia towarów", entries.Where(e => e.Register == VatRegisterType.Zakup && e.TransactionType == VatTransactionType.WewnatrzwspolnotoweNabycieTowarow));
-        Section("E", "Wewnątrzwspólnotowe świadczenie usług (art. 100 ust. 1 pkt 4)", entries.Where(e => e.Register == VatRegisterType.Sprzedaz && e.JpkNetField == "K_12" && EuCountries.Contains(e.CounterpartyCountry)));
         r.Notes.Add("Termin: do 25. dnia miesiąca następującego po miesiącu (art. 100 ust. 3 ustawy o VAT). Kwoty w pełnych złotych, numery VAT bez prefiksu kraju — sprawdź je w VIES (Kontrahenci → Sprawdź).");
         r.Notes.Add("Część F (procedura magazynu typu call-off) — jeśli dotyczy, uzupełnij ręcznie.");
         return r;
