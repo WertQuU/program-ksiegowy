@@ -1,0 +1,1092 @@
+                                                                   E-SPRAWOZDANIA FINANSOWE
+
+                                                                                                                                         specyfikacja API ver. 1.0
+
+
+
+
+SPIS TREŚCI
+Wstęp ...................................................................................................................................................................... 2
+Lista metod.............................................................................................................................................................. 3
+    POST init ............................................................................................................................................................. 3
+    PUT upload/{referenceId}/{fileId} ....................................................................................................................... 5
+    POST finish .......................................................................................................................................................... 5
+    GET status/{referenceId} .................................................................................................................................... 6
+Autoryzacja ............................................................................................................................................................. 6
+Obsługa błędów ...................................................................................................................................................... 6
+Załączniki ................................................................................................................................................................. 7
+    fileMetrics.xsd .................................................................................................................................................... 7
+    metricsTypes.xsd ................................................................................................................................................ 8
+    initRequest.xsd ................................................................................................................................................. 11
+    finishRequest.xsd .............................................................................................................................................. 12
+    gtwTypes.xsd .................................................................................................................................................... 13
+
+
+
+
+                                                                             Projekt CVP
+WSTĘP
+
+         Niniejszy dokument opisuje usługę e-Sprawozdnia Finansowe, która umożliwia przekazanie w formie
+elektronicznej sprawozdań przez podmioty zobligowane do ich składania. API systemu e-Sprawozdania zostało
+zrealizowane według wzorca REST.
+
+Komunikacja polega na wysłaniu żądania HTTP pod adres:
+
+
+
+                Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/
+
+                Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/
+
+
+
+                                  (łącznie z przesłaniem wymaganych danych)
+
+
+
+
+        W ramach pełnej realizacji procesu składania e-sprawozdania metody dostarczane przez usługę powinny
+być wywoływane w określonej kolejności. Zachowanie sekwencji wywołani jest warunkiem koniecznym
+dla prawidłowego obsłużenia proces składani e-Sprawozdań Finansowych.
+
+       W sytuacji gdy rozpoczynamy składanie sprawozdania, należy w pierwszej kolejności przygotować pakiet
+wysyłkowy w skład którego wchodzi:
+
+    •    Sprawozdanie w formacie XML zgodnym z opublikowanymi schematami XSD
+    •    Metrykę dokumentu zgodna ze schematem (sekcja załącznik: fileMetrics.xsd)
+    •    Paczkę ZIP powyższych plików (w oparciu algorytm deFlate)
+    •    Klucz symetryczny AES256 zgodny ze specyfikacją:
+        ✓ Długość klucza          Key Size                    256 bits / 32 bytes
+        ✓ Tryb szyfru             Cipher Mode                 CBC (Chain Block Chaining)
+        ✓ Dopełnienie             Padding                     PKCS#7
+        ✓ Rozmiar bloku           Block Size                  16 bytes
+        ✓ Wektor inicjujący       Initialization Vector       16 bytes
+   •    Zaszyfrowanie przygotwowanego ZIP-a powyższym kluczem.
+   •    Zaszyfrowanie klucza algorytmem RSA, zgodnym ze specyfikacją publicznym certyfikatem MF.
+        ✓ Długość klucza          Key Size           256 bits / 32 bytes
+        ✓ Tryb szyfru             Cipher Mode        ECB (Electronic Codebook)
+        ✓ Dopełnienie             Padding            PKCS#1
+        ✓ Rozmiar bloku           Block Size         256 bytes
+
+Przygotowanie dokumentu XML zgodnego ze schematem (sekcja załącznik: initRequest.xsd)
+
+Podpisanie powyższego dokumentu XML Profilem Zaufanym lub podpisem kwalifikowanym polskim albo
+europejskim zgodnie z algorytmem XAdES Basic Electronic Signature w postaci pliku XML zgodnego ze
+schematem http://www.w3.org/2000/09/xmldsig, w skrócie XAdES-BES w wersji Enveloped (podpis jako
+dodatkowy element ds:Signature w oryginalnym XML).
+
+
+
+
+                                               Projekt CVP
+Przy podpisywaniu można dokonać transformacji obiektu podpisywanego zgodnie z kodowaniem
+http://www.w3.org/2000/09/xmldsig#base64. Funkcją skrótu wykorzystywaną w podpisie powinna być RSA-
+SHA256 lub RSA-SHA1.
+
+
+
+Następnie należy wywołać metodę init wykorzystując wcześniej przygotowany pakiet wysyłkowy. Aby przekazać
+załączniki należy wywołać metodę upload. Potwierdzenie zakończenia przekazywania należy wykonać przez
+wywołanie metody finish.
+
+Po przekazaniu sprawozdania możliwe jest wywołanie metody status umożliwiającej sprawdzenie statusu
+dla złożonego sprawozdania i opcjonalnie pobranie UPO.
+
+Odpowiedź na każde żądanie wysłane do API jest w formacie JSON.
+
+
+LISTA METOD
+POST INIT
+
+Metoda rozpoczynająca przekazywanie sprawozdania. Wywołanie tej metody jest wymagane. W metodzie
+tej należy przekazać podpisany plik xml zawierający wszystkie wymagane dane sprawozdania oraz listę referencji
+do wszystkich załączników które będą dołączone do sprawozdania.
+
+Przykład
+
+Req.
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svcInitRequest:InitRequest
+xmlns:svcInitRequest="http://request.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+xmlns:svcTypes="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001">
+  <svcInitRequest:DocumentType>eSPR</svcInitRequest:DocumentType>
+  <svcInitRequest:Encryption>
+    <svcTypes:EncryptionKey algorithm="RSA" encoding="Base64" mode="ECB"
+padding="PKCS#1">r2Yo9wSgFacAoOUObdnXY3HI06z+RsR/D4zUPZQbwOq4mF9QPwW8eYYXB/lhNfbo4DGINxWtnhPSTevPmdF1/u
+qe8+3Xb5Hnb6S/KzEPdX5AzctEXTcFwuoqbnqsCRJ/wsivSdy6ObRYsmuVkaskXlFngPUQJEt0a6ORlFha9qYFHjdAsCq+++WeWAKw6
+nU3guyaaMcgQNz2/TfhxPV8b5fe/81GbaHi3n3G6MXChe5lDL6jhQBsAj0ARruh6TXcN+wBJeJRIH99bsvNipYQv0Fo8TxbtgVFS6P0
+QC9mw0tTaPyVz2IP8iAz568LR52rM6+4cI8FlJqVNLkUVFEBIw==</svcTypes:EncryptionKey>
+    <svcTypes:EncryptionAlgorithm block="16" mode="CBC" padding="PKCS#7" size="256"/>
+    <svcTypes:EncryptionInitializationVector bytes="16"
+encoding="Base64">aLyQrtNNzxgtfg4MH1q0xA==</svcTypes:EncryptionInitializationVector>
+  </svcInitRequest:Encryption>
+  <svcInitRequest:PackageSignature>
+    <svcInitRequest:Package CompressionType="zip"
+PackageType="single">eSPR_package.zip</svcInitRequest:Package>
+    <svcInitRequest:FileHash>
+      <svcTypes:HashSHA algorithm="SHA-256"
+encoding="Base64">sjSHAhgqtGv7Jp2+2MwSFLc2PQH899Rzn7mRgcNudWo=</svcTypes:HashSHA>
+      <svcTypes:HashMD5 algorithm="MD5" encoding="Base64">ae0b7c6l2lIQbgqTZJvdaQ==</svcTypes:HashMD5>
+      <svcTypes:FileSize>4374</svcTypes:FileSize>
+    </svcInitRequest:FileHash>
+    <svcInitRequest:FileSignatureList>
+      <svcInitRequest:FileSignature>
+        <svcInitRequest:FileName>eSPR_package.zip.aes</svcInitRequest:FileName>
+        <svcInitRequest:FileHash>
+          <svcTypes:HashSHA algorithm="SHA-256"
+encoding="Base64">FZE4Ktn/U5kFfMCseLMeAwxgUQolGs6W/8SYOu2o7Yk=</svcTypes:HashSHA>
+          <svcTypes:HashMD5 algorithm="MD5"
+encoding="Base64">3jTAVpTWtzTzibbpi/uVTA==</svcTypes:HashMD5>
+          <svcTypes:FileSize>4384</svcTypes:FileSize>
+        </svcInitRequest:FileHash>
+      </svcInitRequest:FileSignature>
+    </svcInitRequest:FileSignatureList>
+
+
+
+
+                                                Projekt CVP
+  </svcInitRequest:PackageSignature>
+  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#" Id="sigId_17433636163325">
+    <ds:SignedInfo>
+      <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+      <ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/>
+      <ds:Reference Id="mainRefId_17433636175161" Type="" URI="">
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/TR/1999/REC-xpath-19991116">
+            <ds:XPath>not(ancestor-or-self::ds:Signature)</ds:XPath>
+          </ds:Transform>
+          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+        </ds:Transforms>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>uGiHVnCqRuIKr8vJak6jERyPBHR/VO42xr7RFOkQqsQ=</ds:DigestValue>
+      </ds:Reference>
+      <ds:Reference Type="http://uri.etsi.org/01903#SignedProperties" URI="#sigPropId_17433636176716">
+        <ds:Transforms>
+          <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+        </ds:Transforms>
+        <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+        <ds:DigestValue>SsmD6LHdmOGO6bUga4kYtaZlYubDMlZiDemh/LRLVKM=</ds:DigestValue>
+      </ds:Reference>
+    </ds:SignedInfo>
+    <ds:SignatureValue Id="sigValId_17433636173156">
+      jUAyBcwfqPDpnBb7KRhqQ8bZ493zH6rfU8B2e6Fe9T8h/y1GV2MvDpCVl0Z7wk+85FFwQxjCYDy7
+      IOxyfemNh0QUAQK0nncTko1gEpYx29JFhRsBRcWZwv9V77gTmJeCH/TyhejERU2aEmsUOtE+FCt1
+      LuKp6ITEbrJfvfNTbxerGxwzfHO9AWPcrrdzQflg2gRoo957dfyLYE5aOzd/pAHbmdzRqzzn0/ft
+      OnrY8I9d6oD/NK0CSs7I61nr9ToYHcZ0+fCmf1WMHhaIkkB868aSGh/HsqupcTi26hHe0aJJX4W4
+      9vfdxpZwWkEqhNT9FqUlzrILEkKtdfOL2ombTw==
+    </ds:SignatureValue>
+    <ds:KeyInfo>
+      <ds:X509Data>
+        <ds:X509Certificate>
+          MIIEgDCCA2igAwIBAgICIMAwDQYJKoZIhvcNAQELBQAwgYcxCzAJBgNVBAYTAlBMMR4wHAYDVQQK
+          DBVNaW5pc3RlcnN0d28gRmluYW5zb3cxJzAlBgNVBAsMHktyYWpvd2EgQWRtaW5pc3RyYWNqYSBT
+          a2FyYm93YTEvMC0GA1UEAwwmVEVTVCBDQ0sgTUYgSW5mcmFzdHJ1a3R1cmEgaSBBcGxpa2FjamUw
+          HhcNMTgwOTIxMDk0MTQ1WhcNMjEwOTIxMDgwMDAyWjCBwTElMCMGA1UEAwwcZS1zcHJhd296ZGFu
+          aWEtdHN0Lm1mLmdvdi5wbDEeMBwGA1UECgwVTWluaXN0ZXJzdHdvIEZpbmFuc293MQswCQYDVQQG
+          EwJQTDEUMBIGA1UECAwLbWF6b3dpZWNraWUxETAPBgNVBAcMCFdhcnN6YXdhMSMwIQYDVQQLDBpE
+          ZXBhcnRhbWVudCBJbmZvcm1hdHl6YWNqaTEdMBsGCSqGSIb3DQEJARYOZXNwckBtZi5nb3YucGww
+          ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDE3iL7W44bGawJKMBVt4FZWGxUrY3CKY2o
+          xW8iMMsvMdVSBvqqEc2Kpv/Q+MHMNS1syO260iDmM8XRPQ+tyoNLaTzgkGBKOmKv+e9ydRWTlsx7
+          tm80BRFkPdFAbRdz/7pWIpNrid05dF0XtCfbos7dVilVTY2nsZkD6684EhGsNRmkC6V01AIXj/u/
+          5e9UgboA2L9lfV3mYytxuaNBI+St2lAVJjbMs07QBZIXUVvcyPnTURTFiqMGx47m3L3wqDpyqdgU
+          Snz3YYaxcqdjfBsNlAJZk9hzi5CRy9PaHfBbXDLw90sD6uzsPMmQmV54oDBk2TW/fE04ahm1mqoM
+          BdLXAgMBAAGjgbkwgbYwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUszUbQYCdy0irFTMhwkKGtYdL
+          rekwHwYDVR0jBBgwFoAUC9ivMJ4XZXE/KRKTY56WH/5ZjmIwDgYDVR0PAQH/BAQDAgSwMBYGA1Ud
+          JQEB/wQMMAoGCCsGAQUFBwMCMD4GA1UdHwQ3MDUwM6AxoC+GLWh0dHBzOi8vcHVlc2MuZ292LnBs
+          L3BraS9jcmwvdGVzdG1maW5mYXBsLmNybDANBgkqhkiG9w0BAQsFAAOCAQEAIvZ8WZC9cqDDA9vA
+          XKXkt4jPwekvcuntf9kQebdGhh2ojUp6IoNZ1FdqbFw2sQtMeYeMA9m4jy3mfF0bQ6nh6jqTMZSy
+          OposR+o6losJe/XOJd6nGGxKbtW8gT1Sh3V/Ffm0Vp3ZQQJ7aHW0SPzDb8V6bEki0ZRhDC0l1Amd
+          mONBQhqtxbeNUCutHK+ebZGhYyHxuYCcTwJu9kd88cxaUzM+Cs25dwfpaxEPlAyQuNj6dZPRHh5Z
+          MqIl6QalruI7voWm5xbqiDMxqGvBMRUO/new8sqIgHz8Skvbu3Q6KFmCp/v11ny1PhxMIGhbqkVw
+          UkLpuYQxhHj27hn+u1KlKQ==
+        </ds:X509Certificate>
+      </ds:X509Data>
+    </ds:KeyInfo>
+    <ds:Object>
+      <xades:QualifyingProperties xmlns:xades="http://uri.etsi.org/01903/v1.3.2#"
+Target="#sigId_17433636163325">
+        <xades:SignedProperties Id="sigPropId_17433636176716">
+          <xades:SignedSignatureProperties>
+            <xades:SigningTime>2018-10-01T13:31:51+02:00</xades:SigningTime>
+            <xades:SigningCertificate>
+              <xades:Cert>
+                <xades:CertDigest>
+                  <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                  <ds:DigestValue>FhcoZRuDl2bVN1lzUDRNBPX0nO0=</ds:DigestValue>
+                </xades:CertDigest>
+                <xades:IssuerSerial>
+                  <ds:X509IssuerName>CN=TEST CCK MF Infrastruktura i Aplikacje, OU=Krajowa
+Administracja Skarbowa, O=Ministerstwo Finansow, C=PL</ds:X509IssuerName>
+                  <ds:X509SerialNumber>8384</ds:X509SerialNumber>
+                </xades:IssuerSerial>
+
+
+
+
+                                             Projekt CVP
+              </xades:Cert>
+            </xades:SigningCertificate>
+          </xades:SignedSignatureProperties>
+          <xades:SignedDataObjectProperties>
+            <xades:DataObjectFormat ObjectReference="#mainRefId_17433636175161">
+              <xades:MimeType>text/xml</xades:MimeType>
+            </xades:DataObjectFormat>
+          </xades:SignedDataObjectProperties>
+        </xades:SignedProperties>
+      </xades:QualifyingProperties>
+    </ds:Object>
+  </ds:Signature>
+</svcInitRequest:InitRequest>
+
+Resp.
+
+{
+  "ReferenceNumber": "0a839501da4b4f009eb818908344659b",
+  "PackageSignature": {
+    "PackageName": "eSPR_package.zip",
+    "FileSignatureList": {
+      "FileSignature": {
+        "FileName": "eSPR_package.zip.aes",
+        "HeaderEntry": [
+          {
+             "Value": "0a839501da4b4f009eb818908344659b",
+             "Key": "rn"
+          },
+          {
+             "Value": "8a55ee52-24d2-45b7-822d-2ac46fdd7a46",
+             "Key": "fi"
+          }
+        ],
+        "Method": "PUT",
+        "URL": "https:\/\/e-sprawozdania-
+tst.mf.gov.pl:443\/dmz\/api\/espr\/upload\/0a839501da4b4f009eb818908344659b\/8a55ee52-24d2-45b7-822d-
+2ac46fdd7a46"
+      }
+    }
+  },
+  "Timestamp": 1538393534750
+}
+
+
+PUT UPLOAD/{REFERENCEID}/{FILEID}
+Metoda umożliwiająca przekazanie załączników do sprawozdania. Parametry wywołania tej metody należy
+pobrać z odpowiedzi metody init. Maksymalna wielkość przekazanego załącznika z pomocą tej metody to 50MiB.
+
+Potwierdzenie prawidłowego przekazania danych odbywa się poprzez przekazania kodu 200 (http).
+
+POST FINISH
+Metoda służąca do potwierdzenia zakończenia procesu składania sprawozdań. Wywołanie tej metody jest
+wymagane. Po wywołaniu tej metody możliwe będzie sprawdzenie status przekazanego sprawozdania.
+
+Przykład
+
+Req.
+
+<?xml version="1.0"?>
+<svcFinishRequest:FinishRequest xmlns:svcTypes="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+xmlns:svcFinishRequest="http://request.finish.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001">
+  <svcFinishRequest:ReferenceNumber>0a839501da4b4f009eb818908344659b</svcFinishRequest:ReferenceNumber>
+  <svcFinishRequest:PackageSignature>
+    <svcFinishRequest:PackageName>eSPR_package.zip</svcFinishRequest:PackageName>
+    <svcFinishRequest:FileSignatureList>
+      <svcFinishRequest:FileSignature>
+        <svcFinishRequest:FileName>eSPR_package.zip.aes</svcFinishRequest:FileName>
+      </svcFinishRequest:FileSignature>
+
+
+
+
+                                              Projekt CVP
+    </svcFinishRequest:FileSignatureList>
+  </svcFinishRequest:PackageSignature>
+</svcFinishRequest:FinishRequest>
+
+Resp.
+
+{
+    "ReferenceNumber": "0a839501da4b4f009eb818908344659b",
+    "Timestamp": 1538393535579}
+GET STATUS/{REFERENCEID}
+Metoda służąca do pobierania informacji o statusie złożonego sprawozdania. Wywołanie tej metody jest
+opcjonalne. Metoda ta zwraca także UPO w sytuacji gdy proces składania i weryfikacji danych (w tym podpisów
+pod plikami XML) się powiódł.
+
+Przykład
+
+Resp.
+
+{
+    "Details": "Przetwarzanie zakończone. Wygenerowane UPO.",
+    "UPO": {
+      "encoding": "Base64",
+      "value": "PD94...=="
+    },
+    "ReferenceNumber": "0a839501da4b4f009eb818908344659b",
+    "Timestamp": 1538393565776,
+    "Code": 200
+}
+
+
+
+AUTORYZACJA
+        Wywoływanie metod nie wymaga przekazania żadnych danych autoryzacyjnych. Sam proces autoryzacji
+odbywa się przez sprawdzenie podpisów elektronicznych które są dołączone do przekazanych danych w plikach
+xml. Podpisy muszą być przygotowane zgodnie ze standardem XAdES-BES.
+
+
+OBSŁUGA BŁĘDÓW
+         W sytuacji gdyby wywołanie metody zakończyło się błędem, zostanie przekazana odpowiedz w formacie
+json, np.:
+
+{
+    "ServiceCode": "fd671f76-87e1-4ddf-b4ab-f50840ef1390",
+    "ServiceName": "status",
+    "Timestamp": 1538393755167,
+    "ReferenceNumber": "223212212344124124",
+    "Exceptions": {
+      "Exception": [
+        {
+          "ExceptionCode": 605,
+          "ExceptionDescription": "PARSE PROBLEM"
+        }
+      ]
+    }
+}
+
+
+
+
+                                               Projekt CVP
+ZAŁĄCZNIKI
+FILEMETRICS.XSD
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:meta="http://meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:types="http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        targetNamespace="http://meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        elementFormDefault="qualified" attributeFormDefault="unqualified"
+        version="1.0" xml:lang="PL"
+>
+  <xs:import namespace="http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+schemaLocation="types/metricsTypes.xsd" />
+
+     <xs:element name="Metryka">
+       <xs:complexType>
+         <xs:sequence>
+           <xs:element name="NumerIdentyfikacyjnyNIP" type="types:NIPType" minOccurs="1" maxOccurs="1" />
+           <xs:element name="NumerIdentyfikacyjnyREGON" type="types:REGONType" minOccurs="0" maxOccurs="1"
+/>
+        <xs:element name="NazwaPodmiotu" type="types:NazwaPodmiotuBase" minOccurs="1" maxOccurs="1" />
+        <xs:element name="DataSporzadzenia" type="types:DataCzasType" minOccurs="1" maxOccurs="1" />
+        <xs:element name="DataWyslania" type="types:DataCzasType" minOccurs="1" maxOccurs="1" />
+        <xs:element name="DataOd" type="types:DataType" minOccurs="1" maxOccurs="1" />
+        <xs:element name="DataDo" type="types:DataType" minOccurs="1" maxOccurs="1" />
+        <xs:element name="Adres" type="types:AdresPolskiType" minOccurs="0" maxOccurs="1" />
+        <xs:element name="ListaPlikow" minOccurs="1" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="MetrykaPliku" type="MetrykaPlikuBase" minOccurs="1"
+maxOccurs="unbounded" />
+            </xs:sequence>
+          </xs:complexType>
+          <xs:unique name="ListaPlikowUnique1">
+            <xs:selector xpath="meta:MetrykaPliku"/>
+            <xs:field xpath="meta:NazwaPliku"/>
+          </xs:unique>
+        </xs:element>
+        <xs:element name="ListaOsobPodpisujacaych" minOccurs="0" maxOccurs="1">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element name="OsobaPodpiujaca" type="OsobaPodpiujacaType" minOccurs="1"
+maxOccurs="unbounded"/>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="MetrykaPlikuBase" abstract="true">
+    <xs:sequence>
+      <xs:element name="NazwaPliku" type="types:NazwaPlikuType" minOccurs="1" maxOccurs="1" />
+      <xs:element name="SkrotPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1" />
+      <xs:element name="TypDokumentu" type="types:TypDokumentuType" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="MetrykaPlikuSprBase" abstract="true">
+    <xs:complexContent>
+      <xs:restriction base="MetrykaPlikuBase">
+        <xs:sequence>
+          <xs:element name="NazwaPliku" type="types:NazwaPlikuType" minOccurs="1" maxOccurs="1" />
+          <xs:element name="SkrotPliku" type="types:SkrotPlikuType" minOccurs="1" maxOccurs="1" />
+          <xs:element name="TypDokumentu" type="types:TypDokumentuType" fixed="SprawozdanieFinansowe"
+minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+      </xs:restriction>
+    </xs:complexContent>
+
+
+
+
+                                                Projekt CVP
+  </xs:complexType>
+
+  <xs:complexType name="MetrykaPlikuXMLType">
+    <xs:complexContent>
+      <xs:extension base="MetrykaPlikuSprBase">
+        <xs:sequence>
+          <xs:element name="SkrotPodpisanegoPliku" type="types:SkrotPlikuType" minOccurs="1"
+maxOccurs="1" />
+          <xs:element name="NazwaSchemy" type="types:String128Type" minOccurs="1" maxOccurs="1" />
+          <xs:element name="PrzestrzenNazw" type="types:String512Type" minOccurs="1" maxOccurs="1" />
+
+          <xs:element name="KodSprawozdania" type="types:String64Type" minOccurs="1" maxOccurs="1" />
+          <xs:element name="KodSystemowy" type="types:String64Type" minOccurs="1" maxOccurs="1" />
+          <xs:element name="WersjaSchemy" type="types:String64Type" minOccurs="1" maxOccurs="1" />
+          <xs:element name="WariantSprawozdania" type="types:NonZeroIntType" minOccurs="1"
+maxOccurs="1" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:complexType name="MetrykaPlikuInnyType">
+    <xs:complexContent>
+      <xs:extension base="MetrykaPlikuBase">
+        <xs:sequence>
+          <xs:element name="TypPliku" type="types:String128Type" minOccurs="1" maxOccurs="1" />
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="OsobaPodpiujacaType">
+    <xs:sequence>
+      <xs:element name="Nazwa" type="types:String128Type" minOccurs="1" maxOccurs="1" />
+      <xs:element name="Podpis" type="types:TakNieType" minOccurs="1" maxOccurs="1" />
+      <xs:element name="Odmowa" type="types:TakNieType" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+
+
+METRICSTYPES.XSD
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:types="http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        targetNamespace="http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        elementFormDefault="qualified" attributeFormDefault="unqualified"
+        version="1.0" xml:lang="PL"
+>
+
+  <xs:simpleType name="NIPType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[1-9]((\d[1-9])|([1-9]\d))\d{7}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="REGONType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(\d{9})|(\d{14})" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TypDokumentuType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="SprawozdanieFinansowe" />
+      <xs:enumeration value="OpiniaBieglegoRewidentaSprawozdaniaFInansowego" />
+      <xs:enumeration value="UchwalaZatwierdzajacaSprawozdanie" />
+      <xs:enumeration value="UchwalaOPodzialeZyskuLubStraty" />
+      <xs:enumeration value="SprawozdanieZDzialalnosci" />
+      <xs:enumeration value="SprawozdaniePlatnosciNaRzeczAdministracjiPublicznej" />
+      <xs:enumeration value="SprawozdanieSkonsolidowaneRoczne" />
+
+
+
+
+                                             Projekt CVP
+    <xs:enumeration value="OpiniaBieglegoRewidentaSkonsolidowanegoSprawozdania" />
+    <xs:enumeration value="UchwalaZatwierdzajacaSkonsolidowanegoSprawozdania" />
+    <xs:enumeration value="SprawozdanieZDzialalnosciJednostkiDominujacej" />
+    <xs:enumeration value="SprawozdanieSkonsolidowaneZPlatnosciNaRzeczAdministracji" />
+    <xs:enumeration value="InformacjaOBrakuObowizkuSparzadzeniaSprawozdaniaROcznego" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="NazwaPlikuType">
+  <xs:restriction base="xs:string">
+    <xs:pattern value="[a-zA-Z0-9_\.\-]{5,100}"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="RozmiarPlikuType">
+  <xs:restriction base="xs:integer">
+    <xs:minExclusive value="0" />
+    <xs:maxInclusive value="104857600" />
+  </xs:restriction>
+</xs:simpleType>
+<xs:complexType name="SkrotPlikuType">
+  <xs:sequence>
+    <xs:element name="HashSHA" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="HashSHAType">
+            <xs:minLength value="44"/>
+            <xs:maxLength value="44"/>
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="HashMD5" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="HashMD5Type">
+            <xs:minLength value="24"/>
+            <xs:maxLength value="24"/>
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="RozmiarPliku" type="RozmiarPlikuType" minOccurs="1" maxOccurs="1" />
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="HashSHAType">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+<xs:complexType name="HashMD5Type">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+
+<xs:simpleType name="RokMiesiacType" >
+  <xs:restriction base="xs:gYearMonth">
+    <xs:minInclusive value="2017-01"/>
+    <xs:maxInclusive value="2999-12"/>
+    <xs:pattern value="((\d{4})-(\d{2}))"/>
+  </xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="DataType" >
+  <xs:restriction base="xs:date">
+    <xs:minInclusive value="2017-01-01"/>
+    <xs:maxInclusive value="2999-12-31"/>
+    <xs:pattern value="((\d{4})-(\d{2})-(\d{2}))"/>
+  </xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="DataCzasType" >
+  <xs:restriction base="xs:dateTime">
+
+
+
+
+                                           Projekt CVP
+    <xs:whiteSpace value="collapse"/>
+    <xs:minInclusive value="2017-01-01T00:00:00Z"/>
+    <xs:maxInclusive value="2999-12-31T23:59:59Z"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:complexType name="Firma">
+  <xs:complexContent>
+    <xs:extension base="NazwaPodmiotuBase">
+      <xs:sequence>
+        <xs:element name="NazwaFirmy">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="2" />
+              <xs:maxLength value="200" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+<xs:complexType name="Osoba">
+  <xs:complexContent>
+    <xs:extension base="NazwaPodmiotuBase">
+      <xs:sequence>
+        <xs:element name="Imie">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="2" />
+              <xs:maxLength value="50" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+        <xs:element name="Nazwisko">
+          <xs:simpleType>
+            <xs:restriction base="xs:string">
+              <xs:minLength value="2" />
+              <xs:maxLength value="100" />
+            </xs:restriction>
+          </xs:simpleType>
+        </xs:element>
+      </xs:sequence>
+    </xs:extension>
+  </xs:complexContent>
+</xs:complexType>
+<xs:complexType name="NazwaPodmiotuBase" abstract="true" />
+
+<xs:complexType name="AdresPolskiType">
+  <xs:sequence>
+    <xs:element name="KodKraju" type="KodKrajuType" fixed="PL" minOccurs="1" maxOccurs="1" />
+    <xs:element name="Wojewodztwo" type="String64Type" minOccurs="1" maxOccurs="1" />
+    <xs:element name="Powiat" type="String64Type" minOccurs="1" maxOccurs="1" />
+    <xs:element name="Gmina" type="String64Type" minOccurs="1" maxOccurs="1" />
+    <xs:element name="Ulica" type="String128Type" minOccurs="0" maxOccurs="1" />
+    <xs:element name="NrDomu" type="String16Type" minOccurs="1" maxOccurs="1" />
+    <xs:element name="NrLokalu" type="String16Type" minOccurs="0" maxOccurs="1" />
+    <xs:element name="Miejscowosc" type="String64Type" minOccurs="1" maxOccurs="1" />
+    <xs:element name="KodPocztowy" type="KodPocztowyType" minOccurs="1" maxOccurs="1" />
+    <xs:element name="Poczta" type="String64Type" minOccurs="1" maxOccurs="1" />
+  </xs:sequence>
+</xs:complexType>
+
+<xs:simpleType name="TakNieType">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="Tak" />
+    <xs:enumeration value="Nie" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="KodKrajuType">
+  <xs:restriction base="xs:string">
+    <xs:pattern value="[A-Z]{2}" />
+  </xs:restriction>
+
+
+
+
+                                           Projekt CVP
+  </xs:simpleType>
+  <xs:simpleType name="KodPocztowyType">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[0-9]{2}-[0-9]{3}" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String16Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="16" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String32Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="32" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="String64Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="64" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String128Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="128" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String512Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="512" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="NonZeroIntType">
+    <xs:restriction base="xs:int">
+      <xs:minExclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
+
+
+INITREQUEST.XSD
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://request.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:request.init="http://request.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:types="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        targetNamespace="http://request.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        elementFormDefault="qualified" attributeFormDefault="unqualified"
+        version="1.0" xml:lang="PL"
+>
+  <xs:import namespace="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+schemaLocation="types/gtwTypes.xsd" />
+
+  <xs:element name="InitRequest">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="DocumentType" type="types:DocumentTypeType" minOccurs="1" maxOccurs="1" />
+        <xs:element name="Encryption" type="types:EncryptionType" minOccurs="1" maxOccurs="1" />
+
+        <xs:element name="PackageSignature" type="PackageSignatureType" minOccurs="1" maxOccurs="1" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:complexType name="PackageSignatureType">
+    <xs:sequence>
+
+
+
+
+                                             Projekt CVP
+         <xs:element name="Package" minOccurs="1" maxOccurs="1" >
+           <xs:complexType>
+             <xs:simpleContent>
+               <xs:extension base="types:PackageNameType">
+                 <xs:attribute name="PackageType" type="types:PackageTypeType" use="required" />
+                 <xs:attribute name="CompressionType" type="types:CompressionTypeType" use="required" />
+               </xs:extension>
+             </xs:simpleContent>
+           </xs:complexType>
+         </xs:element>
+         <xs:element name="FileHash" type="types:FileHashType" minOccurs="1" maxOccurs="1" />
+         <xs:element name="FileSignatureList" minOccurs="1" maxOccurs="1">
+           <xs:complexType>
+             <xs:sequence>
+               <xs:element name="FileSignature" type="FileSignatureType" minOccurs="1" maxOccurs="1" />
+             </xs:sequence>
+           </xs:complexType>
+           <xs:unique name="FileSignatureUnique">
+             <xs:selector xpath="request.init:FileSignature"/>
+             <xs:field xpath="request.init:FileName"/>
+           </xs:unique>
+         </xs:element>
+       </xs:sequence>
+     </xs:complexType>
+     <xs:complexType name="FileSignatureType">
+       <xs:sequence>
+         <xs:element name="FileName" type="types:FileNameType" minOccurs="1" maxOccurs="1" />
+         <xs:element name="FileHash" type="types:FileHashType" minOccurs="1" maxOccurs="1" />
+       </xs:sequence>
+     </xs:complexType>
+
+</xs:schema>
+
+
+
+FINISHREQUEST.XSD
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://request.finish.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:request.finish="http://request.finish.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:types="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        targetNamespace="http://request.finish.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        elementFormDefault="qualified" attributeFormDefault="unqualified"
+        version="1.0" xml:lang="PL"
+>
+  <xs:import namespace="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+schemaLocation="types/gtwTypes.xsd" />
+
+     <xs:element name="FinishRequest">
+       <xs:complexType>
+         <xs:sequence>
+           <xs:element name="ReferenceNumber" type="types:ReferenceNumberType" minOccurs="1" maxOccurs="1"
+/>
+
+           <xs:element name="PackageSignature" type="PackageSignatureType" minOccurs="1" maxOccurs="1" />
+         </xs:sequence>
+       </xs:complexType>
+     </xs:element>
+     <xs:complexType name="PackageSignatureType">
+       <xs:sequence>
+         <xs:element name="PackageName" type="types:PackageNameType" minOccurs="1" maxOccurs="1" />
+         <xs:element name="FileSignatureList" minOccurs="1" maxOccurs="1">
+           <xs:complexType>
+             <xs:sequence>
+               <xs:element name="FileSignature" type="FileSignatureType" minOccurs="1" maxOccurs="1" />
+             </xs:sequence>
+           </xs:complexType>
+           <xs:unique name="FileSignatureUnique">
+             <xs:selector xpath="request.finish:FileSignature"/>
+             <xs:field xpath="request.finish:FileName"/>
+
+
+
+
+                                                Projekt CVP
+        </xs:unique>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="FileSignatureType">
+    <xs:sequence>
+      <xs:element name="FileName" type="types:FileNameType" minOccurs="1" maxOccurs="1" />
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+
+
+
+GTWTYPES.XSD
+
+
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        xmlns="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        xmlns:types="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        targetNamespace="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+        elementFormDefault="qualified" attributeFormDefault="unqualified"
+        version="1.0" xml:lang="PL"
+>
+
+  <xs:complexType name="ExceptionType">
+    <xs:sequence>
+      <xs:element name="ExceptionCode" type="IntegerPositiveType" />
+      <xs:element name="ExceptionDescription" type="String256Type" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="HeaderEntryType">
+    <xs:sequence>
+      <xs:element name="Key" type="String64Type" />
+      <xs:element name="Value" type="String128Type" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="MethodType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="POST" />
+      <xs:enumeration value="PUT" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="IntegerPositiveType">
+    <xs:restriction base="xs:integer">
+      <xs:minExclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String64Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="64" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String128Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="128" />
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="String256Type">
+    <xs:restriction base="xs:string">
+      <xs:minLength value="0" />
+      <xs:maxLength value="256" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TimestampType" >
+    <xs:restriction base="xs:dateTime">
+
+
+
+
+                                               Projekt CVP
+    <xs:whiteSpace value="collapse"/>
+    <xs:minInclusive value="2018-08-01T00:00:00Z"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="URLType">
+  <xs:restriction base="xs:string">
+    <xs:minLength value="1" />
+    <xs:maxLength value="512" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="ServiceCodeType">
+  <xs:restriction base="xs:string">
+    <xs:minLength value="0" />
+    <xs:maxLength value="64" />
+  </xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="ServiceNameType">
+  <xs:restriction base="xs:string">
+    <xs:minLength value="0" />
+    <xs:maxLength value="64" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="ReferenceNumberType">
+  <xs:restriction base="xs:string">
+    <xs:minLength value="32" />
+    <xs:maxLength value="32" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:complexType name="UPOType">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+      <xs:attribute name="encoding" use="required" fixed="Base64"/>
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+
+<xs:simpleType name="DocumentTypeType">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="eSPR" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="PackageTypeType">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="single" />
+  </xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="CompressionTypeType">
+  <xs:restriction base="xs:string">
+    <xs:enumeration value="zip" />
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="PackageNameType">
+  <xs:restriction base="xs:string">
+    <xs:pattern value="[a-zA-Z0-9_\.\-]{5,100}"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="FileNameType">
+  <xs:restriction base="xs:string">
+    <xs:pattern value="[a-zA-Z0-9_\.\-]{5,100}"/>
+  </xs:restriction>
+</xs:simpleType>
+
+<xs:simpleType name="FileSizeType">
+  <xs:restriction base="xs:integer">
+    <xs:minExclusive value="0" />
+    <xs:maxInclusive value="104857600" />
+  </xs:restriction>
+
+
+
+
+                                             Projekt CVP
+</xs:simpleType>
+<xs:complexType name="FileHashType">
+  <xs:sequence>
+    <xs:element name="HashSHA" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="HashSHAType">
+            <xs:minLength value="44"/>
+            <xs:maxLength value="44"/>
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="HashMD5" minOccurs="1" maxOccurs="1">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="HashMD5Type">
+            <xs:minLength value="24"/>
+            <xs:maxLength value="24"/>
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="FileSize" type="FileSizeType" minOccurs="1" maxOccurs="1" />
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="HashSHAType">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+      <xs:attribute name="algorithm" use="required" fixed="SHA-256"/>
+      <xs:attribute name="encoding" use="required" fixed="Base64"/>
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+<xs:complexType name="HashMD5Type">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+      <xs:attribute name="algorithm" use="required" fixed="MD5"/>
+      <xs:attribute name="encoding" use="required" fixed="Base64"/>
+    </xs:extension>
+  </xs:simpleContent>
+</xs:complexType>
+
+<xs:complexType name="EncryptionType">
+  <xs:sequence>
+    <xs:element name="EncryptionKey">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="EncryptionKeyRSAType">
+            <xs:minLength value="344" />
+            <xs:maxLength value="344" />
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+    <xs:element name="EncryptionAlgorithm" type="EncryptionAlgorithmType" />
+    <xs:element name="EncryptionInitializationVector">
+      <xs:complexType>
+        <xs:simpleContent>
+          <xs:restriction base="EncryptionInitializationVectorType">
+            <xs:minLength value="24" />
+            <xs:maxLength value="24" />
+          </xs:restriction>
+        </xs:simpleContent>
+      </xs:complexType>
+    </xs:element>
+  </xs:sequence>
+</xs:complexType>
+<xs:complexType name="EncryptionKeyRSAType">
+  <xs:simpleContent>
+    <xs:extension base="xs:token">
+      <xs:attribute name="algorithm" use="required" fixed="RSA" />
+      <xs:attribute name="mode" use="required" fixed="ECB" />
+      <xs:attribute name="padding" use="required" fixed="PKCS#1" />
+
+
+
+
+                                           Projekt CVP
+        <xs:attribute name="encoding" use="required" fixed="Base64" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+  <xs:complexType name="EncryptionAlgorithmType">
+    <xs:attribute name="size" type="xs:int" use="required" fixed="256" />
+    <xs:attribute name="block" type="xs:int" use="required" fixed="16" />
+    <xs:attribute name="mode" use="required" fixed="CBC" />
+    <xs:attribute name="padding" use="required" fixed="PKCS#7" />
+  </xs:complexType>
+
+  <xs:complexType name="EncryptionInitializationVectorType">
+    <xs:simpleContent>
+      <xs:extension base="xs:token">
+        <xs:attribute name="bytes" use="required" fixed="16" />
+        <xs:attribute name="encoding" use="required" fixed="Base64" />
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:schema>
+
+
+
+
+                                             Projekt CVP
+

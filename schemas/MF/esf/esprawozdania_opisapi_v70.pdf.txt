@@ -1,0 +1,494 @@
+                                                            E-SPRAWOZDANIA FINANSOWE
+
+                                                                                                                          specyfikacja API ver. 7.0
+
+
+
+
+Spis treści
+LISTA METOD ........................................................................................................................................... 3
+   POST INIT ............................................................................................................................................. 3
+   PUT UPLOAD/{REFERENCEID}/{FILEID}................................................................................................ 4
+   POST FINISH ......................................................................................................................................... 4
+   PUT UPLOADSIMPLE ............................................................................................................................ 4
+   GET STATUS/{REFERENCEID} ............................................................................................................... 5
+AUTORYZACJA ......................................................................................................................................... 8
+   FILEMETRICS.XSD https://e-
+   sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd https://e-
+   sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/fileMetrics.xsd ....................................... 8
+   INITRESPONSE.XSD .............................................................................................................................. 9
+   FINISHREQUEST.XSD ............................................................................................................................ 9
+   FINISHRESPONSE.XSD .......................................................................................................................... 9
+   UPLOADSIMPLERESPONSE.XSD ........................................................................................................... 9
+   STATUSRESPONSE.XSD ........................................................................................................................ 9
+   EXCEPTIONRESPONSE.XSD .................................................................................................................. 9
+   GTWTYPES.XSD .................................................................................................................................... 9
+
+
+
+
+                                                                    Projekt CVP
+WSTĘP
+         Niniejszy dokument opisuje usługę e-Sprawozdania Finansowe, która umożliwia przekazanie w formie
+elektronicznej sprawozdań przez podmioty zobligowane do ich składania. API systemu e-Sprawozdania zostało
+zrealizowane według wzorca REST.
+
+Komunikacja polega na wysłaniu żądania HTTP pod adres:
+
+
+
+                 Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/
+
+                  Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/
+
+
+
+                                       (łącznie z przesłaniem wymaganych danych)
+
+
+
+
+        W ramach pełnej realizacji procesu składania e-sprawozdania, metody dostarczane przez usługę
+powinny być wywoływane w określonej kolejności. Zachowanie sekwencji wywołań jest warunkiem koniecznym
+dla prawidłowego obsłużenia procesu składania eSprawozdań Finansowych.
+
+       W sytuacji gdy rozpoczynamy składanie sprawozdania, należy w pierwszej kolejności przygotować pakiet
+wysyłkowy w skład którego wchodzi:
+
+    •   Podpisane sprawozdanie w formacie XML zgodne z opublikowanymi schematami XSD
+    •   Metryka dokumentu zgodna ze schematem:
+        https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd
+        albo https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/fileMetrics.xsd (obsługiwana do 31.07.2026)
+              w formie pliku o nazwie eSPR_metrics.xml
+                  W okresie do 31.07.2026 r. akceptowane są obydwie powyższe schemy metryki. Od 01.08.2026 r. obsługiwana będzie
+                  wyłącznie najnowsza schema (https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd).
+                  Różnica między tymi schemami polega na:
+                  - usunięciu elementu ListaOsobPodpisujacaych
+                  - zawężeniu listy typów dokumentów
+                  - zdjęciu wymagalności dla elementów: NazwaPodmiotu, DataZatwierdzenia, DataOd, DataDo
+                  - dodaniu elementu FirmaAudyt
+
+
+
+    •   Paczkę ZIP powyższych plików (w oparciu algorytm deFlate)
+    •   Klucz symetryczny AES256 zgodny ze specyfikacją:
+            Długość klucza       Key Size                 256 bits / 32 bytes
+             Tryb szyfru Cipher Mode                      CBC (Chain Block Chaining)
+             Dopełnienie              Padding                        PKCS#7
+             Rozmiar bloku            Block Size                     16 bytes
+             Wektor inicjujący        Initialization Vector          16 bytes
+    •   Zaszyfrowanie przygotowanego ZIP-a powyższym kluczem.
+    •   Zaszyfrowanie klucza algorytmem RSA, zgodnym ze specyfikacją publicznym certyfikatem MF.
+            Długość klucza       Key Size        256 bits / 32 bytes
+             Tryb szyfru Cipher Mode            ECB (Electronic Codebook)
+
+
+
+
+                                                       Projekt CVP
+               Dopełnienie               Padding             PKCS#1
+               Rozmiar bloku             Block Size          256 bytes
+     •     Skróty dokumentów oraz plików obliczone algorytmami md5 oraz sha-256, zakodowane mechanizmem
+           base64.
+
+Przygotowanie dokumentu XML zgodnego ze schematem
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/initRequest.xsd
+
+Podpisanie dokumentu InitRequest Profilem Zaufanym, zem osobistym albo podpisem kwalifikowanym
+zgodnym z wymaganiami eIDAS, zgodnie z algorytmem XAdES BES Enveloped w postaci pliku XML
+zgodnego ze schematem http://www.w3.org/2000/09/xmldsig. Obsługiwane są wszystkie podpisy
+kwalifikowane zgodne z tymi wymaganiami – niezależnie od kraju ich wydania, łącznie z wydanymi poza
+UE.
+
+Podpisanie sprawozdania w formacie XML Profilem Zaufanym, podpisem osobistym albo podpisem
+kwalifikowanym zgodnym z wymaganiami eIDAS, zgodnie z algorytmem XAdES BES w postaci pliku XML
+zgodnego ze schematem http://www.w3.org/2000/09/xmldsig, Obsługiwane wersje :
+
+     •     XAdES-BES ENVELOPED (podpis jako dodatkowy element ds:Signature w oryginalnym XML)
+     •     XAdES-BES ENVELOPING (podpis do którego załączona jest oryginalny XML).
+     •     XAdES-BES EXTERNAL (podpis w oddzielnym pliku)
+
+Przy podpisywaniu można dokonać transformacji obiektu podpisywanego zgodnie z kodowaniem
+http://www.w3.org/2000/09/xmldsig#base64. Funkcją skrótu wykorzystywaną w podpisie powinna być
+RSA-SHA256. Obsługiwane są wszystkie podpisy kwalifikowane zgodne z ww. wymaganiami – niezależnie od kraju
+ich wydania, łącznie z wydanymi poza UE.
+
+Następnie należy wywołać metodę init wykorzystując wcześniej przygotowany pakiet wysyłkowy. Aby przekazać
+załączniki należy wywołać metodę upload. Potwierdzenie zakończenia przekazywania należy wykonać przez
+wywołanie metody finish.
+
+Alternatywną metodą przekazania e-sprawozdania bez zewnętrznych załączników jest wysyłka sprawozdania z
+użyciem metody uploadSimple.
+
+Po przekazaniu sprawozdania możliwe jest wywołanie metody status umożliwiającej sprawdzenie statusu dla
+złożonego sprawozdania i opcjonalnie pobranie UPO.
+
+Odpowiedź na każde żądanie wysłane do API jest w formacie JSON.
+
+
+
+LISTA METOD
+POST INIT
+Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/init
+
+Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/init
+
+Metoda rozpoczynająca przekazywanie pakietu wysyłkowego. Wywołanie tej metody jest wymagane w procesie
+głównym. W metodzie tej należy przekazać podpisany plik xml (zgodny ze schematem https://e-
+sprawozdania.mf.gov.pl/documentation/xsd/initRequest.xsd) zawierający wszystkie wymagane dane sprawozdania lub listę
+referencji do wszystkich załączników które będą dołączone do sprawozdania).
+Odpowiedź jest zgodna ze schematem https://e-sprawozdania.mf.gov.pl/documentation/xsd/initResponse.xsd. Przykład
+
+Żądanie.
+
+
+
+                                                          Projekt CVP
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.unsigned.xml https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.signed.xml
+
+Odpowiedź.
+
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initResponse.json
+
+
+
+PUT UPLOAD/{REFERENCEID}/{FILEID}
+Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/upload/{REFERENCEID}/{FILEID}
+
+Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/upload/{REFERENCEID}/{FILEID}
+
+Metoda służąca wysłaniu przygotowanego pakietu wysyłkowego. Wywołanie tej metody jest wymagane w
+procesie głównym. Parametry wywołania tej metody należy pobrać z odpowiedzi metody init. Maksymalna
+wielkość przekazanego załącznika z pomocą tej metody to 50MB.
+
+Potwierdzenie prawidłowego przekazania danych odbywa się poprzez przekazania kodu 200 (http). Przykład:
+
+Żądanie
+
+https://e-sprawozdania-tst.mf.gov.pl:443/dmz/api/espr/upload/a8881b74df1140f2986955db7cdfcf65/75363955-8b9a-4e42-
+ae7df99cc927b094
+
+
+
+POST FINISH
+Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/finish
+
+Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/finish
+
+Metoda służąca do potwierdzenia zakończenia procesu składania sprawozdań. Wywołanie tej metody jest
+wymagane w procesie głównym. W metodzie tej należy przekazać plik xml (zgodny ze schematem https://e-
+sprawozdania.mf.gov.pl/documentation/xsd/finishRequest.xsd).
+Po wywołaniu tej metody możliwe będzie sprawdzenie status przekazanego sprawozdania.
+
+Odpowiedź jest zgodna ze schematem https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishResponse.xsd
+
+Przykład
+
+Żądanie
+
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishRequest.xml
+
+
+Odpowiedź
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishResponse.json
+
+PUT UPLOADSIMPLE
+Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/uploadSimple
+
+Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/uploadSimple
+
+Metoda służąca wysłaniu sprawozdania bez zewnętrznych załączników. Wywołanie tej metody jest wymagane w
+procesie alternatywnym. Maksymalna wielkość przekazanego załącznika z pomocą tej metody to 50MB.
+
+
+
+
+                                                          Projekt CVP
+W metodzie należy przekazać dokument sprawozdania oraz metrykę jako multipart/related. Identyfikatorem
+sprawozdania musi być wartość espr.xml, a identyfikatorem metryki wartość meta.xml.
+
+Odpowiedź jest zgodna ze schematem https://e-sprawozdania.mf.gov.pl/documentation/xsd/uploadSimpleResponse.xsd
+
+Przykład
+
+Odpowiedź
+
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_uploadSimpleResponse.json
+
+
+
+
+GET STATUS/{REFERENCEID}
+Środowisko produkcyjne: https://e-sprawozdania.mf.gov.pl/dmz/api/espr/status/{REFERENCEID}
+
+Środowisko testowe: https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/status/{REFERENCEID}
+
+Metoda służąca do pobierania informacji o statusie złożonego sprawozdania. Wywołanie tej metody jest
+opcjonalne. Metoda ta zwraca także UPO w sytuacji gdy proces składania i weryfikacji danych (w tym podpisów
+pod plikami XML) się powiódł.
+
+Odpowiedź jest zgodna ze schematem https://e-sprawozdania.mf.gov.pl/documentation/xsd/statusResponse.xsd
+
+Przykład
+
+Żądanie
+
+https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/status/754c1241ac4e49f5aa92cb77663ebab4
+
+
+Odpowiedź
+
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_01.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_02.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_03.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_04.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_05.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_06.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_07.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_08.json https://e-
+
+sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_09.json
+
+
+Możliwe statusy:
+
+120 - 'Sesja została rozpoczęta'
+
+121 - 'Pliki zostały przesłane'
+
+122 - 'Sesja została zakończona'
+
+
+
+
+                                                         Projekt CVP
+130 - 'Sprawozdanie zostało wysłane'
+
+200 - 'Przetwarzanie zakończone. Wygenerowane UPO.'
+
+201 - 'Przetwarzanie zakończone. Bez potwierdzenia.'
+
+300 - 'Nieprawidłowy numer referencyjny'
+
+301 - 'Weryfikacja podpisów - przetwarzanie'
+
+302 - 'Weryfikacja podpisów - przetwarzanie'
+
+310 - 'Weryfikacja podpisów - sukces'
+
+410 - 'Weryfikacja podpisów - błąd'
+
+Status zostanie zwrócony w przypadku:
+
+  •    nieprawidłowego podpisu dla dokumentu init
+  •    nieważnego podpisu dla dokumentu init
+  •    braku podpisu dla dokumentu init
+  •    przekroczonej maksymalnej liczby (99) podpisów dla dokumentu init
+
+311 - 'Przetwarzanie pakietu - przetwarzanie'
+
+312 - 'Przetwarzanie pakietu - przetwarzanie'
+
+320 - 'Przetwarzanie pakietu - sukces'
+
+420 - 'Przetwarzanie pakietu - błąd'
+
+Status zostanie zwrócony w przypadku:
+
+  •    nieprawidłowego semantycznie dokumentu init
+  •    braku pliku pakietu zip
+  •    nieprawidłowego wektora inicjalizacyjnego
+  •    nieprawidłowego klucza symetrycznego
+  •    zastosowania nieprawidłowego certyfikatu szyfrującego
+
+321 - 'Przetwarzanie metadanych - przetwarzanie'
+
+322 - 'Przetwarzanie metadanych - przetwarzanie'
+
+330 - 'Przetwarzanie metadanych - sukces'
+
+430 - 'Przetwarzanie metadanych - błąd'
+
+Status zostanie zwrócony w przypadku:
+
+  •    nieczytelnego pliku zip
+  •    nieprawidłowego semantycznie dokumentu meta (eSPR_metrics.xml)
+  •    braku pliku dokumentu meta (eSPR_metrics.xml)
+  •    braku tag-a lista plików w dokumencie meta (eSPR_metrics.xml)
+  •    przekroczenia maksymalnej (10) liczby plików zawartych w paczce zip
+
+
+
+                                                Projekt CVP
+  •    przekroczenia maksymalnego (50MB) rozmiaru pliku dokumentu sprawozdania xml zawartego w paczce
+       zip
+  •    nieprawidłowego numeru NIP zawartego w dokumencie meta (eSPR_metrics.xml)
+  •    nieprawidłowego numeru NIP zawartego w sprawozdaniu
+  •    braku pliku zadeklarowanego w dokumencie meta (eSPR_metrics.xml)
+
+331 - 'Weryfikacja sprawozdania - przetwarzanie'
+
+332 - 'Weryfikacja sprawozdania - przetwarzanie'
+
+333 - 'Weryfikacja sprawozdania - przetwarzanie'
+
+340 - 'Weryfikacja sprawozdania - sukces'
+
+440 - 'Weryfikacja sprawozdania - błąd'
+
+Status zostanie zwrócony w przypadku:
+
+  •    nieprawidłowego skrótu dokumentu sprawozdania xml na podstawie zadeklarowanej wartości w
+       dokumencie meta (eSPR_metrics.xml)
+  •    dokumentu sprawozdania xml sporządzonego w schemie wykraczającym poza zaimplementowany zakres
+  •    nieprawidłowego semantycznie dokumentu sprawozdania xml
+  •    nieprawidłowego podpisu dla dokumentu sprawozdania xml
+  •    braku podpisu dla dokumentu sprawozdania xml
+  •    przekroczonej maksymalnej liczby (99) podpisów dla dokumentu sprawozdania xml
+
+Dla metryki https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd i sprawozdań sporządzonych
+według schematów 1-0E zaimplementowano nowe walidacje i komunikaty:
+
+  •    „Sprawozdanie sporządzone według schematu (…) musi zostać wysłane z aktualną wersją metryki.” –
+       sprawozdania o strukturze schematów 1-0E mogą zostać przesłane tylko z metryką https://e-
+       sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd
+  •    „Data zatwierdzenia sprawozdania musi zostać wskazana, sprawozdanie finansowe zostało sporządzone
+       przez podmiot niebędący osobą fizyczną prowadzącą działalność gospodarczą.” – w takim przypadku
+       wymagane jest przesłanie w metryce elementu DataZatwierdzenia
+  •    „Numer identyfikacyjny firmy audytorskiej musi zostać wskazany, jeśli sprawozdanie finansowe podlega
+       obowiązkowi badania.” – w takim przypadku wymagane jest przesłanie w metryce elementu FirmaAudyt
+  •    „Nazwa podmiotu, dataOd oraz dataDo są obowiązkowe w metryce przy wysyłce wyłącznie dokumentów
+       dodatkowych.” – dane wymagane do identyfikacji podmiotu, którego dotyczą przesyłane dokumenty
+  •    „Metryka zawiera dane identyfikujące podmiot, które są zabronione przy wysyłce sprawozdania.” – w
+       przypadku wysyłki sprawozdania lub sprawozdania z dodatkowymi dokumentami metryka nie może
+       zawierać          elementów:           NumerIdentyfikacyjnyNIP,          NumerIdentyfikacyjnyKRS,
+       NumerIdentyfikacyjnyFunduszu, NazwaPodmiotu, DataSporzadzenia, DataOd, DataDo oraz Adres,
+       ponieważ dane te zawiera samo sprawozdanie
+
+
+
+341 - 'Generowanie UPO - przetwarzanie'
+
+342 - 'Generowanie UPO - przetwarzanie'
+
+350 - 'Generowanie UPO - sukces'
+
+
+
+
+                                                       Projekt CVP
+450 - 'Generowanie UPO - błąd'
+
+
+
+AUTORYZACJA
+       Wywoływanie metod nie wymaga przekazania żadnych danych autoryzacyjnych. Sam proces autoryzacji
+odbywa się przez sprawdzenie podpisów elektronicznych które są dołączone do przekazanych danych w plikach
+xml. Wymagania dla podpisów zostały wskazane powyżej w kontekście przygotowania XML sprawozdania.
+
+        Na środowisku testowym istnieje możliwość wyłączenia weryfikacji poprawności certyfikatów podpisów.
+W tym celu należy dodać parametr allowInvalidCert=true w wywołaniu metody init (https://esprawozdania-
+tst.mf.gov.pl/dmz/api/espr/init?allowInvalidCert=true).
+
+
+OBSŁUGA BŁĘDÓW
+         W sytuacji gdyby wywołanie metody zakończyło się błędem, zostanie przekazana odpowiedz w formacie
+json (zgodna ze schematem https://e-sprawozdania.mf.gov.pl/documentation/xsd/exceptionResponse.xsd), np.:
+{
+    "ServiceCode": "fd671f76-87e1-4ddf-b4ab-f50840ef1390",
+    "ServiceName": "status",
+    "Timestamp": 1538393755167,
+    "ReferenceNumber": "223212212344124124",
+    "Exceptions": {
+      "Exception": [
+        {
+          "ExceptionCode": 605,
+          "ExceptionDescription": "PARSE PROBLEM"
+        }
+      ]
+    }
+}
+W przypadku błędu na etapie usługi init, zostanie zwrócony błąd i nie zostanie wygenerowany numer
+referencyjny, obsługiwane są błędy takie jak:
+
+          •    niedozwolony parametr wywołania
+          •    semantycznie nieprawidłowy dokument init
+          •    brak podpisów
+          •    nieprawidłowy podpis
+          •    przekroczona liczba podpisów
+          •    braku kluczowych tag-ów w dokumencie init
+
+
+
+ZAŁĄCZNIKI
+FILEMETRICS.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/fileMetrics.xsd
+
+
+
+METRICSTYPES.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/types/metricsTypes.xsd
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/types/metricsTypes.xsd
+
+
+INITREQUEST.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/initRequest.xsd
+
+
+
+
+                                                          Projekt CVP
+INITRESPONSE.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/initResponse.xsd
+
+
+
+FINISHREQUEST.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishRequest.xsd
+
+
+
+FINISHRESPONSE.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishResponse.xsd
+
+
+
+UPLOADSIMPLERESPONSE.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/uploadSimpleResponse.xsd
+
+
+
+STATUSRESPONSE.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/statusResponse.xsd
+
+
+
+EXCEPTIONRESPONSE.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/exceptionResponse.xsd
+
+
+
+GTWTYPES.XSD
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/gtwTypes.xsd
+
+
+
+
+W celu zgłoszenia pytań lub błędów zapraszamy do kontaktu: https://www.podatki.gov.pl/e-
+sprawozdania-finansowe
+
+
+
+
+                                                          Projekt CVP
+

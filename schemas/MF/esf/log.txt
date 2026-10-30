@@ -1,0 +1,116 @@
+https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf -> https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf [application/pdf] 422470 B
+ZAPISANO schemas/MF/esf/informacja-o-strukturach-e-sf.pdf.txt (12550 B)
+https://www.gov.pl/web/kas/struktury-e-sprawozdan -> https://www.gov.pl/web/kas/struktury-e-sprawozdan [text/html;charset=UTF-8] 41059 B
+ZAPISANO schemas/MF/esf/https___www_gov_pl_web_kas_struktury_e_sprawozdan.html (41059 B)
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/ -> https://podatki.gov.pl/e-sprawozdania-finansowe [text/html; charset=utf-8] 274067 B
+ZAPISANO schemas/MF/esf/https___podatki_gov_pl_e_sprawozdania_finansowe.html (274067 B)
+! https://podatki.gov.pl/media/3xfpk0rg/esprawozdania_opisapi_v-5-0-za&: HTTP Error 404: Not Found
+https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip -> https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip [application/x-zip-compressed] 3145 B
+  ZIP: ['fileMetrics.xsd', 'metricsTypes.xsd']
+ZAPISANO schemas/MF/esf/fileMetrics.xsd (6602 B)
+ZAPISANO schemas/MF/esf/metricsTypes.xsd (8796 B)
+https://podatki.gov.pl/media/ajlp0xfk/esprawozdania_opisapi_v-5-0.pdf -> https://podatki.gov.pl/media/ajlp0xfk/esprawozdania_opisapi_v-5-0.pdf [application/pdf] 888312 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v-5-0.pdf.txt (18799 B)
+http://www.w3.org/2000/09/xmldsig#base64 -> https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/ [text/html; charset=iso-8859-1] 214700 B
+http://www.w3.org/2000/09/xmldsig -> https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/ [text/html; charset=iso-8859-1] 214700 B
+! https://e-: <urlopen error [Errno -3] Temporary failure in name resolution>
+! https://e-sprawozdania-: <urlopen error [Errno -3] Temporary failure in name resolution>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/finish: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/init: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/status/{REFERENCEID}: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/upload/{REFERENCEID}/{FILEID}: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/uploadSimple: <urlopen error timed out>
+! https://e-sprawozdania-tst.mf.gov.pl:443/dmz/api/espr/upload/a8881b74df1140f2986955db7cdfcf65/75363955-8b9a-4e42-: <urlopen error timed out>
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/: HTTP Error 404: 
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/finish: HTTP Error 400: 
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/init: HTTP Error 400: 
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/status/{REFERENCEID}: HTTP Error 400: 
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/upload/{REFERENCEID}/{FILEID}: HTTP Error 400: 
+! https://e-sprawozdania.mf.gov.pl/dmz/api/espr/uploadSimple: HTTP Error 400: 
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishResponse.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishResponse.json [application/json] 80 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.unsigned.xml -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.unsigned.xml [application/xml] 2034 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initResponse.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initResponse.json [application/json] 494 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_01.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_01.json [application/json] 141 B
+! https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_uploadSimpleResponse.json: HTTP Error 404: 
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2020/11/18/fileMetrics.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2020/11/18/fileMetrics.xsd [] 6502 B
+ZAPISANO schemas/MF/esf/fileMetrics.xsd (6502 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2020/11/18/types/metricsTypes.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2020/11/18/types/metricsTypes.xsd [] 8618 B
+ZAPISANO schemas/MF/esf/metricsTypes.xsd (8618 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/exceptionResponse.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/exceptionResponse.xsd [] 1519 B
+ZAPISANO schemas/MF/esf/exceptionResponse.xsd (1519 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/gtwTypes.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/gtwTypes.xsd [] 7455 B
+ZAPISANO schemas/MF/esf/gtwTypes.xsd (7455 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishRequest.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishRequest.xsd [] 1992 B
+ZAPISANO schemas/MF/esf/finishRequest.xsd (1992 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishResponse.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/finishResponse.xsd [] 1038 B
+ZAPISANO schemas/MF/esf/finishResponse.xsd (1038 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/initRequest.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/initRequest.xsd [] 2620 B
+ZAPISANO schemas/MF/esf/initRequest.xsd (2620 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/initResponse.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/initResponse.xsd [] 2281 B
+ZAPISANO schemas/MF/esf/initResponse.xsd (2281 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/statusResponse.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/statusResponse.xsd [] 1297 B
+ZAPISANO schemas/MF/esf/statusResponse.xsd (1297 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/uploadSimpleResponse.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/uploadSimpleResponse.xsd [] 1072 B
+ZAPISANO schemas/MF/esf/uploadSimpleResponse.xsd (1072 B)
+! https://esprawozdania-: <urlopen error [Errno -3] Temporary failure in name resolution>
+https://podatki.gov.pl/media/bsrhx2lq/esprawozdania_opisapi_v-4-0.pdf -> https://podatki.gov.pl/media/bsrhx2lq/esprawozdania_opisapi_v-4-0.pdf [application/pdf] 905076 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v-4-0.pdf.txt (18821 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/fileMetrics.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/fileMetrics.xsd [] 6317 B
+ZAPISANO schemas/MF/esf/fileMetrics.xsd (6317 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/metricsTypes.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/metricsTypes.xsd [] 8366 B
+ZAPISANO schemas/MF/esf/metricsTypes.xsd (8366 B)
+https://podatki.gov.pl/media/d0rduxgq/esprawozdania_opisapi_v70.pdf -> https://podatki.gov.pl/media/d0rduxgq/esprawozdania_opisapi_v70.pdf [application/pdf] 448433 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v70.pdf.txt (20852 B)
+! https://e-sprawozdania-tst.mf.gov.pl/dmz/api/espr/status/754c1241ac4e49f5aa92cb77663ebab4: <urlopen error timed out>
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishRequest.xml -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_finishRequest.xml [application/xml] 726 B
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/fileMetrics.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/fileMetrics.xsd [] 6502 B
+ZAPISANO schemas/MF/esf/fileMetrics.xsd (6502 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/types/metricsTypes.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2022/03/03/types/metricsTypes.xsd [] 8829 B
+ZAPISANO schemas/MF/esf/metricsTypes.xsd (8829 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/fileMetrics.xsd [] 6664 B
+ZAPISANO schemas/MF/esf/fileMetrics.xsd (6664 B)
+https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/types/metricsTypes.xsd -> https://e-sprawozdania.mf.gov.pl/documentation/xsd/2025/09/02/types/metricsTypes.xsd [] 8796 B
+ZAPISANO schemas/MF/esf/metricsTypes.xsd (8796 B)
+! https://www.podatki.gov.pl/e-: HTTP Error 404: Not Found
+https://podatki.gov.pl/media/dkbdabvr/esprawozdania_opisapi_v-2-0.pdf -> https://podatki.gov.pl/media/dkbdabvr/esprawozdania_opisapi_v-2-0.pdf [application/pdf] 397940 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v-2-0.pdf.txt (48300 B)
+! http://meta.gtw.espr.apps.akmf.pl/2018/07/31/0001: <urlopen error [Errno -2] Name or service not known>
+! http://request.finish.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001: <urlopen error [Errno -2] Name or service not known>
+! http://request.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001: <urlopen error [Errno -2] Name or service not known>
+! http://types.meta.gtw.espr.apps.akmf.pl/2018/07/31/0001: <urlopen error [Errno -2] Name or service not known>
+! http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001: <urlopen error [Errno -2] Name or service not known>
+http://uri.etsi.org/01903#SignedProperties -> https://uri.etsi.org/01903/ [text/html] 532 B
+http://uri.etsi.org/01903/v1.3.2# -> https://uri.etsi.org/01903/v1.3.2/ [text/html] 1895 B
+http://www.w3.org/2000/09/xmldsig# -> https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/ [text/html; charset=iso-8859-1] 214700 B
+http://www.w3.org/2000/09/xmldsig#sha1 -> https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/ [text/html; charset=iso-8859-1] 214700 B
+http://www.w3.org/2001/04/xmldsig-more#rsa-sha256 -> https://www.w3.org/2001/04/xmldsig-more [text/html; charset=iso-8859-1] 1218 B
+http://www.w3.org/2001/04/xmlenc#sha256 -> https://www.w3.org/TR/2002/REC-xmlenc-core-20021210/Overview.html [text/html; charset=iso-8859-1] 154336 B
+http://www.w3.org/2001/10/xml-exc-c14n# -> https://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/ [text/html; charset=iso-8859-1] 43783 B
+http://www.w3.org/2001/XMLSchema -> https://www.w3.org/2001/XMLSchema [application/xhtml+xml; charset=utf-8] 5808 B
+ZAPISANO schemas/MF/esf/XMLSchema.xsd (5808 B)
+http://www.w3.org/TR/1999/REC-xpath-19991116 -> https://www.w3.org/TR/1999/REC-xpath-19991116/ [text/html; charset=iso-8859-1] 117524 B
+https://podatki.gov.pl/media/ftdbiiqt/mf-cer-2.zip -> https://podatki.gov.pl/media/ftdbiiqt/mf-cer-2.zip [application/x-zip-compressed] 1166 B
+  ZIP: ['mf-cer (2).cer']
+https://podatki.gov.pl/media/h5ie0xhn/esprawozdania_opisapi_v-6-0.pdf -> https://podatki.gov.pl/media/h5ie0xhn/esprawozdania_opisapi_v-6-0.pdf [application/pdf] 906088 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v-6-0.pdf.txt (19682 B)
+https://podatki.gov.pl/media/q4hnkfbu/esprawozdania_opisapi.pdf -> https://podatki.gov.pl/media/q4hnkfbu/esprawozdania_opisapi.pdf [application/pdf] 942162 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi.pdf.txt (42850 B)
+https://podatki.gov.pl/media/ss3fahbk/esprawozdania_opisapi_v-3-0.pdf -> https://podatki.gov.pl/media/ss3fahbk/esprawozdania_opisapi_v-3-0.pdf [application/pdf] 303671 B
+ZAPISANO schemas/MF/esf/esprawozdania_opisapi_v-3-0.pdf.txt (18303 B)
+! https://e-sprawozdania-tst.mf.gov.pl:443/dmz/api/espr/upload/a8881b74df1140f2986955db7cdfcf65/75363955-8b9a-4e42-ae7d-: <urlopen error timed out>
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.signed.xml -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_initRequest.signed.xml [application/xml] 6406 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_02.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_02.json [application/json] 140 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_03.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_03.json [application/json] 141 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_04.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_04.json [application/json] 145 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_05.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_05.json [application/json] 145 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_06.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_06.json [application/json] 148 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_07.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_07.json [application/json] 148 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_08.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_08.json [application/json] 139 B
+https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_09.json -> https://e-sprawozdania.mf.gov.pl/documentation/testPackage/eSPR_statusResponse_09.json [application/json] 6399 B
+https://podatki.gov.pl/media/z10pa3iz/mf-cer.zip -> https://podatki.gov.pl/media/z10pa3iz/mf-cer.zip [application/x-zip-compressed] 1288 B
+  ZIP: ['mf-cer.cer']
+http://www.mf.gov.pl/schematy/SF/DefinicjeTypySprawozdaniaFinansowe/2018/07/09/ -> https://www.gov.pl/web/finanse [text/html;charset=UTF-8] 53406 B
+ZAPISANO schemas/MF/esf/https___www_gov_pl_web_finanse.html (53406 B)
+https://e-sprawozdania.mf.gov.pl/ap/ -> https://e-sprawozdania.mf.gov.pl/ap/ [text/html;charset=ISO-8859-1] 52792 B
+ZAPISANO schemas/MF/esf/https___e_sprawozdania_mf_gov_pl_ap_.html (52792 B)

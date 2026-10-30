@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xs:schema
+	xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns="http://response.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+	xmlns:response.init="http://response.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" 
+	xmlns:types="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" 
+	targetNamespace="http://response.init.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001"
+	elementFormDefault="qualified" attributeFormDefault="unqualified"
+	version="1.0" xml:lang="PL"
+>
+	<xs:import namespace="http://types.svc.gtw.espr.apps.akmf.pl/2018/07/31/0001" schemaLocation="https://e-sprawozdania.mf.gov.pl/documentation/xsd/types/gtwTypes.xsd" />
+
+	<xs:element name="InitResponse">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="ReferenceNumber" type="types:ReferenceNumberType" minOccurs="1" maxOccurs="1" />
+				<xs:element name="Timestamp" type="types:TimestampType" minOccurs="1" maxOccurs="1" />
+
+				<xs:element name="PackageSignature" type="PackageSignatureType" minOccurs="1" maxOccurs="1" />
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="PackageSignatureType">
+		<xs:sequence>
+			<xs:element name="PackageName" type="types:PackageNameType" minOccurs="1" maxOccurs="1" />
+            <xs:element name="FileSignatureList" minOccurs="1" maxOccurs="1">
+            	<xs:complexType>
+            		<xs:sequence>
+            			<xs:element name="FileSignature" type="FileSignatureType" minOccurs="1" maxOccurs="1" />
+            		</xs:sequence>
+            	</xs:complexType>
+                <xs:unique name="FileSignatureUnique">
+                    <xs:selector xpath="response.init:FileSignature"/>
+                    <xs:field xpath="response.init:FileName"/>
+                </xs:unique>
+            </xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="FileSignatureType">
+		<xs:sequence>
+			<xs:element name="FileName" type="types:FileNameType" minOccurs="1" maxOccurs="1" />
+			<xs:element name="URL" type="types:URLType" />
+			<xs:element name="Method" type="types:MethodType" />
+			<xs:element name="HeaderEntry" type="types:HeaderEntryType" minOccurs="0" maxOccurs="unbounded" />
+		</xs:sequence>
+	</xs:complexType>
+
+</xs:schema>
