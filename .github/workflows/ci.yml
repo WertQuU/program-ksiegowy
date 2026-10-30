@@ -156,10 +156,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          pattern: PelnaKsiegowosc-*
           path: pakiety
           merge-multiple: true
       - name: Sumy kontrolne
-        run: cd pakiety && sha256sum * > SHA256SUMS.txt && cat SHA256SUMS.txt
+        run: cd pakiety && find . -maxdepth 1 -type f -printf '%f\n' | sort | xargs sha256sum > SHA256SUMS.txt && cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:
           files: pakiety/*
