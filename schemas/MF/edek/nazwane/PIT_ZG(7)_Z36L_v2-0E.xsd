@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" xmlns:zg36l="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/02/08/eD/PITZG36L/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/02/08/eD/PITZG36L/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/StrukturyDanych_v7-0E.xsd"/>
+	<!--Załącznik do zeznania PIT-36L.-->
+	<!-- -->
+	<!--Wypełniają podatnicy, którzy uzyskali dochody/przychody opodatkowane zgodnie z art. 27 ust. 8, 9, 9a, art. 30b ust. 5a, 5b, 5e, 5f, art.30c ust. 4, 5 lub art. 30e ust. 8 i 9 ustawy. Załącznik PIT/ZG składa się odrębnie dla każdego państwa uzyskania dochodu/przychodu. Małżonkowie, bez względu na sposób rozliczenia rocznego (indywidualnie czy wspólnie z małżonkiem), składają odrębny załącznik PIT/ZG.-->
+	<!-- -->
+	<!--Podatek zapłacony za granicą, bez uwzględnienia limitu, o którym mowa w art. 27 ust. 9 i 9a, art. 30b ust. 5a i 5b, art. 30c ust. 4 i 5, art. 30e ust. 8 i 9 ustawy.-->
+	<xsd:complexType name="TNaglowek_PIT_ZG">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="zg36l:TKodFormularza_PIT_ZG">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT/ZG (7)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="2-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="7"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_PIT_ZG">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT/ZG"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_PIT_ZG">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O WYSOKOŚCI DOCHODÓW/PRZYCHODÓW Z ZAGRANICY I ZAPŁACONYM PODATKU W ROKU PODATKOWYM</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="zg36l:TNaglowek_PIT_ZG"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dochody i podatek rozliczane w zeznaniu podatkowym PIT-36L</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_7" type="etd:TKodKrajuWydania">
+								<xsd:annotation>
+									<xsd:documentation>Kod kraju uzyskania dochodu / przychodu</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_30">
+								<xsd:annotation>
+									<xsd:documentation>Dochód, o którym mowa w art. 30c ust. 4 i 5 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TKwota2Nieujemna">
+										<xsd:minExclusive value="0"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_31" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Podatek zapłacony za granicą</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>
