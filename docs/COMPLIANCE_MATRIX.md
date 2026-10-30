@@ -24,9 +24,9 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | UoR art. 32 | amortyzacja bilansowa | metody liniowa, degresywna, jednorazowa | Z/W |
 | UoR art. 45–46, zał. nr 1 | bilans, RZiS | wariant porównawczy i kalkulacyjny (klucz podziału kosztów rodzajowych), dane porównawcze | Z/W |
 | UoR art. 48, 48a, 48b, zał. nr 1 | informacja dodatkowa, zestawienie zmian w kapitale, rachunek przepływów | tabele z ksiąg + opisy użytkownika; RPP metodą pośrednią z kontrolą zmiany środków pieniężnych | Z/W |
-| UoR art. 45 ust. 1f | sprawozdanie w strukturze logicznej | struktura SFJINZ(2) (CRWDE 2025/08/07/13817) z RZiS wg polityki, zmianami w kapitale, RPP, informacją dodatkową (PDF) i informacją o podatku dochodowym; walidacja oficjalnym schematem w testach | Z/W |
+| UoR art. 45 ust. 1f, 52 | sprawozdanie w strukturze logicznej | struktury SFJIN/SFJMA/SFJMI (Z/T) z RZiS wg polityki, zmianami w kapitale, RPP, informacją dodatkową (PDF) i informacją o podatku dochodowym; walidacja schematem; plik „gotowy do podpisu” tylko po kontroli kompletności (rok zamknięty, informacja dodatkowa, brak pól „do uzupełnienia”, konta zmapowane) — inaczej wersja robocza | Z/W |
 | UoR art. 53, 69 | zatwierdzenie i złożenie sprawozdania | projekty uchwał (zatwierdzenie, podział zysku, absolutorium), terminy w kalendarzu | Z/W |
-| UoR art. 71–76 | ochrona i przechowywanie | szyfrowane kopie, weryfikacja, retencja, okresy przechowywania | Z/W |
+| UoR art. 71–76, art. 10 ust. 1 pkt 4 | ochrona i przechowywanie | szyfrowany plik bazy (SQLCipher AES-256), TLS do serwera, szyfrowane kopie (także przed aktualizacją schematu), weryfikacja, retencja, okresy przechowywania; role operatorów nadawane przez administratora (rozdział obowiązków), dziennik zdarzeń | Z/W |
 | VAT art. 106e | elementy faktury | generator FA(3) w zakresie typowych faktur krajowych i korekt | Z/W |
 | VAT art. 106ga i n. | KSeF | wyłącznie pobieranie faktur zakupu (sprawdzone w praktyce przez użytkownika); faktury sprzedaży wystawiane w KSeF poza programem, w programie wpisywany i walidowany numer KSeF; asystent ostrzega o fakturach dla firm bez numeru KSeF | Z |
 | VAT art. 86 | prawo i termin odliczenia | wymagane potwierdzenie zakresu i okresu, kontrola terminów | Z/W |
@@ -34,7 +34,7 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | wersje (2) i (3) wg okresu, miesięczny i kwartalny, osoba fizyczna i niefizyczna; walidacja oficjalnymi schematami w testach | Z |
 | VAT art. 99 ust. 2, art. 103 ust. 2 | rozliczenie kwartalne | deklaracja za kwartał w ostatnim miesiącu, ewidencja miesięczna | Z/W |
 | VAT art. 100 | informacja podsumowująca VAT-UE | zestawienie WDT, WNT, usług (art. 100 ust. 1 pkt 4) wg kontrahentów | Z/W |
-| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD(1) v1-1) | ZOiS7 ze słownikiem znaczników MF przypisywanym automatycznie z pozycji sprawozdania, znaczniki PD, dziennik, RPD; walidacja oficjalnym schematem w testach | Z/W |
+| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD(1) v1-1) | ZOiS7 ze słownikiem znaczników MF, znaczniki PD, dziennik; RPD K_1–K_8 z rocznego uzgodnienia CIT (różnice trwałe i przejściowe, art. 18f, odpisy i rezerwy, amortyzacja, korekty lat ubiegłych); zapis zablokowany, gdy RPD nie uzgadnia się z dochodem; JPK_ST_KR — poza programem | Z/W |
 | CIT art. 27 | zeznanie CIT-8, CIT-8/O | zestawienie kwot z uzgodnienia wyniku, zaliczek i odliczeń | Z/W |
 | CIT art. 26 ust. 3 | IFT-2R / CIT-10Z | zestawienie wypłat na rzecz nierezydentów (ocena WHT — użytkownik) | Cz |
 | PIT art. 8, 27, 30c, 44, 45 | dochód wspólników / właściciela, PIT-36, PIT-36L | podział dochodu wg udziałów, skala / liniowy, odliczenie składek | Z/W |
@@ -55,7 +55,8 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | Ordynacja art. 63 | zaokrąglenia do pełnych złotych | deklaracja VAT, CIT | Z |
 | KSH art. 191–195, 344, 347–349, 300^15 | ograniczenia wypłat na rzecz właścicieli | wymagane potwierdzenie przed księgowaniem wypłaty | Z/W |
 | KSH (wpis do KRS) | zmiany kapitału | wymagana sygnatura wpisu dla form rejestrowych | Z/W |
-| RODO art. 5, 25, 32 | minimalizacja, ochrona danych | dane kontrahentów ograniczone, szyfrowane kopie, brak telemetrii | Z/W |
+| RODO art. 5, 17, 25, 32 | minimalizacja, ochrona danych, prawo do usunięcia | szyfrowanie bazy i kopii, TLS, role, brak telemetrii; żądanie usunięcia: odmowa z podstawą (art. 17 ust. 3 lit. b; art. 74 UoR, art. 70/86 OP, art. 94 pkt 9b KP) w okresie przechowywania, anonimizacja po jego upływie, zapis w dzienniku | Z/W |
+| CIT art. 7 ust. 5, 15c | straty z lat ubiegłych, limit kosztów finansowania dłużnego | rejestr strat i odliczeń (5 lat, 50% albo jednorazowo do 5 mln zł, odrębnie dla źródeł; także w zaliczkach); ostrzeżenie o nadwyżce ponad 3 mln zł / 30% EBITDA | Z/W |
 
 Pozycje **Z/W** i **Cz** wymagają sprawdzenia przez księgowego, doradcę podatkowego lub prawnika przed
 wykorzystaniem wyników w rozliczeniach. Odpowiedzialność za rozliczenia ponosi użytkownik (§ 6 licencji).

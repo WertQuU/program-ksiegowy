@@ -1,5 +1,5 @@
 LICENCJA „PEŁNA KSIĘGOWOŚĆ” — UŻYTKOWANIE BEZ PRAWA SPRZEDAŻY
-Wersja 1.1 z dnia 22 października 2026 r.
+Wersja 1.2 z dnia 30 października 2026 r.
 
 Copyright (c) 2026 Kacper Baca
 
@@ -71,7 +71,8 @@ podlegają własnym licencjom i nie są objęte ograniczeniami z § 3.
 2. Licencjobiorca korzysta z Programu na własne ryzyko i ponosi wyłączną
    odpowiedzialność za:
    a) prowadzenie ksiąg rachunkowych, ewidencji, rejestrów VAT, deklaracji,
-      plików JPK, faktur (w tym wysyłanych do KSeF), zeznań podatkowych
+      plików JPK, faktur i numerów KSeF (Program nie wysyła faktur do KSeF —
+      wyłącznie pobiera faktury zakupu), zeznań podatkowych
       i sprawozdań finansowych sporządzonych przy użyciu Programu;
    b) weryfikację poprawności danych, obliczeń, klasyfikacji podatkowych
       i wyników generowanych przez Program, przed ich wykorzystaniem lub
@@ -88,12 +89,25 @@ podlegają własnym licencjom i nie są objęte ograniczeniami z § 3.
    korekt i postępowań, utratę danych, utracone korzyści oraz szkody
    wynikające z błędów Programu lub z jego niezgodności ze zmienionymi
    przepisami albo strukturami plików urzędowych.
-4. Program nie stanowi porady prawnej, podatkowej ani księgowej i nie
+4. Wyłączenia i ograniczenia z ust. 1–3 nie dotyczą szkody wyrządzonej
+   Licencjobiorcy umyślnie (art. 473 § 2 Kodeksu cywilnego) ani innych
+   przypadków, w których wyłączenie odpowiedzialności jest niedopuszczalne
+   z mocy bezwzględnie obowiązujących przepisów, w tym przepisów chroniących
+   konsumentów. Licencja jest nieodpłatna; Licencjodawca nie świadczy usług
+   księgowych, wsparcia ani aktualizacji i nie gwarantuje dostosowania
+   Programu do zmian przepisów.
+5. Program nie stanowi porady prawnej, podatkowej ani księgowej i nie
    zastępuje księgowego, doradcy podatkowego ani biegłego rewidenta.
    Odpowiedzialność za prowadzenie ksiąg rachunkowych ponosi kierownik
    jednostki (art. 4 ust. 5 ustawy z dnia 29 września 1994 r. o rachunkowości),
    a za rozliczenia podatkowe — podatnik.
-5. Korzystanie z Programu oznacza akceptację niniejszych warunków.
+6. Program działa na komputerze Licencjobiorcy i nie przesyła Licencjodawcy
+   danych księgowych ani osobowych (brak telemetrii). Administratorem danych
+   osobowych przetwarzanych w Programie (kontrahentów, pracowników) jest
+   Licencjobiorca (art. 4 pkt 7 RODO); odpowiada on za podstawy przetwarzania,
+   środki bezpieczeństwa (w tym klucze szyfrowania bazy i kopii) oraz
+   realizację praw osób, których dane dotyczą.
+7. Korzystanie z Programu oznacza akceptację niniejszych warunków.
 
 § 7. Wygaśnięcie
 Naruszenie § 3 lub § 4 powoduje automatyczne wygaśnięcie licencji wobec
@@ -110,7 +124,7 @@ Licencjodawcy.
 -------------------------------------------------------------------------------
 ENGLISH TRANSLATION (INFORMATIVE ONLY — THE POLISH TEXT PREVAILS)
 
-"PEŁNA KSIĘGOWOŚĆ" LICENSE — USE WITHOUT THE RIGHT TO SELL, v1.1
+"PEŁNA KSIĘGOWOŚĆ" LICENSE — USE WITHOUT THE RIGHT TO SELL, v1.2
 
 You may, free of charge: install and use the Program (including in a business
 and for keeping the books of your own company, and by accounting firms serving
@@ -129,6 +143,9 @@ Third-party components keep their own licenses. The Program is provided
 tax returns, JPK files, KSeF invoices and financial statements prepared with
 it and for verifying all results; to the fullest extent permitted by law the
 Licensor is not liable for any damages, including tax arrears, interest,
-penalties or fines. It is not legal, tax or accounting advice. Breach of
+penalties or fines, except for damage caused intentionally and other cases
+where exclusion is not permitted by mandatory law (incl. consumer law).
+The Program sends no accounting or personal data to the Licensor; the user is
+the controller of personal data processed in it (GDPR). It is not legal, tax or accounting advice. Breach of
 the restrictions terminates the license for the breaching party. Polish law
 applies.

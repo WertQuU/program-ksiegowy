@@ -119,7 +119,8 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
 - Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie
   chorobowe pracodawcy; urlop wypoczynkowy przy stałej pensji nie zmienia wynagrodzenia.
-- KSeF: logowanie tokenem albo certyfikatem (.pfx — podpis kwalifikowany, pieczęć, certyfikat KSeF). Profil Zaufany
+- KSeF: wyłącznie pobieranie faktur zakupu (faktury sprzedaży wystawia się w KSeF poza programem i wpisuje ich numer).
+  Logowanie tokenem albo certyfikatem (.pfx — podpis kwalifikowany, pieczęć, certyfikat KSeF). Profil Zaufany
   wymaga podpisania pliku na stronie gov.pl — program przyjmuje wtedy certyfikat KSeF.
 - Biała lista VAT i kursy NBP: integracje sprawdzone testami na atrapach API (publiczne API MF i NBP).
 - Reguły kategorii wydatków odpowiadają typowym przypadkom — w nietypowej sytuacji procenty (VAT, NKUP) zmienia się

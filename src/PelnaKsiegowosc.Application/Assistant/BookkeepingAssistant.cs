@@ -216,6 +216,19 @@ public sealed class BookkeepingAssistant
                     "Saldo nie trafi do sprawozdania finansowego.", "Plan kont → zaznacz konto → uzupełnij „Bilans Wn / Ma” albo „RZiS”.", AppArea.PlanKont);
         }
 
+        // --- Parametry płacowe na kolejny rok (minimalne wynagrodzenie, limit składek) ---
+        var nextYear = today.Year + 1;
+        if (today.Month >= 11 && await _db.Employees.AnyAsync(e => e.CompanyId == companyId && e.IsActive, ct))
+        {
+            try { _ = Domain.Payroll.PayrollRules.For(nextYear); }
+            catch (DomainException)
+            {
+                Add("PLACE_PARAMETRY", IssueSeverity.Ostrzezenie, $"Brak parametrów płacowych na {nextYear} r.",
+                    $"Program nie liczy list płac za {nextYear} r. bez zweryfikowanych parametrów (minimalne wynagrodzenie, roczny limit podstawy składek, stawki).",
+                    "Zaktualizuj program, gdy zostaną opublikowane parametry na nowy rok (rejestr przepisów pokaże zmianę).", AppArea.Place);
+            }
+        }
+
         // --- Kapitał P.S.A.: objęcia zaksięgowane według wcześniejszej logiki programu ---
         foreach (var l in await new Capital.CapitalService(_db, _user, _clock).LegacyPsaSubscriptionsAsync(ct))
             Add("KAPITAL_PSA_OBJECIE", IssueSeverity.Ostrzezenie, $"Objęcie akcji ({l.Shareholder}, {l.Date.ToPl()}) zwiększyło kapitał akcyjny przed wpłatą",

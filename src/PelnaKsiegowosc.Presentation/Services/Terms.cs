@@ -5,7 +5,7 @@ namespace PelnaKsiegowosc.Presentation.Services;
 /// <summary>Warunki licencji akceptowane przy pierwszym uruchomieniu (treść pliku LICENSE dołączona do programu).</summary>
 public static class Terms
 {
-    public const string Version = "1.1";
+    public const string Version = "1.2";
     public const string SettingKey = "terms.accepted";
 
     public static string Text

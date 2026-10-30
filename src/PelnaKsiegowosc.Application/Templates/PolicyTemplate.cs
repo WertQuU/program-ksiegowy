@@ -48,7 +48,7 @@ public static class PolicyTemplate
 
 - Program: Pełna Księgowość, wersja {{softwareVersion}}; data rozpoczęcia eksploatacji: [DO UZUPEŁNIENIA].
 - Algorytmy i parametry: opisane w dokumentacji programu (ARCHITECTURE.md, ACCOUNTING_REQUIREMENTS.md) oraz w raporcie „Opis systemu informatycznego” generowanym przez program.
-- Ochrona danych: dostęp przez konto użytkownika systemu operacyjnego (oraz konto serwera PostgreSQL w trybie serwerowym), dziennik audytowy z łańcuchem skrótów, blokada zmian zapisów zaksięgowanych, szyfrowane kopie zapasowe.
+- Ochrona danych: dostęp przez konto użytkownika systemu operacyjnego (oraz konto serwera PostgreSQL w trybie serwerowym, połączenie TLS), role operatorów nadawane przez administratora, dziennik zdarzeń z łańcuchem skrótów, blokada zmian zapisów zaksięgowanych, szyfrowanie pliku bazy (AES-256) i kopii zapasowych.
 - Zmiany wersji programu: rejestrowane w dzienniku audytowym (wersja aplikacji i schematu bazy).
 
 ## 4. Ochrona danych (art. 10 ust. 1 pkt 4, art. 71–76 UoR)

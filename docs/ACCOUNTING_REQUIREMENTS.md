@@ -102,18 +102,26 @@ niebędących podatnikami CIT moduł jest zablokowany (pozostaje uzgodnienie pom
 
 ## 12. Sprawozdanie finansowe
 
-Bilans i RZiS (wariant porównawczy) wg załącznika nr 1 UoR z danymi porównawczymi; kontrola aktywa = pasywa;
-konta niezmapowane sygnalizowane. Plik XML sprawozdania (struktura JednostkaInna) bez informacji dodatkowej
-i zestawienia zmian w kapitale — wymaga uzupełnienia i podpisów w innym narzędziu.
+Bilans i RZiS (wariant porównawczy i kalkulacyjny) wg załączników nr 1, 4 i 5 UoR z danymi porównawczymi; zestawienie
+zmian w kapitale, rachunek przepływów pieniężnych, informacja dodatkowa (PDF dołączany do XML); kontrola aktywa = pasywa
+i kont bez pozycji sprawozdania. Plik XML (struktury JednostkaInna/Mała/Mikro, w złotych lub tysiącach) walidowany
+oficjalnym schematem MF. Plik „gotowy do podpisu” powstaje tylko po kontroli kompletności (rok zamknięty, informacja
+dodatkowa, brak pól „do uzupełnienia”, konta zmapowane) — w przeciwnym razie wyłącznie wersja robocza. Podpisy
+kwalifikowane i złożenie w e-KRS — poza programem (aplikacja e-Sprawozdania MF / e-KRS).
 
-## 13. Ochrona i przechowywanie danych (art. 71–76 UoR)
+## 13. Ochrona i przechowywanie danych (art. 71–76 UoR, RODO)
 
-Szyfrowane kopie zapasowe weryfikowane po zapisie, kopie automatyczne, przechowywanie zdalne (Object Storage),
-odtwarzanie do nowej lokalizacji, dane nieusuwane przy odinstalowaniu programu, okresy przechowywania pokazywane
-w archiwum. Dziennik zdarzeń nie zawiera haseł ani kluczy.
+Plik bazy SQLite szyfrowany (SQLCipher, AES-256; klucz w magazynie sekretów systemu); połączenie z serwerem
+PostgreSQL spoza komputera wyłącznie przez TLS. Szyfrowane kopie zapasowe (AES-256-GCM) weryfikowane po zapisie,
+kopie automatyczne, przechowywanie zdalne (Object Storage), odtwarzanie do nowej lokalizacji, dane nieusuwane przy
+odinstalowaniu programu, okresy przechowywania pokazywane w archiwum. Role operatorów (rozdział obowiązków) nadaje
+administrator; dziennik zdarzeń (kto, kiedy, co) nie zawiera haseł ani kluczy. Żądania usunięcia danych osobowych:
+odmowa z podstawą prawną w okresie przechowywania, anonimizacja po jego upływie.
 
-## 14. Nieobsługiwane
+## 14. Poza zakresem programu / wymagające działań użytkownika
 
-Inwentaryzacja (arkusze spisowe, różnice), magazyn i rozliczanie zapasów, wariant kalkulacyjny RZiS,
-informacja dodatkowa, rachunek przepływów pieniężnych, konsolidacja, PIT właścicieli, JPK_V7K, JPK_KR(_PD),
-podpis XAdES w KSeF, płace.
+- Wystawianie faktur w KSeF (program tylko pobiera faktury zakupu; numer KSeF faktury sprzedaży wpisuje się ręcznie).
+- Wysyłka JPK, deklaracji i sprawozdań (bramka JPK MF, e-Deklaracje, e-KRS) — program przygotowuje pliki.
+- JPK_ST_KR (ewidencja środków trwałych w JPK_CIT), konsolidacja sprawozdań, ulgi CIT (B+R, IP Box) i limit art. 15e.
+- Zwiększenie z art. 18f dla zakupów ujętych w aktywach (środki trwałe, zapasy) — korekta ręczna powiązana ze zobowiązaniem.
+- Podpisy kwalifikowane, złożenie sprawozdania w KRS, dokumenty korporacyjne (uchwały — projekty generuje program).
