@@ -1,0 +1,3005 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" xmlns:kusex="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/KodyUrzedowSkarbowychExWUS/" xmlns:ssr="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/SSER/" xmlns:tns="http://crd.gov.pl/wzor/2021/01/21/10311/" xmlns:zb36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITB36/" xmlns:zbr36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITBR36/" xmlns:zd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITD/" xmlns:zds36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITDS36/" xmlns:zg36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZG36/" xmlns:zip36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITIP36/" xmlns:zm="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITM/" xmlns:zmt36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITMIT36/" xmlns:zo3x="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITO3X/" xmlns:zpm36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITPM36/" xmlns:zse36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITSE36/" xmlns:zwz36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITWZ36/" xmlns:zzi36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITNZI36/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/ORDZU/" xmlns:z2k="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PIT2K/" xmlns:z36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZ36/" targetNamespace="http://crd.gov.pl/wzor/2021/01/21/10311/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITB36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITB36/PIT_B(18)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITBR36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITBR36/PIT_BR(4)_Z36_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITDS36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITDS36/PIT_DS(5)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITIP36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITIP36/PIT_IP(2)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/SSER/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/SSER/SSE-R(5)_Z_v6-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITSE36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITSE36/PIT_SE(1)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITD/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITD/PIT_D(29)_Z_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PIT2K/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PIT2K/PIT-2K(8)_Z_v4-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITM/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITM/PIT_M(7)_Z_v4-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITO3X/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/12/29/eD/PITO3X/PIT_O(25)_Z3X_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZG36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZG36/PIT_ZG(7)_Z36_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZ36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITZ36/PIT_Z(9)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITMIT36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITMIT36/PIT_MIT(2)_Z36_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITWZ36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITWZ36/PIT_WZ(1)_Z36_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITPM36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITPM36/PIT_PM(1)_Z36_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITNZI36/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITNZI36/PIT_NZI(1)_Z36_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/ORDZU/ORD-ZU(3)_v4-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/KodyUrzedowSkarbowychExWUS/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/KodyUrzedowSkarbowychExWUS/KodyUrzedowSkarbowychExWUS_v7-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/StrukturyDanych_v7-0E.xsd"/>
+	<!--Sposób obliczenia dochodu (straty) z pozarolniczej działalności gospodarczej nie ma zastosowania do podatników, którzy zaznaczyli kwadraty w poz. 40-43 (wypełniają informację PIT/Z) lub doliczają dochód z kwalifikowanych praw własności intelektualnej, niepodlegający opodatkowaniu na podstawie art. 30ca ust. 1 ustawy, tj według stawki 5%.-->
+	<!-- -->
+	<!--Podatnicy, którzy zaznaczyli kwadraty w poz. 40 i/lub 41 (wypełniają informację PIT/Z), sumują kwoty z wierszy od 1 do 10, nie uwzględniając kwot dochodu z poz. 82 i 139.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT-36 (28)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="28"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_10"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Rok">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TRok">
+						<xsd:minInclusive value="2020"/>
+						<xsd:maxInclusive value="2030"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="kusex:TKodUS1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-36"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TWyborSposobu">
+		<xsd:annotation>
+			<xsd:documentation>Wybór sposobu opodatkowania</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>indywidualnie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>wspólnie z małżonkiem, zgodnie z wnioskiem, o którym mowa w art. 6 ust. 2 ustawy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>w sposób przewidziany dla wdów i wdowców</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>w sposób przewidziany dla osób samotnie wychowujących dzieci</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TOsobaFizyczna1">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych o osobie fizycznej z identyfikatorem NIP albo PESEL</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="OsobaFizyczna" type="etd:TIdentyfikatorOsobyFizycznej1"/>
+			<xsd:element name="AdresZamieszkania" minOccurs="0">
+				<xsd:complexType>
+					<xsd:complexContent>
+						<xsd:extension base="etd:TAdres1">
+							<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+						</xsd:extension>
+					</xsd:complexContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TNrIBAN">
+		<xsd:annotation>
+			<xsd:documentation>Numer IBAN</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Z]{2}[0-9]{2}[0-9A-Z]{10,30}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="SWIFT_Type">
+		<xsd:annotation>
+			<xsd:documentation>Kod SWIFT</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3}){0,1}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>ZEZNANIE O WYSOKOŚCI OSIĄGNIĘTEGO DOCHODU (PONIESIONEJ STRATY) W ROKU PODATKOWYM</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne i aktualny adres zamieszkania</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TOsobaFizyczna3">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne i aktualny adres zamieszkania</xsd:documentation>
+					</xsd:annotation>
+					<!--Poz. 27-35 można nie wypełniać, jeżeli w poz. 6 wybrano wartość 2 i adres zamieszkania małżonka jest taki jak w części B.1 (Podmiot1); poz. 27-35 nie wypełnia się, jeżeli w poz. 6 wybrano wartość 3.-->
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TOsobaFizyczna1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Małżonek"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Informacje dodatkowe, przychody zwolnione od podatku na podstawie art. 21 ust. 1 pkt 148 ustawy, dochody / straty ze źródeł przychodów, odliczenie dochodu zwolnionego, strat i składek na ubezpieczenia społeczne, odliczenia od dochodu / zwolnienie, ustalenie podstawy opodatkowania / straty, obliczenie podatku, odliczenia od podatku, obliczenie zobowiązania podatkowego, zaliczki, o których mowa w art. 44 ust. 1 pkt 1 ustawy, oraz kwoty podatku, o którym mowa w art. 30g ustawy, dodatkowy zwrot z tytułu ulgi na dzieci, podatek do zapłaty / nadpłata / łączny zwrot, zryczałtowany podatek dochodowy, o którym mowa w art. 44 ust. 1b ustawy, odsetki naliczone zgodnie z art. 22e ust. 1 pkt 4 i ust. 2 ustawy, należne zaliczki o których mowa w art. 44 ust. 1, 1a,1c i 7 ustawy, dochody (przychody) wykazywanych na podstawie art. 45 ust. 3c ustawy, wniosek o przekazanie 1% podatku należnego na rzecz Organizacji Pożytku Publicznego (OPP), informacje uzupełniające, informacje o załącznikach, rachunek osobisty właściwy do zwrotu nadpłaty, KDR</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence>
+								<xsd:element name="P_6" type="tns:TWyborSposobu">
+									<xsd:annotation>
+										<xsd:documentation>Wybór sposobu opodatkowania: 1 - indywidualnie, 2 - wspólnie z małżonkiem, zgodnie z wnioskiem, o którym mowa w art. 6 ust. 2 ustawy, 3 - w sposób przewidziany dla wdów i wdowców, 4 - w sposób przewidziany dla osób samotnie wychowujących dzieci</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_7" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>W sposób przewidziany w art. 29 ust. 4 ustawy - podatnik</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_8" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>W sposób przewidziany w art. 29 ust. 4 ustawy - małżonek</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_11" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rodzaj korekty. Wartość: 1 - korekta zeznania, o której mowa w art. 81 Ordynacji podatkowej, 2 - korekta zeznania składana w toku postępowania podatkowego w sprawie unikania opodatkowania, o której mowa w art. 81b § 1a Ordynacji podatkowej</xsd:documentation>
+								</xsd:annotation>
+								<!--Ilekroć jest mowa o Ordynacji podatkowej, oznacza to ustawę z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2020 r. poz. 1325, z późn. zm.).-->
+								<!-- -->
+								<!--W przypadku wyboru w poz. 11 wartości 2 korektę składa się wraz z uzasadnieniem przyczyn korekty.-->
+							</xsd:element>
+							<xsd:element name="P_36" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik uzyskiwał przychody wyłącznie z emerytury - renty zagranicznej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_37" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek uzyskiwał przychody wyłącznie z emerytury - renty zagranicznej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_38" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik dokonał korekty cen transferowych, o której mowa w art. 23q ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_39" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek dokonał korekty cen transferowych, o której mowa w art. 23q ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_40" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik korzystał, w roku podatkowym wykazanym w poz. 5, ze zwolnienia na podstawie art. 44 ust. 7a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_41" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek korzystał, w roku podatkowym wykazanym w poz. 5, ze zwolnienia na podstawie art. 44 ust. 7a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_42" type="etd:TWybor1">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik korzystał, w jednym z pięciu lat poprzedzających rok wykazany w poz. 5, ze zwolnienia na podstawie art. 44 ust. 7a ustawy i w roku podatkowym wykazanym w poz. 5 dokonuje doliczenia na podstawie art. 44 ust. 7f ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_62_1">
+									<xsd:annotation>
+										<xsd:documentation>Rok (podać rok, w którym podatnik korzystał ze zwolnienia na podstawie art. 44 ust. 7a ustawy)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2015"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_43" type="etd:TWybor1">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek korzystał, w jednym z pięciu lat poprzedzających rok wykazany w poz. 5, ze zwolnienia na podstawie art. 44 ust. 7a ustawy i w roku podatkowym wykazanym w poz. 5 dokonuje doliczenia na podstawie art. 44 ust. 7f ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_62_2">
+									<xsd:annotation>
+										<xsd:documentation>Rok (podać rok, w którym małżonek korzystał ze zwolnienia na podstawie art. 44 ust. 7a ustawy)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2015"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_44" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik występuje o zwrot niewykorzystanego odliczenia na podstawie art. 26ea ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_45" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek występuje o zwrot niewykorzystanego odliczenia na podstawie art. 26ea ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_46" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik wybrał metodę ustalania daty powstawania przychodów na podstawie art. 14 ust. 1j ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_47" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek wybrał metodę ustalania daty powstawania przychodów na podstawie art. 14 ust. 1j ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice minOccurs="0">
+								<xsd:element name="P_48" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik wybrał metodę ustalania różnic kursowych, o której mowa w art. 14b ust. 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_50" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik rezygnuje ze stosowania metody ustalania różnic kursowych, o której mowa w art. 14b ust. 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:choice minOccurs="0">
+								<xsd:element name="P_49" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek wybrał metodę ustalania różnic kursowych, o której mowa w art. 14b ust. 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_51" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek rezygnuje ze stosowania metody ustalania różnic kursowych, o której mowa w art. 14b ust. 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="P_52" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik wybrał prowadzenie ksiąg rachunkowych, na podstawie art. 24a ust. 5 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_53" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek wybrał prowadzenie ksiąg rachunkowych, na podstawie art. 24a ust. 5 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice minOccurs="0">
+								<xsd:element name="P_54" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik wybrał kwartalny sposób wpłacania zaliczek na podstawie art. 44 ust. 3g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_56" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik wybrał wpłacanie zaliczek w formie uproszczonej n podstawie art. 44 ust. 6b ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:choice minOccurs="0">
+								<xsd:element name="P_55" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek wybrał kwartalny sposób wpłacania zaliczek na podstawie art. 44 ust. 3g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_57" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek wybrał wpłacanie zaliczek w formie uproszczonej n podstawie art. 44 ust. 6b ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="P_58" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik zrezygnował w trakcie roku podatkowego z wpłacania zaliczek w formie uproszczonej na podstawie art. 52r ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_59" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek zrezygnował w trakcie roku podatkowego z wpłacania zaliczek w formie uproszczonej na podstawie art. 52r ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_60" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik złożył sprawozdanie o realizacji uprzedniego porozumienia cenowego APA-P</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_61" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek złożył sprawozdanie o realizacji uprzedniego porozumienia cenowego APA-P</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Przychody zwolnione od podatku na podstawie art. 21 ust. 1 pkt 148 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<!--należy podać kwotę przychodów objętych tym zwolnieniem.-->
+								<xsd:element name="P_63" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody ze stosunku służbowego, stosunku pracy, pracy nakładczej, spółdzielczego stosunku pracy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_64" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody ze stosunku służbowego, stosunku pracy, pracy nakładczej, spółdzielczego stosunku pracy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_65" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z umów zlecenia, o których mowa w art. 13 pkt 8 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_66" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z umów zlecenia, o których mowa w art. 13 pkt 8 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>1. Podatnik - Stosunek służbowy, stosunek pracy, praca nakładcza, spółdzielczy stosunek pracy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_67" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_68" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_69" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_70" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_71" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_72" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychód, do którego w poz. 73 podatnik stosuje 50% koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_73" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów (na podstawie art. 22 ust. 9 pkt 3 ustawy w wysokości 50% kwoty przychodów)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>2. Podatnik - Emerytury - renty oraz inne krajowe świadczenia, o których mowa w art. 34 ust. 7 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_74" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_75" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_76" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>3. Podatnik - Pozarolnicza działalność gospodarcza</xsd:documentation>
+								</xsd:annotation>
+								<!--W wierszu 3 nie wykazuje się przychodu, kosztów uzyskania przychodu, które podatnik wykazuje w załączniku PIT/IP.-->
+								<xsd:element name="P_77" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_78" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_79" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_80" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_81" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_82" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dochód, wypełniają podatnicy, którzy zaznaczyli kwadrat w poz. 40</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>4. Podatnik - Działy specjalne produkcji rolnej</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_83" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_84" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_85" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_86" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_87" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>5. Podatnik - Działalność wykonywana osobiście, o której mowa w art. 13 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_88" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_89" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_90" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_91" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_92" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_93" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z umów zlecenia, o których mowa w art. 13 pkt 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_94" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania dotyczące przychodów wykazanych w poz. 93</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>6. Podatnik - Najem lub dzierżawa</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_95" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_96" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_97" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_98" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_99" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>7. Podatnik - Prawa autorskie i inne prawa, o których mowa w art. 18 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_100" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_101" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_102" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_103" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_104" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_105" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychód, do którego w poz. 106 podatnik stosuje 50% koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 1-3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_106" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów (na podstawie art. 22 ust. 9 pkt 1-3 ustawy w wysokości 50% kwoty przychodów)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>8. Podatnik - Odpłatne zbycie rzeczy określonych w art. 10 ust. 1 pkt 8 lit. d ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_107" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_108" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_109" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_110" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>9. Podatnik - Działalność nierejestrowana, określona w art. 20 ust. 1ba ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_111" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_112" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_113" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_114" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>10. Podatnik - Inne źródła, niewymienione w wierszach od 1 do 9 (w tym emerytury - renty z zagranicy)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_115" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_116" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_117" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_118" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_119" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>11. Podatnik - RAZEM</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_120" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_121" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_122" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_123" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>1. Małżonek - Stosunek służbowy, stosunek pracy, praca nakładcza, spółdzielczy stosunek pracy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_124" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_125" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_126" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_127" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_128" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_129" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychód, do którego w poz. 130 małżonek stosuje 50% koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_130" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów (na podstawie art. 22 ust. 9 pkt 3 ustawy w wysokości 50% kwoty przychodów)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>2. Małżonek - Emerytury - renty oraz inne krajowe świadczenia, o których mowa w art. 34 ust. 7 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_131" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_132" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_133" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>3. Małżonek - Pozarolnicza działalność gospodarcza</xsd:documentation>
+								</xsd:annotation>
+								<!--W wierszu 3 nie wykazuje się przychodu, kosztów uzyskania przychodu, które podatnik wykazuje w załączniku PIT/IP.-->
+								<xsd:element name="P_134" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_135" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_136" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_137" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_138" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_139" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dochód, wypełniają podatnicy, którzy zaznaczyli kwadrat w poz. 41</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>4. Małżonek - Działy specjalne produkcji rolnej</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_140" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_141" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_142" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_143" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_144" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>5. Małżonek - Działalność wykonywana osobiście, o której mowa w art. 13 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_145" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_146" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_147" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_148" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_149" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_150" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z umów zlecenia, o których mowa w art. 13 pkt 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_151" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania dotyczące przychodów wykazanych w poz. 150</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>6. Małżonek - Najem lub dzierżawa</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_152" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_153" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_154" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_155" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_156" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>7. Małżonek - Prawa autorskie i inne prawa, o których mowa w art. 18 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_157" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_158" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_159" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_160" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_161" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_162" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychód, do którego w poz. 163 małżonek stosuje 50% koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 1-3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_163" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów (na podstawie art. 22 ust. 9 pkt 1-3 ustawy w wysokości 50% kwoty przychodów)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>8. Małżonek - Odpłatne zbycie rzeczy określonych w art. 10 ust. 1 pkt 8 lit. d ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_164" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_165" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_166" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_167" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>9. Małżonek - Działalność nierejestrowana, określona w art. 20 ust. 1ba ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_168" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_169" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_170" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_171" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>10. Małżonek - Inne źródła, niewymienione w wierszach od 1 do 9 (w tym emerytury - renty z zagranicy)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_172" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_173" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_174" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_175" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_176" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>11. Małżonek - RAZEM</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_177" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_178" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_179" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_180" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochody małoletnich dzieci</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_181" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód - wykazany w załączniku PIT/M</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_183" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika - wykazana w załączniku PIT/M</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dochody małoletnich dzieci</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_182" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód - wykazany w załączniku PIT/M</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_184" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Należna zaliczka, w tym zaliczka pobrana przez płatnika - wykazana w załączniku PIT/M</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_185" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochód zwolniony od podatku - na podstawie art. 21 ust. 1 pkt 63a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_186" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dochód zwolniony od podatku - na podstawie art. 21 ust. 1 pkt 63a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_187" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochód zwolniony od podatku - na podstawie art. 21 ust. 1 pkt 63b ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_188" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dochód zwolniony od podatku - na podstawie art. 21 ust. 1 pkt 63b ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_189_1" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Straty z lat ubiegłych (wymienić źródła)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_190" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Straty z lat ubiegłych</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_189_2" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Straty z lat ubiegłych (wymienić źródła)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_191" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Straty z lat ubiegłych</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_192" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Składki na ubezpieczenia społeczne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_194" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>w tym zagraniczne, o których mowa w art. 26 ust. 1 pkt 2a ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_193" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Składki na ubezpieczenia społeczne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_195" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>w tym zagraniczne, o których mowa w art. 26 ust. 1 pkt 2a ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_196" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochód po odliczeniu dochodu zwolnionego, strat i składek na ubezpieczenia społeczne</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_197" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek- Dochód po odliczeniu dochodu zwolnionego, strat i składek na ubezpieczenia społeczne</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_198" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Odliczenia od dochodu - wykazane w części B załącznika PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_199" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Odliczenia od dochodu - wykazane w części B załącznika PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_200" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Koszty kwalifikowane wykazane w poz. 43 załącznika PIT/BR</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_201" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Koszty kwalifikowane wykazane w poz. 43 załącznika PIT/BR</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_202" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Odliczenie z tytułu kosztów kwalifikowanych w roku podatkowym</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_203" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Odliczenie z tytułu kosztów kwalifikowanych w roku podatkowym</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_204" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Koszty kwalifikowane do odliczenia w latach następnych zgodnie z art. 26e ust. 8 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_205" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Koszty kwalifikowane do odliczenia w latach następnych zgodnie z art. 26e ust. 8 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_206" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Ulga odsetkowa - wykazana w części B.1. załącznika PIT/D</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_207" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dodatkowa obniżka - na podstawie rozporządzenia Rady Ministrów z dnia 24 stycznia 1995 r. w sprawie odliczeń od dochodu wydatków inwestycyjnych oraz obniżek podatku dochodowego w gminach zagrożonych szczególnie wysokim bezrobociem strukturalnym (Dz. U. poz. 63, z późn. zm.) - zgodnie z art. 5 ust. 2 ustawy z dnia 21 listopada 1996 r. o zmianie ustawy o podatku dochodowym od osób fizycznych (Dz. U. poz. 638, z późn. zm.)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_208" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dodatkowa obniżka - na podstawie rozporządzenia Rady Ministrów z dnia 24 stycznia 1995 r. w sprawie odliczeń od dochodu wydatków inwestycyjnych oraz obniżek podatku dochodowego w gminach zagrożonych szczególnie wysokim bezrobociem strukturalnym (Dz. U. poz. 63, z późn. zm.) - zgodnie z art. 5 ust. 2 ustawy z dnia 21 listopada 1996 r. o zmianie ustawy o podatku dochodowym od osób fizycznych (Dz. U. poz. 638, z późn. zm.)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_209" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochód po odliczeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_210" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia od dochodu wydatków mieszkaniowych - wykazane w części B.3. załącznika PIT/D</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_211" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochód zwolniony od podatku - na podstawie przepisów wykonawczych do ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych (Dz. U. z 2020 r. poz. 1670)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_212" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dochód zwolniony od podatku - na podstawie przepisów wykonawczych do ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych (Dz. U. z 2020 r. poz. 1670)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_213" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Utrata prawa do odliczeń z tytułu ulg inwestycyjnych lub utrata prawa do odliczeń związanych z nabyciem nowych technologii albo utrata prawa do zwolnienia na podstawie przepisów wykonawczych do ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych lub art. 21 ust. 5b i 5c ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_215" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zwiększenia podstawy opodatkowania</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_217" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zmniejszenia straty z pozarolniczej działalności gospodarczej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_219" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zmniejszenia straty z działów specjalnych produkcji rolnej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_214" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Utrata prawa do odliczeń z tytułu ulg inwestycyjnych lub utrata prawa do odliczeń związanych z nabyciem nowych technologii albo utrata prawa do zwolnienia na podstawie przepisów wykonawczych do ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych lub art. 21 ust. 5b i 5c ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_216" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zwiększenia podstawy opodatkowania</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_218" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zmniejszenia straty z pozarolniczej działalności gospodarczej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_220" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zmniejszenia straty z działów specjalnych produkcji rolnej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_221" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Strata z pozarolniczej działalności gospodarczej po zmniejszeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_222" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Strata z pozarolniczej działalności gospodarczej po zmniejszeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_223" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Strata z działów specjalnych produkcji rolnej po zmniejszeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_224" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Strata z działów specjalnych produkcji rolnej po zmniejszeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_225" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Dochód do opodatkowania</xsd:documentation>
+								</xsd:annotation>
+								<!--Od kwoty z poz. 209 należy odjąć kwoty z poz. 210, 211 i 212 oraz dodać sumę kwot z poz. 215 i 216.-->
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zmniejszenia podstawy opodatkowania/zwiększenia straty (jeżeli do dnia złożenia zeznania podatkowego wierzytelność nie została uregulowana lub zbyta)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_226" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania, o których mowa w art. 26i ust. 1 pkt 1 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 13 załącznika PIT/WZ. Podatnik wypełnia poz. 226, a małżonek poz. 227, jeżeli kwota z poz. 225 jest większa od 0. Kwota zmniejszenia u podatnika i małżonka nie może przekroczyć kwoty z poz. 225.-->
+								</xsd:element>
+								<xsd:element name="P_227" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania, o których mowa w art. 26i ust. 1 pkt 1 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 13 załącznika PIT/WZ. Podatnik wypełnia poz. 226, a małżonek poz. 227, jeżeli kwota z poz. 225 jest większa od 0. Kwota zmniejszenia u podatnika i małżonka nie może przekroczyć kwoty z poz. 225.-->
+								</xsd:element>
+								<xsd:element name="P_228" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania do rozliczenia w kolejnych latach podatkowych, nie dłużej niż przez okres 3 lat (art. 26i ust. 3 ustawy) - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik w poz. 228, a małżonek w poz. 229 wpisuje nadwyżkę kwoty z poz. 13 załącznika PIT/WZ nad kwotą z poz. 225. Podatnik nie wypełnia poz. 228, a małżonek poz. 229, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_229" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania do rozliczenia w kolejnych latach podatkowych, nie dłużej niż przez okres 3 lat (art. 26i ust. 3 ustawy) - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik w poz. 228, a małżonek w poz. 229 wpisuje nadwyżkę kwoty z poz. 13 załącznika PIT/WZ nad kwotą z poz. 225. Podatnik nie wypełnia poz. 228, a małżonek poz. 229, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_230" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających stratę ze źródła, o których mowa w art. 26i ust. 2 pkt 1 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--NNależy wpisać kwotę z poz. 13 załącznika PIT/WZ. Podatnik wypełnia poz. 230, a małżonek wypełnia poz. 231, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_231" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających stratę ze źródła, o których mowa w art. 26i ust. 2 pkt 1 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 13 załącznika PIT/WZ. Podatnik wypełnia poz. 230, a małżonek wypełnia poz. 231, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zwiększenia podstawy opodatkowania/zmniejszenia straty (jeżeli do dnia złożenia zeznania podatkowego zobowiązanie nie zostało uregulowane)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_232" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających podstawę opodatkowania, o których mowa w art. 26i ust. 1 pkt 2 i ust. 4 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 20 załącznika PIT/WZ. Podatnik wypełnia poz. 232, a małżonek wypełnia poz. 233, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest równa 0.-->
+								</xsd:element>
+								<xsd:element name="P_233" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających podstawę opodatkowania, o których mowa w art. 26i ust. 1 pkt 2 i ust. 4 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 20 załącznika PIT/WZ. Podatnik wypełnia poz. 232, a małżonek wypełnia poz. 233, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest równa 0.-->
+								</xsd:element>
+								<xsd:element name="P_234" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających stratę ze źródła, o których mowa w art. 26i ust. 2 pkt 2 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 20 załącznika PIT/WZ. Podatnik wypełnia poz. 234, a małżonek wypełnia poz. 235, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_235" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających stratę ze źródła, o których mowa w art. 26i ust. 2 pkt 2 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 20 załącznika PIT/WZ. Podatnik wypełnia poz. 234, a małżonek wypełnia poz. 235, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Pozostałe zwiększenia i zmniejszenia podstawy opodatkowania (straty)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_236" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających podstawę opodatkowania, o których mowa w art. 26i ust. 7 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 29 załącznika PIT/WZ. Podatnik wypełnia poz. 236, a małżonek wypełnia poz. 237, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest równa 0.-->
+								</xsd:element>
+								<xsd:element name="P_237" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających podstawę opodatkowania, o których mowa w art. 26i ust. 7 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 29 załącznika PIT/WZ. Podatnik wypełnia poz. 236, a małżonek wypełnia poz. 237, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest równa 0.-->
+								</xsd:element>
+								<xsd:element name="P_238" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających stratę ze źródła, o których mowa w art. 26i ust. 7 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 29 załącznika PIT/WZ. Podatnik wypełnia poz. 238, a małżonek wypełnia poz. 239, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_239" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających stratę ze źródła, o których mowa w art. 26i ust. 7 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 29 załącznika PIT/WZ. Podatnik wypełnia poz. 238, a małżonek wypełnia poz. 239, jeżeli kwota z poz. 221 w przypadku podatnika, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_240" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania, o których mowa w art. 26i ust. 8 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 38 załącznika PIT/WZ. Podatnik wypełnia poz. 240, a małżonek poz. 241, jeżeli kwota z poz. 225 pomniejszona w przypadku podatnika o kwotę z poz. 226, a w przypadku małżonka o kwotę z poz. 227, jest większa od 0. Kwota zmniejszenia nie może przekroczyć kwoty z poz. 225 pomniejszonej w przypadku podatnika o kwotę z poz. 226, a w przypadku małżonka o kwotę z poz. 227.-->
+								</xsd:element>
+								<xsd:element name="P_241" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania, o których mowa w art. 26i ust. 8 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 38 załącznika PIT/WZ. Podatnik wypełnia poz. 240, a małżonek poz. 241, jeżeli kwota z poz. 225 pomniejszona w przypadku podatnika o kwotę z poz. 226, a w przypadku małżonka o kwotę z poz. 227, jest większa od 0. Kwota zmniejszenia nie może przekroczyć kwoty z poz. 225 pomniejszonej w przypadku podatnika o kwotę z poz. 226, a w przypadku małżonka o kwotę z poz. 227.-->
+								</xsd:element>
+								<xsd:element name="P_242" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania do odliczenia w kolejnych latach podatkowych - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik w poz. 242, a małżonek w poz. 243 wpisuje nadwyżkę kwoty z poz. 38 załącznika PIT/WZ pomniejszoną o kwotę odpowiednio z poz. 240 i 241. Poz. 242 i 243 nie wypełnia się, jeżeli w przypadku podatnika kwota z poz. 221, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_243" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania do odliczenia w kolejnych latach podatkowych - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik w poz. 242, a małżonek w poz. 243 wpisuje nadwyżkę kwoty z poz. 38 załącznika PIT/WZ pomniejszoną o kwotę odpowiednio z poz. 240 i 241. Poz. 242 i 243 nie wypełnia się, jeżeli w przypadku podatnika kwota z poz. 221, a w przypadku małżonka kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_244" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających stratę, o których mowa w art. 26i ust. 8 ustawy - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 38 załącznika PIT/WZ. Poz. 244 wypełnia się, jeżeli kwota z poz. 221 w przypadku podatnika jest większa od 0. W przypadku małżonka wypełnia się poz. 245, jeżeli kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_245" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających stratę, o których mowa w art. 26i ust. 8 ustawy - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 38 załącznika PIT/WZ. Poz. 244 wypełnia się, jeżeli kwota z poz. 221 w przypadku podatnika jest większa od 0. W przypadku małżonka wypełnia się poz. 245, jeżeli kwota z poz. 222 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Podstawa opodatkowania po uwzględnieniu kwot z części H.3.1., H.3.2. i H.3.3.</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_246" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Razem zmniejszenie podstawy opodatkowania/zwiększenie straty - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 246 podatnik wpisuje sumę kwot z poz. 226, 230, 240 i 244, a w poz. 247 małżonek wpisuje sumę kwot z poz. 227, 231, 241 i 245.-->
+								</xsd:element>
+								<xsd:element name="P_247" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Razem zmniejszenie podstawy opodatkowania/zwiększenie straty - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 246 podatnik wpisuje sumę kwot z poz. 226, 230, 240 i 244, a w poz. 247 małżonek wpisuje sumę kwot z poz. 227, 231, 241 i 245.-->
+								</xsd:element>
+								<xsd:element name="P_248" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Razem zwiększenie podstawy opodatkowania/zmniejszenie straty - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 248 podatnik wpisuje sumę kwot z poz. 232, 234, 236 i 238, a w poz. 249 małżonek wpisuje sumę kwot z poz. 233, 235, 237 i 239.-->
+								</xsd:element>
+								<xsd:element name="P_249" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Razem zwiększenie podstawy opodatkowania/zmniejszenie straty - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 248 podatnik wpisuje sumę kwot z poz. 232, 234, 236 i 238, a w poz. 249 małżonek wpisuje sumę kwot z poz. 233, 235, 237 i 239.-->
+								</xsd:element>
+								<xsd:element name="P_250" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik i małżonek w poz. 250 wpisują łączną wartość obliczonej podstawy opodatkowania. Jeżeli kwota z poz. 225 jest większa od 0, należy wpisać kwotę z poz. 225 pomniejszoną w przypadku podatnika o kwotę z poz. 246, a w przypadku małżonka o kwotę z poz. 247, i powiększoną w przypadku podatnika o kwotę z poz. 248, a w przypadku małżonka o kwotę z poz. 249. Jeżeli kwota z poz. 225 równa się 0, a w przypadku podatnika kwota z poz. 221 jest mniejsza od kwoty z poz. 248, to od kwoty z poz. 248 należy odjąć kwotę z poz. 221 i kwotę z poz. 246. Małżonek w przypadku gdy kwota z poz. 225 równa jest 0, a kwota z poz. 222 jest mniejsza od kwoty z poz. 249, to od kwoty z poz. 249 odejmuje kwotę z poz. 222 i kwotę z poz. 247. W pozostałych przypadkach oraz jeżeli wynik jest liczbą ujemną, należy wpisać 0.-->
+								</xsd:element>
+								<xsd:element name="P_251" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata po uwzględnieniu kwot z części H.3.1., H.3.2. i H.3.3. - Podatnik</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik nie wypełnia poz. 251, jeżeli kwota z poz. 250 jest większa od 0. W pozostałych przypadkach do kwoty z poz. 221 należy dodać kwotę z poz. 246 i odjąć kwotę z poz. 248. Małżonek nie wypełnia poz. 252, jeżeli kwota z poz. 250 jest większa od 0. W pozostałych przypadkach do kwoty z poz. 222 należy dodać kwotę z poz. 247 i odjąć kwotę z poz. 249.-->
+								</xsd:element>
+								<xsd:element name="P_252" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata po uwzględnieniu kwot z części H.3.1., H.3.2. i H.3.3. - Małżonek</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik nie wypełnia poz. 251, jeżeli kwota z poz. 250 jest większa od 0. W pozostałych przypadkach do kwoty z poz. 221 należy dodać kwotę z poz. 246 i odjąć kwotę z poz. 248. Małżonek nie wypełnia poz. 252, jeżeli kwota z poz. 250 jest większa od 0. W pozostałych przypadkach do kwoty z poz. 222 należy dodać kwotę z poz. 247 i odjąć kwotę z poz. 249.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_253" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Dochód do opodatkowania</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_254" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Dochody osiągnięte za granicą, o które jest zwiększona podstawa obliczenia podatku do ustalenia stopy procentowej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_255" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Dochody osiągnięte za granicą, o które jest zwiększona podstawa obliczenia podatku do ustalenia stopy procentowej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_256" type="etd:TKwotaCNieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Podstawa obliczenia podatku</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_257" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Obliczony podatek - zgodnie z art. 27 ust. 1-8 ustawy (w przypadku uzyskania dochodów wymienionych w poz. 254 i 255 należy obliczyć podatek z zastosowaniem stopy procentowej)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_258" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Doliczenia do podatku</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_258A" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Tytuł (wymienić):</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_259" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Podatek zapłacony za granicą - zgodnie z art. 27 ust. 9 i 9a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_260" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Podatek zapłacony za granicą - zgodnie z art. 27 ust. 9 i 9a ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_261" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Podatek</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_262" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Składki na ubezpieczenie zdrowotne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_264" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - w tym zagraniczne, o których mowa w art. 27b ust. 1 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_263" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Składki na ubezpieczenie zdrowotne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_265" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - w tym zagraniczne, o których mowa w art. 27b ust. 1 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_266" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Odliczenia od podatku - wykazane w części C załącznika PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_267" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Odliczenia od podatku - wykazane w części C załącznika PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_268" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Podatek po odliczeniach</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_269" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia od podatku wydatków mieszkaniowych - wykazane w części C.2. załącznika PIT/D</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_270" type="etd:TKwotaCNieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Podatek należny</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_271" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Suma należnych zaliczek za rok podatkowy, w tym zaliczek pobranych przez płatników</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="P_272" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Różnica między podatkiem należnym a sumą należnych zaliczek za rok podatkowy, w tym zaliczek pobranych przez płatników</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_273" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Różnica między sumą należnych zaliczek za rok podatkowy, w tym zaliczek pobranych przez płatników, a podatkiem należnym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<!--Zaliczki, o których mowa w art. 44 ust. 1 pkt 1 ustawy, oraz podatek, o którym mowa w art. 30g ustawy - podatnik-->
+							<!-- -->
+							<!--Pozycje dotyczące należnych zaliczek oraz zapłaconych zaliczek wypełniają również podatnicy, o których mowa w art. 44 ust. 14 ustawy.-->
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_274" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_280" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_286" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_292" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_275" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_281" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_287" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_293" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_276" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_282" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_288" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_294" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_277" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_283" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_289" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_295" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_278" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_284" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_290" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_296" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_279" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_285" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_291" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_297" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_298" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_305" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_312" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_319" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_299" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_306" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_313" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_320" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_300" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_307" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_314" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_321" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_301" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_308" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_315" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_322" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_302" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_309" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_316" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_323" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_303" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należna zaliczka za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_310" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_317" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_324" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Zapłacona zaliczka za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_304" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Razem należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_311" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Razem należny podatek, o którym mowa w art. 30g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_318" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Razem zapłacony podatek, o którym mowa w art. 30g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_325" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Razem zapłacona zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<!--Zaliczki, o których mowa w art. 44 ust. 1 pkt 1 ustawy, oraz podatek, o którym mowa w art. 30g ustawy - małżonek-->
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_326" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_332" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_338" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_344" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_327" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_333" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_339" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_345" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_328" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_334" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_340" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_346" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_329" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_335" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_341" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_347" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_330" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_336" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_342" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_348" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_331" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_337" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_343" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_349" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_350" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_357" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_364" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_371" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_351" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_358" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_365" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_372" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_352" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_359" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_366" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_373" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_353" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_360" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_367" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_374" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_354" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_361" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_368" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_375" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_355" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należna zaliczka za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_362" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Należny podatek, o którym mowa w art. 30g ustawy za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_369" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacony podatek, o którym mowa w art. 30g ustawy za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_376" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Zapłacona zaliczka za miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_356" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Razem należna zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_363" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Razem należny podatek, o którym mowa w art. 30g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_370" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Razem zapłacony podatek, o którym mowa w art. 30g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_377" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Razem zapłacona zaliczka</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dodatkowy zwrot z tytułu ulgi na dzieci</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_378" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Składki na ubezpieczenia społeczne i zdrowotne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<!--Należy wpisać kwotę składek zapłaconych od przychodów zwolnionych na podstawie art. 21 ust. 1 pkt 148 ustawy oraz kwotę składek, o których mowa w art. 26 ust. 1 pkt 2 i 2a oraz art. 27b ust.1 i 2 ustawy, tj. zapłaconych w roku podatkowym i podlegających odliczeniu (wykazanych przez płatnika lub samodzielnie wpłaconych do ZUS lub zagranicznych systemów ubezpieczeń), pomniejszonych o składki odliczone w PIT-36L, PIT-28 lub wykazane jako odliczone w PIT-16A lub PIT-19A. W przypadku obojga rodziców, opiekunów prawnych dziecka, rodziców zastępczych, którzy pozostają w związku małżeńskim przez cały rok podatkowy, należy wypełnić zarówno poz. 378, jak i poz. 379. Zasada ta obejmuje również podatnika, który zawarł związek małżeński przed rozpoczęciem roku podatkowego, a jego małżonek zmarł w trakcie roku podatkowego.-->
+								<xsd:element name="P_379" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Składki na ubezpieczenia społeczne i zdrowotne</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<!--Należy wpisać kwotę składek zapłaconych od przychodów zwolnionych na podstawie art. 21 ust. 1 pkt 148 ustawy oraz kwotę składek, o których mowa w art. 26 ust. 1 pkt 2 i 2a oraz art. 27b ust.1 i 2 ustawy, tj. zapłaconych w roku podatkowym i podlegających odliczeniu (wykazanych przez płatnika lub samodzielnie wpłaconych do ZUS lub zagranicznych systemów ubezpieczeń), pomniejszonych o składki odliczone w PIT-36L, PIT-28 lub wykazane jako odliczone w PIT-16A lub PIT-19A. W przypadku obojga rodziców, opiekunów prawnych dziecka, rodziców zastępczych, którzy pozostają w związku małżeńskim przez cały rok podatkowy, należy wypełnić zarówno poz. 378, jak i poz. 379. Zasada ta obejmuje również podatnika, który zawarł związek małżeński przed rozpoczęciem roku podatkowego, a jego małżonek zmarł w trakcie roku podatkowego.-->
+								<xsd:element name="P_380" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Różnica między kwotą przysługującego odliczenia a kwotą odliczoną w zeznaniu podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_381" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Różnica między kwotą przysługującego odliczenia a kwotą odliczoną w zeznaniu podatkowym</xsd:documentation>
+									</xsd:annotation>
+									<!--Poz. 381 wypełnia się jedynie w przypadku łącznego opodatkowania dochodów małżonków.-->
+								</xsd:element>
+								<xsd:element name="P_382" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przysługująca różnica</xsd:documentation>
+									</xsd:annotation>
+									<!--W przypadku obojga rodziców, opiekunów prawnych dziecka, rodziców zastępczych, którzy pozostają w związku małżeńskim przez cały rok podatkowy, składających odrębne zeznania PIT-36 albo PIT-37, suma kwot z poz. „Przysługująca różnica” PIT-36 i PIT-37, każdego z małżonków, nie może przekroczyć sumy kwot z poz. 378 i 379. Na podstawie art. 72 § 1a Ordynacji podatkowej kwotę obliczoną zgodnie z art. 27f ust. 8-10 ustawy traktuje się na równi z nadpłatą.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_383" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Suma wpłaconych zaliczek, zaliczek pobranych przez płatników oraz wpłaconego podatku, o którym mowa w art. 30g ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_384" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Różnica między należnym podatkiem, o którym mowa w art. 30g ustawy, a podatkiem należnym</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_385" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Zryczałtowany podatek dochodowy, o którym mowa w art. 29, 30 i 30a ustawy, jeżeli podatek ten nie został pobrany przez płatnika, z wyjątkiem podatku wykazanego w poz. 387-390 oraz w części O</xsd:documentation>
+								</xsd:annotation>
+								<!--Zgodnie z art. 63 § 1a Ordynacji podatkowej, w przypadku zryczałtowanego podatku dochodowego, o którym mowa w art. 30a ust. 1 pkt 1-3 ustawy, kwotę należy zaokrąglić do pełnych groszy w górę.-->
+							</xsd:element>
+							<xsd:element name="P_386" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Zryczałtowany podatek dochodowy, o którym mowa w art. 29, 30 i 30a ustawy, jeżeli podatek ten nie został pobrany przez płatnika, z wyjątkiem podatku wykazanego w poz. 387-390 oraz w części O</xsd:documentation>
+								</xsd:annotation>
+								<!--Zgodnie z art. 63 § 1a Ordynacji podatkowej, w przypadku zryczałtowanego podatku dochodowego, o którym mowa w art. 30a ust. 1 pkt 1-3 ustawy, kwotę należy zaokrąglić do pełnych groszy w górę.-->
+							</xsd:element>
+							<xsd:element name="P_387" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Zryczałtowany podatek obliczony od przychodów (dochodów), o których mowa w art. 30a ust. 1 pkt 1-5 ustawy, uzyskanych poza granicami Rzeczypospolitej Polskiej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_388" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Zryczałtowany podatek obliczony od przychodów (dochodów), o których mowa w art. 30a ust. 1 pkt 1-5 ustawy, uzyskanych poza granicami Rzeczypospolitej Polskiej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_389" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Podatek zapłacony za granicą, o którym mowa w art. 30a ust. 9 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_390" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Podatek zapłacony za granicą, o którym mowa w art. 30a ust. 9 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_391" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Różnica między zryczałtowanym podatkiem a podatkiem zapłaconym za granicą</xsd:documentation>
+								</xsd:annotation>
+								<!--Zgodnie z art. 63 § 1a Ordynacji podatkowej, w przypadku zryczałtowanego podatku dochodowego, o którym mowa w art. 30a ust. 1 pkt 1-3 ustawy, kwotę należy zaokrąglić do pełnych groszy w górę.-->
+							</xsd:element>
+							<xsd:element name="P_392" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Różnica między zryczałtowanym podatkiem a podatkiem zapłaconym za granicą</xsd:documentation>
+								</xsd:annotation>
+								<!--Zgodnie z art. 63 § 1a Ordynacji podatkowej, w przypadku zryczałtowanego podatku dochodowego, o którym mowa w art. 30a ust. 1 pkt 1-3 ustawy, kwotę należy zaokrąglić do pełnych groszy w górę.-->
+							</xsd:element>
+							<xsd:element name="P_393" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik - Podatek wykazany w załączniku PIT/IP</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_394" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Małżonek - Podatek wykazany w załączniku PIT/IP</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="P_395" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>PODATEK DO ZAPŁATY</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_397" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>NADPŁATA</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:choice>
+							<xsd:element name="P_396" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>PODATEK DO ZAPŁATY POMNIEJSZONY O PRZYSŁUGUJĄCĄ RÓŻNICĘ</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_398" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>ŁĄCZNY ZWROT</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zryczałtowany podatek dochodowy, o którym mowa w art. 44 ust. 1b ustawy - Podatnik</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełniają osoby niemające miejsca zamieszkania na terytorium Rzeczypospolitej Polskiej uzyskujące przychody, o których mowa w art. 29 ustawy, bez pośrednictwa płatników.-->
+								<xsd:element name="P_399" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_400" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_401" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_402" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_403" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_404" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_405" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_406" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_407" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_408" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_409" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_410" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zryczałtowany podatek dochodowy, o którym mowa w art. 44 ust. 1b ustawy - Małżonek</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_411" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_412" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_413" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_414" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_415" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_416" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_417" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_418" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_419" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_420" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_421" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_422" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odsetki naliczone zgodnie z art. 22e ust. 1 pkt 4 i ust. 2 ustawy - Podatnik</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_423" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_424" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_425" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_426" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_427" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_428" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_429" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_430" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_431" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_432" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_433" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_434" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odsetki naliczone zgodnie z art. 22e ust. 1 pkt 4 i ust. 2 ustawy - Małżonek</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_435" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_436" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_437" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_438" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_439" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_440" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_441" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_442" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_443" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_444" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_445" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_446" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Należne zaliczki, o których mowa w art. 44 ust. 1a, 1c i 7 ustawy - Podatnik</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_447" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_448" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_449" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_450" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_451" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_452" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_453" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_454" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_455" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_456" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_457" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_458" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Należne zaliczki, o których mowa w art. 44 ust. 1a, 1c i 7 ustawy - Małżonek</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_459" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_460" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_461" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_462" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_463" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_464" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_465" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_466" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_467" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_468" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_469" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_470" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_471" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody) wykazywane na podstawie art. 45 ust. 3c ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wniosek o przekazanie 1% podatku należnego na rzecz Organizacji Pożytku Publicznego (OPP)</xsd:documentation>
+								</xsd:annotation>
+								<!--Należy podać numer wpisu do Krajowego Rejestru Sądowego (numer KRS) organizacji wybranej z wykazu prowadzonego na podstawie odrębnych przepisów oraz wysokość kwoty na jej rzecz.-->
+								<xsd:element name="P_472" type="etd:TNrKRS">
+									<xsd:annotation>
+										<xsd:documentation>Numer KRS</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_473">
+									<xsd:annotation>
+										<xsd:documentation>Wnioskowana kwota</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TKwota2Nieujemna">
+											<xsd:fractionDigits value="1"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_474" type="etd:TZnakowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Cel szczegółowy 1%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_475" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wyrażam zgodę na przekazanie OPP swojego imienia, nazwiska i adresu wraz z informacją o kwocie z poz. 473</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_476" type="etd:TZnakowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje dodatkowe, np. ułatwiające kontakt z podatnikiem (telefon, e-mail)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_477" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/B</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_478" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/BR</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_482" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/SE</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_488" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/Z</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_490" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/WZ</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_479" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/DS</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_480" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/IP</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_481" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników SSE-R</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice minOccurs="0">
+								<xsd:sequence>
+									<xsd:element name="P_483" type="etd:TWybor1">
+										<xsd:annotation>
+											<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/D</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_484" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT-2K</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence>
+									<xsd:element name="P_494" type="etd:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Załącznik PIT/D dołącza do swojego zeznania: 1 - podatnik, 2 - małżonek</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_495" type="etd:TWybor1_3">
+										<xsd:annotation>
+											<xsd:documentation>Kod formularza, do którego został dołączony załącznik PIT/D: 1 - PIT-28, 2 - PIT-36, 3 - PIT-37</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_496" type="etd:TZnakowy" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy, nazwisko i imię małżonka oraz urząd, do którego został złożony załącznik PIT/D</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:choice>
+							<xsd:element name="P_485" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/M</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_486" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_487" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/ZG</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TNaturalny">
+										<xsd:minInclusive value="0"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_489" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/MIT</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_491" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/PM</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_492" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników PIT/NZI</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TNaturalny">
+										<xsd:minInclusive value="0"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_493" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje o załącznikach - Liczba załączników Certyfikat rezydencji</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TNaturalny">
+										<xsd:minInclusive value="0"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rachunek osobisty właściwy do zwrotu nadpłaty</xsd:documentation>
+								</xsd:annotation>
+								<!--Jeżeli z zeznania wynika nadpłata, w tej części można wskazać rachunek bankowy lub w spółdzielczej kasie oszczędnościowo-kredytowej (SKOK), inny niż związany z prowadzoną działalnością gospodarczą, na który ma nastąpić jej zwrot. Podaje się rachunek, którego posiadaczem (współposiadaczem) jest podatnik lub małżonek. Wskazanie rachunku, którego posiadaczem (współposiadaczem) nie jest podatnik, a jest nim małżonek, jest możliwe jedynie w przypadku zaznaczenia w poz. 6 kwadratu nr 2. Wskazany rachunek aktualizuje poprzednio zgłoszony rachunek służący do zwrotu podatku lub nadpłaty osoby wskazanej w poz. 497.-->
+								<xsd:sequence>
+									<xsd:element name="P_497_1" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Osoba zgłaszająca rachunek: 1 - podatnik</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_497_2" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Osoba zgłaszająca rachunek (można zaznaczyć wyłącznie w przypadku wyboru w poz. 6 wartości 2): 1 - małżonek</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_498">
+									<xsd:annotation>
+										<xsd:documentation>Posiadacz rachunku (należy wskazać imię i nazwisko posiadacza, a w przypadku, gdy jest to rachunek wspólny - imiona i nazwiska wszystkich współposiadaczy)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TZnakowy">
+											<xsd:maxLength value="70"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:element name="P_499A" type="etd:TKodKrajuWydania">
+										<xsd:annotation>
+											<xsd:documentation>Kraj siedziby banku (oddziału)</xsd:documentation>
+										</xsd:annotation>
+										<!--uzupełnić wyłącznie, gdy wskazano rachunek zagraniczny-->
+									</xsd:element>
+									<xsd:element name="P_500_2" type="tns:SWIFT_Type">
+										<xsd:annotation>
+											<xsd:documentation>Kod SWIFT</xsd:documentation>
+										</xsd:annotation>
+										<!--w przypadku rachunku zagranicznego należy podać kod SWIFT-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_500_1" type="tns:TNrIBAN">
+									<xsd:annotation>
+										<xsd:documentation>Pełny numer rachunku - numer IBAN</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_501_1" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Osoba posiadająca ważną KDR: 1 - podatnik</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_502_2" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Osoba posiadająca ważną KDR: 1 - małżonek</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Oswiadczenie">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższego oświadczenia:
+W przypadku zastosowania art. 6 ust. 2a ustawy, oświadczam pod rygorem odpowiedzialności karnej za fałszywe zeznania, że jest spełniony warunek przewidziany w tym przepisie.</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:sequence minOccurs="0">
+								<xsd:element ref="zb36:Zalacznik_PIT_B" maxOccurs="2"/>
+								<xsd:element ref="zbr36:Zalacznik_PIT_BR" minOccurs="0" maxOccurs="2"/>
+								<xsd:element ref="zse36:Zalacznik_PIT_SE" minOccurs="0" maxOccurs="2"/>
+								<xsd:element ref="z36:Zalacznik_PIT_Z" minOccurs="0" maxOccurs="2"/>
+								<xsd:element ref="zwz36:Zalacznik_PIT_WZ" minOccurs="0" maxOccurs="2"/>
+							</xsd:sequence>
+							<xsd:element ref="zds36:Zalacznik_PIT_DS" minOccurs="0" maxOccurs="2"/>
+							<xsd:element ref="zip36:Zalacznik_PIT_IP" minOccurs="0" maxOccurs="2"/>
+							<xsd:element ref="ssr:Zalacznik_SSE-R" minOccurs="0" maxOccurs="2"/>
+							<xsd:sequence minOccurs="0">
+								<xsd:element ref="zd:Zalacznik_PIT_D"/>
+								<xsd:element ref="z2k:Zalacznik_PIT-2K" minOccurs="0"/>
+							</xsd:sequence>
+							<xsd:element ref="zm:Zalacznik_PIT_M" minOccurs="0" maxOccurs="2"/>
+							<xsd:element ref="zo3x:Zalacznik_PIT_O" minOccurs="0"/>
+							<xsd:element ref="zg36:Zalacznik_PIT_ZG" minOccurs="0" maxOccurs="unbounded"/>
+							<xsd:element ref="zmt36:Zalacznik_PIT_MIT" minOccurs="0" maxOccurs="2"/>
+							<xsd:element ref="zpm36:Zalacznik_PIT_PM" minOccurs="0" maxOccurs="2"/>
+							<xsd:element ref="zzi36:Zalacznik_PIT_NZI" minOccurs="0" maxOccurs="unbounded"/>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU" minOccurs="0"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Pouczenia">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższych pouczeń:
+W przypadku niewpłacenia w obowiązujących terminach kwot z poz. 395 albo 396 i 399-446 lub wpłacenia ich w niepełnej wysokości niniejsze zeznanie stanowi podstawę do wystawienia tytułu wykonawczego, w tym również na odsetki od kwot wykazanych w poz. 274-303, 305-310, 312-317, 319-324, 326-355, 357-362, 364-369, 371-376 i 447-470, zgodnie z art. 3a § 1 pkt 1 ustawy z dnia 17 czerwca 1966 r. o postępowaniu egzekucyjnym w administracji (Dz. U. z 2020 r. poz. 1427, z późn. zm.).
+Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie podatku na uszczuplenie grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym.
+								</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP_PESEL">
+			<xsd:selector xpath="tns:Podmiot1|tns:Podmiot2"/>
+			<xsd:field xpath="etd:OsobaFizyczna/etd:NIP|etd:OsobaFizyczna/etd:PESEL|tns:OsobaFizyczna/etd:NIP|tns:OsobaFizyczna/etd:PESEL"/>
+		</xsd:unique>
+	</xsd:element>
+</xsd:schema>

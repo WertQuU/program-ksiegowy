@@ -1,0 +1,453 @@
+
+
+<!doctype html>
+<html lang="pl-PL">
+<head>
+        <!-- Google Tag Manager -->
+        <script>
+            (function (w, d, s, l, i) {
+                w[l] = w[l] || [];
+                w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+                var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
+                j.async = true;
+                j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+                f.parentNode.insertBefore(j, f);
+            })
+                (window, document, 'script', 'dataLayer', 'GTM-5FLS8K6P');
+        </script>
+        <!-- End Google Tag Manager -->
+        <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1W9417REQS"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag() { dataLayer.push(arguments); } gtag('js', new Date()); gtag('config', 'G-1W9417REQS');
+        </script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="robots" content="" />
+    <title>Dokumentacja IT</title>
+    <meta name="description" content="Informacje dla dostawców IT, specyfikacje, bramka UBD, struktury XML">
+
+    <div id="x_asData1" style="display:none;">...</div>
+
+	
+	
+    <div id="x_asData2" style="display:none;">...</div>
+
+	
+    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
+    <link rel="manifest" href="/assets/site.webmanifest" />
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <link rel="stylesheet" href="/css/fontawesome-all.css" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/css/bootstrap-select.css">
+    <link rel="stylesheet" href="/css/cookieconsent.min.css?v=20240223" />
+    <link rel="stylesheet" href="/css/site.css?v=20190117">
+    <link rel="stylesheet" href="/css/jquery-ui.css" />
+
+
+    
+
+    
+
+
+
+
+<script src="/scripts/cookieconsent.min.js"></script>
+    <script>
+    window.addEventListener("load", function() {
+        window.cookieconsent.initialise({
+            cookie: {
+                domain: "podatki-arch.mf.gov.pl"
+            },
+            window: '<div role="dialog" aria-label="Informacja o ciasteczkach" aria-describedby="cookieconsent:desc" class="cc-window {{classes}}">{{children}}</div>',
+            elements: {
+                messagelink: '<div id="cookieconsent:desc" class="cc-message"><p>{{messageOne}}</p><p>{{messageTwo}}</p><p><a tabindex="0" class="cc-link" href="{{href}}" target="_blank">{{link}}</a></p></div>',
+                dismiss: '<a aria-label="Rozumiem, zamknij komunikat o ciasteczkach." role="button" tabindex="0" class="btn btn-primary cc-btn cc-dismiss">{{dismiss}}</a>'
+            },
+            palette: {
+                popup: {
+                    text: "#ffffff"
+                },
+            },
+            position: "bottom-left",
+            content: {
+                messageOne: "Korzystamy z plików cookies, by ułatwić użytkownikom poruszanie się po serwisie. Ciasteczka pozwalają nam także tworzyć anonimowe statystyki serwisu.",
+                messageTwo: "Jeżeli nie blokujesz plików cookies, to zgadzasz się na ich używanie i zapisanie w pamięci urządzenia. Możesz zmienić ustawienia przeglądarki, żeby wyłączyć zapisywanie ciasteczek.",
+                href: "/polityka-prywatnosci",
+                link: 'Przeczytaj o polityce prywatności',
+                dismiss: 'Rozumiem'
+            }
+        }, function (popup) {
+            var handler = function (event) {
+                if (event.keyCode === 13) {
+                    popup.setStatus(cookieconsent.status.dismiss);
+                    popup.close();
+                    document.removeEventListener('keyup', handler);
+                }
+            };
+            document.addEventListener('keyup', handler)
+        })
+    });
+    </script>
+
+
+</head>
+
+<body>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript>
+            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5FLS8K6P"
+                    height="0" width="0" style="display:none;visibility:hidden"></iframe>
+        </noscript>
+        <!-- End Google Tag Manager (noscript) -->
+
+        <div id="scrollDown"><div id="scrollDownAfter"></div></div>
+    
+
+<link href="/Content/Styles/SENT/mobileheader.css" rel="stylesheet" type="text/css" />
+
+    <header class="shadow-sm">
+        <nav class="navbar navbar-dark navbar-expand-lg">
+            <a href="#content" class="skip-link sr-only sr-only-focusable">Przejdź do treści</a>
+            <a href="#search" class="skip-link sr-only sr-only-focusable">Przejdź do wyszukiwarki</a>
+            <a href="#footer" class="skip-link sr-only sr-only-focusable">Przejdź do stopki</a>
+
+                <div class="navbar-brand">
+                    <a href="/">
+                        <img class="d-inline-block" width="96" src="/media/2842/assets-logotypes-polish-emblem.svg" alt="Przejdź do strony gł&#243;wnej serwisu">
+                        <span class="h1 amethysta navbar-text">podatki.gov.pl</span>
+                        
+                    </a>
+                </div>
+
+            <div class="d-flex align-items-end">
+                <button class="btn btn-secondary mobileSearchButton" type="button" data-toggle="modal" data-target="#searchModal">
+                    <img style="height:30px; height:30px; display:inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" />
+                </button>
+
+                <button class="btn btn-secondary navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModal" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-body">
+                            <div class="input-group" style="margin-bottom:5px;">
+                                <input type="text" id="searchLabel" name="query" class="form-control" aria-label="Wpisz szukaną frazę" required minlength="3">
+                                <div class="input-group-append">
+                                    <button id="btn-search" class="btn btn-secondary" type="submit"><img style="height: 30px; height: 30px; display: inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" /></button>
+                                    <button class="btn btn-secondary" data-dismiss="modal" label="Zamknij"><span aria-hidden="true">X</span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+
+                <form id="search" class="header-element ml-auto" action="/e-deklaracje/dokumentacja-it//szukaj" method="GET" style="padding-right:20px;">
+
+                    <div class="input-group" style="margin-bottom:5px;">
+                            <div class="lang-sel-wrapper" style="margin: 10px">
+                                <div tabindex="0" id="lang-sel" class="lang-sel btn btn-emptyAk" aria-label="Wybierz język">
+                                    PL
+                                    <div class="arrow" style="transform: rotate(45deg);"></div>
+                                    <ul id="lang-sel-items" class="lang-sel-wrapper">
+                                            <li>
+                                                <a href="/en/">EN</a>
+                                            </li>
+                                            <li>
+                                                <a href="/uk/">UK</a>
+                                            </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                        <div class="input-group-append mobileButtonSearch" style="margin:10px;">
+                            <button class="btn btn-secondary" type="button" data-toggle="modal" data-target="#searchModal">
+                                <img style="height:30px; height:30px; display:inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" />
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                
+
+
+
+                <nav class="nav nav-list flex-column d-lg-none">
+                        <a class="nav-link" href="/pit/">PIT</a>
+                        <a class="nav-link" href="/cit/">CIT</a>
+                        <a class="nav-link" href="/vat/">VAT</a>
+                        <a class="nav-link" href="/akcyza/">Akcyza</a>
+                        <a class="nav-link" href="/clo/">Cło</a>
+                        <a class="nav-link" href="/pcc-sd/">PCC, SD</a>
+                        <a class="nav-link" href="/podatki-i-oplaty-lokalne/">Podatki i opłaty lokalne</a>
+                        <a class="nav-link" href="/pozostale-podatki/">Pozostałe podatki</a>
+                        <a class="nav-link" href="/e-deklaracje/">e-Deklaracje</a>
+                        <a class="nav-link" href="/skontaktuj-sie-z-nami/">Skontaktuj się z nami</a>
+                                            <span class="nav-link">Zmień język:</span>
+                        <div class="nav-lang">
+                                <a href="/en/" aria-label="Odnośnik do angielskiej wersji językowej portalu podatkowego">EN</a>
+                                <a href="/uk/" aria-label="Odnośnik do ukraińskiej wersji językowej portalu podatkowego">UK</a>
+                        </div>
+                </nav>
+            </div>
+        </nav>
+    </header>
+<script>
+    function LogOut() {
+         $.ajax({
+    url: '',
+    type: 'POST',
+    data: {},
+             success: function (result) {
+                 console.log(result);
+    }
+});
+    }
+</script>
+
+
+
+
+
+
+
+    <nav class="main">
+        <div class="container">
+            <ol class="breadcrumb">
+                
+                    <li class="breadcrumb-item"><a href="/">Podatki.gov.pl</a></li>
+                    <li class="breadcrumb-item"><a href="/e-deklaracje/">e-Deklaracje</a></li>
+        
+                
+                
+            </ol>
+        </div>
+    </nav>
+
+    <div id="content" class="container-fluid">
+        
+<link href="/Content/Styles/NewOrderPage.css" rel="stylesheet" />
+
+
+
+
+
+<div class="content-header dark-text">
+    <div class="container relative">
+        <h1>Dokumentacja IT</h1>
+        <hr />
+        <p class="introduction">Informacje dla dostawców IT, specyfikacje, bramka UBD, struktury XML</p>
+            </div>
+</div>
+
+    <div class="umb-grid container">
+        <div class="row clearfix">
+                <div class="col-md-12 column">                
+                        <section class="article-content">
+    <div >
+        
+        <div class="row clearfix">
+            <div class="col-md-12 column">
+                <div >
+                            
+    
+
+<h2>Specyfikacja Wejścia - Wyjścia</h2>
+<h3>Bramka e-Deklaracje</h3>
+
+                            
+    
+
+<h4>Specyfikacja We-Wy v.2.4</h4>
+<p><span>Zasady wymiany informacji pomiędzy systemem informatycznym </span>e-Deklaracje<span> a oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu </span>e-Deklaracje<span> </span></p>
+<p style="padding-left: 40px;"><a rel="noopener" href="/media/3615/edek_specyfikacja_we-wy_2-4_www.pdf" target="_blank" class="link-attachment">Specyfikacje We-Wy v.2.4 (PDF, 1115 kB)</a></p>
+
+                            
+    
+
+<h4>Specyfikacja We-Wy - środowisko testowe v.2.4</h4>
+<p>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego<span> </span>e-Deklaracje<span> </span>a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu<span> </span>e-Deklaracje</p>
+<p style="padding-left: 40px;"><a rel="noopener" href="/media/3616/edek_specyfikacja_we-wy_2-4_test_www.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy - środowisko testowe v.2.4 (PDF, 1127 kB)</a></p>
+
+                            
+    
+
+<h3>Bramka UBD</h3>
+<h4>Specyfikacja We-Wy UBD v.0.3.0</h4>
+<p><span>Zasady wymiany informacji pomiędzy systemem informatycznym e-Deklaracje a oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</span></p>
+<p style="padding-left: 40px;"><a rel="noopener" href="/media/3617/ubd_specyfikacja_we-wy_0-3-0.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy UBD v.0.3.0. (PDF, 1553 kB)</a></p>
+
+                            
+    
+
+<h4>Specyfikacja We-Wy UBD - środowisko testowe v.0.3.0<span> </span></h4>
+<p><span>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego e-Deklaracje a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</span></p>
+<p style="padding-left: 40px;"><a rel="noopener" href="/media/3614/ubd_specyfikacja_we-wy_0-3-0_test.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy UBD - środowisko testowe v.0.3.0. (PDF, 1560 kB)</a></p>
+
+                            
+    
+
+<h2>Informacja na temat certyfikatu SSL serwera usługi Web Services systemu e-Deklaracje</h2>
+<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych <span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</span></p>
+<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do informacji na temat certyfikatu SSL</span></a></p>
+
+                            
+    
+
+<h2>Informacja na temat certyfikatu SSL serwera testowego usługi Web Services systemu e-Deklaracje</h2>
+<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych <span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</span></p>
+<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do informacji na temat certyfikatu SSL</span></a></p>
+
+                            
+    
+
+<h2>Struktury dokumentów XML</h2>
+<p><span>Struktury dokumentów XML można pobrać klikając w nazwę konkretnej struktury wyświetlając jej kod w formacie XSD na ekranie.</span></p>
+<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do tabeli struktur dokumentów XML</span></a></p>
+
+                </div>
+            </div>        </div>
+        
+    </div>
+    </section>
+              
+                </div>
+        </div>        
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+    </div>
+
+
+    
+
+<footer id="footer">
+    <div class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <p><a rel="noopener" href="https://www.gov.pl/web/finanse" target="_self"><img style="width: 70%;" class="img-fluid" src="/media/9509/02_kreska_podstawowy_kolor_czerwone_tlo.png" alt="Przejdź do strony Ministerstwa Finansów" data-udi="umb://media/29678cb588ca440aa6fb4226b95b8be0" /></a></p>
+                </div>
+                <div class="col-md-4">
+                    <p><a data-udi="umb://document/dbf89527471542f1bd4e3190f5917d65" href="/mapa-serwisu-podatki-gov-pl/">Mapa serwisu</a></p>
+<p><a data-udi="umb://document/0de341c9c49e4c10855e71aaf734860b" href="/deklaracja-dostepnosci-serwisu/">Deklaracja dostępności serwisu</a></p>
+<p><a rel="nofollow" href="https://www.gov.pl/web/finanse/informacja-o-dzialalnosci-ministerstwa/">Informacja o działalności Ministerstwa</a></p>
+<p><a data-udi="umb://document/39bc55d5f72d49e5969225c1dc21cb6b" href="/polityka-cookie/" title="Polityka cookie">Polityka cookie</a></p>
+<p><a data-udi="umb://document/f0501ecf5e6345c88fe294fa490cf31c" href="/klauzula-informacyjna-mf/">Klauzula informacyjna Ministra Finansów</a></p>
+<p><a data-udi="umb://document/23a8024a2df64b4c8fa9dc6e6e8e3c17" href="/klauzula-informacyjna-szefa-kas/">Klauzula informacyjna Szefa KAS</a></p>
+<p><a rel="noopener" href="https://finanse-arch.mf.gov.pl/web/wp/pp" target="_self">finanse.mf.gov.pl – archiwum</a></p>
+<p> </p>
+                </div>
+                <div class="col-md-4">
+                    <div style="margin-bottom: 16px;">
+<h2 class="amethysta" style="margin: 0px;"><a data-udi="umb://document/ef596fe311c34072a9a59fe54fc9ddf0" href="https://www.podatki.gov.pl/" aria-label="Strona główna podatki.gov.pl">podatki.gov.pl</a></h2>
+</div>
+<p><strong><a data-udi="umb://document/9decbc0a9b834eeea0957649a90c5604" href="/skontaktuj-sie-z-nami/" class="btn btn-outline-primary light-text" data-anchor="#">Skontaktuj się z nami</a></strong></p>
+<p> </p>
+<p> </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="eu-footer">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-auto logo-container">
+                    <img class="logo-left" src="/media/3144/fe.svg" alt="Fundusze Europejskie. Polska Cyfrowa" />
+                </div>
+                <div class="col">
+                    <p>Treści zamieszczone w serwisie udostępniamy bezpłatnie. Korzystanie z treści opublikowanych w serwisie podatki.gov.pl, niezależnie od celu i sposobu korzystania, nie wymaga zgody Ministerstwa Finansów. Treści znaczone w serwisie jako treści będące przedmiotem praw autorskich, o ile nie jest to stwierdzone inaczej, są udostępniane na licencji Creative Commons Uznanie Autorstwa 3.0 Polska.</p>
+                </div>
+                <div class="col-md-auto logo-container">
+                    <img class="logo-right" src="/media/10541/ue2.svg" />
+                </div>
+            </div>
+        </div>
+    </div>
+</footer>
+
+    <script src="/scripts/jquery-3.3.1.min.js"></script>
+    <script src="/scripts/popper.min.js"></script>
+    <script src="/scripts/moment.min.js"></script>
+    <script src="/scripts/bootstrap.min.js"></script>
+    <script src="/scripts/jquery-ui.min.js"></script>
+    <script src="/scripts/jquery-migrate-3.0.0.min.js"></script>
+    <script src="/scripts/jquery.unobtrusive-ajax.js"></script>
+    <script>
+            $('.fb-button').click(function() {
+                FB.ui({
+                    method: 'share',
+                    href: 'http://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/',
+                }, function(response){});
+            });
+    </script>
+
+
+    
+    <script>
+        var sliderStopped = false;
+
+        function PauseCarousel()
+        {
+            $('.carousel').carousel('cycle');
+        };
+
+        $('.carousel').carousel({ interval: 6000, pause: false });
+
+        $('#control-next-button').click(function (ev) {
+            $('.carousel').carousel('cycle');
+            ev.preventDefault();
+        });
+
+        $('#control-pause-button').click(function (ev)
+        {
+            if (!sliderStopped)
+            {
+                $('.carousel').carousel('pause');
+                $("#pauseStartSliderIcon").removeClass("fa-pause");
+                $("#pauseStartSliderIcon").addClass("fa-play");
+
+                $("#pauseStartSliderStatusContainer").html("Rozpocznij pokaz slajdów");
+                sliderStopped = true;
+            }
+            else
+            {
+                $('.carousel').carousel('cycle');
+                $("#pauseStartSliderIcon").removeClass("fa-play");
+                $("#pauseStartSliderIcon").addClass("fa-pause");
+
+                $("#pauseStartSliderStatusContainer").html("Zatrzymaj pokaz slajdów");
+                sliderStopped = false;
+            }
+
+            ev.preventDefault();
+        });
+
+        $('.btn-slider').click(function (ev) {
+            $('.carousel').carousel('pause');
+        });
+    </script>
+
+    <script src="/scripts/front.js"></script>
+<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=3&cb=1571715574" async></script></body>
+</html>
