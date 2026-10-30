@@ -1,3 +1,4 @@
+using PelnaKsiegowosc.Domain.Accounts;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Banking;
@@ -329,8 +330,10 @@ public class PurchaseScenarioTests
 
 public class FixedAssetCitCapitalTests
 {
-    [Fact]
-    public async Task Depreciation_run_posts_book_and_records_tax_and_cit_reconciles_difference()
+    [Theory]
+    [InlineData(CitClassification.DoAnalizy)]
+    [InlineData(CitClassification.KosztPodatkowy)]
+    public async Task Depreciation_run_posts_book_and_records_tax_and_cit_reconciles_difference(CitClassification classification)
     {
         await using var t = await TestBooks.CreateAsync();
         var fa = new FixedAssetService(t.Db, t.User, t.Clock);
@@ -356,6 +359,8 @@ public class FixedAssetCitCapitalTests
         var e = await t.Ledger().CreateDraftAsync(TestBooks.Entry(new DateOnly(2026, 2, 15), "PK/REP", new("409-02", 300m, 0), new("130-01", 0, 300m)));
         await t.Ledger().PostAsync(e.Id);
 
+        (await t.Db.Accounts.SingleAsync(a => a.Number == "400")).CitClassification = classification;
+        await t.Db.SaveChangesAsync();
         var cit = new CitService(t.Db, t.User, t.Clock);
         var rec = await cit.ReconcileAsync(t.Year.Id, 2);
         Assert.Equal(10000m, rec.TaxRevenue);

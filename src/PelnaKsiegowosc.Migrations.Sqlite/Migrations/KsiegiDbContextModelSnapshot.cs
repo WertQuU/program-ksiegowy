@@ -674,6 +674,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("CapitalGains")
+                        .HasColumnType("INTEGER");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("TEXT");
 
@@ -692,6 +695,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("OpenItemId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("PeriodNumber")
                         .HasColumnType("INTEGER");
 
@@ -706,6 +712,8 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FiscalYearId");
+
+                    b.HasIndex("OpenItemId");
 
                     b.ToTable("CitAdjustments");
                 });
@@ -3299,6 +3307,14 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.HasIndex("CompanyId", "StockItemId", "Date");
 
                     b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.CitAdjustment", b =>
+                {
+                    b.HasOne("PelnaKsiegowosc.Domain.Settlements.OpenItem", null)
+                        .WithMany()
+                        .HasForeignKey("OpenItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentLine", b =>

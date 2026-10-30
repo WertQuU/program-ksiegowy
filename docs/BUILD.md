@@ -92,8 +92,9 @@ Code Signing (`signtool sign /fd SHA256 /tr <serwer-znacznika-czasu> /td SHA256 
 **nie umieszczaj w repozytorium** — w CI używaj zaszyfrowanych sekretów GitHub.
 
 `.github/workflows/ci.yml`: testy na Windows i Linux (na Linuksie z PostgreSQL i atrapą S3), publikacja,
-kontrola uruchomienia opublikowanych programów, budowa i próbna instalacja `.deb` oraz `.msi`. Wypchnięcie tagu
-`v<wersja>` (np. `v1.0.2`) tworzy wydanie z pakietami i plikiem `SHA256SUMS.txt`.
+kontrola uruchomienia opublikowanych programów, budowa i próbna instalacja `.deb` oraz `.msi`. Wypchnięcie do `main` uruchamia weryfikację i buduje artefakty testowe, bez publikowania wydania.
+Wydanie z pakietami i `SHA256SUMS.txt` wymaga ręcznego uruchomienia workflow z polem `wydanie`.
+Kolejne planowane wydanie po zakończeniu przeglądów: `1.0.0`.
 
 Statystyki kompilacji wysyłane przez pakiet Avalonia.BuildServices są wyłączone w `Directory.Build.targets`.
 

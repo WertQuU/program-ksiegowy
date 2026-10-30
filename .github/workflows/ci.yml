@@ -3,7 +3,6 @@ name: CI
 on:
   push:
     branches: ['**']
-    tags: ['v*']
   pull_request:
   workflow_dispatch:
     inputs:
@@ -164,7 +163,8 @@ jobs:
 
   release:
     name: Wydanie (tag v*)
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.wydanie != '')
+    # Publikacja wyłącznie po świadomym uruchomieniu workflow z numerem wydania.
+    if: github.event_name == 'workflow_dispatch' && inputs.wydanie != ''
     needs: [linux, windows]
     runs-on: ubuntu-latest
     permissions:

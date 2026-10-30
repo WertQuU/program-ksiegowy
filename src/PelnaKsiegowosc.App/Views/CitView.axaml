@@ -37,6 +37,8 @@
         <TextBox Text="{Binding AdjustmentAmount}" Watermark="kwota" />
         <TextBox Text="{Binding AdjustmentDescription}" Watermark="opis" MinWidth="240" />
         <TextBox Text="{Binding AdjustmentBasis}" Watermark="podstawa prawna" MinWidth="180" />
+        <CheckBox Content="Art. 18f — powiąż z zaznaczonym zobowiązaniem" IsChecked="{Binding LinkAdjustmentToLiability}" />
+        <CheckBox Content="Koszt zysków kapitałowych" IsChecked="{Binding AdjustmentCapitalGains}" />
         <Button Content="Dodaj korektę" Command="{Binding AddAdjustmentCommand}" />
       </WrapPanel>
     </Expander>
@@ -46,6 +48,13 @@
       <TabItem Header="Kwalifikacja art. 18f"><DockPanel>
         <Button DockPanel.Dock="Top" Content="Kwalifikuj zaznaczone zobowiązanie…" Command="{Binding QualifyLiabilityCommand}" />
         <c:TableView Table="{Binding Liabilities}" SelectedRow="{Binding SelectedLiability}" />
+      </DockPanel></TabItem>
+      <TabItem Header="Korekty ręczne"><DockPanel>
+        <WrapPanel DockPanel.Dock="Top">
+          <Button Content="Powiąż ze zobowiązaniem wybranym w art. 18f" Command="{Binding LinkManualLiabilityCommand}" />
+          <Button Content="Usuń korektę…" Command="{Binding RemoveManualAdjustmentCommand}" />
+        </WrapPanel>
+        <c:TableView Table="{Binding ManualAdjustments}" SelectedRow="{Binding SelectedManualAdjustment}" />
       </DockPanel></TabItem>
       <TabItem Header="Zaliczki"><c:TableView Table="{Binding Advances}" SelectedRow="{Binding SelectedAdvance}" /></TabItem>
     </TabControl>

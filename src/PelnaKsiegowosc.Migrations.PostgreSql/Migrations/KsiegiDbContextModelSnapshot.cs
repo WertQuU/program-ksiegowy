@@ -679,6 +679,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<bool>("CapitalGains")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
@@ -697,6 +700,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<Guid?>("OpenItemId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("PeriodNumber")
                         .HasColumnType("integer");
 
@@ -711,6 +717,8 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FiscalYearId");
+
+                    b.HasIndex("OpenItemId");
 
                     b.ToTable("CitAdjustments");
                 });
@@ -3304,6 +3312,14 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.HasIndex("CompanyId", "StockItemId", "Date");
 
                     b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.CitAdjustment", b =>
+                {
+                    b.HasOne("PelnaKsiegowosc.Domain.Settlements.OpenItem", null)
+                        .WithMany()
+                        .HasForeignKey("OpenItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.DocumentLine", b =>

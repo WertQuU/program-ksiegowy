@@ -66,13 +66,22 @@ public sealed class CitService
         _clock = clock;
     }
 
-    public async Task<CitAdjustment> AddAdjustmentAsync(Guid fiscalYearId, int periodNumber, CitAdjustmentType type, decimal amount, string description, string? legalBasis, CancellationToken ct = default)
+    public async Task<CitAdjustment> AddAdjustmentAsync(Guid fiscalYearId, int periodNumber, CitAdjustmentType type, decimal amount, string description, string? legalBasis, CancellationToken ct = default, Guid? openItemId = null, bool capitalGains = false)
     {
         _user.Require(Permission.ManageCit);
         if (amount <= 0) throw new DomainException("Kwota korekty musi być dodatnia (kierunek określa rodzaj korekty).");
         if (string.IsNullOrWhiteSpace(description)) throw new DomainException("Opisz korektę (udokumentowanie różnicy).");
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         if (periodNumber < 1 || periodNumber > fy.Periods.Count) throw new DomainException("Nieprawidłowy numer okresu.");
+        await EnsureManualPeriodEditableAsync(fiscalYearId, periodNumber, ct);
+        if (openItemId is { } itemId)
+        {
+            if (type is not (CitAdjustmentType.KosztNKUP or CitAdjustmentType.DodatkowyKUP))
+                throw new DomainException("Korekta zobowiązania art. 18f musi zwiększać albo zmniejszać dochód (NKUP / dodatkowy KUP).");
+            await EnsureManualLiabilityAsync(itemId, ct);
+        }
+        else if (IsArticle18f(description, legalBasis))
+            throw new DomainException("Powiąż ręczną korektę art. 18f z konkretnym zobowiązaniem.");
         var a = new CitAdjustment
         {
             CompanyId = _user.CompanyId,
@@ -82,6 +91,8 @@ public sealed class CitService
             Amount = Money.Round(amount),
             Description = description.Trim(),
             LegalBasis = legalBasis,
+            OpenItemId = openItemId,
+            CapitalGains = capitalGains,
             UserId = _user.UserId,
             CreatedAtUtc = _clock.UtcNow
         };
@@ -138,7 +149,7 @@ public sealed class CitService
 
     public async Task<CitReconciliation> ReconcileAsync(Guid fiscalYearId, int uptoPeriod, CancellationToken ct = default)
     {
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         var period = fy.Periods.Single(p => p.Number == uptoPeriod);
         var company = await _db.Companies.FirstAsync(c => c.Id == fy.CompanyId, ct);
         var tb = await new LedgerQueries(_db).TrialBalanceAsync(fy.Id, fy.StartDate, period.EndDate, true, ct);
@@ -160,7 +171,8 @@ public sealed class CitService
             var value = a.Type == AccountType.WynikowePrzychodowe ? -(t.CumulativeDebit - t.CumulativeCredit) : t.CumulativeDebit - t.CumulativeCredit;
             if (value == 0) continue;
             if (a.Type == AccountType.WynikowePrzychodowe) r.BookRevenue += value; else r.BookCosts += value;
-            if (a.Number is "870" or "872") { r.Adjustments.Add(new($"Podatek dochodowy ({a.Number}) — NKUP", value, "art. 16 ust. 1 pkt 46 ustawy o CIT")); continue; }
+            if (a.Number is "870" or "872") { r.Adjustments.Add(new($"Podatek dochodowy ({a.Number}) — NKUP", value, "art. 16 ust. 1 pkt 15 ustawy o CIT")); continue; }
+            if (depAccounts.Contains(a.Number)) continue; // zastępujemy całą amortyzację bilansową podatkową jeden raz
             switch (a.CitClassification)
             {
                 case CitClassification.PrzychodPodatkowy: taxRev += value; break;
@@ -200,7 +212,9 @@ public sealed class CitService
         var nkupTotal = nkupLines.Sum(o => o.Debit - o.Credit);
         if (nkupTotal != 0)
         {
-            taxCost -= nkupTotal;
+            var capitalNkup = nkupLines.Where(o => accById[o.AccountId].CitClassification == CitClassification.KosztZyskiKapitalowe).Sum(o => o.Debit - o.Credit);
+            taxCost -= nkupTotal - capitalNkup;
+            capCost -= capitalNkup;
             r.Adjustments.Add(new("Koszty NKUP — części wydatków wskazane w dokumentach (kategorie wydatków)", nkupTotal, "art. 16 ust. 1 ustawy o CIT (np. pkt 28, 51)"));
             foreach (var g in nkupLines.GroupBy(o => o.AccountId))
             {
@@ -224,8 +238,8 @@ public sealed class CitService
             {
                 case CitAdjustmentType.ZwiekszeniePrzychodow: taxRev += a.Amount; break;
                 case CitAdjustmentType.ZmniejszeniePrzychodow: taxRev -= a.Amount; break;
-                case CitAdjustmentType.KosztNKUP: taxCost -= a.Amount; break;
-                case CitAdjustmentType.DodatkowyKUP: taxCost += a.Amount; break;
+                case CitAdjustmentType.KosztNKUP: if (a.CapitalGains) capCost -= a.Amount; else taxCost -= a.Amount; break;
+                case CitAdjustmentType.DodatkowyKUP: if (a.CapitalGains) capCost += a.Amount; else taxCost += a.Amount; break;
                 case CitAdjustmentType.OdliczenieOdDochodu: r.Deductions += a.Amount; break;
             }
             r.Adjustments.Add(new($"Korekta: {a.Description}", a.Type is CitAdjustmentType.ZmniejszeniePrzychodow or CitAdjustmentType.DodatkowyKUP or CitAdjustmentType.OdliczenieOdDochodu ? -a.Amount : a.Amount, a.LegalBasis ?? "korekta ręczna"));
@@ -326,6 +340,8 @@ public sealed class CitService
         var allocations = await _db.SettlementAllocations.AsNoTracking().Where(a => ids.Contains(a.OpenItemId) && !a.IsReversed && a.Date <= asOf)
             .Select(a => new { a.OpenItemId, a.Date, a.AmountPln }).ToListAsync(ct);
         var history = await _db.CitLiabilityAdjustments.AsNoTracking().Where(h => ids.Contains(h.OpenItemId) && h.FiscalYearId != fy.Id && h.Date < fy.StartDate).ToListAsync(ct);
+        var manualItems = await _db.CitAdjustments.AsNoTracking().Where(a => a.CompanyId == fy.CompanyId && a.OpenItemId != null)
+            .Select(a => a.OpenItemId!.Value).Distinct().ToListAsync(ct);
         var entryIds = items.Select(i => i.JournalEntryId).Distinct().ToList();
         var lines = await (from l in _db.JournalLines.AsNoTracking()
                            join a in _db.Accounts.AsNoTracking() on l.AccountId equals a.Id
@@ -334,6 +350,11 @@ public sealed class CitService
         var assetPurchases = new List<string>();
         foreach (var i in items)
         {
+            if (manualItems.Contains(i.Id))
+            {
+                r.Warnings.Add($"Art. 18f: {i.Reference} rozliczane ręcznie — automatyczna korekta wyłączona, aby uniknąć podwójnego ujęcia.");
+                continue;
+            }
             decimal op = 0, cap = 0, assets = 0;
             foreach (var l in lines.Where(l => l.EntryId == i.JournalEntryId && l.Debit != 0))
             {
@@ -411,8 +432,62 @@ public sealed class CitService
         _user.Require(Permission.ManageCit);
         if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Podaj uzasadnienie kwalifikacji art. 18f (warunki i wyłączenia).");
         await _db.OpenItems.FirstAsync(o => o.Id == openItemId && o.CompanyId == _user.CompanyId, ct);
+        var currentQualification = await new SettingsService(_db, _clock).GetAsync<bool?>(_user.CompanyId, $"cit.art18f.{openItemId}", () => null, ct);
+        if (currentQualification != applicable && await (from h in _db.CitLiabilityAdjustments
+            join a in _db.CitAdvances on h.FiscalYearId equals a.FiscalYearId
+            where h.OpenItemId == openItemId && a.IsApproved && a.PeriodEnd >= h.Date
+            select a.Id).AnyAsync(ct))
+            throw new DomainException("Kwalifikacja wpływa na zatwierdzone rozliczenie art. 18f — nie można jej zmienić.");
+        if (applicable)
+        {
+            if (await _db.CitAdjustments.AnyAsync(a => a.CompanyId == _user.CompanyId && a.OpenItemId == openItemId, ct))
+                throw new DomainException("Zobowiązanie ma ręczne korekty art. 18f. Usuń je kontrolowaną operacją przed przejściem na automat; zatwierdzonych rozliczeń nie można zmienić.");
+            var unlinked = await _db.CitAdjustments.AsNoTracking().Where(a => a.CompanyId == _user.CompanyId && a.OpenItemId == null).ToListAsync(ct);
+            if (unlinked.Any(a => IsArticle18f(a.Description, a.LegalBasis)))
+                throw new DomainException("Istnieją stare ręczne korekty art. 18f bez powiązania — najpierw przypisz im zobowiązania.");
+        }
         await new SettingsService(_db, _clock).SetAsync<bool?>(_user.CompanyId, $"cit.art18f.{openItemId}", applicable, ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_ART18F_KWALIFIKACJA", "OpenItem", openItemId.ToString(), $"{applicable}: {justification}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private static bool IsArticle18f(string description, string? basis) =>
+        System.Text.RegularExpressions.Regex.IsMatch(description + " " + basis, @"18\s*f", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+    private async Task EnsureManualPeriodEditableAsync(Guid yearId, int period, CancellationToken ct)
+    {
+        if (await _db.CitAdvances.AnyAsync(a => a.FiscalYearId == yearId && a.PeriodNumber >= period && a.IsApproved, ct))
+            throw new DomainException("Korekta wpływa na zatwierdzoną zaliczkę — rozliczenie jest zablokowane.");
+    }
+
+    private async Task EnsureManualLiabilityAsync(Guid itemId, CancellationToken ct)
+    {
+        await _db.OpenItems.FirstAsync(o => o.Id == itemId && o.CompanyId == _user.CompanyId && o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie, ct);
+        if (await new SettingsService(_db, _clock).GetAsync<bool?>(_user.CompanyId, $"cit.art18f.{itemId}", () => null, ct) == true)
+            throw new DomainException("Zobowiązanie jest rozliczane automatycznie — najpierw wyłącz kwalifikację art. 18f.");
+    }
+
+    public async Task LinkManualLiabilityAsync(Guid adjustmentId, Guid itemId, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        var adjustment = await _db.CitAdjustments.FirstAsync(a => a.Id == adjustmentId && a.CompanyId == _user.CompanyId, ct);
+        await EnsureManualPeriodEditableAsync(adjustment.FiscalYearId, adjustment.PeriodNumber, ct);
+        await EnsureManualLiabilityAsync(itemId, ct);
+        if (adjustment.Type is not (CitAdjustmentType.KosztNKUP or CitAdjustmentType.DodatkowyKUP))
+            throw new DomainException("To nie jest korekta kosztów art. 18f.");
+        adjustment.OpenItemId = itemId;
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_KOREKTA_POWIAZANA", "CitAdjustment", adjustmentId.ToString(), itemId.ToString(), ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task RemoveManualAdjustmentAsync(Guid adjustmentId, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        var adjustment = await _db.CitAdjustments.FirstAsync(a => a.Id == adjustmentId && a.CompanyId == _user.CompanyId, ct);
+        await EnsureManualPeriodEditableAsync(adjustment.FiscalYearId, adjustment.PeriodNumber, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_KOREKTA_USUNIETA", "CitAdjustment", adjustmentId.ToString(),
+            System.Text.Json.JsonSerializer.Serialize(adjustment), ct);
+        _db.CitAdjustments.Remove(adjustment);
         await _db.SaveChangesAsync(ct);
     }
 
@@ -447,7 +522,7 @@ public sealed class CitService
 
     private async Task<CitAdvance> ComputeSingleAdvanceAsync(Guid fiscalYearId, int periodNumber, CancellationToken ct)
     {
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         var company = await _db.Companies.FirstAsync(c => c.Id == fy.CompanyId, ct);
         EnsureCitTaxpayer(company);
         if (company.CitAdvanceMethod == CitAdvanceMethod.Kwartalne && periodNumber % 3 != 0)
@@ -509,10 +584,12 @@ public sealed class CitService
     public async Task ApproveAdvanceAsync(Guid advanceId, bool analysisConfirmed, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCit);
-        var adv = await _db.CitAdvances.FirstAsync(a => a.Id == advanceId, ct);
+        var adv = await _db.CitAdvances.FirstAsync(a => a.Id == advanceId && a.CompanyId == _user.CompanyId, ct);
         var current = await ReconcileAsync(adv.FiscalYearId, adv.PeriodNumber, ct);
         if (current.Rate.RateMissing || (current.SmallTaxpayerEvidenceMissing && current.Rate.RatePercent == CitCalculator.ReducedRate)
-            || current.Computation.Tax != adv.CumulativeTax || current.Computation.RatePercent != adv.RatePercent)
+            || current.Computation.Tax != adv.CumulativeTax || current.Computation.RatePercent != adv.RatePercent
+            || current.TaxRevenue != adv.CumulativeTaxRevenue || current.TaxCosts != adv.CumulativeTaxCosts
+            || current.Deductions != adv.Deductions || current.Computation.TaxBase != adv.TaxBase)
             throw new DomainException("Warunki lub dane CIT zmieniły się albo są niekompletne — przelicz zaliczkę przed zatwierdzeniem.");
         if (!analysisConfirmed && !string.IsNullOrWhiteSpace(adv.WarningsText) && adv.WarningsText.Contains("wymaga analizy"))
             throw new DomainException("Potwierdź weryfikację pozycji wymagających analizy podatkowej przed zatwierdzeniem zaliczki.");

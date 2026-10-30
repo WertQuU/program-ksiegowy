@@ -25,11 +25,91 @@ public class ReviewFixesTests
     [Theory]
     [InlineData(2026, 1, 15, 2026, 2, 13, 1)]
     [InlineData(2026, 1, 15, 2026, 2, 12, 0)]
-    [InlineData(2026, 1, 15, 2026, 3, 14, 1)]
-    [InlineData(2026, 2, 1, 2026, 2, 28, 0)]
+    [InlineData(2026, 1, 15, 2026, 3, 14, 2)]
+    [InlineData(2026, 2, 1, 2026, 2, 28, 1)]
+    [InlineData(2026, 2, 1, 2026, 4, 30, 3)]
+    [InlineData(2024, 2, 1, 2024, 2, 29, 1)]
+    [InlineData(2026, 1, 31, 2026, 3, 29, 2)]
     [InlineData(2026, 1, 1, 2026, 12, 31, 12)]
-    public void Tax_year_months_are_complete_thirty_day_periods(int sy, int sm, int sd, int ey, int em, int ed, int expected)
+    public void Tax_year_months_preserve_calendar_months_and_count_remaining_thirty_days(int sy, int sm, int sd, int ey, int em, int ed, int expected)
         => Assert.Equal(expected, CitCalculator.FullMonths(new(sy, sm, sd), new(ey, em, ed)));
+
+    [Fact]
+    public async Task Manual_article18f_cannot_be_added_to_automatic_and_transition_does_not_double_count()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var doc = await PurchaseAsync(t, cp.Id, "FZ/18f", 1000m);
+        var item = await t.Db.OpenItems.SingleAsync(o => o.DocumentId == doc.Id);
+        var service = new CitService(t.Db, t.User, t.Clock);
+        var manual = await service.AddAdjustmentAsync(t.Year.Id, 4, CitAdjustmentType.KosztNKUP, 1000m,
+            "Nieuregulowane zobowiązanie", "art. 18f", openItemId: item.Id);
+        var before = await service.ReconcileAsync(t.Year.Id, 4);
+        Assert.Equal(0m, before.Operating.TaxCosts);
+        Assert.Empty(before.LiabilityAdjustments);
+        await Assert.ThrowsAsync<DomainException>(() => service.QualifyLiabilityAsync(item.Id, true, "Przejście na automat"));
+        await t.ReopenAsync();
+        service = new CitService(t.Db, t.User, t.Clock);
+        Assert.Equal(item.Id, (await t.Db.CitAdjustments.SingleAsync()).OpenItemId);
+        await service.RemoveManualAdjustmentAsync(manual.Id);
+        await service.QualifyLiabilityAsync(item.Id, true, "Przejście po usunięciu korekty ręcznej");
+        var after = await service.ReconcileAsync(t.Year.Id, 4);
+        Assert.Equal(before.Operating.TaxCosts, after.Operating.TaxCosts);
+        Assert.Single(after.LiabilityAdjustments);
+        await Assert.ThrowsAsync<DomainException>(() => service.AddAdjustmentAsync(t.Year.Id, 4, CitAdjustmentType.KosztNKUP,
+            1000m, "Korekta", "art. 18f", openItemId: item.Id));
+        await Assert.ThrowsAsync<DomainException>(() => service.AddAdjustmentAsync(t.Year.Id, 4, CitAdjustmentType.KosztNKUP,
+            1000m, "Korekta", "art. 18f"));
+    }
+
+    [Fact]
+    public async Task Approved_manual_article18f_cannot_be_removed_or_relinked()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var doc = await PurchaseAsync(t, cp.Id, "FZ/18f", 1000m);
+        var item = await t.Db.OpenItems.SingleAsync(o => o.DocumentId == doc.Id);
+        var service = new CitService(t.Db, t.User, t.Clock);
+        var manual = await service.AddAdjustmentAsync(t.Year.Id, 4, CitAdjustmentType.KosztNKUP, 1000m, "Korekta", "art. 18f", openItemId: item.Id);
+        await service.SetLimitEurRateAsync(t.Year.StartDate, 4m);
+        var advance = await service.ComputeAdvanceAsync(t.Year.Id, 4);
+        await service.ApproveAdvanceAsync(advance.Id, true);
+        await Assert.ThrowsAsync<DomainException>(() => service.RemoveManualAdjustmentAsync(manual.Id));
+        await Assert.ThrowsAsync<DomainException>(() => service.LinkManualLiabilityAsync(manual.Id, item.Id));
+        await Assert.ThrowsAsync<DomainException>(() => service.AddAdjustmentAsync(t.Year.Id, 4, CitAdjustmentType.KosztNKUP, 1m, "Nowa", null));
+        Assert.Single(await t.Db.CitAdjustments.ToListAsync());
+    }
+
+    [Fact]
+    public async Task Legacy_unlinked_article18f_must_be_linked_before_automatic_qualification()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var doc = await PurchaseAsync(t, cp.Id, "FZ/18f", 1000m);
+        var item = await t.Db.OpenItems.SingleAsync(o => o.DocumentId == doc.Id);
+        var old = new CitAdjustment { CompanyId = t.Company.Id, FiscalYearId = t.Year.Id, PeriodNumber = 4,
+            Type = CitAdjustmentType.KosztNKUP, Amount = 1000m, Description = "Stara korekta", LegalBasis = "art. 18 f" };
+        t.Db.CitAdjustments.Add(old);
+        await t.Db.SaveChangesAsync();
+        var service = new CitService(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => service.QualifyLiabilityAsync(item.Id, true, "Kwalifikacja"));
+        await service.LinkManualLiabilityAsync(old.Id, item.Id);
+        Assert.Empty((await service.ReconcileAsync(t.Year.Id, 4)).LiabilityAdjustments);
+    }
+
+    [Fact]
+    public async Task Capital_cost_nkup_does_not_reduce_operating_costs()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var account = await t.Db.Accounts.SingleAsync(a => a.Number == "751-03");
+        account.CitClassification = CitClassification.KosztZyskiKapitalowe;
+        await t.Db.SaveChangesAsync();
+        await PurchaseAsync(t, cp.Id, "FZ/KAP", 1000m, account: "751-03", nkupPercent: 25m);
+        var rec = await new CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 1);
+        Assert.Equal(750m, rec.CapitalGains.TaxCosts);
+        Assert.Equal(0m, rec.Operating.TaxCosts);
+    }
 
     [Fact]
     public async Task Small_taxpayer_limit_overrides_company_flag_and_ignores_drafts()
@@ -230,6 +310,7 @@ public class ReviewFixesTests
         Assert.Equal(1000m, afterEarlier.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zmniejszenie).AmountOperating);
         var later = await t.Db.CitAdvances.SingleAsync(a => a.PeriodNumber == 5);
         await cit.ApproveAdvanceAsync(later.Id, true);
+        await Assert.ThrowsAsync<DomainException>(() => cit.QualifyLiabilityAsync(item.Id, false, "Zmiana po zatwierdzeniu"));
         await Assert.ThrowsAsync<DomainException>(() => cit.ComputeAdvanceAsync(t.Year.Id, 3));
         Assert.Equal(2, await t.Db.CitLiabilityAdjustments.CountAsync(h => h.OpenItemId == item.Id));
     }

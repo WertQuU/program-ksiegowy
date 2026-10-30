@@ -122,12 +122,12 @@ wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 W sekcji CIT → „Warunki stawki 9%” przycisk **Pobierz kursy z NBP** zapisuje dwa różne kursy:
 
 - **limit 9% w bieżącym roku** — kurs z pierwszego dnia roboczego roku podatkowego; limit to 2 mln euro (przy roku
-  krótszym lub dłuższym niż 12 miesięcy: 1/12 za każdy pełny okres 30 dni, liczony z oboma dniami granicznymi), przeliczony i zaokrąglony do 1000 zł;
+  krótszym lub dłuższym niż 12 miesięcy: 1/12 za każdy pełny miesiąc kalendarzowy oraz każde 30 dni z pozostałych fragmentów okresu), przeliczony i zaokrąglony do 1000 zł;
 - **status małego podatnika** — kurs z pierwszego dnia roboczego października roku poprzedniego (sprzedaż z VAT
   w poprzednim roku ≤ 2 mln euro).
 
 Bez kursu dla limitu program pokazuje wyliczenie wstępne i nie zapisze zaliczki. Niezapłacone faktury kosztowe
-po 90 dniach od terminu (art. 18f) program dolicza sam — tylko część zaliczoną do kosztów podatkowych — i zapisuje
+po 90 dniach od terminu (art. 18f) program dolicza po potwierdzeniu kwalifikacji — tylko część zaliczoną do kosztów podatkowych — i zapisuje
 historię korekt przy zaliczce; po zapłacie zmniejsza podstawę do wysokości wcześniejszego zwiększenia.
 
 ## Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1
@@ -155,6 +155,15 @@ W zakładce „Kwalifikacja art. 18f” wybierz zobowiązanie, określ stosowani
 warunków oraz wyłączeń. Sam NIP nie wystarcza. Automatyczna korekta obejmuje wyłącznie jawnie sklasyfikowane KUP
 lub koszty zysków kapitałowych. Części „DoAnalizy” i „NieDotyczy” wymagają oceny oraz ewentualnej udokumentowanej
 korekty ręcznej; nie są automatycznie doliczane do podstawy.
+
+Ręczną korektę art. 18f dodawaj z zaznaczeniem „powiąż z zaznaczonym zobowiązaniem” oraz właściwym źródłem kosztu.
+Zobowiązanie wybierz wcześniej w zakładce kwalifikacji. Lista „Korekty ręczne” pokazuje powiązania; przyciskiem
+„Powiąż…” przypisz zobowiązanie także starym korektom. Korekta ręczna i automatyczna tego samego zobowiązania
+nie mogą działać równocześnie. Aby przejść na automat, usuń ręczne korekty tego zobowiązania (ich treść zostaje
+w audycie), następnie zakwalifikuj zobowiązanie i przelicz zaliczki. Zatwierdzone rozliczenia blokują usunięcie,
+powiązanie oraz dodanie korekty z mocą wsteczną. Starsza niepowiązana korekta z oznaczeniem art. 18f blokuje
+włączenie automatu do czasu uporządkowania powiązań.
+
 
 Przeliczenie wcześniejszej zaliczki przelicza zapisane późniejsze niezatwierdzone zaliczki w jednej transakcji.
 Zatwierdzona późniejsza zaliczka blokuje operację. Historia art. 18f obejmuje najpóźniejszy zapisany okres,

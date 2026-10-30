@@ -75,8 +75,12 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 
 ## Pobranie i instalacja
 
-Gotowe pakiety (bez potrzeby instalowania .NET) są budowane automatycznie w GitHub Actions i publikowane
-w zakładce **Releases**:
+Trwają prace rozwojowe i przeglądy. Stare wydania zostały wycofane; obecnie nie ma oficjalnego wydania.
+Po zakończeniu analiz planowane jest wydanie **1.0.0**. Aktualny kod znajduje się na gałęzi **main**.
+Pakiety testowe są budowane w GitHub Actions jako artefakty; publikacja w **Releases** wymaga osobnego,
+świadomego uruchomienia workflow z numerem wydania.
+
+Docelowe formaty pakietów (bez potrzeby instalowania .NET):
 
 | System | Pakiet |
 |---|---|

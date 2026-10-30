@@ -12,6 +12,9 @@ public class CitAdjustment : CompanyEntity
     public decimal Amount { get; set; }
     public string Description { get; set; } = "";
     public string? LegalBasis { get; set; }
+    /// <summary>Ręczna korekta art. 18f: zobowiązanie źródłowe. Wyklucza równoległe rozliczenie automatyczne.</summary>
+    public Guid? OpenItemId { get; set; }
+    public bool CapitalGains { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -106,11 +109,25 @@ public static class CitCalculator
     /// <summary>Limit przychodów dla stawki 9% (art. 19 ust. 1 pkt 2) i statusu małego podatnika (art. 4a pkt 10): 2 000 000 euro.</summary>
     public const decimal ReducedRateLimitEur = 2_000_000m;
 
-    /// <summary>Pełne okresy 30 dni roku podatkowego, z uwzględnieniem obu dni granicznych (art. 19).</summary>
+    /// <summary>Pełne miesiące kalendarzowe oraz pełne okresy 30 dni z pozostałych fragmentów roku.</summary>
     public static int FullMonths(DateOnly start, DateOnly end)
     {
         if (end < start) throw new DomainException("Koniec roku poprzedza jego początek.");
-        return (end.DayNumber - start.DayNumber + 1) / 30;
+        var months = 0;
+        var remainingDays = end.DayNumber - start.DayNumber + 1;
+        var month = new DateOnly(start.Year, start.Month, 1);
+        while (month <= end)
+        {
+            var days = DateTime.DaysInMonth(month.Year, month.Month);
+            if (month >= start && month.AddDays(days - 1) <= end)
+            {
+                months++;
+                remainingDays -= days;
+            }
+            if (month.Year == 9999 && month.Month == 12) break;
+            month = month.AddMonths(1);
+        }
+        return months + remainingDays / 30;
     }
 
     /// <summary>

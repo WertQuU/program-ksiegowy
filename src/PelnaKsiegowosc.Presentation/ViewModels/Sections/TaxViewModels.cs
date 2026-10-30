@@ -164,6 +164,11 @@ public sealed partial class CitViewModel : SectionViewModel
         foreach (var item in await db.OpenItems.AsNoTracking().Where(o => o.CompanyId == Session.CompanyId && o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie).OrderBy(o => o.DueDate).ToListAsync())
             liabilities.Add(item.Id, item.Reference, item.DueDate, item.AmountPln);
         Liabilities = liabilities;
+        var manual = new TableData(new TableColumn("Okres", ColumnKind.Integer), new TableColumn("Opis", Width: 2), new TableColumn("Kwota", ColumnKind.Money), new TableColumn("Zobowiązanie"));
+        foreach (var adjustment in await db.CitAdjustments.AsNoTracking().Where(a => a.FiscalYearId == year.Id).OrderBy(a => a.PeriodNumber).ToListAsync())
+            manual.Add(adjustment.Id, adjustment.PeriodNumber, adjustment.Description, adjustment.Amount,
+                adjustment.OpenItemId is { } itemId ? await db.OpenItems.Where(o => o.Id == itemId).Select(o => o.Reference).FirstAsync() : "Niepowiązana");
+        ManualAdjustments = manual;
         var pl = System.Globalization.CultureInfo.GetCultureInfo("pl-PL");
         EurRate = (await svc.LimitEurRateAsync(year.StartDate))?.ToString("0.0000", pl) ?? "";
         StatusEurRate = (await svc.StatusEurRateAsync(year.StartDate.Year - 1))?.ToString("0.0000", pl) ?? "";
@@ -207,6 +212,29 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).SetPreviousSalesAsync(Session.CurrentYear.Id, Parse.Amount(value, "Sprzedaż z VAT"));
     }, "Zapisano potwierdzoną sprzedaż poprzedniego roku.");
+
+    [ObservableProperty] private bool _linkAdjustmentToLiability;
+    [ObservableProperty] private bool _adjustmentCapitalGains;
+    [ObservableProperty] private TableData _manualAdjustments = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedManualAdjustment;
+
+    [RelayCommand]
+    private Task LinkManualLiabilityAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedManualAdjustment?.Tag is not Guid adjustment || SelectedLiability?.Tag is not Guid item)
+            throw new DomainException("Wybierz korektę ręczną i zobowiązanie w zakładce art. 18f.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).LinkManualLiabilityAsync(adjustment, item);
+    }, "Powiązano korektę ze zobowiązaniem.");
+
+    [RelayCommand]
+    private Task RemoveManualAdjustmentAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedManualAdjustment?.Tag is not Guid id) throw new DomainException("Zaznacz korektę ręczną.");
+        if (!await Dialogs.ConfirmAsync("Usunięcie korekty", "Usunąć ręczną korektę? Jej treść zostanie zachowana w audycie. Następnie przelicz zaliczki; możesz zakwalifikować zobowiązanie do automatycznej korekty.")) return;
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).RemoveManualAdjustmentAsync(id);
+    }, "Usunięto korektę; przelicz zaliczki.");
 
     [ObservableProperty] private TableData _liabilities = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedLiability;
@@ -278,8 +306,11 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task AddAdjustmentAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
+        if (LinkAdjustmentToLiability && SelectedLiability?.Tag is not Guid)
+            throw new DomainException("Zaznacz zobowiązanie w zakładce art. 18f.");
         await new CitService(db, Session.User, Session.Clock).AddAdjustmentAsync(Session.CurrentYear.Id, Parse.Int(AdjustmentPeriod, "Okres korekty"), AdjustmentType.Value,
-            Parse.Amount(AdjustmentAmount, "Kwota"), AdjustmentDescription, Parse.Trim(AdjustmentBasis));
+            Parse.Amount(AdjustmentAmount, "Kwota"), AdjustmentDescription, Parse.Trim(AdjustmentBasis),
+            openItemId: LinkAdjustmentToLiability ? (Guid?)SelectedLiability!.Tag : null, capitalGains: AdjustmentCapitalGains);
         AdjustmentAmount = AdjustmentDescription = AdjustmentBasis = "";
     }, "Dodano korektę wyniku podatkowego.");
 

@@ -234,7 +234,11 @@ public class KsiegiDbContext : DbContext
             e.HasIndex(x => x.DocumentId);
         });
         m.Entity<CitAdvance>(e => { e.HasIndex(x => new { x.FiscalYearId, x.PeriodNumber }).IsUnique(); e.Property(x => x.RatePercent).HasPrecision(7, 4); e.Property(x => x.WarningsText).HasMaxLength(int.MaxValue); });
-        m.Entity<CitAdjustment>(e => e.HasIndex(x => x.FiscalYearId));
+        m.Entity<CitAdjustment>(e =>
+        {
+            e.HasIndex(x => x.FiscalYearId);
+            e.HasOne<OpenItem>().WithMany().HasForeignKey(x => x.OpenItemId).OnDelete(DeleteBehavior.Restrict);
+        });
         m.Entity<CitLiabilityAdjustment>(e => { e.HasIndex(x => x.FiscalYearId); e.HasIndex(x => x.OpenItemId); });
 
         m.Entity<ReceivableAllowance>(e => e.HasIndex(x => new { x.CompanyId, x.OpenItemId }));
