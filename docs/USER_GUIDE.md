@@ -110,7 +110,9 @@ wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 3. **Sprawozdanie** (Raporty): bilans, RZiS (porównawczy lub kalkulacyjny — klucz podziału kosztów ustawisz
    w raporcie kalkulacyjnym), zestawienie zmian w kapitale, rachunek przepływów, informacja dodatkowa (opisy wpisz
    w „Tekstach informacji dodatkowej”). „Sprawozdanie finansowe XML” tworzy plik e-Sprawozdania z dołączoną
-   informacją dodatkową; podpisuje się go w aplikacji MF.
+   informacją dodatkową; podpisuje się go w aplikacji MF. Strukturę dobiera polityka rachunkowości: pełna SFJINZ
+   (zał. nr 1), jednostka mała SFJMAZ (zał. nr 5) albo mikro SFJMIZ (zał. nr 4); pole „Kwoty w tysiącach zł” tworzy
+   odpowiednio SFJINT / SFJMAT / SFJMIT.
 4. Schematy XSD do walidacji: Ustawienia → Schematy XSD → „Pobierz z serwera MF” lub „Wczytaj z pliku…”.
 5. CIT-8, JPK_CIT, uchwały i złożenie w KRS — sekcja Deklaracje (terminy na Pulpicie).
 
