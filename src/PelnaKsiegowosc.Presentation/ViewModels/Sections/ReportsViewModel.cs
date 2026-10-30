@@ -240,10 +240,24 @@ public sealed partial class ReportsViewModel : SectionViewModel
             IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null,
             Scope: scope, InThousands: InThousands);
         var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
-        var target = await Dialogs.SaveFileAsync("Sprawozdanie finansowe (XML)", $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
+
+        // kompletność: plik „gotowy do podpisu” tylko bez braków; w przeciwnym razie wyłącznie wersja robocza
+        var missing = FinancialStatementCompleteness.Check(bs, r, notesTexts.Values, notesTexts["kontynuacja"], notesTexts["zasady"],
+            y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany, AuditRequired);
+        var draft = missing.Count > 0;
+        if (draft && !await Dialogs.ConfirmAsync("Sprawozdanie niekompletne",
+                "Sprawozdania nie można oznaczyć jako gotowego do podpisu i złożenia:" + Environment.NewLine + string.Join(Environment.NewLine, missing.Select(m => "• " + m)) +
+                Environment.NewLine + Environment.NewLine + "Zapisać WERSJĘ ROBOCZĄ (tylko do przeglądu, nie do podpisu ani KRS)?"))
+            return;
+        var target = await Dialogs.SaveFileAsync(draft ? "Sprawozdanie finansowe — WERSJA ROBOCZA (XML)" : "Sprawozdanie finansowe (XML)",
+            draft ? $"ROBOCZA-NIE-DO-PODPISU-sprawozdanie-finansowe-{y.Name}.xml" : $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
+        if (draft && !Path.GetFileName(target).StartsWith("ROBOCZA", StringComparison.OrdinalIgnoreCase))
+            target = Path.Combine(Path.GetDirectoryName(target) ?? "", "ROBOCZA-NIE-DO-PODPISU-" + Path.GetFileName(target));
         r.Document.Save(target);
-        await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
+        await Session.AuditAsync(draft ? "SPRAWOZDANIE_WERSJA_ROBOCZA" : "SPRAWOZDANIE_GOTOWE", "FinancialStatement", y.Id.ToString(),
+            draft ? $"{y.Name}: braki — {string.Join("; ", missing)}" : $"{y.Name}: kompletne, {r.Status}");
+        await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {(draft ? "WERSJA ROBOCZA — NIE DO PODPISU" : "kompletne — " + r.Status)}{Environment.NewLine}{Environment.NewLine}" +
             (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane / do wykonania poza programem:" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
             string.Join(Environment.NewLine, r.Validation.Errors.Take(30)) +
             $"{Environment.NewLine}Struktura: {scope switch { StatementScope.Mikro => "SFJMI", StatementScope.Mala => "SFJMA", _ => "SFJIN" }}{(InThousands ? "T" : "Z")}(2) — {scope switch { StatementScope.Mikro => "jednostka mikro, zał. nr 4 UoR", StatementScope.Mala => "jednostka mała, zał. nr 5 UoR", _ => "zał. nr 1 UoR" }}, kwoty {(InThousands ? "w tysiącach złotych" : "w złotych")} (MF, sprawozdania sporządzane od 1.01.2026; uproszczenia wybiera się w polityce rachunkowości). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");

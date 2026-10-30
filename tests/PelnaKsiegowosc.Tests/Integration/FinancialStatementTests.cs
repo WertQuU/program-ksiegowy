@@ -130,6 +130,13 @@ public class FinancialStatementTests
         Assert.Equal("4277.00", root.Descendants(jin + "RZiSPor").Single().Element(jin + "L")!.Element(dtsf + "KwotaA")!.Value);
         Assert.Equal(pdf, Convert.FromBase64String(root.Descendants(dtsf + "Zawartosc").Single().Value));
         Assert.DoesNotContain(x.NotImplemented, n => n.StartsWith("Dodatkowe informacje"));
+        // kompletność: z uzupełnionymi tekstami i zamkniętym rokiem — gotowe; brak informacji dodatkowej / pola „do uzupełnienia” / rok otwarty — wersja robocza
+        Assert.Empty(FinancialStatementCompleteness.Check(bsCur, x, texts.Values, texts["kontynuacja"], texts["zasady"], yearClosed: true));
+        var noNotes = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, extras with { NotesPdf = null });
+        var gaps = FinancialStatementCompleteness.Check(bsCur, noNotes, texts.Values.Append("[DO UZUPEŁNIENIA — test]"), texts["kontynuacja"], texts["zasady"], yearClosed: false);
+        Assert.Contains(gaps, g => g.Contains("Dodatkowe informacje"));
+        Assert.Contains(gaps, g => g.Contains("DO UZUPEŁNIENIA"));
+        Assert.Contains(gaps, g => g.Contains("nie jest zamknięty"));
         // wariant kalkulacyjny
         var xk = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator,
             extras with { CalculationVariant = await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default) });
