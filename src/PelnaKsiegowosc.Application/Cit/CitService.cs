@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Audit;
 using PelnaKsiegowosc.Application.Ledger;
+using PelnaKsiegowosc.Application.Setup;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Accounts;
 using PelnaKsiegowosc.Domain.Ledger;
@@ -25,7 +26,13 @@ public sealed class CitReconciliation
     public decimal TaxRevenue { get; set; }
     public decimal TaxCosts { get; set; }
     public decimal Deductions { get; set; }
+    /// <summary>Łącznie: dochód z innych źródeł + dochód z zysków kapitałowych (podatek = suma podatków obu źródeł).</summary>
     public CitComputation Computation { get; set; } = null!;
+    /// <summary>Źródło „inne niż zyski kapitałowe” (stawka 9% lub 19%).</summary>
+    public CitComputation Operating { get; set; } = null!;
+    /// <summary>Zyski kapitałowe (art. 7b) — odrębne źródło, zawsze 19%; strata z jednego źródła nie pomniejsza dochodu z drugiego.</summary>
+    public CitComputation CapitalGains { get; set; } = null!;
+    public ReducedRateDecision Rate { get; set; } = null!;
     public List<string> Warnings { get; } = new();
     public List<(string Account, string Name, decimal Amount)> ToAnalyze { get; } = new();
 }
@@ -37,6 +44,9 @@ public sealed class CitReconciliation
 /// </summary>
 public sealed class CitService
 {
+    public const string ExclusionKey = "cit.wylaczenie9";
+    public static string EurRateKey(int year) => $"cit.kursEur.{year}";
+
     private readonly KsiegiDbContext _db;
     private readonly ICurrentUser _user;
     private readonly IClock _clock;
@@ -73,6 +83,27 @@ public sealed class CitService
         return a;
     }
 
+    /// <summary>Średni kurs EUR NBP z pierwszego dnia roboczego października roku poprzedzającego rok podatkowy (limit 9%).</summary>
+    public Task<decimal?> EurRateAsync(int taxYearStartYear, CancellationToken ct = default) =>
+        new SettingsService(_db, _clock).GetAsync<decimal?>(_user.CompanyId, EurRateKey(taxYearStartYear), () => null, ct);
+
+    public async Task SetEurRateAsync(int taxYearStartYear, decimal rate, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (rate is <= 0 or > 20) throw new DomainException("Podaj kurs euro z tabeli A NBP (np. 4,2617).");
+        await new SettingsService(_db, _clock).SetAsync<decimal?>(_user.CompanyId, EurRateKey(taxYearStartYear), Math.Round(rate, 4), ct);
+    }
+
+    /// <summary>Wyłączenie stawki 9% (art. 19 ust. 1b–1c): podmiot powstały z restrukturyzacji itp.</summary>
+    public Task<bool> ReducedRateExcludedAsync(CancellationToken ct = default) =>
+        new SettingsService(_db, _clock).GetAsync(_user.CompanyId, ExclusionKey, () => false, ct);
+
+    public async Task SetReducedRateExcludedAsync(bool excluded, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, ExclusionKey, excluded, ct);
+    }
+
     public async Task<CitReconciliation> ReconcileAsync(Guid fiscalYearId, int uptoPeriod, CancellationToken ct = default)
     {
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
@@ -90,7 +121,7 @@ public sealed class CitService
         var taxDep = inRange.Sum(c => c.TaxAmount - c.TaxNonDeductibleAmount);
         var depAccounts = (await _db.FixedAssets.AsNoTracking().Where(a => a.CompanyId == fy.CompanyId).Select(a => a.ExpenseAccountNumber).Distinct().ToListAsync(ct)).ToHashSet();
 
-        decimal taxRev = 0, taxCost = 0;
+        decimal taxRev = 0, taxCost = 0, capRev = 0, capCost = 0;
         foreach (var t in tb.Where(t => t.IsLeaf && t.Account.IsResultAccount))
         {
             var a = t.Account;
@@ -101,6 +132,8 @@ public sealed class CitService
             switch (a.CitClassification)
             {
                 case CitClassification.PrzychodPodatkowy: taxRev += value; break;
+                case CitClassification.PrzychodZyskiKapitalowe: capRev += value; break;
+                case CitClassification.KosztZyskiKapitalowe: capCost += value; break;
                 case CitClassification.PrzychodNiepodatkowy:
                     r.Adjustments.Add(new($"Przychody niepodatkowe — {a.Number} {a.Name}", -value, "klasyfikacja konta")); break;
                 case CitClassification.KosztPodatkowy: taxCost += value; break;
@@ -145,6 +178,8 @@ public sealed class CitService
         }
         r.BookResultBeforeTax = r.BookRevenue - (r.BookCosts - tb.Where(t => t.IsLeaf && t.Account.Number is "870" or "872").Sum(t => t.CumulativeDebit - t.CumulativeCredit));
 
+        await UnpaidLiabilitiesAsync(fy, period.EndDate, r, ct, v => taxCost -= v);
+
         var adjustments = await _db.CitAdjustments.AsNoTracking().Where(a => a.FiscalYearId == fy.Id && a.PeriodNumber <= uptoPeriod).ToListAsync(ct);
         foreach (var a in adjustments)
         {
@@ -158,15 +193,78 @@ public sealed class CitService
             }
             r.Adjustments.Add(new($"Korekta: {a.Description}", a.Type is CitAdjustmentType.ZmniejszeniePrzychodow or CitAdjustmentType.DodatkowyKUP or CitAdjustmentType.OdliczenieOdDochodu ? -a.Amount : a.Amount, a.LegalBasis ?? "korekta ręczna"));
         }
-        r.TaxRevenue = taxRev;
-        r.TaxCosts = taxCost;
-        var rate = CitCalculator.RateFor(company.IsSmallCitTaxpayer || fy.IsFirstYear);
-        r.Computation = CitCalculator.Compute(taxRev, taxCost, r.Deductions, rate);
+        r.TaxRevenue = taxRev + capRev;
+        r.TaxCosts = taxCost + capCost;
+        var settings = new SettingsService(_db, _clock);
+        var eurRate = await settings.GetAsync<decimal?>(fy.CompanyId, EurRateKey(fy.StartDate.Year), () => null, ct);
+        var excluded = await settings.GetAsync(fy.CompanyId, ExclusionKey, () => false, ct);
+        // limit dotyczy wszystkich przychodów osiągniętych w roku podatkowym (obu źródeł)
+        r.Rate = CitCalculator.DecideRate(company.IsSmallCitTaxpayer || fy.IsFirstYear, excluded, eurRate, fy.Periods.Count, taxRev + capRev);
+        r.Operating = CitCalculator.Compute(taxRev, taxCost, r.Deductions, r.Rate.RatePercent);
+        r.CapitalGains = CitCalculator.Compute(capRev, capCost, 0m, CitCalculator.StandardRate);
+        r.Computation = new CitComputation(r.Operating.TaxRevenue + r.CapitalGains.TaxRevenue, r.Operating.TaxCosts + r.CapitalGains.TaxCosts,
+            r.Operating.Income + r.CapitalGains.Income, r.Operating.Loss + r.CapitalGains.Loss, r.Deductions,
+            r.Operating.TaxBase + r.CapitalGains.TaxBase, r.Rate.RatePercent, r.Operating.Tax + r.CapitalGains.Tax);
         if (r.ToAnalyze.Count > 0) r.Warnings.Add($"{r.ToAnalyze.Count} kont(a) wymaga analizy podatkowej (np. odsetki, różnice kursowe, wynagrodzenia — art. 15 ust. 4g/4h, art. 16 ust. 1 pkt 57 ustawy o CIT). Przyjęto wartości bilansowe.");
-        if (rate == CitCalculator.ReducedRate)
-            r.Warnings.Add("Zastosowano stawkę 9% (mały podatnik / pierwszy rok) — zweryfikuj spełnienie warunków art. 19 ust. 1 pkt 2 ustawy o CIT (m.in. limit przychodów, wyłączenie zysków kapitałowych).");
-        r.Warnings.Add("Wyliczenie nie uwzględnia automatycznie: zysków kapitałowych (odrębne źródło), limitów kosztów finansowania dłużnego, strat z lat ubiegłych (wprowadź jako korektę), ulg — wymagana weryfikacja przez doradcę podatkowego.");
+        r.Warnings.Add("Stawka: " + r.Rate.Reason);
+        if (r.Rate.FallbackRateUsed && r.Rate.RatePercent == CitCalculator.ReducedRate)
+            r.Warnings.Add($"Nie wprowadzono kursu EUR NBP z 1. dnia roboczego października {fy.StartDate.Year - 1} r. — limit 9% wyliczono ostrożnie po kursie {CitCalculator.FallbackEurRate:0.00} zł. Wprowadź kurs w module CIT.");
+        if (r.Rate.RatePercent == CitCalculator.ReducedRate && !fy.IsFirstYear)
+            r.Warnings.Add("Status małego podatnika: przychody ze sprzedaży (z VAT) w poprzednim roku podatkowym nie mogły przekroczyć 2 mln euro (art. 4a pkt 10 ustawy o CIT) — potwierdź w danych spółki.");
+        if (capRev != 0 || capCost != 0)
+            r.Warnings.Add($"Zyski kapitałowe rozliczono odrębnie po 19%: dochód {Money.Format(r.CapitalGains.Income)}, strata {Money.Format(r.CapitalGains.Loss)} (straty nie kompensuje się między źródłami; odliczenia przypisano do innych źródeł).");
+        r.Warnings.Add("Wyliczenie nie uwzględnia automatycznie: limitów kosztów finansowania dłużnego, strat z lat ubiegłych (wprowadź jako korektę), ulg — wymagana weryfikacja przez doradcę podatkowego.");
         return r;
+    }
+
+    /// <summary>
+    /// Art. 18f ustawy o CIT: niezapłacone w terminie 90 dni od upływu terminu płatności zobowiązania z faktur zakupu
+    /// zaliczonych do kosztów zwiększają podstawę opodatkowania w okresie, w którym upłynął 90. dzień (także przy zaliczkach),
+    /// a zapłata zobowiązania już doliczonego w poprzednim roku ją zmniejsza. Kwota netto (VAT odliczony nie był kosztem).
+    /// Zwiększenie realizowane jest jako zmniejszenie KUP (callback), a pozycja trafia do uzgodnienia.
+    /// </summary>
+    private async Task UnpaidLiabilitiesAsync(Domain.Periods.FiscalYear fy, DateOnly asOf, CitReconciliation r, CancellationToken ct, Action<decimal> reduceCosts)
+    {
+        var items = await (from o in _db.OpenItems.AsNoTracking()
+                           join d in _db.Documents.AsNoTracking() on o.DocumentId equals d.Id
+                           where o.CompanyId == fy.CompanyId && o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie && o.DueDate != null
+                                 && (d.Kind == Domain.Documents.DocumentKind.FakturaZakupu || d.Kind == Domain.Documents.DocumentKind.Rachunek)
+                           select new { o.Id, o.Reference, o.AmountPln, DueDate = o.DueDate!.Value, d.NetAmountPln, d.GrossAmountPln }).ToListAsync(ct);
+        if (items.Count == 0) return;
+        var ids = items.Select(i => i.Id).ToList();
+        var allocations = await _db.SettlementAllocations.AsNoTracking().Where(a => ids.Contains(a.OpenItemId) && !a.IsReversed && a.Date <= asOf)
+            .Select(a => new { a.OpenItemId, a.Date, a.AmountPln }).ToListAsync(ct);
+        decimal increase = 0, decrease = 0;
+        foreach (var i in items)
+        {
+            var day90 = i.DueDate.AddDays(90);
+            if (day90 > asOf || i.GrossAmountPln == 0) continue;
+            var ratio = i.NetAmountPln / i.GrossAmountPln;
+            var paidTotal = allocations.Where(a => a.OpenItemId == i.Id).Sum(a => a.AmountPln);
+            if (day90 >= fy.StartDate)
+            {
+                var paidBy90 = allocations.Where(a => a.OpenItemId == i.Id && a.Date <= day90).Sum(a => a.AmountPln);
+                var unpaid = i.AmountPln - paidTotal;
+                // zapłata po 90. dniu w tym samym roku — doliczenie i zmniejszenie znoszą się (pozostaje część niezapłacona)
+                if (i.AmountPln - paidBy90 > 0 && unpaid > 0) increase += Money.Round(unpaid * ratio);
+            }
+            else
+            {
+                var paidThisYear = allocations.Where(a => a.OpenItemId == i.Id && a.Date >= fy.StartDate).Sum(a => a.AmountPln);
+                var unpaidAtStart = i.AmountPln - (paidTotal - paidThisYear);
+                if (unpaidAtStart > 0 && paidThisYear > 0) decrease += Money.Round(Math.Min(paidThisYear, unpaidAtStart) * ratio);
+            }
+        }
+        if (increase != 0)
+        {
+            reduceCosts(increase);
+            r.Adjustments.Add(new("Niezapłacone zobowiązania — 90 dni po terminie płatności (zwiększenie dochodu)", increase, "art. 18f ust. 1 pkt 1 ustawy o CIT"));
+        }
+        if (decrease != 0)
+        {
+            reduceCosts(-decrease);
+            r.Adjustments.Add(new("Zapłata zobowiązań doliczonych do dochodu w latach poprzednich (zmniejszenie)", -decrease, "art. 18f ustawy o CIT"));
+        }
     }
 
     /// <summary>Jednostki transparentne podatkowo (spółka jawna, partnerska, cywilna, osoba fizyczna) nie są podatnikami CIT.</summary>

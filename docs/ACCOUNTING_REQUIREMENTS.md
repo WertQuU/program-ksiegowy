@@ -1,7 +1,7 @@
 # Wymagania księgowe i ich realizacja
 
 Dokument opisuje, jak program realizuje wymagania prowadzenia ksiąg rachunkowych. Program **wspiera** spełnienie
-wymagań — za prowadzenie ksiąg odpowiada kierownik jednostki (art. 4a UoR), a za rozliczenia — podatnik.
+wymagań — za prowadzenie ksiąg odpowiada kierownik jednostki (art. 4 ust. 5 UoR), a za rozliczenia — podatnik.
 Odwołania do przepisów mają charakter informacyjny i wymagają weryfikacji z aktualnym brzmieniem
 ([COMPLIANCE_MATRIX.md](COMPLIANCE_MATRIX.md)). Skróty: UoR — ustawa z 29.09.1994 o rachunkowości;
 VAT — ustawa z 11.03.2004 o podatku od towarów i usług; CIT — ustawa z 15.02.1992 o podatku dochodowym od osób prawnych.

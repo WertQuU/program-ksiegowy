@@ -7,6 +7,7 @@ using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Capital;
 using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Counterparties;
 using PelnaKsiegowosc.Domain.Ledger;
 using PelnaKsiegowosc.Domain.Security;
@@ -102,7 +103,13 @@ public sealed class CapitalService
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<JournalEntry> PostEventAsync(Guid eventId, CancellationToken ct = default)
+    /// <summary>
+    /// Księgowanie zdarzenia. W prostej spółce akcyjnej kapitał akcyjny tworzą wyłącznie wniesione wkłady (art. 300^3 § 1 KSH)
+    /// — objęcie akcji za wkład pieniężny nie zwiększa kapitału: zdarzenie trafia do ewidencji wkładów do wniesienia (bez zapisu
+    /// w księgach, wynik null), a kapitał akcyjny (i ewentualnie zapasowy) uznaje się dopiero przy wpłacie wkładu.
+    /// W spółce akcyjnej kapitał zakładowy wykazuje się w wysokości ze statutu, a niewniesione wkłady jako należne wpłaty (art. 36 ust. 2 UoR).
+    /// </summary>
+    public async Task<JournalEntry?> PostEventAsync(Guid eventId, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
         var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId && e.CompanyId == _user.CompanyId, ct);
@@ -112,6 +119,18 @@ public sealed class CapitalService
         var sh = ev.ShareholderId is { } sid ? await _db.Shareholders.FirstAsync(s => s.Id == sid, ct) : null;
         var cp = sh?.CounterpartyId;
         var lines = new List<LineInput>();
+        var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.LegalForm).FirstAsync(ct);
+        var psa = form == LegalForm.ProstaSpolkaAkcyjna;
+
+        if (psa && ev.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny)
+        {
+            if (ev.ShareholderId is null) throw new DomainException("Objęcie akcji wymaga wskazania akcjonariusza.");
+            ev.Status = CapitalEventStatus.Zaksiegowany;
+            await _audit.AddAsync(_user, "AKCJE_OBJETE_WKLAD_DO_WNIESIENIA", "CapitalEvent", ev.Id.ToString(),
+                $"P.S.A.: wkład do wniesienia {Money.Xml(ev.TotalAmount)} — kapitał akcyjny zostanie uznany przy wpłacie (art. 300^3 KSH)", ct);
+            await _db.SaveChangesAsync(ct);
+            return null;
+        }
 
         async Task<Guid?> OldestOpenItemAsync(string account, OpenItemSide side)
         {
@@ -134,6 +153,20 @@ public sealed class CapitalService
                 lines.Add(new(p.ShareCapital, 0, ev.ShareCapitalAmount));
                 if (ev.SupplementaryCapitalAmount > 0) lines.Add(new(p.SupplementaryCapital, 0, ev.SupplementaryCapitalAmount));
                 break;
+            case CapitalEventType.WplataWkladu when psa:
+            {
+                if (ev.ShareholderId is not { } shId) throw new DomainException("Wpłata wkładu wymaga wskazania akcjonariusza.");
+                var (unpaid, capitalShare) = await UnpaidContributionAsync(shId, ev.Id, ct);
+                if (ev.TotalAmount > unpaid)
+                    throw new DomainException($"Wpłata ({Money.Format(ev.TotalAmount)}) przekracza wkłady objęte i niewniesione przez akcjonariusza ({Money.Format(unpaid)}).");
+                var toCapital = ev.ShareCapitalAmount + ev.SupplementaryCapitalAmount == ev.TotalAmount && ev.TotalAmount > 0
+                    ? ev.ShareCapitalAmount
+                    : Money.Round(ev.TotalAmount * capitalShare);
+                lines.Add(new(ev.DebitAccountNumber ?? p.Bank, ev.TotalAmount, 0, Description: "Wpłata wkładu na akcje"));
+                lines.Add(new(p.ShareCapital, 0, toCapital, Description: "Kapitał akcyjny — wkład wniesiony"));
+                if (ev.TotalAmount - toCapital > 0) lines.Add(new(p.SupplementaryCapital, 0, ev.TotalAmount - toCapital, Description: "Nadwyżka wkładu — kapitał zapasowy"));
+                break;
+            }
             case CapitalEventType.WplataWkladu:
                 lines.Add(new(ev.DebitAccountNumber ?? p.Bank, ev.TotalAmount, 0, Description: "Wpłata wkładu"));
                 lines.Add(new(p.ShareContributionsDue, 0, ev.TotalAmount, cp, "Wpłata wkładu", await OldestOpenItemAsync(p.ShareContributionsDue, OpenItemSide.Naleznosc)));
@@ -193,6 +226,34 @@ public sealed class CapitalService
         await _audit.AddAsync(_user, "ZDARZENIE_KAPITALOWE_ZAKSIEGOWANE", "CapitalEvent", ev.Id.ToString(), entry.JournalNumber, ct);
         await _db.SaveChangesAsync(ct);
         return entry;
+    }
+
+    /// <summary>
+    /// P.S.A.: wkłady pieniężne objęte, a jeszcze niewniesione przez akcjonariusza (poza bilansem — nie są kapitałem akcyjnym)
+    /// oraz udział części przeznaczonej na kapitał akcyjny w objętych wkładach (do podziału wpłaty).
+    /// </summary>
+    public async Task<(decimal Unpaid, decimal CapitalShare)> UnpaidContributionAsync(Guid shareholderId, Guid? excludingEventId = null, CancellationToken ct = default)
+    {
+        var events = await _db.CapitalEvents.AsNoTracking()
+            .Where(e => e.CompanyId == _user.CompanyId && e.ShareholderId == shareholderId && e.Status == CapitalEventStatus.Zaksiegowany && e.Id != excludingEventId
+                        && (e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny || e.Type == CapitalEventType.WplataWkladu)).ToListAsync(ct);
+        var subscribed = events.Where(e => e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny).ToList();
+        var total = subscribed.Sum(e => e.TotalAmount);
+        var paid = events.Where(e => e.Type == CapitalEventType.WplataWkladu).Sum(e => e.TotalAmount);
+        var share = total == 0 ? 1m : subscribed.Sum(e => e.ShareCapitalAmount) / total;
+        return (total - paid, share);
+    }
+
+    /// <summary>P.S.A.: zestawienie wkładów objętych i niewniesionych wg akcjonariuszy (ewidencja pozabilansowa).</summary>
+    public async Task<List<(string Shareholder, decimal Unpaid)>> UnpaidContributionsAsync(CancellationToken ct = default)
+    {
+        var result = new List<(string, decimal)>();
+        foreach (var sh in await _db.Shareholders.AsNoTracking().Where(s => s.CompanyId == _user.CompanyId).OrderBy(s => s.Name).ToListAsync(ct))
+        {
+            var (unpaid, _) = await UnpaidContributionAsync(sh.Id, null, ct);
+            if (unpaid != 0) result.Add((sh.Name, unpaid));
+        }
+        return result;
     }
 
     /// <summary>Zestawienie kapitałów (salda kont kapitałowych) — informacyjne, z ledger.</summary>

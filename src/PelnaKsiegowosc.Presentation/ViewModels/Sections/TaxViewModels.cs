@@ -103,6 +103,8 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private string _applicability = "";
     [ObservableProperty] private bool _isApplicable = true;
     [ObservableProperty] private string _uptoPeriod = "";
+    [ObservableProperty] private string _eurRate = "";
+    [ObservableProperty] private bool _reducedRateExcluded;
     [ObservableProperty] private TableData _reconciliation = TableData.Empty;
     [ObservableProperty] private TableData _advances = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedAdvance;
@@ -155,6 +157,9 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var svc = new CitService(db, Session.User, Session.Clock);
         var rec = await svc.ReconcileAsync(year.Id, Parse.Int(UptoPeriod, "Okres"));
+        var eur = await svc.EurRateAsync(year.StartDate.Year);
+        EurRate = eur?.ToString("0.0000", System.Globalization.CultureInfo.GetCultureInfo("pl-PL")) ?? "";
+        ReducedRateExcluded = await svc.ReducedRateExcludedAsync();
         var t = new TableData(new TableColumn("Pozycja", Width: 3), new TableColumn("Kwota", ColumnKind.Money), new TableColumn("Podstawa / uwagi", Width: 2));
         t.Add(null, $"Przychody bilansowe ({rec.From.ToPl()}–{rec.To.ToPl()})", rec.BookRevenue, "");
         t.Add(null, "Koszty bilansowe", rec.BookCosts, "");
@@ -166,7 +171,12 @@ public sealed partial class CitViewModel : SectionViewModel
         t.Add(null, "Strata", rec.Computation.Loss, "");
         t.Add(null, "Odliczenia od dochodu", rec.Deductions, "");
         t.Add(null, "Podstawa opodatkowania", rec.Computation.TaxBase, "zaokrąglona do pełnych złotych");
-        t.Add(null, $"Podatek ({rec.Computation.RatePercent:0.##}%)", rec.Computation.Tax, "");
+        if (rec.CapitalGains.TaxRevenue != 0 || rec.CapitalGains.TaxCosts != 0)
+        {
+            t.Add(null, "  w tym inne źródła — dochód", rec.Operating.Income, $"podatek {rec.Operating.RatePercent:0}%: {Money.Format(rec.Operating.Tax)}");
+            t.Add(null, "  w tym zyski kapitałowe — dochód", rec.CapitalGains.Income, $"art. 7b, podatek 19%: {Money.Format(rec.CapitalGains.Tax)}");
+        }
+        t.Add(null, $"Podatek ({rec.Computation.RatePercent:0.##}%{(rec.CapitalGains.Tax != 0 ? " + zyski kapitałowe 19%" : "")})", rec.Computation.Tax, rec.Rate.Reason);
         foreach (var (acc, name, amount) in rec.ToAnalyze) t.Add(null, $"DO ANALIZY: {acc} {name}", amount, "wymaga oceny podatkowej");
         Reconciliation = t;
         Warnings = string.Join(Environment.NewLine, rec.Warnings);
@@ -180,6 +190,15 @@ public sealed partial class CitViewModel : SectionViewModel
     }
 
     [RelayCommand] private Task RecalculateAsync() => LoadAsync();
+
+    [RelayCommand]
+    private Task SaveRateConditionsAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        var svc = new CitService(db, Session.User, Session.Clock);
+        if (!string.IsNullOrWhiteSpace(EurRate)) await svc.SetEurRateAsync(Session.CurrentYear.StartDate.Year, Parse.Amount(EurRate, "Kurs EUR"));
+        await svc.SetReducedRateExcludedAsync(ReducedRateExcluded);
+    }, "Zapisano warunki stawki 9%.");
 
     [RelayCommand]
     private Task AddAdjustmentAsync() => ChangeAsync(async () =>

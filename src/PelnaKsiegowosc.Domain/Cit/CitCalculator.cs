@@ -52,6 +52,8 @@ public class CitAdvance : CompanyEntity
     public string? WarningsText { get; set; }
 }
 
+public sealed record ReducedRateDecision(decimal RatePercent, decimal LimitPln, string Reason, bool FallbackRateUsed);
+
 public sealed record CitComputation(
     decimal TaxRevenue,
     decimal TaxCosts,
@@ -74,6 +76,42 @@ public static class CitCalculator
     public const decimal ReducedRate = 9m;
 
     public static decimal RateFor(bool smallTaxpayerOrFirstYear) => smallTaxpayerOrFirstYear ? ReducedRate : StandardRate;
+
+    /// <summary>Limit przychodów dla stawki 9% (art. 19 ust. 1 pkt 2): równowartość 2 000 000 euro.</summary>
+    public const decimal ReducedRateLimitEur = 2_000_000m;
+    /// <summary>Ostrożny kurs zastępczy, gdy nie wprowadzono kursu NBP — zaniża limit w złotych (nigdy go nie zawyża).</summary>
+    public const decimal FallbackEurRate = 4.00m;
+
+    /// <summary>
+    /// Limit w złotych: 2 mln euro po średnim kursie NBP z pierwszego dnia roboczego października roku poprzedzającego
+    /// rok podatkowy, w zaokrągleniu do 1000 zł (art. 19 ust. 1a ustawy o CIT). Dla roku podatkowego krótszego niż
+    /// 12 miesięcy limit jest ostrożnie zmniejszany proporcjonalnie do liczby miesięcy; dla roku dłuższego nie jest zwiększany.
+    /// </summary>
+    public static decimal ReducedRateLimitPln(decimal eurRate, int taxYearMonths)
+    {
+        if (eurRate <= 0) throw new DomainException("Kurs euro musi być dodatni.");
+        var full = Math.Round(ReducedRateLimitEur * eurRate / 1000m, 0, MidpointRounding.AwayFromZero) * 1000m;
+        return taxYearMonths is > 0 and < 12 ? Math.Round(full * taxYearMonths / 12m, 0, MidpointRounding.AwayFromZero) : full;
+    }
+
+    /// <summary>
+    /// Stawka dla dochodu z innych źródeł niż zyski kapitałowe (art. 19 ust. 1 pkt 1–2): 9% tylko gdy podatnik jest małym
+    /// podatnikiem albo rozpoczyna działalność, nie podlega wyłączeniom (art. 19 ust. 1b–1c, m.in. podmioty powstałe
+    /// z restrukturyzacji) ORAZ przychody osiągnięte w roku podatkowym (narastająco) nie przekroczyły limitu.
+    /// Po przekroczeniu limitu w trakcie roku stosuje się 19% od dochodu narastająco (zaliczka = podatek narastająco − zaliczki wcześniejsze).
+    /// </summary>
+    public static ReducedRateDecision DecideRate(bool smallTaxpayerOrFirstYear, bool excluded, decimal? eurRate, int taxYearMonths, decimal revenueToDate)
+    {
+        if (!smallTaxpayerOrFirstYear)
+            return new(StandardRate, 0m, "19% — podatnik nie jest małym podatnikiem (przychody poprzedniego roku powyżej 2 mln euro z VAT) ani nie rozpoczyna działalności.", false);
+        if (excluded)
+            return new(StandardRate, 0m, "19% — wyłączenie z art. 19 ust. 1b–1c (np. podmiot powstały z przekształcenia, połączenia, podziału lub wniesienia przedsiębiorstwa).", false);
+        var limit = ReducedRateLimitPln(eurRate ?? FallbackEurRate, taxYearMonths);
+        var fallback = eurRate is null;
+        if (revenueToDate > limit)
+            return new(StandardRate, limit, $"19% — przychody roku podatkowego ({Money.Format(revenueToDate)}) przekroczyły limit {Money.Format(limit)} (art. 19 ust. 1 pkt 2).", fallback);
+        return new(ReducedRate, limit, $"9% — mały podatnik / rozpoczynający działalność, przychody roku {Money.Format(revenueToDate)} ≤ limit {Money.Format(limit)}.", fallback);
+    }
 
     public static CitComputation Compute(decimal taxRevenue, decimal taxCosts, decimal deductions, decimal ratePercent)
     {

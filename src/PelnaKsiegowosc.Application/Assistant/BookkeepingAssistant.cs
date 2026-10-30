@@ -221,8 +221,8 @@ public sealed class BookkeepingAssistant
         var cps = await _db.Counterparties.AsNoTracking().Where(c => c.CompanyId == companyId).ToDictionaryAsync(c => c.Id, c => c.Name, ct);
         foreach (var o in items.Where(o => o.Side == OpenItemSide.Zobowiazanie && o.DueDate is { } d && today.DayNumber - d.DayNumber > 90 && o.DocumentId is not null))
             Add("ZOBOWIAZANIE_90", IssueSeverity.Blad, $"Niezapłacona faktura {o.Reference} ({cps.GetValueOrDefault(o.CounterpartyId)}) — ponad 90 dni po terminie",
-                $"Pozostało {Money.Format(o.RemainingPln)} zł. Nabywca ma obowiązek skorygować odliczony VAT (art. 89b ustawy o VAT); w CIT niezapłacony koszt wymaga zwiększenia dochodu (art. 15b ustawy o CIT).",
-                "Jeżeli faktura jest zapłacona — zaksięguj płatność. Jeżeli nie — ujmij korektę VAT w JPK i korektę CIT (CIT → korekta).", AppArea.Kontrahenci, o.Id);
+                $"Pozostało {Money.Format(o.RemainingPln)} zł. Nabywca ma obowiązek skorygować odliczony VAT (art. 89b ustawy o VAT); w CIT podstawę opodatkowania zwiększa się o niezapłaconą kwotę netto w okresie, w którym upłynął 90. dzień — również w zaliczce (art. 18f ustawy o CIT; program dolicza ją automatycznie w module CIT).",
+                "Jeżeli faktura jest zapłacona — zaksięguj płatność. Jeżeli nie — ujmij korektę VAT w JPK; zwiększenie dochodu CIT (art. 18f) program wylicza sam w uzgodnieniu i zaliczce.", AppArea.Kontrahenci, o.Id);
         foreach (var o in items.Where(o => o.Side == OpenItemSide.Naleznosc && o.DueDate is { } d && today.DayNumber - d.DayNumber > 90))
             Add("NALEZNOSC_90", IssueSeverity.Wskazowka, $"Klient {cps.GetValueOrDefault(o.CounterpartyId)} nie zapłacił {o.Reference} od ponad 90 dni",
                 $"Pozostało {Money.Format(o.RemainingPln)} zł. Możliwa „ulga na złe długi” w VAT (art. 89a) i CIT (art. 18f) oraz odpis aktualizujący (art. 35b UoR).",
@@ -385,16 +385,34 @@ public sealed class BookkeepingAssistant
             if (LegalForms.IsCitTaxpayer(company.LegalForm))
             {
                 Y(Domain.Cit.CitCalculator.AnnualReturnDeadline(fy.EndDate), $"Zeznanie CIT-8 za {fy.Name}", "Do końca 3. miesiąca roku następnego (art. 27 ust. 1 ustawy o CIT); zapłata podatku w tym terminie. Zeznanie składa się poza programem.", false, AppArea.Cit);
-                if (company.VatStatus == VatStatus.CzynnyPodatnikVat && fy.StartDate.Year >= 2026)
+                if (JpkCitRequired(company, fy.StartDate) is { } basis)
                 {
                     var jpkCit = await settings.GetAsync<DateTime?>(companyId, $"jpk-cit.wygenerowano.{fy.Name}", () => null, ct) is not null;
                     Y(Domain.Cit.CitCalculator.ShiftToBusinessDay(After(7)), $"JPK_CIT (księgi z oznaczeniami podatkowymi) za {fy.Name}",
-                        "Podatnicy CIT składający JPK_V7 przesyłają księgi w strukturze JPK_KR_PD do końca 7. miesiąca po roku podatkowym (art. 9 ust. 1e ustawy o CIT; dla lat od 2026). Generator: sekcja CIT.",
+                        $"Księgi w strukturze JPK_KR_PD do końca 7. miesiąca po roku podatkowym (art. 9 ust. 1e ustawy o CIT). {basis} Generator: sekcja CIT.",
                         jpkCit, AppArea.Cit);
                 }
             }
             Y(After(6), $"Zatwierdzenie sprawozdania finansowego za {fy.Name}", "Nie później niż 6 miesięcy od dnia bilansowego (art. 53 ust. 1 UoR); następnie złożenie w KRS w ciągu 15 dni (art. 69 UoR) — dotyczy jednostek wpisanych do KRS.", false, AppArea.Raporty);
         }
         return list.OrderBy(d => d.Date).ToList();
+    }
+
+    /// <summary>
+    /// Harmonogram obowiązku JPK_CIT (przepisy przejściowe): lata podatkowe rozpoczęte od 2025 r. — podatkowe grupy
+    /// kapitałowe i najwięksi podatnicy (przychody ponad 50 mln euro; program nie ustala tego automatycznie); od 2026 r. —
+    /// podatnicy składający JPK_V7M (VAT miesięcznie); od 2027 r. — podatnicy składający JPK_V7K (VAT kwartalnie)
+    /// oraz pozostali podatnicy CIT. Zwraca podstawę obowiązku albo null, gdy rok jeszcze nie jest objęty.
+    /// </summary>
+    public static string? JpkCitRequired(Company company, DateOnly taxYearStart)
+    {
+        var vatPayer = company.VatStatus == VatStatus.CzynnyPodatnikVat;
+        if (vatPayer && company.VatPeriod == VatSettlementPeriod.Miesieczny && taxYearStart.Year >= 2026)
+            return "Obowiązek od lat podatkowych rozpoczętych po 31.12.2025 r. — podatnik składa JPK_V7M.";
+        if (taxYearStart.Year >= 2027)
+            return vatPayer
+                ? "Obowiązek od lat podatkowych rozpoczętych po 31.12.2026 r. — podatnik składa JPK_V7K."
+                : "Obowiązek od lat podatkowych rozpoczętych po 31.12.2026 r. — pozostali podatnicy CIT (bez JPK_VAT).";
+        return null;
     }
 }

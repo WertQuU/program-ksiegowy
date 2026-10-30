@@ -16,6 +16,14 @@
       <Button Content="JPK CIT (księgi ze znacznikami)…" Command="{Binding JpkCitCommand}" IsEnabled="{Binding IsApplicable}" />
       <Button Content="Podatek odroczony…" Command="{Binding DeferredTaxCommand}" IsEnabled="{Binding IsApplicable}" />
     </WrapPanel>
+    <Expander DockPanel.Dock="Top" Header="Warunki stawki 9% (limit 2 mln euro, wyłączenia)" Margin="0,0,0,4">
+      <WrapPanel Classes="toolbar">
+        <TextBlock Text="Kurs EUR NBP z 1. dnia roboczego października roku poprzedniego:" />
+        <TextBox Text="{Binding EurRate}" Watermark="np. 4,2617" MinWidth="90" />
+        <CheckBox Content="Spółka powstała z przekształcenia / połączenia / podziału / wniesienia przedsiębiorstwa (art. 19 ust. 1b–1c) — 9% wyłączone" IsChecked="{Binding ReducedRateExcluded}" />
+        <Button Content="Zapisz" Command="{Binding SaveRateConditionsCommand}" IsEnabled="{Binding IsApplicable}" />
+      </WrapPanel>
+    </Expander>
     <Expander DockPanel.Dock="Top" Header="Korekta wyniku podatkowego" Margin="0,0,0,8">
       <WrapPanel Classes="toolbar">
         <ComboBox ItemsSource="{Binding AdjustmentTypes}" SelectedItem="{Binding AdjustmentType}" MinWidth="220" />

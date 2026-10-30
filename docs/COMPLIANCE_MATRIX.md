@@ -7,7 +7,7 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 
 | Przepis | Wymaganie (skrót) | Realizacja w programie | Status |
 |---|---|---|---|
-| UoR art. 4a | odpowiedzialność kierownika jednostki | wskazanie kierownika w kreatorze; zatwierdzanie polityki | Z |
+| UoR art. 4 ust. 5 | odpowiedzialność kierownika jednostki za wykonywanie obowiązków w zakresie rachunkowości | wskazanie kierownika w kreatorze; zatwierdzanie polityki | Z |
 | UoR art. 9 ust. 1 | księgi w języku polskim i w PLN | waluta ksiąg PLN, kursy walut na dokumentach | Z |
 | UoR art. 10 | polityka rachunkowości, plan kont, opis systemu | szablon, blokada księgowania bez zatwierdzenia, raport „Opis systemu informatycznego” | Z/W |
 | UoR art. 12 | otwarcie i zamknięcie ksiąg | rok obrotowy, zamknięcie roku, BO | Z |
@@ -41,12 +41,14 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | PIT art. 31–42, ustawa o sus | płatnik: zaliczki, ZUS, składka zdrowotna | listy płac (umowa o pracę, zlecenie, dzieło, powołanie), limit 30-krotności, próg 120 000 zł, PIT-2, ulga dla młodych, ryczałt do 200 zł; DRA/RCA, PIT-4R, PIT-8AR, PIT-11 | Z/W |
 | UoR art. 24 ust. 5 | bieżące prowadzenie ksiąg (przyjęty termin ujęcia operacji miesiąca: 15. dzień następnego miesiąca — do potwierdzenia w polityce) | asystent i kalendarz terminów | Z/W |
 | VAT art. 86a, 88 ust. 1 pkt 4 | ograniczenia odliczenia (samochody osobowe, noclegi, gastronomia) | kategorie wydatków z procentem odliczenia | Z/W |
-| VAT art. 89b, CIT art. 15b | korekta przy niezapłaconych zobowiązaniach (90 dni) | asystent: błąd dla zobowiązań > 90 dni po terminie | Z/W |
+| VAT art. 89b, CIT art. 18f | korekta przy niezapłaconych zobowiązaniach (90 dni) | asystent: błąd dla zobowiązań > 90 dni po terminie; CIT: automatyczne zwiększenie dochodu (netto) w uzgodnieniu i zaliczce za okres, w którym upłynął 90. dzień, zmniejszenie po zapłacie w kolejnym roku | Z/W |
 | VAT art. 96b, CIT art. 15d, Ordynacja art. 117ba | biała lista, płatności > 15 000 zł | sprawdzenie rachunku w wykazie, asystent: gotówka > 15 000 zł | Z/W |
 | VAT art. 108a | mechanizm podzielonej płatności | asystent: wskazówka dla faktur > 15 000 zł bez MPP (załącznik nr 15 — ocenia użytkownik) | Cz |
 | VAT art. 31a, UoR art. 30, CIT art. 15a | kurs NBP z dnia poprzedzającego | pobieranie kursu NBP, asystent: dokument walutowy bez tabeli | Z/W |
 | CIT art. 16 ust. 1 pkt 28, 51 | reprezentacja, 75% kosztów samochodu osobowego | część NKUP pozycji w dekrecie i w uzgodnieniu CIT | Z/W |
-| CIT art. 19 | stawki 9% / 19% | stawka wg statusu małego podatnika i pierwszego roku | Z/W |
+| CIT art. 19, 7b | stawki 9% / 19% | 9% tylko dla małego podatnika / pierwszego roku, bez wyłączeń z ust. 1b–1c i gdy przychody bieżącego roku (narastająco) ≤ 2 mln euro po kursie NBP z 1. dnia roboczego października roku poprzedniego (zaokr. do 1000 zł; rok krótszy niż 12 mies. — limit proporcjonalny); po przekroczeniu — 19% od dochodu narastająco; zyski kapitałowe odrębnym źródłem zawsze 19% | Z/W |
+| KSH art. 300^3, UoR art. 36 | kapitał akcyjny P.S.A. | objęcie akcji za wkład pieniężny nie tworzy kapitału (ewidencja wkładów do wniesienia poza bilansem); kapitał akcyjny/zapasowy uznawany przy wpłacie, proporcjonalnie do objęcia | Z |
+| VAT — JPK_V7 | sprzedaż poza krajem (art. 100), MPP, wersja struktury | K_12 wykazywane również w K_11; MPP nie jest oznaczane w JPK_V7(2)/(3); wariant 2 do okresu 01.2026, wariant 3 od 02.2026 (także korekty) | Z |
 | CIT art. 25 | zaliczki | narastająco, miesięczne/kwartalne, terminy | Z/W |
 | CIT art. 16a–16m | amortyzacja podatkowa | odrębne parametry podatkowe | Z/W |
 | CIT art. 1 | podmiotowość | blokada CIT dla spółek transparentnych i osób fizycznych | Z |
@@ -71,8 +73,8 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | Płace — parametry innych lat | **poprawiono**: dodano 2025 (4666 zł, 260 190 zł); dla roku bez zweryfikowanych parametrów program odmawia wyliczenia zamiast liczyć stawkami 2026 | aktualizacja programu co rok |
 | KP art. 92 — wynagrodzenie chorobowe | **poprawiono**: limit 33 dni w roku (14 dni od roku następującego po ukończeniu 50 lat); powyżej — informacja o zasiłku ZUS (Z-3) | — |
 | CIT art. 15d / Ordynacja art. 117ba — przelewy > 15 000 zł na rachunek spoza białej listy | **poprawiono**: wynik sprawdzenia rachunku zapamiętywany przy kontrahencie (data, wynik, identyfikator zapytania); asystent ostrzega o fakturach > 15 000 zł bez aktualnego sprawdzenia | sprawdzać w dniu zlecenia przelewu |
-| CIT art. 15b, VAT art. 89a/89b — należności i zobowiązania po 90 dniach | ostrzeżenia asystenta; korekty wprowadza użytkownik | — |
+| CIT art. 18f, VAT art. 89a/89b — należności i zobowiązania po 90 dniach | ostrzeżenia asystenta; CIT 18f dla zobowiązań wyliczany automatycznie, ulgę na złe długi po stronie należności i korekty VAT wprowadza użytkownik | — |
 | P.S.A. — kapitał akcyjny, test wypłacalności (art. 300^15 KSH), uchwały (zarząd / rada dyrektorów) | zgodne: nazwa kapitału, potwierdzenie testu wypłacalności przy wypłatach, projekty uchwał | rejestr akcjonariuszy prowadzi podmiot uprawniony (poza programem) |
-| JPK_CIT — termin | do potwierdzenia (reguła oznaczona w rejestrze przepisów) | sprawdzić termin w rozporządzeniu |
+| JPK_CIT — zakres i termin | harmonogram w asystencie: od lat podatkowych 2026 — podatnicy z JPK_V7M, od 2027 — z JPK_V7K i pozostali; termin do końca 7. miesiąca po roku; PGK i podatnicy > 50 mln euro (od 2025) — do ustawienia przez użytkownika | potwierdzać zmiany terminów w komunikatach MF |
 | KSeF — terminy obowiązku, sankcje | do potwierdzenia (reguły w rejestrze przepisów) | — |
 | RODO | dane osobowe tylko w bazie lokalnej / własnym serwerze, szyfrowane kopie, brak telemetrii, dziennik zdarzeń | rejestr czynności przetwarzania prowadzi spółka |

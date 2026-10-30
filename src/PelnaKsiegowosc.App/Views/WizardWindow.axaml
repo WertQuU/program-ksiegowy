@@ -123,7 +123,7 @@
 
       <!-- 7. Kierownik jednostki -->
       <StackPanel IsVisible="{Binding IsPerson}" Spacing="6">
-        <TextBlock Classes="info" Text="Kierownik jednostki odpowiada za prowadzenie ksiąg rachunkowych (art. 4a UoR). Kolejne osoby (np. główny księgowy) dodasz w sekcji „Jednostka i polityka”." />
+        <TextBlock Classes="info" Text="Kierownik jednostki odpowiada za wykonywanie obowiązków w zakresie rachunkowości (art. 4 ust. 5 UoR). Kolejne osoby (np. główny księgowy) dodasz w sekcji „Jednostka i polityka”." />
         <Grid Classes="form" ColumnDefinitions="210,300" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding ManagerFirstName}" />
           <TextBlock Grid.Row="1" Text="Nazwisko" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ManagerLastName}" />

@@ -414,15 +414,28 @@ public class FixedAssetCitCapitalTests
         subscribe.AgreementReference = "Umowa spółki z 02.01.2026, Rep. A 1/2026";
         await t.Db.SaveChangesAsync();
         await cap.ConfirmDocumentsAsync(subscribe.Id);
-        await cap.PostEventAsync(subscribe.Id);
-        Assert.Equal(-1000m, await t.BalanceAsync("801"));
-        Assert.Equal(-9000m, await t.BalanceAsync("802"));
-        Assert.Equal(10000m, await t.BalanceAsync("245-01"));
+        // P.S.A.: objęcie akcji nie tworzy kapitału akcyjnego (art. 300^3 KSH) — wkład do wniesienia poza bilansem
+        Assert.Null(await cap.PostEventAsync(subscribe.Id));
+        Assert.Equal(0m, await t.BalanceAsync("801"));
+        Assert.Equal(0m, await t.BalanceAsync("245-01"));
+        Assert.Equal(10000m, (await cap.UnpaidContributionAsync(sh.Id)).Unpaid);
 
-        var pay = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 5), ShareholderId = sh.Id, TotalAmount = 10000m });
+        // wpłata częściowa: kapitał akcyjny i zapasowy proporcjonalnie do objęcia
+        var pay = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 5), ShareholderId = sh.Id, TotalAmount = 4000m });
         await cap.ConfirmDocumentsAsync(pay.Id);
         await cap.PostEventAsync(pay.Id);
-        Assert.Equal(0m, await t.BalanceAsync("245-01"));
+        Assert.Equal(-400m, await t.BalanceAsync("801"));
+        Assert.Equal(-3600m, await t.BalanceAsync("802"));
+        Assert.Equal(6000m, (await cap.UnpaidContributionAsync(sh.Id)).Unpaid);
+        var tooMuch = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 6), ShareholderId = sh.Id, TotalAmount = 7000m });
+        await cap.ConfirmDocumentsAsync(tooMuch.Id);
+        await Assert.ThrowsAsync<DomainException>(() => cap.PostEventAsync(tooMuch.Id));
+        var rest = await cap.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu, EventDate = new DateOnly(2026, 1, 7), ShareholderId = sh.Id, TotalAmount = 6000m });
+        await cap.ConfirmDocumentsAsync(rest.Id);
+        await cap.PostEventAsync(rest.Id);
+        Assert.Equal(-1000m, await t.BalanceAsync("801"));
+        Assert.Equal(-9000m, await t.BalanceAsync("802"));
+        Assert.Equal(0m, (await cap.UnpaidContributionAsync(sh.Id)).Unpaid);
         Assert.Equal(10000m, await t.BalanceAsync("130-01"));
 
         var advance = await cap.CreateEventAsync(new CapitalEvent

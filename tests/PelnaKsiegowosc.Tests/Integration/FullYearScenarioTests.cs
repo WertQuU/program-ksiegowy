@@ -49,7 +49,10 @@ public class FullYearScenarioTests
         var client = await t.AddCounterpartyAsync("K001", "Klient sp. z o.o.", "7740001454");
         var supplier = await t.AddCounterpartyAsync("D001", "Dostawca S.A.", "5260250274");
         var inv = await SalesAndBankScenarioTests.IssueAndPostSalesInvoiceAsync(t, client.Id, 10000m, new DateOnly(2026, 1, 20));
-        await PurchaseScenarioTests.RegisterPurchaseAsync(t, supplier.Id, 2000m, "FV/123/2026", 100m);
+        var purchase = await PurchaseScenarioTests.RegisterPurchaseAsync(t, supplier.Id, 2000m, "FV/123/2026", 100m);
+        // termin płatności uzgodniony na 15.01.2027 — zobowiązanie nie podlega jeszcze art. 18f ustawy o CIT (test osobny)
+        (await t.Db.OpenItems.SingleAsync(o => o.DocumentId == purchase.Id)).DueDate = new DateOnly(2027, 1, 15);
+        await t.Db.SaveChangesAsync();
 
         // zakup środka trwałego na 080 + OT
         var docs = new DocumentService(t.Db, t.User, t.Clock);

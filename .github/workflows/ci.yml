@@ -11,6 +11,10 @@ on:
         description: 'Wersja do wydania (np. 1.0.0) — pusta: tylko testy i pakiety'
         required: false
         default: ''
+      usun_wydanie:
+        description: 'Tag starego wydania do usunięcia razem z tagiem (np. v1.0.0) — puste: nic nie usuwa'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -21,6 +25,19 @@ env:
   AVALONIA_TELEMETRY_OPTOUT: '1'
 
 jobs:
+  delete-release:
+    name: Usunięcie starego wydania
+    if: github.event_name == 'workflow_dispatch' && inputs.usun_wydanie != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Usuń wydanie i tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.usun_wydanie }}
+        run: gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --cleanup-tag --yes
+
   test:
     name: Testy (${{ matrix.os }})
     strategy:

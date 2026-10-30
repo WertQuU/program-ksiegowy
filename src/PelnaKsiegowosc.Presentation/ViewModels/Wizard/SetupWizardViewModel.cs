@@ -155,7 +155,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 break;
             case WizardStep.OsobaOdpowiedzialna:
                 if (string.IsNullOrWhiteSpace(ManagerFirstName) || string.IsNullOrWhiteSpace(ManagerLastName))
-                    throw new DomainException($"Podaj kierownika jednostki ({LegalForms.ManagementBody(Company.LegalForm.Value)}) — odpowiada za prowadzenie ksiąg (art. 4a UoR).");
+                    throw new DomainException($"Podaj kierownika jednostki ({LegalForms.ManagementBody(Company.LegalForm.Value)}) — odpowiada za wykonywanie obowiązków w zakresie rachunkowości (art. 4 ust. 5 UoR).");
                 break;
             case WizardStep.KopieZapasowe:
                 if (!SkipBackupKey && string.IsNullOrEmpty(RecoveryKey) && Session.StoredBackupKey() is null)

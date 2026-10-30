@@ -211,6 +211,9 @@ public sealed partial class CapitalViewModel : SectionViewModel
         var st = new TableData(new TableColumn("Konto", Width: 0.6), new TableColumn("Nazwa", Width: 2.5), new TableColumn("Saldo (Ma +)", ColumnKind.Money));
         foreach (var (acc, name, bal) in await new CapitalService(db, Session.User, Session.Clock).CapitalSummaryAsync(Session.CurrentYear.Id, Session.Clock.Today < Session.CurrentYear.EndDate ? Session.Clock.Today : Session.CurrentYear.EndDate))
             st.Add(null, acc, name, bal);
+        if (form == LegalForm.ProstaSpolkaAkcyjna)
+            foreach (var (holder, unpaid) in await new CapitalService(db, Session.User, Session.Clock).UnpaidContributionsAsync())
+                st.Add(null, "poza bilansem", $"Wkład objęty, niewniesiony — {holder} (nie stanowi kapitału akcyjnego, art. 300³ KSH)", unpaid);
         Summary = st;
     }
 
@@ -261,6 +264,8 @@ public sealed partial class CapitalViewModel : SectionViewModel
         if (SelectedEvent?.Tag is not Guid id) throw new DomainException("Zaznacz zdarzenie.");
         await using var db = Session.OpenDb();
         var e = await new CapitalService(db, Session.User, Session.Clock).PostEventAsync(id);
-        StatusMessage = $"Zaksięgowano {e.JournalNumber}";
+        StatusMessage = e is null
+            ? "P.S.A.: objęcie akcji ujęto w ewidencji wkładów do wniesienia — kapitał akcyjny zostanie zaksięgowany przy wpłacie wkładu (art. 300³ KSH)."
+            : $"Zaksięgowano {e.JournalNumber}";
     }, "Zdarzenie zaksięgowane.");
 }

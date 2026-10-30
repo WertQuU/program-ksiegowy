@@ -45,7 +45,11 @@ public enum CitClassification
     PrzychodPodatkowy,
     PrzychodNiepodatkowy,
     /// <summary>Różnica wymagająca analizy (np. rezerwy, odsetki naliczone, różnice kursowe niezrealizowane).</summary>
-    DoAnalizy
+    DoAnalizy,
+    /// <summary>Przychód z zysków kapitałowych (art. 7b ustawy o CIT) — odrębne źródło, zawsze stawka 19%.</summary>
+    PrzychodZyskiKapitalowe,
+    /// <summary>Koszt uzyskania przychodu z zysków kapitałowych (art. 7b) — odrębne źródło.</summary>
+    KosztZyskiKapitalowe
 }
 
 /// <summary>Wersja planu kont — powiązana z rokiem obrotowym (nowa wersja przy otwarciu roku).</summary>

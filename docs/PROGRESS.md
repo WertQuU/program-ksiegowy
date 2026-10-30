@@ -1,6 +1,6 @@
 # Stan prac
 
-Wersja: 1.0.0 (pierwsze wydanie).
+Wersja: 1.0.1 (poprawki zgodności po przeglądzie kodu; zastępuje 1.0.0).
 
 ## Zrealizowane
 
