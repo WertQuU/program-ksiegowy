@@ -1,453 +1,1584 @@
 
 
-<!doctype html>
-<html lang="pl-PL">
+
+<!DOCTYPE html>
+<html lang="pl">
 <head>
-        <!-- Google Tag Manager -->
-        <script>
-            (function (w, d, s, l, i) {
-                w[l] = w[l] || [];
-                w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-                var f = d.getElementsByTagName(s)[0], j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : '';
-                j.async = true;
-                j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-                f.parentNode.insertBefore(j, f);
-            })
-                (window, document, 'script', 'dataLayer', 'GTM-5FLS8K6P');
-        </script>
-        <!-- End Google Tag Manager -->
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-1W9417REQS"></script>
-        <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag() { dataLayer.push(arguments); } gtag('js', new Date()); gtag('config', 'G-1W9417REQS');
-        </script>
 
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="robots" content="" />
-    <title>Dokumentacja IT</title>
-    <meta name="description" content="Informacje dla dostawców IT, specyfikacje, bramka UBD, struktury XML">
-
-    <div id="x_asData1" style="display:none;">...</div>
-
-	
-	
-    <div id="x_asData2" style="display:none;">...</div>
-
-	
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png" />
-    <link rel="manifest" href="/assets/site.webmanifest" />
-    <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link rel="stylesheet" href="/fonts/fonts.css" />
-    <link rel="stylesheet" href="/css/fontawesome-all.css" />
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/bootstrap-select.css">
-    <link rel="stylesheet" href="/css/cookieconsent.min.css?v=20240223" />
-    <link rel="stylesheet" href="/css/site.css?v=20190117">
-    <link rel="stylesheet" href="/css/jquery-ui.css" />
-
-
-    
-
-    
+    <meta name="language" content="pl" /> <!-- Dodane -->
+    ﻿
 
 
 
 
-<script src="/scripts/cookieconsent.min.js"></script>
+<meta name="robots" content="index, follow" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+<meta name="description" content="portal podatki.gov.pl e-Deklaracje, bramka UBD i dokumentacja IT: specyfikacje techniczne i schematy XSD dla programist&#xF3;w integruj&#x105;cych systemy z bramk&#x105;. Pobierz dokumentacj&#x119;.&#xA;" />
+<meta name="author" content="MF" />
+<title>Serwis o podatkach - Bramka UBD i dokumentacja IT  </title>
+       
+<link rel="canonical" href="http://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it" />
+   
+   
+
     <script>
-    window.addEventListener("load", function() {
-        window.cookieconsent.initialise({
-            cookie: {
-                domain: "podatki-arch.mf.gov.pl"
-            },
-            window: '<div role="dialog" aria-label="Informacja o ciasteczkach" aria-describedby="cookieconsent:desc" class="cc-window {{classes}}">{{children}}</div>',
-            elements: {
-                messagelink: '<div id="cookieconsent:desc" class="cc-message"><p>{{messageOne}}</p><p>{{messageTwo}}</p><p><a tabindex="0" class="cc-link" href="{{href}}" target="_blank">{{link}}</a></p></div>',
-                dismiss: '<a aria-label="Rozumiem, zamknij komunikat o ciasteczkach." role="button" tabindex="0" class="btn btn-primary cc-btn cc-dismiss">{{dismiss}}</a>'
-            },
-            palette: {
-                popup: {
-                    text: "#ffffff"
-                },
-            },
-            position: "bottom-left",
-            content: {
-                messageOne: "Korzystamy z plików cookies, by ułatwić użytkownikom poruszanie się po serwisie. Ciasteczka pozwalają nam także tworzyć anonimowe statystyki serwisu.",
-                messageTwo: "Jeżeli nie blokujesz plików cookies, to zgadzasz się na ich używanie i zapisanie w pamięci urządzenia. Możesz zmienić ustawienia przeglądarki, żeby wyłączyć zapisywanie ciasteczek.",
-                href: "/polityka-prywatnosci",
-                link: 'Przeczytaj o polityce prywatności',
-                dismiss: 'Rozumiem'
-            }
-        }, function (popup) {
-            var handler = function (event) {
-                if (event.keyCode === 13) {
-                    popup.setStatus(cookieconsent.status.dismiss);
-                    popup.close();
-                    document.removeEventListener('keyup', handler);
-                }
-            };
-            document.addEventListener('keyup', handler)
-        })
-    });
-    </script>
+         
+        var cat = localStorage.getItem("matomoConsentChoice:v2");       
+        //console.log("test");
+        //console.log(cat);
+        if(cat==null || cat=="declined" || cat=="customNO"){
+             const cookies = document.cookie.split(";");
 
+             for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i];
+                    const eqPos = cookie.indexOf("=");
+                     const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                        // Ustawiamy datę wygaśnięcia na 1 sty 1970
+                       document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                        }
+        }
+        else{
+        (function (w, d, s, l, i) {
+        w[l] = w[l] || []; w[l].push({
+        'gtm.start':
+        new Date().getTime(), event: 'gtm.js'
+        }); var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s), dl = l != 'dataLayer' ? '&l=' + l : ''; j.async = true; j.src =
+        'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', 'GTM-N2PN2W8');
+        }</script>
+    <noscript>
+        <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-N2PN2W8"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe>
+    </noscript>
+    
+
+
+    <!-- Favicon-->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <!-- Core theme CSS (includes Bootstrap)-->
+    <link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css?v=PI8n5gCcz9cQqQXm3PEtDuPG8qx9oFsFctPg0S5zb8g" />
+    <link rel="stylesheet" href="/bootstrap/css/style.css?v=Ya8qujalk4qyJ2egMCjNdvxgyvpNVrvy2DMoyAK4Qx8" />
+    <link rel="stylesheet" href="/bootstrap/css/cookieconsent.min.css?v=psHBeH_tZbqrO3-El-uCgUsKqrC9Mm1KqQMkGfJvlIY" />
+    <script src="/scripts/mark.js/mark.min.js"></script>
+    <script src="/scripts/zawbi_banner.js"></script>
+    <link rel="stylesheet" type="text/css" href="/css/zawbi_banner.css">
+
+    <link rel="stylesheet" href="/bootstrap/bootstrap-icons/font/bootstrap-icons.min.css?v=pdY4ejLKO67E0CM2tbPtq1DJ3VGDVVdqAR6j3ZwdiE4" />
+
+    <script src="/scripts/jquery-3.6.0.min.js"></script>
 
 </head>
-
 <body>
-        <!-- Google Tag Manager (noscript) -->
-        <noscript>
-            <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5FLS8K6P"
-                    height="0" width="0" style="display:none;visibility:hidden"></iframe>
-        </noscript>
-        <!-- End Google Tag Manager (noscript) -->
 
-        <div id="scrollDown"><div id="scrollDownAfter"></div></div>
     
 
-<link href="/Content/Styles/SENT/mobileheader.css" rel="stylesheet" type="text/css" />
 
-    <header class="shadow-sm">
-        <nav class="navbar navbar-dark navbar-expand-lg">
-            <a href="#content" class="skip-link sr-only sr-only-focusable">Przejdź do treści</a>
-            <a href="#search" class="skip-link sr-only sr-only-focusable">Przejdź do wyszukiwarki</a>
-            <a href="#footer" class="skip-link sr-only sr-only-focusable">Przejdź do stopki</a>
+<div class="umb-block-grid"
+     data-grid-columns="12;"
+     style="--umb-block-grid--grid-columns: 12;">
+    
 
-                <div class="navbar-brand">
-                    <a href="/">
-                        <img class="d-inline-block" width="96" src="/media/2842/assets-logotypes-polish-emblem.svg" alt="Przejdź do strony gł&#243;wnej serwisu">
-                        <span class="h1 amethysta navbar-text">podatki.gov.pl</span>
-                        
-                    </a>
-                </div>
 
-            <div class="d-flex align-items-end">
-                <button class="btn btn-secondary mobileSearchButton" type="button" data-toggle="modal" data-target="#searchModal">
-                    <img style="height:30px; height:30px; display:inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" />
-                </button>
 
-                <button class="btn btn-secondary navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Menu">
-                    <i class="fas fa-bars"></i>
-                </button>
+<header class="masthead">
+    <!-- Pasek nawigacji -->
+
+    <nav class="navbar navbar-expand-lg border-bottom">
+        <div class="container-fluid">
+            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#navbarToggleExternalContent" aria-controls="navbarToggleExternalContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon color-mobile-icon"></span>
+            </button>
+                <h1>
+                    <a class="navbar-brand" href="/">
+                        <img src="/media/bymfppfc/herb_polski.svg?width=50&amp;v=1dce4696f639b10" alt="" height="50" class="d-inline-block align-text-center">
+podatki.gov.pl                    </a>
+                </h1>
+
+            <div class="offcanvas">
+                <ul class="navbar-nav justify-content-end">
+                    <li class="nav-item p-2">
+                            <form class="d-flex" role="search" action="/nowe-wyszukiwanie">
+                                <input type="search" class="form-control me-2" placeholder="Wpisz min. 3... znaki" aria-label="Szukaj" id="query" name="query">
+                                <button type="submit" class="search-submit-btn">Szukaj</button>
+                            </form>
+                    </li>
+
+                    <li class="nav-item p-2">
+                        <form class="d-flex">
+                            <select class="form-select" onchange="if(this.value) window.location.href=this.value;">
+
+                            
+                                    <option value="/en">
+                                        Angielski
+                                    </option>
+                                    <option value="/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it" selected="selected">
+                                        Polski
+                                    </option>
+                                    <option value="/uk">
+                                        Ukrai&#x144;ski
+                                    </option>
+
+                            
+                            </select>
+                        </form>
+                    </li>
+
+                        <li class="nav-item p-2">
+                            <a class="btn btn-primary" href="https://urzadskarbowy.gov.pl/" title="Zaloguj się do eUrzędu Skarbowego">Zaloguj się do eUrzędu Skarbowego</a>
+                        </li>
+                </ul>
             </div>
+            <a class="search-link" href="/nowe-wyszukiwanie" title="Szukaj"><i class="color-mobile-icon fas fa-search"></i></a>
 
-            <div class="modal fade" id="searchModal" tabindex="-1" role="dialog" aria-labelledby="searchModal" aria-hidden="true">
-                <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                        <div class="modal-body">
-                            <div class="input-group" style="margin-bottom:5px;">
-                                <input type="text" id="searchLabel" name="query" class="form-control" aria-label="Wpisz szukaną frazę" required minlength="3">
-                                <div class="input-group-append">
-                                    <button id="btn-search" class="btn btn-secondary" type="submit"><img style="height: 30px; height: 30px; display: inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" /></button>
-                                    <button class="btn btn-secondary" data-dismiss="modal" label="Zamknij"><span aria-hidden="true">X</span></button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        </div>
+    </nav>
+
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="navbarToggleExternalContent" >
+        <div class="offcanvas-header justify-content-between">
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"> </button>
+        </div>
+
+
+        <div class="offcanvas-body">
+            <div class="offcanvas-body">
+                <div class="accordion accordion-flush" id="accordionFlushMobile">
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_osobiste">
+                                                            <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseMobile_osobiste" aria-expanded="false" aria-controls="flush-collapseMobile_osobiste">
+                                                                Podatki osobiste
+                                                            </button>
+                                                    </h2>
+                                                    <div id="flush-collapseMobile_osobiste" class="accordion-collapse collapse" aria-labelledby="flush-headingMobile_osobiste" data-bs-parent="#accordionFlushMobile">
+                                                        <div class="accordion-body mb-4">
+                                                                       <h3 class="fw-bold mb-4">Od dochodu</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/podatki-osobiste/pit/informacje-podstawowe" title="Informacje podstawowe"><strong>PIT</strong></a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe" title="Informacje podstawowe">Informacje podstawowe</a></p>
+<p><a href="/podatki-osobiste/pit/ulgi-i-odliczenia" title="Ulgi i odliczenia">Ulgi i odliczenia</a></p>
+<p><a href="/podatki-osobiste/pit/stawki-i-limity" title="Stawki i limity">Stawki i limity</a></p>
+<p><a href="/podatki-osobiste/pit/formularze-pit" title="Formularze">Formularze</a></p>
+                                                                    </div>
+                                                                        <h4 data-bs-toggle="collapse" href="#collapseMobile_osobiste0" role="button" aria-expanded="false" aria-controls="collapseMobile_osobiste0"><img src="/assets/ICONS/Caretdown.svg" alt="Rozwiń przycisk">Wybierz swoją sytuację</h4>
+                                                                        <ul class="list-unstyled collapse mx-4" id="collapseMobile_osobiste0">
+                                                                            <h3><strong>Wybierz swoją sytuację</strong></h3>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-pracy" title="Dochody z pracy">Mam dochody z pracy</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-pracy-wykonywanej-za-granica" title="Dochody z pracy wykonywanej za granicą">Mam dochody z pracy wykonywanej za granicą</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-umowy-zlecenia-lub-o-dzielo" title="Dochody z umowy zlecenia lub o dzieło">Mam dochody z umowy zlecenia lub o dzieło</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-praw-autorskich" title="Dochody z praw autorskich">Mam dochody z praw autorskich</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-najmu" title="Dochody z najmu">Mam dochody z najmu</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-dzialalnosci-nierejestrowanej" title="Dochody z działalności nierejestrowanej">Mam dochody z działalności nierejestrowanej</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-niani" title="Dochody niani">Mam dochody niani</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-emerytury-lub-renty" title="Dochody z emerytury lub renty">Mam dochody z emerytury</a></p>
+<p><a href="/potrzebuje-pelnomocnictwa" title="Potrzebuje pełnomocnictwa">Potrzebuję pełnomocnictwa</a></p>
+                                                                        </ul>
+                                                                        <hr />
+                                                                       <h3 class="fw-bold mb-4">Od maj&#x105;tku</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/podatki-osobiste/sd/informacje-podstawowe" title="Informacje podstawowe">Spadki i darowizny (<strong>SD</strong>)</a></p>
+<p><a href="/podatki-osobiste/pcc/informacje-podstawowe" title="Informacje podstawowe">Czynności cywilnoprawne (<strong>PCC</strong>)</a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Od zakup&#xF3;w</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/akcyza/informacje-podstawowe" title="Informacje podstawowe">Akcyza</a></p>
+<p><a href="/podatki-firmowe/vat" title="VAT">VAT</a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Pozosta&#x142;e</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/pozostale/podatek-od-gier/informacje-podstawowe" title="Informacje podstawowe">Podatek od gier</a></p>
+<p><a href="/podatki-lokalne" title="Podatki lokalne">Podatki lokalne</a></p>
+<p><a href="/interpretacje-podatkowe" title="Interpretacje podatkowe">Interpretacje podatkowe</a></p>
+                                                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_firmowe">
+                                                            <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseMobile_firmowe" aria-expanded="false" aria-controls="flush-collapseMobile_firmowe">
+                                                                Podatki dla przedsi&#x119;biorc&#xF3;w
+                                                            </button>
+                                                    </h2>
+                                                    <div id="flush-collapseMobile_firmowe" class="accordion-collapse collapse" aria-labelledby="flush-headingMobile_firmowe" data-bs-parent="#accordionFlushMobile">
+                                                        <div class="accordion-body mb-4">
+                                                                       <h3 class="fw-bold mb-4">Podstawowe podatki dla przedsi&#x119;biorc&#xF3;w</h3>
+                                                                            <ul class="nav nav-tabs" role="tablist">
+                                                                                
+
+
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/pit/informacje-podstawowe" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							PIT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/cit/informacje-podstawowe" title="CIT">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							CIT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/vat" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							VAT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/jednolity-plik-kontrolny/jpk_vat-z-deklaracja" title="JPK">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							<p>JPK</p>
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/akcyza/informacje-podstawowe" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							Akcyza
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+
+                                                                            </ul>
+                                                                    <div class="fw-bold mb-4">
+                                                                        
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Pozosta&#x142;e podatki</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/podatki-osobiste/pcc/informacje-podstawowe" title="Informacje podstawowe">od czynności cywilnoprawnych (<strong>PCC</strong>)</a></p>
+<p><a href="/podatki-osobiste/sd/informacje-podstawowe" title="Informacje podstawowe">od spadków i darowizn (<strong>SD</strong>)</a></p>
+<p><a href="/pozostale/podatek-tonazowy/informacje-podstawowe" title="Informacje podstawowe">tonażowy</a></p>
+<p><a href="/pozostale/podatek-od-gier/informacje-podstawowe" title="Informacje podstawowe">od gier</a></p>
+<p><a href="/pozostale/podatek-od-sprzedazy-detalicznej/informacje-podstawowe" title="Informacje podstawowe">od sprzedaży detalicznej</a></p>
+<p><a href="/pozostale/podatek-od-wydobycia-niektorych-kopalin/informacje-podstawowe" title="Informacje podstawowe">od wydobycia niektórych kopalin</a></p>
+<p><a href="/pozostale/podatek-od-niektorych-instytucji-finansowych/informacje-podstawowe" title="Informacje podstawowe">od niektórych instytucji finansowych</a></p>
+<p><a href="/pozostale/oplata-od-sprzedazy-alkoholu-w-opak-do-300-ml/informacje-podstawowe" title="Informacje podstawowe">od sprzedaży alkoholu w opakowaniach do 300 ml</a></p>
+<p><a href="/pozostale/oplata-cukrowa/informacje-podstawowe" title="Informacje podstawowe">Opłata cukrowa</a></p>
+<p><a href="/pozostale/klauzula-ogolna-przeciwko-unikaniu-opodatkowania" title="Klauzula ogólna przeciwko unikaniu opodatkowania">Klauzula ogólna przeciwko unikaniu opodatkowania</a></p>
+                                                                    </div>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/podatki-lokalne" title="Podatki lokalne">Podatki lokalne</a></p>
+<p><a href="/pozostale/pelnomocnictwa/informacje-podstawowe-pelnomocnictwa" title="Informacje podstawowe pełnomocnictwa">Pełnomocnictwa</a></p>
+<p><a href="/pozostale/oplata-skarbowa/informacje-podstawowe" title="Informacje podstawowe">Opłata skarbowa</a></p>
+<p><a href="https://www.gov.pl/web/ias-katowice/rejestr-dzialalnosci-na-rzecz-spolek-lub-trustow">Rejestr działalności na rzecz spółek lub trustów</a></p>
+<p><a href="https://www.gov.pl/web/ias-katowice/rejestr-dzialalnosci-w-zakresie-walut-wirtualnych">Rejestr działalności w zakresie walut wirtualnych</a></p>
+<p><a href="/ceny-transferowe" title="Ceny transferowe">Ceny transferowe</a></p>
+<p><a href="/pozostale/program-wspoldzialania-pw" title="Program Współdziałania (PW)">Program współdziałania</a></p>
+<p><a href="/interpretacje-podatkowe" title="Interpretacje podatkowe">Interpretacje podatkowe</a></p>
+<p><a href="/podatkowa-wspolpraca-miedzynarodowa" title="Podatkowa współpraca międzynarodowa">Podatkowa współpraca międzynarodowa</a></p>
+<p><a href="/pozostale/porozumienie-inwestycyjne/informacje-podstawowe" title="Informacje podstawowe">Porozumienie inwestycyjne</a></p>
+<p><a href="/wiazace-informacje-podatkowe-i-celne" title="Wiążące informacje podatkowe i celne">Wiążące informacje podatkowe i celne</a></p>
+                                                                    </div>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/enotariusz" title="eNotariusz">eNotariusz</a></p>
+<p><a href="/e-sprawozdania-finansowe" title="e-Sprawozdania Finansowe">eSprawozdania</a></p>
+<p><a href="/eurzad-skarbowy-zalatw-sprawy-podatkowe-online/konto-organizacji-w-eurzedzie-skarbowym/zawiadomienie-zaw-nr" title="Zawiadomienie ZAW-NR">Zawiadomienie <strong>ZAW-NR</strong></a></p>
+<p><a href="/pozostale/wht-withholding-tax-podatek-u-zrodla" title="WHT - Withholding Tax (podatek u źródła)"><strong>WHT</strong> - Withholding Tax (podatek u źródła)</a></p>
+<p><a href="/mdr" title="MDR"><strong>MDR</strong> - Raportowanie schematów podatkowych</a></p>
+<p><a href="/icap" title="ICAP"><strong>ICAP</strong> -&nbsp;</a><a href="/icap" title="ICAP">International Compliance Assurance Programme</a></p>
+<p><a href="/pozostale/etaca" title="ETACA"><strong>ETACA</strong> - European Trust And Cooperation Approac</a></p>
+<p><a href="/pozostale/procedura-szczegolna-sme" title="Procedura szczególna SME"><strong>SME</strong> - procedura szczególna</a></p>
+<p><a href="/pozostale/globe-opodatkowanie-wyrownawcze/pytania-i-odpowiedzi-dot-opodatkowania-wyrownawczego" title="FAQ"><strong>GLOBE</strong> - opodatkowanie wyrównawcze</a></p>
+<p><a href="/pozostale/crbr" title="CRBR"><strong>CRBR</strong> - Centralny Rejestr Beneficjentów Rzeczywistych</a></p>
+<p><a href="/pozostale/tax-free-vat-refund-vap-oss-i-ioss" title="TAX FREE, VAT-REFUND, VAP, OSS i IOSS">Procedury <strong>TAX FREE, VAT-REFUND, VAP, OSS i IOSS</strong></a><a href="https://podatki-arch.mf.gov.pl/wht/"></a></p>
+                                                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_clo">
+                                                            <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseMobile_clo" aria-expanded="false" aria-controls="flush-collapseMobile_clo">
+                                                                C&#x142;o
+                                                            </button>
+                                                    </h2>
+                                                    <div id="flush-collapseMobile_clo" class="accordion-collapse collapse" aria-labelledby="flush-headingMobile_clo" data-bs-parent="#accordionFlushMobile">
+                                                        <div class="accordion-body mb-4">
+                                                                       <h3 class="fw-bold mb-4">Podstawowe informacje o cle</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/informacje-dla-osob-fizycznych/towary-objete-ograniczeniami-i-zakazami" title="Towary objęte ograniczeniami i zakazami">Informacje dla osób fizycznych</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/informacje-dla-przedsiebiorcow/aeo" title="AEO">Informacje dla przedsiębiorców</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/ograniczenia-przywozu-i-wywozu-towarow/srodki-ochrony-roslin" title="Środki ochrony roślin">Ograniczenia przywozu i wywozu towarów</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/zabezpieczenie-i-pobor-naleznosci-celnych-oraz-zwrot-i-umorzenia-naleznosci-celnych/odroczenie-terminu-platnosci-naleznosci" title="Odroczenie terminu płatności należności">Zabezpieczenie i pobór należności celnych oraz zwrot i umorzenia należności celnych</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/zintegrowana-taryfa-celna/nomenklatura-taryfowa-i-wspolna-taryfa-celna" title="Nomenklatura taryfowa i WTC">Zintegrowana Taryfa Celna </a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Pozosta&#x142;e</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/informacje-o-cle/pozostale-informacje/agenci-celni" title="Agenci celni">Agenci celni</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/gwaranci-celni" title="Gwaranci celni">Gwaranci celni</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/kursy-walut-w-przepisach-celnych" title="Kursy walut w przepisach celnych">Kursy walut w przepisach</a></p>
+<p><a href="/informacje-o-cle/akty-prawne-regulujace-sprawy-celne" title="Akty prawne regulujące sprawy celne">Akty prawne regulujące sprawy celne</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/zwolnienia-celne" title="Zwolnienia celne">Zwolnienia</a></p>
+                                                                    </div>
+                                                                        <h4 data-bs-toggle="collapse" href="#collapseMobile_clo0" role="button" aria-expanded="false" aria-controls="collapseMobile_clo0"><img src="/assets/ICONS/Caretdown.svg" alt="Rozwiń przycisk">Wybierz swoją sytuację</h4>
+                                                                        <ul class="list-unstyled collapse mx-4" id="collapseMobile_clo0">
+                                                                            <p>&nbsp;</p>
+<p> </p>
+                                                                        </ul>
+                                                                        <hr />
+                                                                       <h3 class="fw-bold mb-4">Og&#xF3;lne</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/informacje-o-cle/ogolne/cbam" title="CBAM">CBAM</a></p>
+<p><a href="/informacje-o-cle/ogolne/zgloszenie-celne-i-intrastat" title="Zgłoszenie celne i INTRASTAT">Zgłoszenie celne i INTRASTAT</a></p>
+<p><a href="/informacje-o-cle/ogolne/brexit-a-clo" title="Brexit a cło">Brexit a cło</a></p>
+<p><a href="/informacje-o-cle/ogolne/reforma-celna" title="Reforma celna">Reforma celna</a><a href="/narzedzia/kalkulator-taryfowy" title="Kalkulator taryfowy"></a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Narz&#x119;dzia</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/narzedzia/kalkulator-taryfowy" title="Kalkulator taryfowy">Kalkulator taryfowy</a></p>
+<p><a href="/narzedzia/przegladarka-taryfowa" title="Przeglądarka taryfowa">Przeglądarka taryfowa</a></p>
+                                                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_">
+                                                            <a class="accordion-button primary fw-bold collapsed" role="button" href="/poradniki-i-informatory" title="Poradniki i informatory">
+                                                                Poradniki i informatory
+                                                            </a>
+                                                        </h2>
+                                                    </div>
+                                                    <div class="accordion-item">
+                                                        <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_">
+                                                            <a class="accordion-button primary fw-bold collapsed" role="button" href="/aktualnosci" title="Aktualno&#x15B;ci">
+                                                                Aktualno&#x15B;ci
+                                                            </a>
+                                                        </h2>
+                                                    </div>
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_Narzedzia">
+                                                            <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapseMobile_Narzedzia" aria-expanded="false" aria-controls="flush-collapseMobile_Narzedzia">
+                                                                Narz&#x119;dzia
+                                                            </button>
+                                                    </h2>
+                                                    <div id="flush-collapseMobile_Narzedzia" class="accordion-collapse collapse" aria-labelledby="flush-headingMobile_Narzedzia" data-bs-parent="#accordionFlushMobile">
+                                                        <div class="accordion-body mb-4">
+                                                                       <h3 class="fw-bold mb-4">Kalkulatory</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-odsetek-za-zwloke-od-zaleglosci-podatkowych-oraz-oplaty-prolongacyjnej/">Kalkulator odsetek za zwłokę od zaległości podatkowych oraz opłaty prolongacyjnej</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-odsetek-ustawowych/">Kalkulator odsetek ustawowych</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-walut/">Kalkulator walut</a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Wyszukiwarki</h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/narzedzia/eureka" title="EUREKA">System Informacji Celno-Skarbowej EUREKA </a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/wyszukiwarki/wyszukiwarka-teleadresowa-jednostek-kas/">Wyszukiwarka urzędów skarbowych i jednostek Krajowej Administracji Skarbowej</a></p>
+<p><a href="https://wykazpodatnikowvat.mf.gov.pl/">Wykaz podmiotów zarejestrowanych jako podatnicy VAT, niezarejestrowanych oraz wykreślonych i przywróconych do rejestru VAT</a></p>
+<p><a href="https://wykazpodatnikowvat.mf.gov.pl/plik-plaski" title="White List">Plik płaski</a></p>
+<p><a href="https://sprawdznip.podatki.gov.pl/">Sprawdź status NIP</a></p>
+<p><a href="https://niw.gov.pl/opp/wykaz-opp/">Wyszukiwarka OPP 1,5%</a></p>
+<p><a href="https://kaucja-gwarancyjna.mf.gov.pl/">Kaucja gwarancyjna</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/wyszukiwarka-uprawnien-serwisantow/">Wyszukiwarka uprawnień serwisantów&nbsp;</a></p>
+<p><a href="http://ec.europa.eu/taxation_customs/vies/?locale=pl&amp;;" data-anchor="?locale=pl&amp;;">Potwierdzanie numeru VAT UE (VIES)</a></p>
+                                                                    </div>
+                                                                       <h3 class="fw-bold mb-4">Inne narz&#x119;dzia </h3>
+                                                                    <div class="fw-bold mb-4">
+                                                                        <p><a href="/aplikacja-mobilna-eus" title="Aplikacja mobilna e-US">Aplikacja mobilna eUS</a></p>
+<p><a href="/aplikacja-e-paragony" title="Aplikacja e-Paragony">Aplikacja e-Paragony</a></p>
+<p><a href="/narzedzia/jak-pobrac-urzedowe-poswiadczenie-odbioru-upo" title="Jak pobrać Urzędowe Poświadczenie Odbioru (UPO)">Jak pobrać Urzędowe Poświadczenie Odbioru (UPO)</a></p>
+<p><a href="https://granica.gov.pl/index_wait.php">Czas oczekiwania na granicy</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/inne-narzedzia/wazne-terminy/">Ważne terminy&nbsp;</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/inne-narzedzia/rejestr-zastawow-skarbowych/">Rejestr zastawów skarbowych </a></p>
+<p><a href="/narzedzia/glos-podatnika" title="Głos Podatnika">Głos podatnika</a></p>
+<p><a href="https://ord-in.podatki.gov.pl/" title="Kreator wniosku ORD-IN">Kreator wniosku ORD-IN</a></p>
+<p><a href="https://elicytacje.mf.gov.pl/auction/">eLicytacje</a></p>
+                                                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="accordion-item">
+                                                    <h2 class="accordion-header mobile-accordion-header" id="flush-headingMobile_Zalatwsprawe">
+                                                            <a class="accordion-button primary fw-bold collapsed" role="button" href="/zalatw-sprawe-podatkowa-online" title="Za&#x142;atw spraw&#x119; online">
+                                                                Za&#x142;atw spraw&#x119; online
+                                                            </a>
+                                                    </h2>
+                                                    <div id="flush-collapseMobile_Zalatwsprawe" class="accordion-collapse collapse" aria-labelledby="flush-headingMobile_Zalatwsprawe" data-bs-parent="#accordionFlushMobile">
+                                                        <div class="accordion-body mb-4">
+                                                        </div>
+                                                    </div>
+                                                </div>
                 </div>
             </div>
+        </div>
+    </div>
+</header>
 
-            <div class="collapse navbar-collapse" id="navbarNav">
 
-                <form id="search" class="header-element ml-auto" action="/e-deklaracje/dokumentacja-it//szukaj" method="GET" style="padding-right:20px;">
 
-                    <div class="input-group" style="margin-bottom:5px;">
-                            <div class="lang-sel-wrapper" style="margin: 10px">
-                                <div tabindex="0" id="lang-sel" class="lang-sel btn btn-emptyAk" aria-label="Wybierz język">
-                                    PL
-                                    <div class="arrow" style="transform: rotate(45deg);"></div>
-                                    <ul id="lang-sel-items" class="lang-sel-wrapper">
-                                            <li>
-                                                <a href="/en/">EN</a>
-                                            </li>
-                                            <li>
-                                                <a href="/uk/">UK</a>
-                                            </li>
-                                    </ul>
-                                </div>
-                            </div>
 
-                        <div class="input-group-append mobileButtonSearch" style="margin:10px;">
-                            <button class="btn btn-secondary" type="button" data-toggle="modal" data-target="#searchModal">
-                                <img style="height:30px; height:30px; display:inline-block;" alt="Wyszukaj" src="/Content/Images/search.svg" />
-                            </button>
+</div>
+
+
+<div class="umb-block-grid"
+     data-grid-columns="12;"
+     style="--umb-block-grid--grid-columns: 12;">
+    
+
+<ul class="nav nav-tabs" id="taxTabs" role="tablist">
+
+
+
+
+            <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#osobiste" aria-expanded="false" aria-controls="osobiste">
+                            Podatki osobiste
+                        </button>
+                    </h2>
+                </a>
+            </li>
+
+
+            <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#firmowe" aria-expanded="false" aria-controls="firmowe">
+                            Podatki dla przedsi&#x119;biorc&#xF3;w
+                        </button>
+                    </h2>
+                </a>
+            </li>
+
+
+            <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#clo" aria-expanded="false" aria-controls="clo">
+                            C&#x142;o
+                        </button>
+                    </h2>
+                </a>
+            </li>
+
+
+             <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" href="/poradniki-i-informatory" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <div class="link primary fw-bold">
+                            Poradniki i informatory
                         </div>
-                    </div>
-                </form>
+                    </h2>
+                </a>
+            </li>
 
+
+             <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" href="/aktualnosci" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <div class="link primary fw-bold">
+                            Aktualno&#x15B;ci
+                        </div>
+                    </h2>
+                </a>
+            </li>
+
+
+            <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed primary fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#Narzedzia" aria-expanded="false" aria-controls="Narzedzia">
+                            Narz&#x119;dzia
+                        </button>
+                    </h2>
+                </a>
+            </li>
+
+
+             <li class="nav-item accordion" role="presentation">
+                <a class="nav-link accordion-item" href="/zalatw-sprawe-podatkowa-online" role="button" type="button">
+                    <h2 class="accordion-header">
+                        <div class="link primary fw-bold">
+                            Za&#x142;atw spraw&#x119; online
+                        </div>
+                    </h2>
+                </a>
+            </li>
+
+
+
+</ul>
+
+
+
+<div class="tab-content accordion" id="taxTabsContent">
+    
+
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="osobiste" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Od dochodu</h3>
+
+    <p>Podstawowy podatek od dochod&#xF3;w osobistych.</p>
+    <p><p><a href="/podatki-osobiste/pit/informacje-podstawowe" title="Informacje podstawowe"><strong>PIT</strong></a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe" title="Informacje podstawowe">Informacje podstawowe</a></p>
+<p><a href="/podatki-osobiste/pit/ulgi-i-odliczenia" title="Ulgi i odliczenia">Ulgi i odliczenia</a></p>
+<p><a href="/podatki-osobiste/pit/stawki-i-limity" title="Stawki i limity">Stawki i limity</a></p>
+<p><a href="/podatki-osobiste/pit/formularze-pit" title="Formularze">Formularze</a></p></p>
+    <p><h3><strong>Wybierz swoją sytuację</strong></h3>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-pracy" title="Dochody z pracy">Mam dochody z pracy</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-pracy-wykonywanej-za-granica" title="Dochody z pracy wykonywanej za granicą">Mam dochody z pracy wykonywanej za granicą</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-umowy-zlecenia-lub-o-dzielo" title="Dochody z umowy zlecenia lub o dzieło">Mam dochody z umowy zlecenia lub o dzieło</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-praw-autorskich" title="Dochody z praw autorskich">Mam dochody z praw autorskich</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-najmu" title="Dochody z najmu">Mam dochody z najmu</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-dzialalnosci-nierejestrowanej" title="Dochody z działalności nierejestrowanej">Mam dochody z działalności nierejestrowanej</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-niani" title="Dochody niani">Mam dochody niani</a></p>
+<p><a href="/podatki-osobiste/pit/informacje-podstawowe/co-jest-opodatkowane/dochody-z-emerytury-lub-renty" title="Dochody z emerytury lub renty">Mam dochody z emerytury</a></p>
+<p><a href="/potrzebuje-pelnomocnictwa" title="Potrzebuje pełnomocnictwa">Potrzebuję pełnomocnictwa</a></p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Od maj&#x105;tku</h3>
+
+    <p>Podatki, kt&#xF3;re op&#x142;acasz, kiedy zmienia si&#x119; Twoja sytuacja majatkowa.</p>
+    <p><p><a href="/podatki-osobiste/sd/informacje-podstawowe" title="Informacje podstawowe">Spadki i darowizny (<strong>SD</strong>)</a></p>
+<p><a href="/podatki-osobiste/pcc/informacje-podstawowe" title="Informacje podstawowe">Czynności cywilnoprawne (<strong>PCC</strong>)</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Od zakup&#xF3;w</h3>
+
+    <p>Podatki zwi&#x105;zane z transakcjami kupna r&#xF3;&#x17C;nych produkt&#xF3;w z kraju i zagranicy.</p>
+    <p><p><a href="/akcyza/informacje-podstawowe" title="Informacje podstawowe">Akcyza</a></p>
+<p><a href="/podatki-firmowe/vat" title="VAT">VAT</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Pozosta&#x142;e</h3>
+
+    <p>Wybrane podatki lokalne oraz inne formy opodatkowania.</p>
+    <p><p><a href="/pozostale/podatek-od-gier/informacje-podstawowe" title="Informacje podstawowe">Podatek od gier</a></p>
+<p><a href="/podatki-lokalne" title="Podatki lokalne">Podatki lokalne</a></p>
+<p><a href="/interpretacje-podatkowe" title="Interpretacje podatkowe">Interpretacje podatkowe</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="firmowe" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+<div class="col-md-4 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Podstawowe podatki dla przedsi&#x119;biorc&#xF3;w</h3>
+
+    <p></p>
+    <p></p>
+                <ul class="nav nav-tabs"  role="tablist">
+                    
+
+
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/pit/informacje-podstawowe" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							PIT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/cit/informacje-podstawowe" title="CIT">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							CIT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/vat" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							VAT
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/podatki-firmowe/jednolity-plik-kontrolny/jpk_vat-z-deklaracja" title="JPK">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							<p>JPK</p>
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary card-link fw-bold" href="/akcyza/informacje-podstawowe" title="">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							Akcyza
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+
+                </ul>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Pozosta&#x142;e podatki</h3>
+
+    <p></p>
+    <p><p><a href="/podatki-osobiste/pcc/informacje-podstawowe" title="Informacje podstawowe">od czynności cywilnoprawnych (<strong>PCC</strong>)</a></p>
+<p><a href="/podatki-osobiste/sd/informacje-podstawowe" title="Informacje podstawowe">od spadków i darowizn (<strong>SD</strong>)</a></p>
+<p><a href="/pozostale/podatek-tonazowy/informacje-podstawowe" title="Informacje podstawowe">tonażowy</a></p>
+<p><a href="/pozostale/podatek-od-gier/informacje-podstawowe" title="Informacje podstawowe">od gier</a></p>
+<p><a href="/pozostale/podatek-od-sprzedazy-detalicznej/informacje-podstawowe" title="Informacje podstawowe">od sprzedaży detalicznej</a></p>
+<p><a href="/pozostale/podatek-od-wydobycia-niektorych-kopalin/informacje-podstawowe" title="Informacje podstawowe">od wydobycia niektórych kopalin</a></p>
+<p><a href="/pozostale/podatek-od-niektorych-instytucji-finansowych/informacje-podstawowe" title="Informacje podstawowe">od niektórych instytucji finansowych</a></p>
+<p><a href="/pozostale/oplata-od-sprzedazy-alkoholu-w-opak-do-300-ml/informacje-podstawowe" title="Informacje podstawowe">od sprzedaży alkoholu w opakowaniach do 300 ml</a></p>
+<p><a href="/pozostale/oplata-cukrowa/informacje-podstawowe" title="Informacje podstawowe">Opłata cukrowa</a></p>
+<p><a href="/pozostale/klauzula-ogolna-przeciwko-unikaniu-opodatkowania" title="Klauzula ogólna przeciwko unikaniu opodatkowania">Klauzula ogólna przeciwko unikaniu opodatkowania</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-2 col-lg-3">
+
+    <p></p>
+    <p><p><a href="/podatki-lokalne" title="Podatki lokalne">Podatki lokalne</a></p>
+<p><a href="/pozostale/pelnomocnictwa/informacje-podstawowe-pelnomocnictwa" title="Informacje podstawowe pełnomocnictwa">Pełnomocnictwa</a></p>
+<p><a href="/pozostale/oplata-skarbowa/informacje-podstawowe" title="Informacje podstawowe">Opłata skarbowa</a></p>
+<p><a href="https://www.gov.pl/web/ias-katowice/rejestr-dzialalnosci-na-rzecz-spolek-lub-trustow">Rejestr działalności na rzecz spółek lub trustów</a></p>
+<p><a href="https://www.gov.pl/web/ias-katowice/rejestr-dzialalnosci-w-zakresie-walut-wirtualnych">Rejestr działalności w zakresie walut wirtualnych</a></p>
+<p><a href="/ceny-transferowe" title="Ceny transferowe">Ceny transferowe</a></p>
+<p><a href="/pozostale/program-wspoldzialania-pw" title="Program Współdziałania (PW)">Program współdziałania</a></p>
+<p><a href="/interpretacje-podatkowe" title="Interpretacje podatkowe">Interpretacje podatkowe</a></p>
+<p><a href="/podatkowa-wspolpraca-miedzynarodowa" title="Podatkowa współpraca międzynarodowa">Podatkowa współpraca międzynarodowa</a></p>
+<p><a href="/pozostale/porozumienie-inwestycyjne/informacje-podstawowe" title="Informacje podstawowe">Porozumienie inwestycyjne</a></p>
+<p><a href="/wiazace-informacje-podatkowe-i-celne" title="Wiążące informacje podatkowe i celne">Wiążące informacje podatkowe i celne</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+
+    <p></p>
+    <p><p><a href="/enotariusz" title="eNotariusz">eNotariusz</a></p>
+<p><a href="/e-sprawozdania-finansowe" title="e-Sprawozdania Finansowe">eSprawozdania</a></p>
+<p><a href="/eurzad-skarbowy-zalatw-sprawy-podatkowe-online/konto-organizacji-w-eurzedzie-skarbowym/zawiadomienie-zaw-nr" title="Zawiadomienie ZAW-NR">Zawiadomienie <strong>ZAW-NR</strong></a></p>
+<p><a href="/pozostale/wht-withholding-tax-podatek-u-zrodla" title="WHT - Withholding Tax (podatek u źródła)"><strong>WHT</strong> - Withholding Tax (podatek u źródła)</a></p>
+<p><a href="/mdr" title="MDR"><strong>MDR</strong> - Raportowanie schematów podatkowych</a></p>
+<p><a href="/icap" title="ICAP"><strong>ICAP</strong> -&nbsp;</a><a href="/icap" title="ICAP">International Compliance Assurance Programme</a></p>
+<p><a href="/pozostale/etaca" title="ETACA"><strong>ETACA</strong> - European Trust And Cooperation Approac</a></p>
+<p><a href="/pozostale/procedura-szczegolna-sme" title="Procedura szczególna SME"><strong>SME</strong> - procedura szczególna</a></p>
+<p><a href="/pozostale/globe-opodatkowanie-wyrownawcze/pytania-i-odpowiedzi-dot-opodatkowania-wyrownawczego" title="FAQ"><strong>GLOBE</strong> - opodatkowanie wyrównawcze</a></p>
+<p><a href="/pozostale/crbr" title="CRBR"><strong>CRBR</strong> - Centralny Rejestr Beneficjentów Rzeczywistych</a></p>
+<p><a href="/pozostale/tax-free-vat-refund-vap-oss-i-ioss" title="TAX FREE, VAT-REFUND, VAP, OSS i IOSS">Procedury <strong>TAX FREE, VAT-REFUND, VAP, OSS i IOSS</strong></a><a href="https://podatki-arch.mf.gov.pl/wht/"></a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="clo" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+<div class="col-md-6 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Podstawowe informacje o cle</h3>
+
+    <p></p>
+    <p><p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/informacje-dla-osob-fizycznych/towary-objete-ograniczeniami-i-zakazami" title="Towary objęte ograniczeniami i zakazami">Informacje dla osób fizycznych</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/informacje-dla-przedsiebiorcow/aeo" title="AEO">Informacje dla przedsiębiorców</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/ograniczenia-przywozu-i-wywozu-towarow/srodki-ochrony-roslin" title="Środki ochrony roślin">Ograniczenia przywozu i wywozu towarów</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/zabezpieczenie-i-pobor-naleznosci-celnych-oraz-zwrot-i-umorzenia-naleznosci-celnych/odroczenie-terminu-platnosci-naleznosci" title="Odroczenie terminu płatności należności">Zabezpieczenie i pobór należności celnych oraz zwrot i umorzenia należności celnych</a></p>
+<p><a href="/informacje-o-cle/podstawowe-informacje-o-cle/zintegrowana-taryfa-celna/nomenklatura-taryfowa-i-wspolna-taryfa-celna" title="Nomenklatura taryfowa i WTC">Zintegrowana Taryfa Celna </a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Pozosta&#x142;e</h3>
+
+    <p></p>
+    <p><p><a href="/informacje-o-cle/pozostale-informacje/agenci-celni" title="Agenci celni">Agenci celni</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/gwaranci-celni" title="Gwaranci celni">Gwaranci celni</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/kursy-walut-w-przepisach-celnych" title="Kursy walut w przepisach celnych">Kursy walut w przepisach</a></p>
+<p><a href="/informacje-o-cle/akty-prawne-regulujace-sprawy-celne" title="Akty prawne regulujące sprawy celne">Akty prawne regulujące sprawy celne</a></p>
+<p><a href="/informacje-o-cle/pozostale-informacje/zwolnienia-celne" title="Zwolnienia celne">Zwolnienia</a></p></p>
+    <p><p>&nbsp;</p>
+<p> </p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Og&#xF3;lne</h3>
+
+    <p></p>
+    <p><p><a href="/informacje-o-cle/ogolne/cbam" title="CBAM">CBAM</a></p>
+<p><a href="/informacje-o-cle/ogolne/zgloszenie-celne-i-intrastat" title="Zgłoszenie celne i INTRASTAT">Zgłoszenie celne i INTRASTAT</a></p>
+<p><a href="/informacje-o-cle/ogolne/brexit-a-clo" title="Brexit a cło">Brexit a cło</a></p>
+<p><a href="/informacje-o-cle/ogolne/reforma-celna" title="Reforma celna">Reforma celna</a><a href="/narzedzia/kalkulator-taryfowy" title="Kalkulator taryfowy"></a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-2 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Narz&#x119;dzia</h3>
+
+    <p></p>
+    <p><p><a href="/narzedzia/kalkulator-taryfowy" title="Kalkulator taryfowy">Kalkulator taryfowy</a></p>
+<p><a href="/narzedzia/przegladarka-taryfowa" title="Przeglądarka taryfowa">Przeglądarka taryfowa</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="Informacje o cle" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-12 col-lg-3">
+
+    <p></p>
+    <p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="Narzedzia" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+<div class="col-md-4 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Kalkulatory</h3>
+
+    <p></p>
+    <p><p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-odsetek-za-zwloke-od-zaleglosci-podatkowych-oraz-oplaty-prolongacyjnej/">Kalkulator odsetek za zwłokę od zaległości podatkowych oraz opłaty prolongacyjnej</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-odsetek-ustawowych/">Kalkulator odsetek ustawowych</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/kalkulatory-podatkowe/kalkulator-walut/">Kalkulator walut</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-3 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Wyszukiwarki</h3>
+
+    <p></p>
+    <p><p><a href="/narzedzia/eureka" title="EUREKA">System Informacji Celno-Skarbowej EUREKA </a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/wyszukiwarki/wyszukiwarka-teleadresowa-jednostek-kas/">Wyszukiwarka urzędów skarbowych i jednostek Krajowej Administracji Skarbowej</a></p>
+<p><a href="https://wykazpodatnikowvat.mf.gov.pl/">Wykaz podmiotów zarejestrowanych jako podatnicy VAT, niezarejestrowanych oraz wykreślonych i przywróconych do rejestru VAT</a></p>
+<p><a href="https://wykazpodatnikowvat.mf.gov.pl/plik-plaski" title="White List">Plik płaski</a></p>
+<p><a href="https://sprawdznip.podatki.gov.pl/">Sprawdź status NIP</a></p>
+<p><a href="https://niw.gov.pl/opp/wykaz-opp/">Wyszukiwarka OPP 1,5%</a></p>
+<p><a href="https://kaucja-gwarancyjna.mf.gov.pl/">Kaucja gwarancyjna</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/wyszukiwarka-uprawnien-serwisantow/">Wyszukiwarka uprawnień serwisantów&nbsp;</a></p>
+<p><a href="http://ec.europa.eu/taxation_customs/vies/?locale=pl&amp;;" data-anchor="?locale=pl&amp;;">Potwierdzanie numeru VAT UE (VIES)</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+<div class="col-md-2 col-lg-3">
+       <h3 class="fw-bold pt-4 mb-2">Inne narz&#x119;dzia </h3>
+
+    <p></p>
+    <p><p><a href="/aplikacja-mobilna-eus" title="Aplikacja mobilna e-US">Aplikacja mobilna eUS</a></p>
+<p><a href="/aplikacja-e-paragony" title="Aplikacja e-Paragony">Aplikacja e-Paragony</a></p>
+<p><a href="/narzedzia/jak-pobrac-urzedowe-poswiadczenie-odbioru-upo" title="Jak pobrać Urzędowe Poświadczenie Odbioru (UPO)">Jak pobrać Urzędowe Poświadczenie Odbioru (UPO)</a></p>
+<p><a href="https://granica.gov.pl/index_wait.php">Czas oczekiwania na granicy</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/inne-narzedzia/wazne-terminy/">Ważne terminy&nbsp;</a></p>
+<p><a href="https://podatki-arch.mf.gov.pl/inne-narzedzia/rejestr-zastawow-skarbowych/">Rejestr zastawów skarbowych </a></p>
+<p><a href="/narzedzia/glos-podatnika" title="Głos Podatnika">Głos podatnika</a></p>
+<p><a href="https://ord-in.podatki.gov.pl/" title="Kreator wniosku ORD-IN">Kreator wniosku ORD-IN</a></p>
+<p><a href="https://elicytacje.mf.gov.pl/auction/">eLicytacje</a></p></p>
+    <p></p>
+    <p></p>
+</div>
+
+
+
+
+        </div>
+    </div>
+
+
+    <div class="tab-pane fade active py-3 px-5 accordion-collapse collapse" id="Zalatwsprawe" role="tabpanel" data-bs-parent="#taxTabsContent">
+        <div class="row px-5">
+            
+
+
+
+        </div>
+    </div>
+
+
+
+
+</div>
+
+</div>
+
+
+
+<div class="container-fluid nav-tabs pt-3 d-none d-lg-block">
+    <nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='%236c757d'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+        <ol class="breadcrumb">
+
+                    <li class="breadcrumb-item">
+                        <a href="/">Strona G&#x142;&#xF3;wna</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="/e-deklaracje-zloz-deklaracje-podatkowa-online">e-Deklaracje &#x2013; z&#x142;&#xF3;&#x17C; deklaracj&#x119; podatkow&#x105; online</a>
+                    </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Bramka UBD i dokumentacja IT
+                </li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Masthead-->
+
+    
+	 
+
+<div class="container">
+	<div class="row">
+		<div class="col-12">
+			<h2 class="fw-bold pt-4 mb-4">e-Deklaracje - bramka UBD i dokumentacja IT</h2>
+			<h3 class="fw-bold mb-4">W tym miejscu znajdziesz dokumentacj&#x119; dotycz&#x105;c&#x105; IT, w tym Uniwersalnej Bramki Dokument&#xF3;w </h3>
+            <p>
+                Data publikacji: <span class="fw-bold">18.02.2026</span><br />
+                Data aktualizacji: <span class="fw-bold">13.10.2026</span>
+            </p>
+			
+<div class="umb-block-grid"
+     data-grid-columns="12;"
+     style="--umb-block-grid--grid-columns: 12;">
+    
+
+
+<div class="accordion accordion-flush mb-4" id="accordionFlush_161" role="tablist" aria-label="Uniwersalna Bramka Dokument&#xF3;w">
+
+
+
+
+<div class="accordion-item">
+		<div class="accordion-header mb-4 pt-4" id="Uniwersalna Bramka Dokument&#xF3;w">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse122" aria-expanded="false" aria-controls="flush-collapse122">
+				<h3><strong>Uniwersalna Bramka Dokument&#xF3;w</strong></h3>
+			</button>
+		</div>
+		<div id="flush-collapse122" class="accordion-collapse collapsed collapse" aria-labelledby="Uniwersalna Bramka Dokument&#xF3;w">
+			<div class="accordion-body mb-4">
+
+
+
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_727" role="button" aria-expanded="false" aria-controls="collapse_727" aria-label="Co to jest UBD"><img src="/assets/ICONS/Caretdown.svg" alt="Co to jest UBD"><strong>Co to jest UBD</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_727">
+	<p>Dzięki UBD:</p>
+<ul>
+<li>przekażesz do 20 tys. deklaracji (PIT-11, PIT-8C, PIT-R) jednocześnie</li>
+</ul>
+<p class="fw-bold bd-excerpt">Jeśli przesyłasz kilka dokumentów skorzystaj ze schematów informacji zbiorczych oznaczonych odpowiednio: PIT-11Z, PIT-8CZ, PIT-RZ</p>
+<ul>
+<li>podpiszesz je podpisem kwalifikowanym, a jeśli jesteś płatnikiem zaliczek na podatek dochodowy i jesteś osobą fizyczną – także danymi autoryzującymi (to podpis elektroniczny, który zapewnia autentyczność deklaracji i podań opartych na danych autoryzujących)</li>
+<li>pobierzesz jedno Urzędowe Poświadczenie Odbioru (UPO)</li>
+</ul>
+<p class="fw-bold bd-excerpt">Korekty deklaracji nie możesz złożyć za pomocą bramki UBD.<br>Wyślesz ją tylko jako pojedynczy dokument do systemu e-Deklaracje.</p>
+
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_753" role="button" aria-expanded="false" aria-controls="collapse_753" aria-label="Bramka UBD"><img src="/assets/ICONS/Caretdown.svg" alt="Bramka UBD"><strong>Bramka UBD</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_753">
+	<p><a href="https://ubd.mf.gov.pl/uslugi/dokumenty">Przejdź do bramki UBD</a>.</p>
+<p>Informacje techniczne, które dotyczą działania UBD znajdziesz w Specyfikacji Wejścia - Wyjścia dostępnej w zakładce Dokumentacja IT.</p>
+
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_667" role="button" aria-expanded="false" aria-controls="collapse_667" aria-label="Wersja testowa bramki UBD"><img src="/assets/ICONS/Caretdown.svg" alt="Wersja testowa bramki UBD"><strong>Wersja testowa bramki UBD</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_667">
+	<p>Wersja testowa pozwoli na dostosowanie twojego systemu informatycznego do bramki UBD i korzystanie z tego kanału komunikacji.</p>
+<p>Informacje techniczne, które dotyczą działania wersji testowej UBD znajdziesz w zakładce Dokumentacja IT.</p>
+<p><a href="https://test-ubd.mf.gov.pl/uslugi/dokumenty">Przejdź do testowej bramki UBD</a>.</p>
+
+
+
+</div>
+
+
+			</div>
+		</div>
+
+	
+</div>
+
+
+
+</div>
+
+<div class="accordion accordion-flush mb-4" id="accordionFlush_524" role="tablist" aria-label="Dokumentacja IT">
+
+
+
+
+<div class="accordion-item">
+		<div class="accordion-header mb-4 pt-4" id="Dokumentacja IT">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse576" aria-expanded="false" aria-controls="flush-collapse576">
+				<h3><strong>Dokumentacja IT</strong></h3>
+			</button>
+		</div>
+		<div id="flush-collapse576" class="accordion-collapse collapsed collapse" aria-labelledby="Dokumentacja IT">
+			<div class="accordion-body mb-4">
+<p>Informacje dla dostawców IT, specyfikacje, bramka UBD, struktury XML</p>
+
+
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_231" role="button" aria-expanded="false" aria-controls="collapse_231" aria-label="Specyfikacja Wej&#x15B;cia - Wyj&#x15B;cia"><img src="/assets/ICONS/Caretdown.svg" alt="Specyfikacja Wej&#x15B;cia - Wyj&#x15B;cia"><strong>Specyfikacja Wej&#x15B;cia - Wyj&#x15B;cia</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_231">
+	
+
+
+
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_656" role="button" aria-expanded="false" aria-controls="collapse_656" aria-label="Bramka e-Deklaracje"><img src="/assets/ICONS/Caretdown.svg" alt="Bramka e-Deklaracje"><strong>Bramka e-Deklaracje</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_656">
+	
+
+
+
+	<div class="mt-5 mb-5">
+	<h4>Specyfikacja We-Wy v.2.4</h4>
+<p>Zasady wymiany informacji pomiędzy systemem informatycznym e-Deklaracje a oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu e-Deklaracje</p>
+	</div>
+
+					<p>
+						<a class="primary fw-bold" href="/media/4z0b4mp0/edek_specyfikacja_we-wy_2-4_www.pdf" target="_blank" title="Specyfikacje We-Wy v.2.4"><img src="/assets/ICONS/Download.svg" alt="Pobierz Specyfikacje We-Wy v.2.4"> Specyfikacje We-Wy v.2.4 <span class="secondary">PDF, 1,09 MB</span></a><br />
+					</p>
+
+	<div class="mt-5 mb-5">
+	<h4>Specyfikacja We-Wy - środowisko testowe v.2.4</h4>
+<p>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego e-Deklaracje a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu e-Deklaracje</p>
+	</div>
+
+					<p>
+						<a class="primary fw-bold" href="/media/d4ilawpa/edek_specyfikacja_we-wy_2-4_test_www.pdf" target="_blank" title="Specyfikacja We-Wy - &#x15B;rodowisko testowe v.2.4"><img src="/assets/ICONS/Download.svg" alt="Pobierz Specyfikacja We-Wy - &#x15B;rodowisko testowe v.2.4"> Specyfikacja We-Wy - &#x15B;rodowisko testowe v.2.4 <span class="secondary">PDF, 1,10 MB</span></a><br />
+					</p>
+
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_106" role="button" aria-expanded="false" aria-controls="collapse_106" aria-label="Bramka UBD"><img src="/assets/ICONS/Caretdown.svg" alt="Bramka UBD"><strong>Bramka UBD</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_106">
+	
+
+
+
+	<div class="mt-5 mb-5">
+	<h4>Specyfikacja We-Wy UBD v.0.3.0</h4>
+<p>Zasady wymiany informacji pomiędzy systemem informatycznym e-Deklaracje a oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</p>
+	</div>
+
+					<p>
+						<a class="primary fw-bold" href="/media/vdyhm5qq/ubd_specyfikacja_we-wy_0-3-0.pdf" target="_blank" title="Specyfikacja We-Wy UBD v.0.3.0."><img src="/assets/ICONS/Download.svg" alt="Pobierz Specyfikacja We-Wy UBD v.0.3.0."> Specyfikacja We-Wy UBD v.0.3.0. <span class="secondary">PDF, 1,52 MB</span></a><br />
+					</p>
+
+	<div class="mt-5 mb-5">
+	<h4>Specyfikacja We-Wy UBD - środowisko testowe v.0.3.0</h4>
+<p>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego e-Deklaracje a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</p>
+	</div>
+
+					<p>
+						<a class="primary fw-bold" href="/media/bwpflsk5/ubd_specyfikacja_we-wy_0-3-0_test.pdf" target="_blank" title="Specyfikacja We-Wy UBD - &#x15B;rodowisko testowe v.0.3.0."><img src="/assets/ICONS/Download.svg" alt="Pobierz Specyfikacja We-Wy UBD - &#x15B;rodowisko testowe v.0.3.0."> Specyfikacja We-Wy UBD - &#x15B;rodowisko testowe v.0.3.0. <span class="secondary">PDF, 1,52 MB</span></a><br />
+					</p>
+
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_85" role="button" aria-expanded="false" aria-controls="collapse_85" aria-label="Sprawd&#x17A; status VAT"><img src="/assets/ICONS/Caretdown.svg" alt="Sprawd&#x17A; status VAT"><strong>Sprawd&#x17A; status VAT</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_85">
+	<p>Zasady wymiany informacji pomiędzy usługą sieciową&nbsp;<strong>Sprawdź status VAT</strong>&nbsp;udostępnioną przez Ministerstwo Finansów, a oprogramowaniem interfejsowym systemów klienckich, pobierających informacje dotyczące statusu podatników jako płatników podatku VAT.</p>
+
+
+
+					<p>
+						<a class="primary fw-bold" href="/media/qmvjc422/specyfikacja-we-wy.pdf" target="_blank" title="Specyfikacja We-WY us&#x142;ugi &quot;Sprawd&#x17A; status VAT&quot;"><img src="/assets/ICONS/Download.svg" alt="Pobierz Specyfikacja We-WY us&#x142;ugi &quot;Sprawd&#x17A; status VAT&quot;"> Specyfikacja We-WY us&#x142;ugi &quot;Sprawd&#x17A; status VAT&quot; <span class="secondary">PDF, 865,96 kB</span></a><br />
+					</p>
+
+
+
+</div>
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_940" role="button" aria-expanded="false" aria-controls="collapse_940" aria-label="Informacja na temat certyfikatu SSL serwera us&#x142;ugi Web Services systemu e-Deklaracje"><img src="/assets/ICONS/Caretdown.svg" alt="Informacja na temat certyfikatu SSL serwera us&#x142;ugi Web Services systemu e-Deklaracje"><strong>Informacja na temat certyfikatu SSL serwera us&#x142;ugi Web Services systemu e-Deklaracje</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_940">
+	<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych<span>&nbsp;</span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</p>
+
+
+
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary btn btn-primary" href="/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-uslugi-web-services-systemu-e-deklaracje" title="Przejd&#x17A; do informacji na temat certyfikatu SSL">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							<p>Przejdź do informacji na temat certyfikatu SSL</p>
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_42" role="button" aria-expanded="false" aria-controls="collapse_42" aria-label="Informacja na temat certyfikatu SSL serwera testowego us&#x142;ugi Web Services systemu e-Deklaracje"><img src="/assets/ICONS/Caretdown.svg" alt="Informacja na temat certyfikatu SSL serwera testowego us&#x142;ugi Web Services systemu e-Deklaracje"><strong>Informacja na temat certyfikatu SSL serwera testowego us&#x142;ugi Web Services systemu e-Deklaracje</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_42">
+	<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych<span>&nbsp;</span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</p>
+
+
+
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary btn btn-primary" href="/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje" title="Przejd&#x17A; do informacji na temat certyfikatu SSL">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							<p>Przejdź do informacji na temat certyfikatu SSL</p>
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+</div>
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_343" role="button" aria-expanded="false" aria-controls="collapse_343" aria-label="Struktury dokument&#xF3;w XML"><img src="/assets/ICONS/Caretdown.svg" alt="Struktury dokument&#xF3;w XML"><strong>Struktury dokument&#xF3;w XML</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_343">
+	<p>Struktury dokumentów XML można pobrać klikając w nazwę konkretnej struktury wyświetlając jej kod w formacie XSD na ekranie.</p>
+
+
+
+
+<div class="col-12 col-lg-12 mb-4">
+	<a class="card h-100 primary btn btn-primary" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/" title="Przejd&#x17A; do tabeli struktur dokument&#xF3;w XML">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+						<div class="col-10">
+							<p>Przejdź do tabeli struktur dokumentów XML</p>
+						</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+</div>
+
+
+			</div>
+		</div>
+
+	
+</div>
+
+
+
+</div>
+
+<div class="accordion accordion-flush mb-4" id="accordionFlush_711" role="tablist" aria-label="Wtyczka do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF">
+
+
+
+
+<div class="accordion-item">
+		<div class="accordion-header mb-4 pt-4" id="Wtyczka do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF">
+			<button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#flush-collapse192" aria-expanded="false" aria-controls="flush-collapse192">
+				<h3><strong>Wtyczka do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF</strong></h3>
+			</button>
+		</div>
+		<div id="flush-collapse192" class="accordion-collapse collapsed collapse" aria-labelledby="Wtyczka do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF">
+			<div class="accordion-body mb-4">
+<p><strong>Wtyczka (plug-in) niezbędna przy składaniu dokumentów bezpośrednio z formularzy interaktywnych PDF</strong></p>
+<p class="fw-bold bd-excerpt">Prawidłowe działanie wtyczki wymaga Adobe Reader w wersji 32-bit.</p>
+<p>Niezbędna do składania drogą elektroniczną deklaracji podatkowych, wypełnianych w interaktywnych formularzach w formacie PDF dostępnych na Portalu Podatkowym.</p>
+<p class="fw-bold bd-excerpt">Przed wysłaniem deklaracji zainstaluj najnowszą wtyczkę (plugin).</p>
+<p>Szczegółowy opis odinstalowania/instalacji wtyczki znajdujesz w "Instrukcja użytkownika interaktywnych formularzy deklaracji i podań składanych od roku 2018 opatrywanych kwalifikowanym podpisem elektronicznym oraz podpisem elektronicznym zapewniającym autentyczność deklaracji i podań opartym na danych autoryzujących („dane autoryzujące")", w rozdziałach:</p>
+<ul>
+<li>2.2. Instalacja wtyczki (plugin) do programu Adobe Reader</li>
+<li>2.2.1. Odinstalowanie wtyczki</li>
+<li>2.2.2. Instalacja nowej wersji wtyczki</li>
+</ul>
+<p><strong>Wtyczka (plug-in) wersja 11.0.0 – opis najważniejszych zmian:</strong></p>
+<div id="aui_3_2_0_1137">
+<ol>
+<li>ekran danych autoryzujących dostosowany do składania dokumentów począwszy od roku 2024. Wykaz kwot autoryzujących zawierających aktualne informacje znajdziesz w zakładce <a href="/e-deklaracje-zloz-deklaracje-podatkowa-online/pytania-i-odpowiedzi" title="Pytania i odpowiedzi">e-Deklaracje – pytania i odpowiedzi – pytanie numer 3</a></li>
+</ol>
+<p>Przed instalacją wersji 11.0.0 usuń poprzednią wersji wtyczki – zamknij przeglądarkę Adobe i odinstaluj ją z Panelu sterowania - Programy i funkcje (lub Dodaj/usuń programy).</p>
+<p>Korzystanie z nieaktualnych wersji oprogramowania do zarządzania kartą kryptograficzną oraz składania i weryfikacji bezpiecznego podpisu elektronicznego skutkować będzie nieprawidłowym podpisywaniem i odrzucaniem dokumentów na bramkach Systemu e- Deklaracje.</p>
+<p>Informacja na temat konfiguracji oprogramowania do podpisu jest dostępna w dokumencie „Oprogramowanie do podpisu elektronicznego i zarządzania kartami kryptograficznymi, dostarczane przez centra certyfikacji – ustawienia dla systemu e-Deklaracje" dostępnym do pobrania poniżej.</p>
+</div>
+
+
+<button class="accordion-button  mt-4 mb-4 collapsed" data-bs-toggle="collapse" href="#collapse_327" role="button" aria-expanded="false" aria-controls="collapse_327" aria-label="Pliki do pobrania"><img src="/assets/ICONS/Caretdown.svg" alt="Pliki do pobrania"><strong>Pliki do pobrania</strong></button>
+
+<div class="collapse mb-4 ms-4" id="collapse_327">
+	
+
+
+
+					<p>
+						<a class="primary fw-bold" href="/media/1fnfgmo2/e-deklaracje-wtyczka-11-0-0.msi" target="_blank" title="Wtyczka (plug-in) do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF v 11.0.0"><img src="/assets/ICONS/Download.svg" alt="Pobierz Wtyczka (plug-in) do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF v 11.0.0"> Wtyczka (plug-in) do podpisywania i przesy&#x142;ania danych XML z interaktywnych formularzy PDF v 11.0.0 <span class="secondary">MSI, 2,16 MB</span></a><br />
+						<a class="primary fw-bold" href="/media/xsndcdg0/instrukcja-korzystania-z-formularzy-interaktywnych-pdf-wersja-1-19_tk-1.pdf" target="_blank" title="Instrukcja korzystania z formularzy interaktywnych PDF"><img src="/assets/ICONS/Download.svg" alt="Pobierz Instrukcja korzystania z formularzy interaktywnych PDF"> Instrukcja korzystania z formularzy interaktywnych PDF <span class="secondary">PDF, 2,84 MB</span></a><br />
+						<a class="primary fw-bold" href="/media/ta1hs4n5/oprogramowanie-do-podpisu-konfiguracja-dla-edeklaracje_v20190625-1.pdf" target="_blank" title="Oprogramowanie do podpisu - konfiguracja dla eDeklaracje"><img src="/assets/ICONS/Download.svg" alt="Pobierz Oprogramowanie do podpisu - konfiguracja dla eDeklaracje"> Oprogramowanie do podpisu - konfiguracja dla eDeklaracje <span class="secondary">PDF, 1,61 MB</span></a><br />
+					</p>
+
+
+
+</div>
+
+
+			</div>
+		</div>
+
+	
+</div>
+
+
+
+</div>
+
+</div>
+
+		</div>
+	</div>
+</div>
+
+    
+    
+
+<footer>  
+
+
+   
+        
+
+<div class="container-fluid">
+    <div class="bg-white">
+        <div class="container">
+				<div class="row fw-bold pt-4 mb-4">
+
+
+	<div class="mt-5 mb-5">
+	<h2>Załatw swoją sprawę podatkową</h2>
+	</div>
+
+
+
+</div>
+            <div class="row justify-content-center">
                 
 
 
 
-                <nav class="nav nav-list flex-column d-lg-none">
-                        <a class="nav-link" href="/pit/">PIT</a>
-                        <a class="nav-link" href="/cit/">CIT</a>
-                        <a class="nav-link" href="/vat/">VAT</a>
-                        <a class="nav-link" href="/akcyza/">Akcyza</a>
-                        <a class="nav-link" href="/clo/">Cło</a>
-                        <a class="nav-link" href="/pcc-sd/">PCC, SD</a>
-                        <a class="nav-link" href="/podatki-i-oplaty-lokalne/">Podatki i opłaty lokalne</a>
-                        <a class="nav-link" href="/pozostale-podatki/">Pozostałe podatki</a>
-                        <a class="nav-link" href="/e-deklaracje/">e-Deklaracje</a>
-                        <a class="nav-link" href="/skontaktuj-sie-z-nami/">Skontaktuj się z nami</a>
-                                            <span class="nav-link">Zmień język:</span>
-                        <div class="nav-lang">
-                                <a href="/en/" aria-label="Odnośnik do angielskiej wersji językowej portalu podatkowego">EN</a>
-                                <a href="/uk/" aria-label="Odnośnik do ukraińskiej wersji językowej portalu podatkowego">UK</a>
-                        </div>
-                </nav>
+<div class="col-12 col-lg-3 mb-4">
+	<a class="card h-100 primary Primary Default Hover" href="/eurzad-skarbowy-zalatw-sprawy-podatkowe-online" target="_blank" title="Znajd&#x17A; us&#x142;ug&#x119;">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+					<div class="col-2">
+						<img src="/media/1acmmqjd/quick_reference_all.svg?width=50&amp;v=1dc5e5fcd8f58e0" alt="ikona z lup&#x105;">
+					</div>
+					<div class="col-8">
+						<p>Znajdź usługę</p>
+					</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-3 mb-4">
+	<a class="card h-100 primary Primary Default Hover" href="/e-deklaracje-zloz-deklaracje-podatkowa-online" title="Znajd&#x17A; deklaracj&#x119; ">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+					<div class="col-2">
+						<img src="/media/1klpcxtf/contract_edit.svg?width=50&amp;v=1dc5e5fcd90df80" alt="">
+					</div>
+					<div class="col-8">
+						Znajdź deklarację
+					</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-3 mb-4">
+	<a class="card h-100 primary Primary Default Hover" href="/zalatw-sprawe-podatkowa-online" title="Za&#x142;atw spraw&#x119; online ">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+					<div class="col-2">
+						<img src="/media/bbedtxkn/computer.svg?width=50&amp;v=1dc5e5fcd8323e0" alt="">
+					</div>
+					<div class="col-8">
+						Znajdź serwis
+					</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+<div class="col-12 col-lg-3 mb-4">
+	<a class="card h-100 primary Primary Default Hover" href="/narzedzia-i-uslugi" title="Znajd&#x17A; narz&#x119;dzie">
+		<div class="card-body align-middle">
+			<div class="card-title fw-bold row align-middle">
+					<div class="col-2">
+						<img src="/media/fswgw0og/handyman.svg?width=50&amp;v=1dc5e5fcd9684d0" alt="">
+					</div>
+					<div class="col-8">
+						<p>Znajdź narzędzie</p>
+					</div>
+				<div class="col-2 text-end">
+						<i class="text-right fas fa-arrow-right"></i>
+				</div>
+			</div>
+				<div class="card-text small-text" ></div>
+		</div>
+	</a>
+</div>
+
+
+
             </div>
-        </nav>
-    </header>
+        </div>
+    </div>
+</div>
+	<div class="mt-5 mb-5">
+	<hr class="linia">
+	</div>
+
+
+
+<div class="container">
+    <div class="row">
+         <div class="col-12 col-md-3">
+            
+
+
+
+    
+    <div class="col-12 footer-logo mb-4"><img src="/assets/logoMF_znak_bez_orla_kolor_biale_tlo.svg?rmode=max&amp;width=147&amp;height=74" alt="logo Ministerstwa Finansów" width="147" height="74"></div>
+<div class="col-12 footer-logo"><img src="/assets/logoKAS.svg?rmode=max&amp;width=127&amp;height=72" alt="logo KAS" width="127" height="72"></div>
+
+
+
+
+        </div>
+         <div class="col-12 col-md-6">
+            
+
+
+
+    
+    <ul>
+<li><a href="/mapa-strony" title="Mapa Strony 2" data-anchor="#">Mapa strony</a></li>
+<li><a href="/deklaracja-dostepnosci" title="Deklaracja dostepności" data-anchor="#">Deklaracja dostępności serwisu</a></li>
+<li><a href="/polityka-cookie" title="Polityka cookie" data-anchor="#">Polityka cookie</a></li>
+<li><a href="/klauzula-informacyjna-ministra-finansow-i-gospodarki" title="Klauzula informacyjna Ministra Finansów i Gospodarki">Klauzula informacyjna Ministra Finansów i Gospodarki</a></li>
+<li><a href="/klauzula-informacyjna-szefa-kas" title="Klauzula informacyjna Szefa KAS">Klauzula informacyjna Szefa Krajowej Administracji Skarbowej</a></li>
+<li><a href="https://podatki-arch.mf.gov.pl/">podatki.gov.pl - archiwum</a></li>
+</ul>
+
+
+
+
+        </div>
+         <div class="col-12 col-md-3">
+            
+
+
+
+    
+    <div class=" col-sm-12 row">
+<div class="col-12 mb-4"><a href="https://podatki.gov.pl" class="footer-link"><img src="/assets/logoPodatki.svg?rmode=max&amp;width=205&amp;height=28" alt="logo podatki.gov.pl" width="205" height="28"></a></div>
+<div class="col-12 mb-4"><button class="tax-box-button fw-bold"><a href="/skontaktuj-sie-z-nami" title="Skontaktuj się z Nami" data-anchor="#">Skontaktuj się z nami <img src="/assets/ICONS/open_in_new.svg" alt=""></a></button></div>
+<div class="col-4"></div>
+</div>
+
+
+
+
+        </div>
+         <div class="col-12 col-md-12">
+            
+
+
+
+    
+    <p>Treści zamieszczone w serwisie udostępniamy bezpłatnie. Korzystanie z treści opublikowanych w serwisie podatki.gov.pl, niezależnie od celu i sposobu korzystania, nie wymaga zgody Ministerstwa Finansów. Treści znaczone w serwisie jako treści będące przedmiotem praw autorskich, o ile nie jest to stwierdzone inaczej, są udostępniane na licencji Creative Commons Uznanie Autorstwa 3.0 Polska.</p>
+
+
+
+
+        </div>
+    </div>
+</div>
+
+				
+
+</footer>
+    <!-- Bootstrap core JS-->
+    <script src="/bootstrap/js/bootstrap.bundle.min.js?v=CDOy6cOibCWEdsRiZuaHf8dSGGJRYuBGC-mjoJimHGw"></script>
+    <script src="/scripts/accordion-anchors.js"></script>
+
+
+    
+
+
+<a href="#" id="manage-consent1">Ustawienia prywatności</a>
 <script>
-    function LogOut() {
-         $.ajax({
-    url: '',
-    type: 'POST',
-    data: {},
-             success: function (result) {
-                 console.log(result);
+    MatomoConsentSDK.init({
+        policyUrl: '/polityka-cookie/',
+    cookieTableEnabled: false,
+    });
+        if (!window.location.pathname.includes('/polityka-cookie/')) {
+    MatomoConsentSDK.showBanner();
     }
-});
+    document.getElementById('manage-consent1').addEventListener('click', function(e){
+    e.preventDefault();
+    if (typeof showMatomoConsentBanner === 'function') {
+    showMatomoConsentBanner({ forceShow: true, forceCookiePanel: true });
+    } else if (typeof MatomoConsentSDK !== 'undefined') {
+    MatomoConsentSDK.showBanner({ forceShow: true, forceCookiePanel: true });
     }
+    });
 </script>
 
 
 
-
-
-
-
-    <nav class="main">
-        <div class="container">
-            <ol class="breadcrumb">
-                
-                    <li class="breadcrumb-item"><a href="/">Podatki.gov.pl</a></li>
-                    <li class="breadcrumb-item"><a href="/e-deklaracje/">e-Deklaracje</a></li>
-        
-                
-                
-            </ol>
-        </div>
-    </nav>
-
-    <div id="content" class="container-fluid">
-        
-<link href="/Content/Styles/NewOrderPage.css" rel="stylesheet" />
-
-
-
-
-
-<div class="content-header dark-text">
-    <div class="container relative">
-        <h1>Dokumentacja IT</h1>
-        <hr />
-        <p class="introduction">Informacje dla dostawców IT, specyfikacje, bramka UBD, struktury XML</p>
-            </div>
-</div>
-
-    <div class="umb-grid container">
-        <div class="row clearfix">
-                <div class="col-md-12 column">                
-                        <section class="article-content">
-    <div >
-        
-        <div class="row clearfix">
-            <div class="col-md-12 column">
-                <div >
-                            
     
-
-<h2>Specyfikacja Wejścia - Wyjścia</h2>
-<h3>Bramka e-Deklaracje</h3>
-
-                            
-    
-
-<h4>Specyfikacja We-Wy v.2.4</h4>
-<p><span>Zasady wymiany informacji pomiędzy systemem informatycznym </span>e-Deklaracje<span> a oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu </span>e-Deklaracje<span> </span></p>
-<p style="padding-left: 40px;"><a rel="noopener" href="/media/3615/edek_specyfikacja_we-wy_2-4_www.pdf" target="_blank" class="link-attachment">Specyfikacje We-Wy v.2.4 (PDF, 1115 kB)</a></p>
-
-                            
-    
-
-<h4>Specyfikacja We-Wy - środowisko testowe v.2.4</h4>
-<p>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego<span> </span>e-Deklaracje<span> </span>a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania dokumentów do systemu<span> </span>e-Deklaracje</p>
-<p style="padding-left: 40px;"><a rel="noopener" href="/media/3616/edek_specyfikacja_we-wy_2-4_test_www.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy - środowisko testowe v.2.4 (PDF, 1127 kB)</a></p>
-
-                            
-    
-
-<h3>Bramka UBD</h3>
-<h4>Specyfikacja We-Wy UBD v.0.3.0</h4>
-<p><span>Zasady wymiany informacji pomiędzy systemem informatycznym e-Deklaracje a oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</span></p>
-<p style="padding-left: 40px;"><a rel="noopener" href="/media/3617/ubd_specyfikacja_we-wy_0-3-0.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy UBD v.0.3.0. (PDF, 1553 kB)</a></p>
-
-                            
-    
-
-<h4>Specyfikacja We-Wy UBD - środowisko testowe v.0.3.0<span> </span></h4>
-<p><span>Zasady wymiany informacji pomiędzy środowiskiem testowym systemu informatycznego e-Deklaracje a testowanym oprogramowaniem interfejsowym przeznaczonym do przekazywania wielopozycyjnych dokumentów do systemu e-Deklaracje</span></p>
-<p style="padding-left: 40px;"><a rel="noopener" href="/media/3614/ubd_specyfikacja_we-wy_0-3-0_test.pdf" target="_blank" class="link-attachment">Specyfikacja We-Wy UBD - środowisko testowe v.0.3.0. (PDF, 1560 kB)</a></p>
-
-                            
-    
-
-<h2>Informacja na temat certyfikatu SSL serwera usługi Web Services systemu e-Deklaracje</h2>
-<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych <span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</span></p>
-<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do informacji na temat certyfikatu SSL</span></a></p>
-
-                            
-    
-
-<h2>Informacja na temat certyfikatu SSL serwera testowego usługi Web Services systemu e-Deklaracje</h2>
-<p>Informacje dotyczące certyfikatu potwierdzającego wiarygodność systemu w celu zabezpieczenia przepływu danych <span>pomiędzy użytkownikiem a serwerem oraz uwierzytelnienia właściciela.</span></p>
-<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do informacji na temat certyfikatu SSL</span></a></p>
-
-                            
-    
-
-<h2>Struktury dokumentów XML</h2>
-<p><span>Struktury dokumentów XML można pobrać klikając w nazwę konkretnej struktury wyświetlając jej kod w formacie XSD na ekranie.</span></p>
-<p><a rel="noopener" href="https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/" target="_self" class="btn btn-primary btn-lg btn-block"><span style="font-weight: bold; font-size: 18px; padding: 30px;">Przejdź do tabeli struktur dokumentów XML</span></a></p>
-
-                </div>
-            </div>        </div>
-        
-    </div>
-    </section>
-              
-                </div>
-        </div>        
-    </div>
-
-
-
-
-
-
-
-
-
-
-
-    </div>
-
-
-    
-
-<footer id="footer">
-    <div class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-md-4">
-                    <p><a rel="noopener" href="https://www.gov.pl/web/finanse" target="_self"><img style="width: 70%;" class="img-fluid" src="/media/9509/02_kreska_podstawowy_kolor_czerwone_tlo.png" alt="Przejdź do strony Ministerstwa Finansów" data-udi="umb://media/29678cb588ca440aa6fb4226b95b8be0" /></a></p>
-                </div>
-                <div class="col-md-4">
-                    <p><a data-udi="umb://document/dbf89527471542f1bd4e3190f5917d65" href="/mapa-serwisu-podatki-gov-pl/">Mapa serwisu</a></p>
-<p><a data-udi="umb://document/0de341c9c49e4c10855e71aaf734860b" href="/deklaracja-dostepnosci-serwisu/">Deklaracja dostępności serwisu</a></p>
-<p><a rel="nofollow" href="https://www.gov.pl/web/finanse/informacja-o-dzialalnosci-ministerstwa/">Informacja o działalności Ministerstwa</a></p>
-<p><a data-udi="umb://document/39bc55d5f72d49e5969225c1dc21cb6b" href="/polityka-cookie/" title="Polityka cookie">Polityka cookie</a></p>
-<p><a data-udi="umb://document/f0501ecf5e6345c88fe294fa490cf31c" href="/klauzula-informacyjna-mf/">Klauzula informacyjna Ministra Finansów</a></p>
-<p><a data-udi="umb://document/23a8024a2df64b4c8fa9dc6e6e8e3c17" href="/klauzula-informacyjna-szefa-kas/">Klauzula informacyjna Szefa KAS</a></p>
-<p><a rel="noopener" href="https://finanse-arch.mf.gov.pl/web/wp/pp" target="_self">finanse.mf.gov.pl – archiwum</a></p>
-<p> </p>
-                </div>
-                <div class="col-md-4">
-                    <div style="margin-bottom: 16px;">
-<h2 class="amethysta" style="margin: 0px;"><a data-udi="umb://document/ef596fe311c34072a9a59fe54fc9ddf0" href="https://www.podatki.gov.pl/" aria-label="Strona główna podatki.gov.pl">podatki.gov.pl</a></h2>
-</div>
-<p><strong><a data-udi="umb://document/9decbc0a9b834eeea0957649a90c5604" href="/skontaktuj-sie-z-nami/" class="btn btn-outline-primary light-text" data-anchor="#">Skontaktuj się z nami</a></strong></p>
-<p> </p>
-<p> </p>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="eu-footer">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-auto logo-container">
-                    <img class="logo-left" src="/media/3144/fe.svg" alt="Fundusze Europejskie. Polska Cyfrowa" />
-                </div>
-                <div class="col">
-                    <p>Treści zamieszczone w serwisie udostępniamy bezpłatnie. Korzystanie z treści opublikowanych w serwisie podatki.gov.pl, niezależnie od celu i sposobu korzystania, nie wymaga zgody Ministerstwa Finansów. Treści znaczone w serwisie jako treści będące przedmiotem praw autorskich, o ile nie jest to stwierdzone inaczej, są udostępniane na licencji Creative Commons Uznanie Autorstwa 3.0 Polska.</p>
-                </div>
-                <div class="col-md-auto logo-container">
-                    <img class="logo-right" src="/media/10541/ue2.svg" />
-                </div>
-            </div>
-        </div>
-    </div>
-</footer>
-
-    <script src="/scripts/jquery-3.3.1.min.js"></script>
-    <script src="/scripts/popper.min.js"></script>
-    <script src="/scripts/moment.min.js"></script>
-    <script src="/scripts/bootstrap.min.js"></script>
-    <script src="/scripts/jquery-ui.min.js"></script>
-    <script src="/scripts/jquery-migrate-3.0.0.min.js"></script>
-    <script src="/scripts/jquery.unobtrusive-ajax.js"></script>
-    <script>
-            $('.fb-button').click(function() {
-                FB.ui({
-                    method: 'share',
-                    href: 'http://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/',
-                }, function(response){});
-            });
-    </script>
-
-
-    
-    <script>
-        var sliderStopped = false;
-
-        function PauseCarousel()
-        {
-            $('.carousel').carousel('cycle');
-        };
-
-        $('.carousel').carousel({ interval: 6000, pause: false });
-
-        $('#control-next-button').click(function (ev) {
-            $('.carousel').carousel('cycle');
-            ev.preventDefault();
-        });
-
-        $('#control-pause-button').click(function (ev)
-        {
-            if (!sliderStopped)
-            {
-                $('.carousel').carousel('pause');
-                $("#pauseStartSliderIcon").removeClass("fa-pause");
-                $("#pauseStartSliderIcon").addClass("fa-play");
-
-                $("#pauseStartSliderStatusContainer").html("Rozpocznij pokaz slajdów");
-                sliderStopped = true;
-            }
-            else
-            {
-                $('.carousel').carousel('cycle');
-                $("#pauseStartSliderIcon").removeClass("fa-play");
-                $("#pauseStartSliderIcon").addClass("fa-pause");
-
-                $("#pauseStartSliderStatusContainer").html("Zatrzymaj pokaz slajdów");
-                sliderStopped = false;
-            }
-
-            ev.preventDefault();
-        });
-
-        $('.btn-slider').click(function (ev) {
-            $('.carousel').carousel('pause');
-        });
-    </script>
-
-    <script src="/scripts/front.js"></script>
-<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=3&cb=1571715574" async></script></body>
+<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=6&cb=1796998850" async></script></body>
 </html>
+
