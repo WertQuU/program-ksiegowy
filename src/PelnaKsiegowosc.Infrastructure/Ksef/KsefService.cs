@@ -54,7 +54,10 @@ public sealed class KsefService
         return (Fa3InvoiceBuilder.ToBytes(x), v);
     }
 
-    public async Task<KsefSendResult> SendAsync(Guid documentId, KsefClient client, string ksefToken, CancellationToken ct = default)
+    public Task<KsefSendResult> SendAsync(Guid documentId, KsefClient client, string ksefToken, CancellationToken ct = default) =>
+        SendAsync(documentId, client, KsefCredentials.FromToken(ksefToken), ct);
+
+    public async Task<KsefSendResult> SendAsync(Guid documentId, KsefClient client, KsefCredentials credentials, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageIntegrations);
         var doc = await _db.Documents.FirstAsync(d => d.Id == documentId && d.CompanyId == _user.CompanyId, ct);
@@ -71,7 +74,7 @@ public sealed class KsefService
         var company = await _db.Companies.FirstAsync(c => c.Id == doc.CompanyId, ct);
         try
         {
-            var tokens = await client.AuthenticateWithTokenAsync(Identifiers.NormalizeNip(company.Nip), ksefToken, ct);
+            var tokens = await credentials.AuthenticateAsync(client, Identifiers.NormalizeNip(company.Nip), ct);
             using var session = await client.OpenOnlineSessionAsync(tokens.AccessToken.Token, ct);
             var sent = await client.SendInvoiceAsync(session, xml, ct);
             doc.KsefReferenceNumber = sent.ReferenceNumber;
@@ -113,11 +116,14 @@ public sealed class KsefService
     /// Import faktur zakupowych z KSeF jako dokumentów roboczych (z numerem KSeF i oryginalnym XML w załączniku).
     /// Duplikaty (ten sam numer KSeF) są pomijane. Dekretacja i decyzja o odliczeniu VAT pozostają po stronie użytkownika.
     /// </summary>
-    public async Task<KsefImportResult> ImportPurchasesAsync(KsefClient client, string ksefToken, DateTimeOffset from, DateTimeOffset to, IFileStore attachments, CancellationToken ct = default)
+    public Task<KsefImportResult> ImportPurchasesAsync(KsefClient client, string ksefToken, DateTimeOffset from, DateTimeOffset to, IFileStore attachments, CancellationToken ct = default) =>
+        ImportPurchasesAsync(client, KsefCredentials.FromToken(ksefToken), from, to, attachments, ct);
+
+    public async Task<KsefImportResult> ImportPurchasesAsync(KsefClient client, KsefCredentials credentials, DateTimeOffset from, DateTimeOffset to, IFileStore attachments, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageIntegrations);
         var company = await _db.Companies.FirstAsync(c => c.Id == _user.CompanyId, ct);
-        var tokens = await client.AuthenticateWithTokenAsync(Identifiers.NormalizeNip(company.Nip), ksefToken, ct);
+        var tokens = await credentials.AuthenticateAsync(client, Identifiers.NormalizeNip(company.Nip), ct);
         var list = await client.QueryPurchaseInvoicesAsync(tokens.AccessToken.Token, from, to, ct);
         var errors = new List<string>();
         int imported = 0, present = 0;

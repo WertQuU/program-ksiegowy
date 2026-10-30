@@ -2196,6 +2196,17 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<bool>("Pit2")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("Ppk")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("PpkEmployeeRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("PpkEmployerRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("date");
 
@@ -2303,6 +2314,21 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("PpkEmployee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("PpkEmployer")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("SickDays")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("SickPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<decimal>("SicknessEmployee")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -2318,6 +2344,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<decimal>("TaxBase")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<int>("UnpaidDays")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 

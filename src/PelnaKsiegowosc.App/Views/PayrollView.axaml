@@ -28,6 +28,7 @@
               <CheckBox Content="Uczeń/student do 26 lat (zlecenie bez ZUS)" IsChecked="{Binding Student}" />
               <CheckBox Content="Dobrowolne chorobowe (zlecenie)" IsChecked="{Binding VoluntarySickness}" />
               <CheckBox Content="Zwolnienie z FP/FGŚP" IsChecked="{Binding ExemptFromFp}" />
+              <CheckBox Content="Uczestnik PPK (2% + 1,5%)" IsChecked="{Binding Ppk}" />
             </WrapPanel>
             <WrapPanel Grid.Row="5" Grid.ColumnSpan="6" Classes="toolbar">
               <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />
@@ -51,7 +52,9 @@
           </WrapPanel>
           <c:TableView DockPanel.Dock="Top" Table="{Binding Lists}" SelectedRow="{Binding SelectedList}" MaxHeight="200" />
           <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
-            <TextBlock Text="Zmień brutto zaznaczonej osoby (np. niepełny miesiąc, premia):" /><TextBox Text="{Binding NewGross}" MinWidth="110" />
+            <TextBlock Text="Zaznaczona osoba — brutto za pełny miesiąc:" /><TextBox Text="{Binding NewGross}" Watermark="(z umowy)" MinWidth="100" />
+            <TextBlock Text="dni choroby:" /><TextBox Text="{Binding SickDays}" MinWidth="50" />
+            <TextBlock Text="dni urlopu bezpłatnego (robocze):" /><TextBox Text="{Binding UnpaidDays}" MinWidth="50" />
             <Button Content="Przelicz" Command="{Binding ChangeGrossCommand}" />
           </WrapPanel>
           <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />

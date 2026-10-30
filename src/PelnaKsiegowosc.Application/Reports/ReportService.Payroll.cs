@@ -38,6 +38,8 @@ public sealed partial class ReportService
         r.AddRow(new ReportRow("RAZEM", null, list.Items.Sum(i => i.Gross), list.Items.Sum(i => i.PensionEmployee), list.Items.Sum(i => i.DisabilityEmployee), list.Items.Sum(i => i.SicknessEmployee),
             list.Items.Sum(i => i.Health), list.Items.Sum(i => i.CostsOfIncome), list.Items.Sum(i => i.TaxBase), list.Items.Sum(i => i.TaxAdvance), list.Items.Sum(i => i.Net), list.Items.Sum(i => i.EmployerCost)) { IsTotal = true });
         foreach (var i in list.Items.Where(i => i.Notes is not null)) r.Notes.Add($"{i.EmployeeName}: {i.Notes}");
+        if (list.Items.Any(i => i.PpkEmployee + i.PpkEmployer != 0))
+            r.Notes.Add($"PPK: wpłaty pracowników {Money.Format(list.Items.Sum(i => i.PpkEmployee))} zł (potrącone z netto), pracodawcy {Money.Format(list.Items.Sum(i => i.PpkEmployer))} zł (przychód pracownika, koszt 405) — przelew do instytucji finansowej do 15. dnia następnego miesiąca.");
         r.Notes.Add($"Parametry: {list.RulesVersion}. Składki pracodawcy (emerytalna, rentowa, wypadkowa, FP, FGŚP) w kolumnie „Koszt pracodawcy”.");
         return r;
     }
@@ -116,7 +118,7 @@ public sealed partial class ReportService
                          _ => "działalność wykonywana osobiście"
                      }))
             {
-                var revenue = src.Sum(i => i.Gross - i.ExemptRevenue);
+                var revenue = src.Sum(i => i.Gross + i.PpkEmployer - i.ExemptRevenue);
                 var costs = src.Sum(i => i.CostsOfIncome);
                 r.Add(g.First().EmployeeName, e?.Pesel, src.Key, revenue, costs, Math.Max(0, revenue - costs), src.Sum(i => i.TaxAdvance),
                     src.Sum(i => i.SocialEmployee), src.Sum(i => i.Health), src.Sum(i => i.ExemptRevenue));

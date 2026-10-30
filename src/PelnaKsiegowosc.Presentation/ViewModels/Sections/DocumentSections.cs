@@ -387,12 +387,12 @@ public sealed partial class SalesViewModel : DocumentListBase
     {
         var id = SelectedId;
         if (!Session.Config.Ksef.Enabled) throw new DomainException("Integracja z KSeF jest wyłączona — skonfiguruj ją w sekcji „Integracje”.");
-        var token = Session.Secrets.Get(Session.Config.Ksef.TokenSecretName) ?? throw new DomainException("Brak zapisanego tokenu KSeF dla wybranego środowiska.");
+        var credentials = Session.KsefCredentials();
         if (!await Dialogs.ConfirmAsync("KSeF", $"Wysłać fakturę do KSeF (środowisko: {Session.Config.Ksef.Environment})?")) return;
         await using var db = Session.OpenDb();
         using var http = new HttpClient { BaseAddress = KsefClient.BaseUrl(Session.Config.Ksef.Environment), Timeout = TimeSpan.FromSeconds(120) };
         var ksef = new KsefService(db, Session.User, Session.Clock, Session.Validator);
-        var r = await ksef.SendAsync(id, new KsefClient(http), token);
+        var r = await ksef.SendAsync(id, new KsefClient(http), credentials);
         if (r.Accepted) { Session.Config.Ksef.LastSuccessUtc = Session.Clock.UtcNow; Session.SaveConfig(); }
         await Dialogs.InfoAsync("KSeF", r.Message + (r.KsefNumber is null ? "" : $"{Environment.NewLine}Numer KSeF: {r.KsefNumber}"));
     }, "Zakończono operację KSeF.");
@@ -504,12 +504,12 @@ public sealed partial class PurchasesViewModel : DocumentListBase
     private Task ImportFromKsefAsync() => ChangeAsync(async () =>
     {
         if (!Session.Config.Ksef.Enabled) throw new DomainException("Integracja z KSeF jest wyłączona — skonfiguruj ją w sekcji „Integracje”.");
-        var token = Session.Secrets.Get(Session.Config.Ksef.TokenSecretName) ?? throw new DomainException("Brak zapisanego tokenu KSeF.");
+        var credentials = Session.KsefCredentials();
         var from = Parse.OptionalDate(KsefFrom, "Od") ?? Session.Clock.Today.AddDays(-30);
         var to = Parse.OptionalDate(KsefTo, "Do") ?? Session.Clock.Today;
         await using var db = Session.OpenDb();
         using var http = new HttpClient { BaseAddress = KsefClient.BaseUrl(Session.Config.Ksef.Environment), Timeout = TimeSpan.FromSeconds(120) };
-        var r = await new KsefService(db, Session.User, Session.Clock, Session.Validator).ImportPurchasesAsync(new KsefClient(http), token,
+        var r = await new KsefService(db, Session.User, Session.Clock, Session.Validator).ImportPurchasesAsync(new KsefClient(http), credentials,
             new DateTimeOffset(from.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero), new DateTimeOffset(to.ToDateTime(TimeOnly.MaxValue), TimeSpan.Zero), Session.Attachments);
         await Dialogs.InfoAsync("Import z KSeF", $"Znaleziono: {r.Found}, zaimportowano: {r.Imported}, już w ewidencji: {r.AlreadyPresent}." +
             (r.Errors.Count > 0 ? Environment.NewLine + "Błędy:" + Environment.NewLine + string.Join(Environment.NewLine, r.Errors) : ""));

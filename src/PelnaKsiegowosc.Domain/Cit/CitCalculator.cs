@@ -115,6 +115,15 @@ public static class CitCalculator
 /// <summary>Dni ustawowo wolne od pracy w Polsce (ustawa z 18.01.1951 r., w tym Wigilia od 2025 r.).</summary>
 public static class PolishHolidays
 {
+    /// <summary>Liczba dni roboczych (pon.–pt. bez świąt) w miesiącu.</summary>
+    public static int WorkingDays(int year, int month)
+    {
+        var n = 0;
+        for (var d = new DateOnly(year, month, 1); d.Month == month; d = d.AddDays(1))
+            if (d.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday) && !IsHoliday(d)) n++;
+        return n;
+    }
+
     public static bool IsHoliday(DateOnly d)
     {
         var fixedDays = new[] { (1, 1), (1, 6), (5, 1), (5, 3), (8, 15), (11, 1), (11, 11), (12, 25), (12, 26) };

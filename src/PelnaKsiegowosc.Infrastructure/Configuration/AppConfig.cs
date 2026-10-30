@@ -81,6 +81,13 @@ public sealed class KsefSettings
     public bool Enabled { get; set; }
     public KsefEnvironment Environment { get; set; } = KsefEnvironment.Test;
     public string TokenSecretName => $"PelnaKsiegowosc/ksef/{Environment}/token";
+    /// <summary>Logowanie certyfikatem (podpis XAdES) zamiast tokena.</summary>
+    public bool UseCertificate { get; set; }
+    /// <summary>Ścieżka pliku .pfx/.p12 z certyfikatem (hasło — w magazynie sekretów).</summary>
+    public string? CertificatePath { get; set; }
+    /// <summary>Certyfikat identyfikowany odciskiem (np. certyfikat KSeF), a nie NIP/PESEL z certyfikatu.</summary>
+    public bool CertificateByFingerprint { get; set; }
+    public string CertificatePasswordSecretName => $"PelnaKsiegowosc/ksef/{Environment}/certyfikat-haslo";
     public DateTime? LastSuccessUtc { get; set; }
 }
 

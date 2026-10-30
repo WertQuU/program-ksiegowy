@@ -28,6 +28,10 @@ public sealed partial class IntegrationsViewModel : SectionViewModel
     public List<string> EndpointHints { get; } = S3BackupTarget.OvhEndpointHints.Select(h => h.Endpoint).ToList();
 
     [ObservableProperty] private bool _ksefEnabled;
+    [ObservableProperty] private bool _ksefUseCertificate;
+    [ObservableProperty] private string _ksefCertificatePath = "";
+    [ObservableProperty] private string _ksefCertificatePassword = "";
+    [ObservableProperty] private bool _ksefByFingerprint;
     [ObservableProperty] private Choice<KsefEnvironment> _ksefEnvironment = Choices.Of<KsefEnvironment>()[0];
     [ObservableProperty] private string _ksefToken = "";
     [ObservableProperty] private string _ksefInfo = "";
@@ -48,6 +52,9 @@ public sealed partial class IntegrationsViewModel : SectionViewModel
         KsefEnabled = k.Enabled;
         KsefEnvironment = KsefEnvironments.First(e => e.Value == k.Environment);
         KsefToken = "";
+        KsefUseCertificate = k.UseCertificate;
+        KsefCertificatePath = k.CertificatePath ?? "";
+        KsefByFingerprint = k.CertificateByFingerprint;
         UpdateKsefInfo();
         await using var db = Session.OpenDb();
         var t2 = new TableData(new TableColumn("Czas", Width: 1.1), new TableColumn("System", Width: 0.7), new TableColumn("Operacja", Width: 1.3), new TableColumn("Wynik", Width: 0.5),
@@ -95,12 +102,23 @@ public sealed partial class IntegrationsViewModel : SectionViewModel
     });
 
     [RelayCommand]
+    private async Task PickKsefCertificateAsync()
+    {
+        if (await Dialogs.OpenFileAsync("Certyfikat do KSeF", new FileFilter("Certyfikat z kluczem", "*.pfx", "*.p12")) is { } f) KsefCertificatePath = f;
+    }
+
+    [RelayCommand]
     private Task SaveKsefAsync() => ChangeAsync(async () =>
     {
         var k = Session.Config.Ksef;
         k.Enabled = KsefEnabled;
         k.Environment = KsefEnvironment.Value;
         if (!string.IsNullOrWhiteSpace(KsefToken)) Session.Secrets.Set(k.TokenSecretName, KsefToken.Trim());
+        k.UseCertificate = KsefUseCertificate;
+        k.CertificatePath = Parse.Trim(KsefCertificatePath);
+        k.CertificateByFingerprint = KsefByFingerprint;
+        if (!string.IsNullOrEmpty(KsefCertificatePassword)) Session.Secrets.Set(k.CertificatePasswordSecretName, KsefCertificatePassword);
+        KsefCertificatePassword = "";
         Session.SaveConfig();
         await Session.AuditAsync("KSEF_USTAWIENIA", "Settings", null, $"środowisko {k.Environment}; włączone: {k.Enabled}");
         KsefToken = "";
@@ -109,11 +127,9 @@ public sealed partial class IntegrationsViewModel : SectionViewModel
     [RelayCommand]
     private Task TestKsefAsync() => RunAsync(async () =>
     {
-        var k = Session.Config.Ksef;
-        var token = (string.IsNullOrWhiteSpace(KsefToken) ? null : KsefToken.Trim()) ?? Session.Secrets.Get($"PelnaKsiegowosc/ksef/{KsefEnvironment.Value}/token")
-                    ?? throw new DomainException("Wpisz lub zapisz token KSeF.");
+        var credentials = !KsefUseCertificate && !string.IsNullOrWhiteSpace(KsefToken) ? KsefCredentials.FromToken(KsefToken.Trim()) : Session.KsefCredentials();
         using var http = new HttpClient { BaseAddress = KsefClient.BaseUrl(KsefEnvironment.Value), Timeout = TimeSpan.FromSeconds(60) };
-        await new KsefClient(http).AuthenticateWithTokenAsync(Session.Company!.Nip, token);
-        await Dialogs.InfoAsync("Test KSeF", $"Uwierzytelnienie tokenem w środowisku {KsefEnvironment.Label} zakończone powodzeniem.");
+        await credentials.AuthenticateAsync(new KsefClient(http), PelnaKsiegowosc.Domain.Validation.Identifiers.NormalizeNip(Session.Company!.Nip), default);
+        await Dialogs.InfoAsync("Test KSeF", $"Uwierzytelnienie {(credentials.Certificate is null ? "tokenem" : "certyfikatem (XAdES)")} w środowisku {KsefEnvironment.Label} zakończone powodzeniem.");
     });
 }

@@ -58,6 +58,16 @@ public static class KsefDto
 /// Ponawianie przy 429/5xx z respektowaniem nagłówka Retry-After. Tokeny nigdy nie są logowane.
 /// Uwierzytelnianie podpisem XAdES (kwalifikowanym / Profilem Zaufanym) — NIEZAIMPLEMENTOWANE.
 /// </summary>
+/// <summary>Poświadczenia KSeF: token albo certyfikat (podpis XAdES). Certyfikat może zawierać NIP/PESEL albo być identyfikowany odciskiem.</summary>
+public sealed record KsefCredentials(string? Token, System.Security.Cryptography.X509Certificates.X509Certificate2? Certificate, bool ByFingerprint = false)
+{
+    public static KsefCredentials FromToken(string token) => new(token, null);
+
+    public Task<KsefDto.TokensResponse> AuthenticateAsync(KsefClient client, string nip, CancellationToken ct) =>
+        Certificate is not null ? client.AuthenticateWithCertificateAsync(nip, Certificate, ByFingerprint, ct)
+        : client.AuthenticateWithTokenAsync(nip, Token ?? throw new KsefException("Brak tokena ani certyfikatu KSeF."), ct);
+}
+
 public sealed class KsefClient
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull };

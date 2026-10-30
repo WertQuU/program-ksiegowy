@@ -69,6 +69,28 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Ppk_and_absences()
+    {
+        var e = new Employee { FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace, Pit2 = true, Ppk = true };
+        var p = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m);
+        Assert.Equal(120m, p.PpkEmployee);
+        Assert.Equal(90m, p.PpkEmployer);
+        Assert.Equal(5017m, p.TaxBase); // przychód obejmuje wpłatę PPK pracodawcy
+        Assert.Equal(302m, p.TaxAdvance);
+        Assert.Equal(465.97m, p.Health); // wpłata pracodawcy nie zwiększa podstawy zdrowotnej
+        Assert.Equal(4289.43m, p.Net);
+
+        var sick = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        Assert.Equal(4000m, sick.SocialBasis);
+        Assert.Equal(1380.64m, sick.SickPay); // 6000 × 86,29% × 80% / 30 × 10
+        Assert.Equal(5380.64m, sick.Gross);
+        Assert.Equal(390.40m, sick.PensionEmployee); // składki tylko od wynagrodzenia za czas pracy
+        var unpaid = PayrollCalculator.Compute(new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace }, 4200m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(0, 2, 21));
+        Assert.Equal(3800m, unpaid.Gross);
+        Assert.Equal(20, PelnaKsiegowosc.Domain.Cit.PolishHolidays.WorkingDays(2026, 11)); // 1 i 11 listopada
+    }
+
+    [Fact]
     public void Birth_date_is_read_from_pesel()
     {
         Assert.Equal(new DateOnly(1944, 5, 14), PelnaKsiegowosc.Domain.Validation.Identifiers.BirthDateFromPesel("44051401359"));

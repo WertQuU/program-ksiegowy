@@ -70,6 +70,28 @@ public sealed class AppSession
 
     public string AttachmentsRoot => Config.AttachmentsDirectory ?? Paths.AttachmentsDirectory;
     public LocalFileStore Attachments => new(AttachmentsRoot);
+    /// <summary>Poświadczenia KSeF wg ustawień stanowiska: certyfikat .pfx (hasło z magazynu sekretów) albo token.</summary>
+    public Infrastructure.Ksef.KsefCredentials KsefCredentials()
+    {
+        var k = Config.Ksef;
+        if (k.UseCertificate)
+        {
+            if (string.IsNullOrWhiteSpace(k.CertificatePath) || !File.Exists(k.CertificatePath))
+                throw new DomainException("Wskaż plik certyfikatu (.pfx/.p12) w sekcji Integracje → KSeF.");
+            var password = Secrets.Get(k.CertificatePasswordSecretName);
+            try
+            {
+                var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12FromFile(k.CertificatePath, password);
+                return new Infrastructure.Ksef.KsefCredentials(null, cert, k.CertificateByFingerprint);
+            }
+            catch (System.Security.Cryptography.CryptographicException e)
+            {
+                throw new DomainException($"Nie można otworzyć certyfikatu (złe hasło lub uszkodzony plik): {e.Message}");
+            }
+        }
+        return Infrastructure.Ksef.KsefCredentials.FromToken(Secrets.Get(k.TokenSecretName) ?? throw new DomainException("Brak zapisanego tokenu KSeF dla wybranego środowiska (Integracje → KSeF)."));
+    }
+
     public XsdValidator Validator => new(XsdValidator.BundledSchemasDirectory, Paths.SchemasDirectory);
     public string BackupDirectory => Config.Backup.LocalDirectory ?? Paths.DefaultBackupDirectory;
 

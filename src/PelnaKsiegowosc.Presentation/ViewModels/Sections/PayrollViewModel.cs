@@ -49,6 +49,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private bool _student;
     [ObservableProperty] private bool _voluntarySickness;
     [ObservableProperty] private bool _exemptFromFp;
+    [ObservableProperty] private bool _ppk;
+    [ObservableProperty] private string _sickDays = "";
+    [ObservableProperty] private string _unpaidDays = "";
 
     [ObservableProperty] private TableData _lists = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedList;
@@ -74,7 +77,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
             Contract = ContractTypes.First(c => c.Value == e.ContractType); Costs = CostTypes.First(c => c.Value == e.Costs);
             Gross = e.Gross.ToString("N2", Money.Pl); Fraction = e.WorkTimeFraction.ToString("0.####", Money.Pl);
             StartDate = e.StartDate.ToPl(); EndDate = e.EndDate?.ToPl() ?? "";
-            Pit2 = e.Pit2; YouthRelief = e.YouthRelief; Student = e.StudentUnder26; VoluntarySickness = e.VoluntarySickness; ExemptFromFp = e.ExemptFromFp;
+            Pit2 = e.Pit2; YouthRelief = e.YouthRelief; Student = e.StudentUnder26; VoluntarySickness = e.VoluntarySickness; ExemptFromFp = e.ExemptFromFp; Ppk = e.Ppk;
         });
     }
 
@@ -125,7 +128,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
         FirstName = FirstName.Trim(), LastName = LastName.Trim(), Pesel = Parse.Trim(Pesel), Address = Parse.Trim(Address), BankAccountIban = Parse.Trim(Iban),
         TaxOfficeCode = Parse.Trim(TaxOffice), ContractType = Contract.Value, Costs = Costs.Value, Gross = Parse.Amount(Gross, "Wynagrodzenie brutto"),
         WorkTimeFraction = Parse.Amount(Fraction, "Wymiar etatu"), StartDate = Parse.Date(StartDate, "Data rozpoczęcia"), EndDate = Parse.OptionalDate(EndDate, "Data zakończenia"),
-        Pit2 = Pit2, YouthRelief = YouthRelief, StudentUnder26 = Student, VoluntarySickness = VoluntarySickness, ExemptFromFp = ExemptFromFp
+        Pit2 = Pit2, YouthRelief = YouthRelief, StudentUnder26 = Student, VoluntarySickness = VoluntarySickness, ExemptFromFp = ExemptFromFp, Ppk = Ppk
     };
 
     [RelayCommand]
@@ -167,8 +170,12 @@ public sealed partial class PayrollViewModel : SectionViewModel
     {
         if (SelectedItem?.Tag is not Guid id) throw new DomainException("Zaznacz osobę na liście płac.");
         await using var db = Session.OpenDb();
-        await new PayrollService(db, Session.User, Session.Clock).ChangeGrossAsync(id, Parse.Amount(NewGross, "Nowa kwota brutto"));
-        NewGross = "";
+        var item = await db.PayrollItems.AsNoTracking().FirstAsync(i => i.Id == id);
+        var baseGross = Parse.OptionalAmount(NewGross, "Wynagrodzenie za pełny miesiąc")
+                        ?? (await db.Employees.AsNoTracking().FirstAsync(x => x.Id == item.EmployeeId)).Gross;
+        int Days(string s, string f) => string.IsNullOrWhiteSpace(s) ? 0 : Parse.Int(s, f);
+        await new PayrollService(db, Session.User, Session.Clock).ChangeAsync(id, baseGross, Days(SickDays, "Dni choroby"), Days(UnpaidDays, "Dni nieobecności nieodpłatnej"));
+        NewGross = SickDays = UnpaidDays = "";
     }, "Przeliczono pozycję listy płac.");
 
     [RelayCommand]

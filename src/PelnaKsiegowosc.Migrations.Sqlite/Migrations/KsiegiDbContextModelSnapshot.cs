@@ -2191,6 +2191,17 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<bool>("Pit2")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("Ppk")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("PpkEmployeeRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PpkEmployerRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("TEXT");
 
@@ -2298,6 +2309,21 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("PpkEmployee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("PpkEmployer")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("SickDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("SickPay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("SicknessEmployee")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -2313,6 +2339,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<decimal>("TaxBase")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("UnpaidDays")
+                        .HasColumnType("INTEGER");
 
                     b.HasKey("Id");
 

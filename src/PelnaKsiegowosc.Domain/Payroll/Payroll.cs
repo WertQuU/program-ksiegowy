@@ -50,6 +50,10 @@ public class Employee : CompanyEntity
     public bool VoluntarySickness { get; set; }
     /// <summary>Zwolnienie z FP/FGŚP (np. 60/55+, powrót z urlopu macierzyńskiego) — decyzja użytkownika.</summary>
     public bool ExemptFromFp { get; set; }
+    /// <summary>Uczestnik PPK (pracownik i zleceniobiorca objęty ZUS).</summary>
+    public bool Ppk { get; set; }
+    public decimal PpkEmployeeRate { get; set; } = 2m;
+    public decimal PpkEmployerRate { get; set; } = 1.5m;
     public Guid CounterpartyId { get; set; }
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; }
@@ -86,6 +90,14 @@ public class PayrollItem : Entity
     public decimal Gross { get; set; }
     /// <summary>Podstawa składek społecznych (przed limitem 30-krotności) — do sumowania narastająco.</summary>
     public decimal SocialBasis { get; set; }
+    /// <summary>Dni choroby (wynagrodzenie chorobowe 80%, art. 92 KP) i nieobecności nieodpłatnej (dni robocze).</summary>
+    public int SickDays { get; set; }
+    public int UnpaidDays { get; set; }
+    /// <summary>Wynagrodzenie chorobowe (bez składek społecznych; zdrowotna i PIT — tak).</summary>
+    public decimal SickPay { get; set; }
+    public decimal PpkEmployee { get; set; }
+    /// <summary>Wpłata PPK pracodawcy — przychód pracownika (PIT), koszt pracodawcy.</summary>
+    public decimal PpkEmployer { get; set; }
     /// <summary>Przychód zwolniony (ulga dla młodych).</summary>
     public decimal ExemptRevenue { get; set; }
     public decimal PensionEmployee { get; set; }

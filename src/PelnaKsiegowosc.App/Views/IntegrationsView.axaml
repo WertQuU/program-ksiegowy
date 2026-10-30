@@ -36,10 +36,15 @@
       <TabItem Header="KSeF">
         <StackPanel>
           <TextBlock Text="{Binding KsefInfo}" Classes="info" />
-          <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto">
+          <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <CheckBox Grid.ColumnSpan="2" Content="Włącz integrację z KSeF" IsChecked="{Binding KsefEnabled}" />
             <TextBlock Grid.Row="1" Text="Środowisko" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding KsefEnvironments}" SelectedItem="{Binding KsefEnvironment}" />
             <TextBlock Grid.Row="2" Text="Token KSeF" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding KsefToken}" PasswordChar="•" Watermark="(bez zmian)" />
+            <CheckBox Grid.Row="3" Grid.ColumnSpan="2" Content="Loguj certyfikatem — podpis XAdES (podpis kwalifikowany, pieczęć firmowa albo certyfikat KSeF)" IsChecked="{Binding KsefUseCertificate}" />
+            <TextBlock Grid.Row="4" Text="Plik certyfikatu (.pfx)" />
+            <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto"><TextBox Text="{Binding KsefCertificatePath}" Margin="0,2,4,2" /><Button Grid.Column="1" Content="Wybierz…" Command="{Binding PickKsefCertificateCommand}" /></Grid>
+            <TextBlock Grid.Row="5" Text="Hasło certyfikatu" /><TextBox Grid.Row="5" Grid.Column="1" Text="{Binding KsefCertificatePassword}" PasswordChar="•" Watermark="(bez zmian — zapisane w magazynie sekretów)" />
+            <CheckBox Grid.Row="6" Grid.ColumnSpan="2" Content="Certyfikat identyfikowany odciskiem (certyfikat KSeF / bez NIP i PESEL)" IsChecked="{Binding KsefByFingerprint}" />
           </Grid>
           <WrapPanel Classes="toolbar" Margin="0,8,0,0">
             <Button Content="Zapisz" Command="{Binding SaveKsefCommand}" />

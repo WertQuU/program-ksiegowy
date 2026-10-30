@@ -135,14 +135,20 @@ public sealed class PayrollService
         return list;
     }
 
-    public async Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default)
+    public Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default) => ChangeAsync(itemId, gross, 0, 0, ct);
+
+    /// <summary>Przelicza pozycję: wynagrodzenie zasadnicze za pełny miesiąc oraz dni choroby i nieobecności nieodpłatnej (umowa o pracę).</summary>
+    public async Task<PayrollItem> ChangeAsync(Guid itemId, decimal gross, int sickDays, int unpaidWorkingDays, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
         var it = await _db.PayrollItems.FirstAsync(i => i.Id == itemId, ct);
         var list = await _db.PayrollLists.FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == it.EmployeeId, ct);
-        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct));
+        var absence = sickDays > 0 || unpaidWorkingDays > 0
+            ? new PayrollAbsence(sickDays, unpaidWorkingDays, Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month))
+            : null;
+        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence);
         fresh.Id = it.Id;
         fresh.PayrollListId = list.Id;
         _db.Entry(it).CurrentValues.SetValues(fresh);
@@ -158,6 +164,16 @@ public sealed class PayrollService
         _db.PayrollLists.Remove(list);
         await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_USUNIETA", "PayrollList", list.Id.ToString(), list.Number, ct);
         await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task<Guid> PpkCounterpartyAsync(CancellationToken ct)
+    {
+        var cp = await _db.Counterparties.FirstOrDefaultAsync(c => c.CompanyId == _user.CompanyId && c.Code == "PPK", ct);
+        if (cp is not null) return cp.Id;
+        cp = new Counterparty { CompanyId = _user.CompanyId, Code = "PPK", Name = "Instytucja finansowa PPK", Kind = CounterpartyKind.Firma, CreatedAtUtc = _clock.UtcNow };
+        _db.Counterparties.Add(cp);
+        await _db.SaveChangesAsync(ct);
+        return cp.Id;
     }
 
     public async Task<PayrollList> PostAsync(Guid listId, CancellationToken ct = default)
@@ -182,6 +198,13 @@ public sealed class PayrollService
         {
             lines.Add(new LineInput("405", employer, 0, Description: "Składki ZUS pracodawcy, FP, FGŚP"));
             lines.Add(new LineInput("220-03", 0, employer, Description: "Składki ZUS pracodawcy, FP, FGŚP"));
+        }
+        var ppk = list.Items.Sum(i => i.PpkEmployee + i.PpkEmployer);
+        if (ppk != 0)
+        {
+            var ppkCp = await PpkCounterpartyAsync(ct);
+            if (list.Items.Sum(i => i.PpkEmployer) is var er and not 0) lines.Add(new LineInput("405", er, 0, Description: "Wpłaty PPK finansowane przez pracodawcę"));
+            lines.Add(new LineInput("240", 0, ppk, ppkCp, "Wpłaty PPK do instytucji finansowej"));
         }
         var date = list.Month.AddMonths(1).AddDays(-1);
         if (list.PaymentDate < date) date = list.PaymentDate;
