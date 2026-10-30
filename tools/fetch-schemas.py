@@ -90,19 +90,35 @@ def fetch_zip(url):
             save_xsd(url + "#" + n, z.read(n))
 
 
-for page in PAGES:
+KEYWORDS = ("struktur", "jpk", "sprawozd", "schemat", "xsd", "kr_pd", "kr-pd", "cit")
+all_hrefs = []
+queue = [(p, 0) for p in PAGES]
+visited = set()
+while queue:
+    page, depth = queue.pop(0)
+    if page in visited:
+        continue
+    visited.add(page)
     try:
         html, final = get(page)
     except Exception as e:
         print(f"strona {page}: {e}")
         continue
+    ctype_zip = html[:2] == b"PK"
+    if ctype_zip:
+        links.append((page, page))
+        continue
     text = html.decode("utf-8", "replace")
     found = set(re.findall(r'href="([^"]+)"', text))
     for h in sorted(found):
-        full = urllib.parse.urljoin(final, h)
+        full = urllib.parse.urljoin(final, h).split("#")[0]
         low = full.lower()
-        if low.endswith(".xsd") or low.endswith(".zip") or "crd.gov.pl/wzor" in low or "/attachment/" in low and ("xsd" in low or "schemat" in low or "struktur" in low):
+        all_hrefs.append(f"{page}\t{full}")
+        if low.endswith(".xsd") or low.endswith(".zip") or "crd.gov.pl/wzor" in low or "/attachment/" in low or "/media/" in low and not low.endswith((".jpg", ".png", ".pdf", ".svg")):
             links.append((page, full))
+        elif depth < 2 and urllib.parse.urlparse(full).netloc.endswith(("podatki.gov.pl", "www.gov.pl")) and any(k in low for k in KEYWORDS):
+            queue.append((full, depth + 1))
+links = list(dict.fromkeys(links))
 
 for page, link in links:
     print(f"[{page}] {link}")
@@ -121,7 +137,7 @@ for page, link in links:
                 for n in z.namelist():
                     if n.lower().endswith(".xsd"):
                         save_xsd(link + "#" + n, z.read(n))
-            elif b"<xsd:schema" in data[:2000] or b"<xs:schema" in data[:2000]:
+            elif b"schema" in data[:3000] and b"http://www.w3.org/2001/XMLSchema" in data[:3000]:
                 save_xsd(link, data)
         except Exception as e:
             print(f"  ! {link}: {e}")
@@ -132,6 +148,8 @@ for s in SEEDS:
 os.makedirs(OUT, exist_ok=True)
 with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as f:
     json.dump(sorted(manifest, key=lambda m: m["url"]), f, ensure_ascii=False, indent=1)
+with open(os.path.join(OUT, "odnosniki.txt"), "w", encoding="utf-8") as f:
+    f.write("\n".join(sorted(set(all_hrefs))))
 with open(os.path.join(OUT, "strony.txt"), "w", encoding="utf-8") as f:
     for page, link in links:
         f.write(f"{page}\t{link}\n")
