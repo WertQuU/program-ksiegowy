@@ -372,7 +372,7 @@ public class ReviewFixesTests
 
         async Task<CapitalEvent> LegacySubscriptionAsync(decimal amount, DateOnly date)
         {
-            // stan sprzed wersji 1.0.1: objęcie zaksięgowane Wn należne wkłady / Ma kapitał akcyjny
+            // wcześniejsza logika: objęcie zaksięgowane Wn należne wkłady / Ma kapitał akcyjny
             var ev = await cap.CreateEventAsync(new CapitalEvent
             {
                 Type = CapitalEventType.ObjecieAkcjiWkladPieniezny, EventDate = date, ShareholderId = sh.Id, ShareCapitalAmount = amount,

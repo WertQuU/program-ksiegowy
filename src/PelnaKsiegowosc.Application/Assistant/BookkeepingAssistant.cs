@@ -216,12 +216,12 @@ public sealed class BookkeepingAssistant
                     "Saldo nie trafi do sprawozdania finansowego.", "Plan kont → zaznacz konto → uzupełnij „Bilans Wn / Ma” albo „RZiS”.", AppArea.PlanKont);
         }
 
-        // --- Kapitał P.S.A.: objęcia zaksięgowane według logiki sprzed wersji 1.0.1 ---
+        // --- Kapitał P.S.A.: objęcia zaksięgowane według wcześniejszej logiki programu ---
         foreach (var l in await new Capital.CapitalService(_db, _user, _clock).LegacyPsaSubscriptionsAsync(ct))
             Add("KAPITAL_PSA_OBJECIE", IssueSeverity.Ostrzezenie, $"Objęcie akcji ({l.Shareholder}, {l.Date.ToPl()}) zwiększyło kapitał akcyjny przed wpłatą",
                 $"Zapis {l.JournalNumber}: {Money.Format(l.Amount)} zł, wpłacono {Money.Format(l.Paid)} zł. W P.S.A. kapitał akcyjny tworzą wyłącznie wniesione wkłady (art. 300³ KSH).",
                 l.Paid == 0 ? "Kapitał → zaznacz zdarzenie → „Koryguj objęcie (P.S.A.)” — storno; kapitał zostanie uznany przy wpłacie."
-                            : "Wkład częściowo wpłacony — korekta PK wg podręcznika (rozdział „Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1”).", AppArea.Kapital, l.EventId);
+                            : "Wkład częściowo wpłacony — korekta PK wg podręcznika (rozdział „Kapitał P.S.A. — korekta wcześniejszych zapisów objęcia”).", AppArea.Kapital, l.EventId);
 
         // --- Rozrachunki ---
         var items = await _db.OpenItems.AsNoTracking().Where(o => o.CompanyId == companyId && o.Status != OpenItemStatus.Rozliczona).ToListAsync(ct);

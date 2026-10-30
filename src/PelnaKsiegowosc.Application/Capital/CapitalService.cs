@@ -163,7 +163,7 @@ public sealed class CapitalService
                 {
                     if (rest <= 0) break;
                     var part = Math.Min(rest, legacy.RemainingPln);
-                    lines.Add(new(p.ShareContributionsDue, 0, part, cp, "Wpłata wkładu — rozliczenie należnego wkładu (zapis sprzed wersji 1.0.1)", legacy.Id));
+                    lines.Add(new(p.ShareContributionsDue, 0, part, cp, "Wpłata wkładu — rozliczenie należnego wkładu (zapis według wcześniejszej logiki)", legacy.Id));
                     rest -= part;
                 }
                 if (rest > 0)
@@ -300,7 +300,7 @@ public sealed class CapitalService
     public sealed record LegacyPsaSubscription(Guid EventId, DateOnly Date, string Shareholder, decimal Amount, decimal Paid, string JournalNumber);
 
     /// <summary>
-    /// P.S.A.: objęcia akcji za wkład pieniężny zaksięgowane według logiki sprzed wersji 1.0.1 (kapitał akcyjny uznany już przy
+    /// P.S.A.: objęcia akcji za wkład pieniężny zaksięgowane według wcześniejszej logiki programu (kapitał akcyjny uznany już przy
     /// objęciu, Wn należne wkłady / Ma kapitał), których zapis nie został wystornowany. Kontrola danych — nic nie jest zmieniane.
     /// </summary>
     public async Task<List<LegacyPsaSubscription>> LegacyPsaSubscriptionsAsync(CancellationToken ct = default)
@@ -333,7 +333,7 @@ public sealed class CapitalService
                      ?? throw new DomainException("To zdarzenie nie jest objęciem akcji P.S.A. zaksięgowanym według wcześniejszej logiki.");
         if (legacy.Paid != 0)
             throw new DomainException($"Wkład został już częściowo wpłacony ({Money.Format(legacy.Paid)} zł) — storno całego zapisu zaburzyłoby rozliczenie wpłat. " +
-                "Postępuj wg podręcznika („Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1”): PK storno części niewpłaconej (Wn kapitał akcyjny/zapasowy, Ma należne wkłady).");
+                "Postępuj wg podręcznika („Kapitał P.S.A. — korekta wcześniejszych zapisów objęcia”): PK storno części niewpłaconej (Wn kapitał akcyjny/zapasowy, Ma należne wkłady).");
         var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId, ct);
         var reversal = await new LedgerService(_db, _user, _clock).ReverseAsync(ev.JournalEntryId!.Value,
             string.IsNullOrWhiteSpace(reason) ? "P.S.A.: kapitał akcyjny tworzą wniesione wkłady (art. 300^3 KSH) — objęcie przeniesione do ewidencji wkładów do wniesienia" : reason, null, ct);

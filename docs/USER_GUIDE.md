@@ -130,9 +130,9 @@ Bez kursu dla limitu program pokazuje wyliczenie wstępne i nie zapisze zaliczki
 po 90 dniach od terminu (art. 18f) program dolicza po potwierdzeniu kwalifikacji — tylko część zaliczoną do kosztów podatkowych — i zapisuje
 historię korekt przy zaliczce; po zapłacie zmniejsza podstawę do wysokości wcześniejszego zwiększenia.
 
-## Kapitał P.S.A. — korekta zapisów sprzed wersji 1.0.1
+## Kapitał P.S.A. — korekta wcześniejszych zapisów objęcia
 
-W prostej spółce akcyjnej kapitał akcyjny tworzą tylko wniesione wkłady (art. 300³ KSH). Wersja 1.0.0 księgowała
+W prostej spółce akcyjnej kapitał akcyjny tworzą tylko wniesione wkłady (art. 300³ KSH). Wcześniejsza logika programu księgowała
 objęcie akcji od razu na kapitale (Wn 245-01 / Ma 801). Asystent pokazuje takie objęcia („Objęcie akcji … zwiększyło
 kapitał akcyjny przed wpłatą”). Zapisy nie są zmieniane automatycznie:
 

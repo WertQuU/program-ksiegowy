@@ -41,7 +41,7 @@
     <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
       <Button Content="Potwierdź dokumenty zaznaczonego" Command="{Binding ConfirmDocumentsCommand}" />
       <Button Content="Zaksięguj zaznaczone" Command="{Binding PostEventCommand}" />
-      <Button Content="Koryguj objęcie (P.S.A.)…" Command="{Binding CorrectLegacyPsaCommand}" ToolTip.Tip="Storno objęcia akcji zaksięgowanego przed wersją 1.0.1 na kapitale akcyjnym — kapitał zostanie uznany przy wpłacie (art. 300³ KSH)" />
+      <Button Content="Koryguj objęcie (P.S.A.)…" Command="{Binding CorrectLegacyPsaCommand}" ToolTip.Tip="Storno objęcia akcji zaksięgowanego według wcześniejszej logiki (kapitał uznany przy objęciu) — kapitał zostanie uznany przy wpłacie (art. 300³ KSH)" />
     </WrapPanel>
     <TabControl>
       <TabItem Header="Zdarzenia"><c:TableView Table="{Binding Events}" SelectedRow="{Binding SelectedEvent}" /></TabItem>

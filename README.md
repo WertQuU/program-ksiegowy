@@ -76,7 +76,7 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 ## Pobranie i instalacja
 
 Trwają prace rozwojowe i przeglądy. Stare wydania zostały wycofane; obecnie nie ma oficjalnego wydania.
-Po zakończeniu analiz planowane jest wydanie **1.0.0**. Aktualny kod znajduje się na gałęzi **main**.
+Wersja programu: **1.0.0** (bez nowych wydań). Aktualny kod znajduje się na gałęzi **main**.
 Pakiety testowe są budowane w GitHub Actions jako artefakty; publikacja w **Releases** wymaga osobnego,
 świadomego uruchomienia workflow z numerem wydania.
 

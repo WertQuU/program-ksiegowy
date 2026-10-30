@@ -2,7 +2,7 @@
   <!-- Instalator MSI (Windows x64) budowany z katalogu publikacji self-contained win-x64 (AppPublishDir).
        Wymaga Windows: WiX korzysta z bibliotek Instalatora Windows. Polecenia: docs/BUILD.md. -->
   <PropertyGroup>
-    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.2</ProductVersion>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
     <AppPublishDir Condition="'$(AppPublishDir)' == ''">$(MSBuildThisFileDirectory)..\artifacts\win-x64</AppPublishDir>
     <OutputName>PelnaKsiegowosc-$(ProductVersion)-x64</OutputName>
     <OutputType>Package</OutputType>

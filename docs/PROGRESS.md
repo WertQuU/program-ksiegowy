@@ -1,6 +1,6 @@
 # Stan prac
 
-Wersja: 1.0.2 (druga runda poprawek zgodności CIT i kapitału P.S.A.; zastępuje 1.0.1).
+Wersja: 1.0.0 (w trakcie przeglądów; nowe wydanie nie jest planowane — numer wersji pozostaje 1.0.0).
 
 ## Zrealizowane
 
