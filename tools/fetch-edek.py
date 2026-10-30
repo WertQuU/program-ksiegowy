@@ -80,50 +80,70 @@ def version(ctx, form):
     return found[-1] if found else None
 
 
-# 1) Wykaz struktur (archiwum i aktualny serwis): najnowsza wersja każdego formularza
+# 1) Wykaz struktur (aktualny serwis podatki.gov.pl i archiwum): najnowsza wersja każdego formularza
 best = {}
-for i, url in enumerate([
-    "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/",
-    "https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/",
-    "https://www.gov.pl/web/kas/struktury-dokumentow-xml",
-    "https://www.gov.pl/web/kas/e-deklaracje",
-    "https://www.podatki.gov.pl/e-deklaracje/",
-    "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/",
-]):
-    text, final = page(url, f"wykaz{i}")
-    if not text:
-        continue
+
+
+def scan(text, final):
     for full, ctx in anchors(text, final):
         if "crd.gov.pl/wzor/" in full or full.lower().endswith(".xsd"):
             links.append(f"{full}\t{ctx[-260:]}")
+            m = re.search(r"crd\.gov\.pl/wzor/(\d{4}/\d{2}/\d{2}/\d+)", full)
+            if not m:
+                continue
             for f in FORMS:
                 v = version(ctx[-260:], f)
-                if v is not None and "crd.gov.pl/wzor/" in full:
-                    key = f
-                    wz = re.search(r"crd\.gov\.pl/wzor/(\d{4}/\d{2}/\d{2}/\d+)", full).group(1)
-                    if key not in best or v > best[key][0]:
-                        best[key] = (v, wz)
+                if v is not None and (f not in best or v > best[f][0]):
+                    best[f] = (v, m.group(1))
+
+
+queue = [
+    "https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it",
+    "https://podatki.gov.pl/podatki-firmowe/cit/formularze-cit",
+    "https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit",
+    "https://podatki.gov.pl/podatki-firmowe/vat/formularze-vat",
+    "https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/",
+]
+visited = set()
+i = 0
+while queue and i < 40 and time.time() - START < 300:
+    url = queue.pop(0)
+    if url in visited:
+        continue
+    visited.add(url)
+    text, final = page(url, f"wykaz{i}")
+    i += 1
+    if not text:
+        continue
+    scan(text, final)
+    for full, ctx in anchors(text, final):
+        l = full.lower()
+        if "podatki.gov.pl" in l and ("dokumentacja-it" in l or "struktur" in l or "formularze-" in l) and full not in visited and len(queue) < 60:
+            queue.append(full)
 open(os.path.join(OUT, "odnosniki.txt"), "w", encoding="utf-8").write("\n".join(sorted(set(links))))
 for f, (v, wz) in sorted(best.items()):
     log.append(f"NAJNOWSZY {f}({v}) {wz}")
     fetch_xsd(f"http://crd.gov.pl/wzor/{wz}/schemat.xsd", f"{f}({v})")
 
-# 2) ZUS — dokumentacja KEDU (struktura dokumentów programu Płatnik)
-for i, url in enumerate([
-    "https://www.zus.pl/firmy/programy-i-aplikacje/program-platnik",
-    "https://www.zus.pl/firmy/programy-i-aplikacje/program-platnik/dokumentacja-techniczna",
-    "https://www.zus.pl/baza-wiedzy/biblioteka-materialow/dokumentacja-techniczna",
-    "https://www.zus.pl/o-zus/akty-prawne/dokumentacja-techniczna",
-]):
-    text, final = page(url, f"zus{i}")
+# 2) ZUS — dokumentacja KEDU (struktura dokumentów programu Płatnik): przeszukanie serwisu od strony głównej
+zq, zv, zi = ["https://www.zus.pl/", "https://www.zus.pl/firmy/programy-i-aplikacje"], set(), 0
+while zq and zi < 25 and time.time() - START < 500:
+    url = zq.pop(0)
+    if url in zv:
+        continue
+    zv.add(url)
+    text, final = page(url, f"zus{zi}")
+    zi += 1
     if not text:
         continue
     for full, ctx in anchors(text, final):
         l = full.lower()
         if "kedu" in l or "kedu" in ctx.lower() or l.endswith((".xsd", ".zip")):
             links.append(f"ZUS\t{full}\t{ctx[-200:]}")
-            if (l.endswith((".xsd", ".zip")) or "/documents/" in l) and ("kedu" in l or "kedu" in ctx.lower()):
+            if l.endswith((".xsd", ".zip")) or "/documents/" in l:
                 fetch_xsd(full, "KEDU")
+        elif "zus.pl" in l and any(k in l for k in ("platnik", "płatnik", "dokumentacja", "programy")) and full not in zv and len(zq) < 40:
+            zq.append(full)
 open(os.path.join(OUT, "odnosniki.txt"), "w", encoding="utf-8").write("\n".join(sorted(set(links))))
 open(os.path.join(OUT, "log.txt"), "w", encoding="utf-8").write("\n".join(log))
 print("\n".join(log))

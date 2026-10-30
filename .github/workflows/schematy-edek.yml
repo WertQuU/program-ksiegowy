@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Pobranie
-        timeout-minutes: 10
+        timeout-minutes: 12
         run: python3 tools/fetch-edek.py schemas/MF/edek
       - name: Zapis w repozytorium
         if: always()
