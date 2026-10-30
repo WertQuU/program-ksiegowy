@@ -40,7 +40,8 @@ public sealed partial class MainViewModel : ViewModelBase
             new SettingsViewModel(session, dialogs),
             new HelpViewModel(session, dialogs),
             new RegulationsViewModel(session, dialogs),
-            new PayrollViewModel(session, dialogs)
+            new PayrollViewModel(session, dialogs),
+            new DeclarationsViewModel(session, dialogs)
         };
         SectionViewModel S(PelnaKsiegowosc.Application.Assistant.AppArea a) => Sections[(int)a];
         MenuItems = new List<object>
@@ -48,7 +49,7 @@ public sealed partial class MainViewModel : ViewModelBase
             new MenuHeader("NA CO DZIEŃ"),
             S(AA.Pulpit), S(AA.Sprzedaz), S(AA.Zakupy), S(AA.Bank), S(AA.Kontrahenci),
             new MenuHeader("ROZLICZENIA"),
-            S(AA.Zamkniecie), S(AA.Vat), S(AA.Cit), S(AA.Place), S(AA.Raporty),
+            S(AA.Zamkniecie), S(AA.Vat), S(AA.Cit), S(AA.Place), S(AA.Deklaracje), S(AA.Raporty),
             new MenuHeader("KSIĘGI"),
             S(AA.Dokumenty), S(AA.Ksiegowosc), S(AA.PlanKont), S(AA.SrodkiTrwale), S(AA.Kapital),
             new MenuHeader("FIRMA I PROGRAM"),

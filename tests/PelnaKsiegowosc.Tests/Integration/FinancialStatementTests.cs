@@ -202,4 +202,27 @@ public class FinancialStatementTests
             File.Delete(zipPath);
         }
     }
+
+    [Fact]
+    public async Task Declarations_cit8_vat_ue_foreign_payments_and_resolutions()
+    {
+        await using var t = await FullYearScenarioTests.BuildFullYearAsync(closeYear: true);
+        var rs = new ReportService(t.Db, t.User, t.Clock);
+        var cit = await rs.Cit8Async(t.Year.Id);
+        Assert.Contains(cit.Rows, r => (string?)r.Cells[0] == "G.2" && (decimal?)r.Cells[2] == 423m);
+        Assert.Contains(cit.Rows, r => (string?)r.Cells[0] == "D.1" && (decimal?)r.Cells[2] == 10000m);
+
+        var ue = await rs.VatUeAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 3, 1));
+        Assert.Equal(3, ue.Rows.Count(r => r.IsHeader));
+        Assert.Contains(ue.Rows, r => (string?)r.Cells[3] == "brak transakcji");
+
+        var ift = await rs.ForeignPaymentsAsync(2026);
+        Assert.DoesNotContain(ift.Rows, r => !r.IsHeader && !r.IsTotal);
+
+        var u = await rs.AnnualResolutionsAsync(t.Year.Id);
+        Assert.False(u.ControlsPassed);
+        Assert.Contains(u.Rows, r => ((string?)r.Cells[1] ?? "").Contains($"zysk netto w kwocie {Money.Format(4277m)} zł"));
+        Assert.Contains(u.Rows, r => ((string?)r.Cells[1] ?? "").Contains(Money.Format(17160m)));
+        foreach (var r in new[] { cit, ue, ift, u }) Assert.True(new PdfReportExporter().Export(r).Length > 100);
+    }
 }

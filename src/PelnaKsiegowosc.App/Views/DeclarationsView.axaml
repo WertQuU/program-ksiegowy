@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.DeclarationsView"
+             x:DataType="s:DeclarationsViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <ListBox DockPanel.Dock="Top" ItemsSource="{Binding Catalog}" SelectedItem="{Binding Selected}" MaxHeight="260">
+      <ListBox.ItemTemplate>
+        <DataTemplate DataType="s:DeclarationInfo">
+          <Grid ColumnDefinitions="3*,2*,2*">
+            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="1" Text="{Binding Deadline}" Foreground="{DynamicResource PkMuted}" TextWrapping="Wrap" />
+            <TextBlock Grid.Column="2" Text="{Binding Where}" Foreground="{DynamicResource PkMuted}" TextWrapping="Wrap" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+      <TextBlock Text="Rok:" /><TextBox Text="{Binding Year}" MinWidth="70" />
+      <TextBlock Text="VAT-UE od / do (mm.rrrr):" /><TextBox Text="{Binding From}" MinWidth="80" /><TextBox Text="{Binding To}" MinWidth="80" />
+      <TextBox Text="{Binding ProfitDistribution}" Watermark="podział zysku do uchwały, np. „na kapitał zapasowy”" MinWidth="300" />
+      <Button Content="Generuj / przejdź" Command="{Binding GenerateCommand}" Classes="accent" />
+      <Button Content="PDF…" Command="{Binding ExportPdfCommand}" />
+      <Button Content="XLSX…" Command="{Binding ExportXlsxCommand}" />
+    </WrapPanel>
+    <c:TableView Table="{Binding Preview}" />
+  </DockPanel>
+</UserControl>

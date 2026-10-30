@@ -27,6 +27,7 @@
     <DataTemplate DataType="s:HelpViewModel"><v:HelpView /></DataTemplate>
     <DataTemplate DataType="s:RegulationsViewModel"><v:RegulationsView /></DataTemplate>
     <DataTemplate DataType="s:PayrollViewModel"><v:PayrollView /></DataTemplate>
+    <DataTemplate DataType="s:DeclarationsViewModel"><v:DeclarationsView /></DataTemplate>
   </Application.DataTemplates>
 
   <Application.Resources>

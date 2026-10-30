@@ -34,7 +34,7 @@ public enum IssueSeverity
 public enum AppArea
 {
     Pulpit, Jednostka, Dokumenty, Sprzedaz, Zakupy, Ksiegowosc, PlanKont, Kontrahenci, Bank, Vat, Cit, SrodkiTrwale, Kapital,
-    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc, Przepisy, Place
+    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc, Przepisy, Place, Deklaracje
 }
 
 /// <summary>Wykryty problem: co jest nie tak, dlaczego to ważne i jak to naprawić.</summary>
