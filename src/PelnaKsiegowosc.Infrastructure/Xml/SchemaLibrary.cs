@@ -28,7 +28,7 @@ public sealed class SchemaLibrary
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/jpk_vat-z-deklaracja/", "Ewidencja VAT z deklaracją — rozliczenie kwartalne"),
         new("JPK_CIT (JPK_KR_PD)", Jpk.JpkKrPdBuilder.SchemaFile, "https://www.gov.pl/attachment/4ec8f106-032c-42f2-9fb5-15b5ec5ca670",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/", "Księgi rachunkowe ze znacznikami podatkowymi — CIT (od roku 2026 dla podatników JPK_V7)"),
-        new("e-Sprawozdanie — jednostka inna (JednostkaInnaWZlotych)", FinancialStatementXmlBuilder.SchemaFile, null,
+        new("e-Sprawozdanie SFJINZ(2) — jednostka inna, w złotych", FinancialStatementXmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie finansowe w formie elektronicznej (art. 45 ust. 1g UoR)"),
     };
 

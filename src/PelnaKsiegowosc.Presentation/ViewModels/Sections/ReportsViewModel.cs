@@ -182,6 +182,31 @@ public sealed partial class ReportsViewModel : SectionViewModel
         StatusMessage = $"Zapisano {target}";
     });
 
+    /// <summary>Sprawozdanie podlega obowiązkowi badania (art. 64 UoR) — pole P_9 e-Sprawozdania.</summary>
+    [ObservableProperty] private bool _auditRequired;
+
+    /// <summary>Średnioroczne zatrudnienie w etatach (umowy o pracę) — z ewidencji płacowej.</summary>
+    private static async Task<decimal> AverageEmploymentAsync(Data.KsiegiDbContext db, DateOnly from, DateOnly to)
+    {
+        var employees = await db.Employees.AsNoTracking().Where(e => e.ContractType == Domain.Payroll.ContractType.UmowaOPrace).ToListAsync();
+        decimal sum = 0;
+        var months = 0;
+        for (var m = new DateOnly(from.Year, from.Month, 1); m <= to; m = m.AddMonths(1), months++)
+        {
+            var end = m.AddMonths(1).AddDays(-1);
+            sum += employees.Where(e => e.StartDate <= end && (e.EndDate == null || e.EndDate >= m)).Sum(e => e.WorkTimeFraction);
+        }
+        return months == 0 ? 0 : Math.Round(sum / months, 2);
+    }
+
+    private async Task<FinancialStatementXmlBuilder.IncomeTaxInfo> IncomeTaxAsync(Data.KsiegiDbContext db, Domain.Periods.FiscalYear y)
+    {
+        var rec = await new Application.Cit.CitService(db, Session.User, Session.Clock).ReconcileAsync(y.Id, y.Periods.Count);
+        var plus = rec.Adjustments.Where(a => a.Amount > 0).Sum(a => a.Amount);
+        var minus = -rec.Adjustments.Where(a => a.Amount < 0).Sum(a => a.Amount);
+        return new FinancialStatementXmlBuilder.IncomeTaxInfo(rec.BookResultBeforeTax, 0, minus, 0, plus, 0, 0, rec.Deductions, 0, rec.Computation.TaxBase, rec.Computation.Tax);
+    }
+
     [RelayCommand]
     private Task FinancialStatementXmlAsync() => RunAsync(async () =>
     {
@@ -208,7 +233,9 @@ public sealed partial class ReportsViewModel : SectionViewModel
             simplified || prev is null ? null : await sb.EquityChangesAsync(prev.Id, prev.EndDate),
             simplified ? null : await sb.CashFlowAsync(y.Id, y.EndDate),
             simplified || prev is null ? null : await sb.CashFlowAsync(prev.Id, prev.EndDate),
-            notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf");
+            notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf",
+            AverageEmployment: await AverageEmploymentAsync(db, y.StartDate, y.EndDate), AuditRequired: AuditRequired,
+            IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null);
         var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
         var target = await Dialogs.SaveFileAsync("Sprawozdanie finansowe (XML)", $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
@@ -216,6 +243,6 @@ public sealed partial class ReportsViewModel : SectionViewModel
         await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
             (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane / do wykonania poza programem:" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
             string.Join(Environment.NewLine, r.Validation.Errors.Take(30)) +
-            $"{Environment.NewLine}Sprawozdanie wymaga informacji dodatkowej, podpisów kierownika jednostki i osoby sporządzającej oraz weryfikacji z aktualną strukturą logiczną.");
+            $"{Environment.NewLine}Struktura: SFJINZ(2) (MF, sprawozdania sporządzane od 1.01.2026). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");
     });
 }

@@ -52,8 +52,8 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   spis z natury),
   **środki trwałe** (amortyzacja bilansowa i podatkowa), **kapitał i właściciele** (wkłady, podział zysku, dywidendy, pożyczki — po potwierdzeniu dokumentów).
 - **Sprawozdanie finansowe**: bilans, RZiS porównawczy i kalkulacyjny (klucz podziału kosztów), zestawienie zmian
-  w kapitale, rachunek przepływów (metoda pośrednia), informacja dodatkowa (tabele z ksiąg + opisy), e-Sprawozdanie XML
-  z dołączoną informacją dodatkową; **schematy XSD** pobierane z serwera MF lub wczytywane z pliku.
+  w kapitale, rachunek przepływów (metoda pośrednia), informacja dodatkowa (tabele z ksiąg + opisy), informacja
+  o podatku dochodowym; **e-Sprawozdanie XML w oficjalnej strukturze SFJINZ(2)** walidowane schematem MF.
 - **Monitor przepisów** — sprawdza zmiany ustaw (API Sejmu) i pokazuje je w panelu; **weryfikacja kontrahenta**
   w bezpłatnych rejestrach (biała lista VAT, KRS — likwidacja/upadłość/restrukturyzacja, VIES).
 - **Raporty** z rzeczywistych zapisów: dziennik, księga główna, zestawienie obrotów i sald, bilans, RZiS,
@@ -105,9 +105,10 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 
 ## Znane ograniczenia
 
-- Schematy XSD JPK_V7M/V7K, JPK_KR_PD i e-Sprawozdania nie mogły zostać dołączone do repozytorium (brak dostępu
-  do serwerów MF podczas budowania) — program pobiera je w *Ustawienia → Schematy XSD → Pobierz z serwera MF* albo
-  wczytuje z pliku. Do tego czasu pliki mają status „niezwalidowany” (szczegóły: [schemas/README.md](schemas/README.md)).
+- Oficjalne schematy XSD MF (JPK_V7M/V7K, JPK_KR_PD, e-Sprawozdanie SFJINZ(2), FA(3)) są dołączone do programu
+  (`schemas/`) i odświeżane automatycznie w GitHub Actions; nowe wersje można też pobrać w *Ustawienia → Schematy XSD*.
+- e-Sprawozdanie: struktura SFJINZ(2) (jednostki inne, w złotych) — dopuszczalna także dla jednostek małych i mikro,
+  które nie korzystają z uproszczeń; uproszczonych wzorów dla jednostek małych/mikro (SFJMAZ/SFJMIZ) program nie generuje.
 - Deklaracje CIT-8, VAT-UE, PIT-36/36L, PIT-4R/8AR/11, DRA/RCA — program wylicza kwoty i drukuje zestawienia;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
 - Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie

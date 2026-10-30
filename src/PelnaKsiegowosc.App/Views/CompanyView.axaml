@@ -11,7 +11,7 @@
       <TabItem Header="Dane jednostki">
         <ScrollViewer>
           <StackPanel>
-            <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Text="Forma prawna" /><ComboBox Grid.Column="1" ItemsSource="{Binding Form.LegalFormChoices}" SelectedItem="{Binding Form.LegalForm}" />
               <TextBlock Grid.Column="2" Text="NIP" /><TextBox Grid.Column="3" Text="{Binding Form.Nip}" />
               <TextBlock Grid.Row="1" Text="Pełna nazwa (firma)" /><TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Form.FullName}" />
@@ -36,6 +36,7 @@
               <TextBlock Grid.Row="11" Text="Województwo" /><TextBox Grid.Row="11" Grid.Column="1" Text="{Binding Form.Voivodeship}" Watermark="np. mazowieckie" />
               <TextBlock Grid.Row="11" Grid.Column="2" Text="Powiat / gmina" />
               <Grid Grid.Row="11" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding Form.County}" Watermark="powiat" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding Form.Commune}" Watermark="gmina" Margin="0,2,12,2" /></Grid>
+              <TextBlock Grid.Row="12" Text="PKD (przeważająca działalność)" /><TextBox Grid.Row="12" Grid.Column="1" Text="{Binding Form.PkdCode}" Watermark="np. 6920Z" />
               <TextBlock Grid.Row="10" Text="Stopka faktury" /><TextBox Grid.Row="10" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Form.InvoiceFooter}" />
             </Grid>
             <WrapPanel Classes="toolbar" Margin="0,8,0,0"><Button Content="Zapisz dane jednostki" Command="{Binding SaveCompanyCommand}" /></WrapPanel>

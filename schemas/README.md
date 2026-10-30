@@ -12,15 +12,18 @@ Aplikacja **nie pobiera** schematów z Internetu podczas walidacji — `XsdValid
 
 Sumy kontrolne: `KSeF/FA3/SHA256SUMS`.
 
-## Schematy, których nie dołączono
+## Schematy MF (`MF/`)
 
-Schematów JPK_V7M(3) (CRWDE 2025/12/19/14090), JPK_V7K(3), JPK_KR_PD (JPK_CIT) oraz e-Sprawozdań
-finansowych (JednostkaInnaWZlotych) nie udało się pobrać ze środowiska budowania (brak dostępu do crd.gov.pl / gov.pl).
-W programie: *Ustawienia → Schematy XSD*:
+Pobierane automatycznie przez GitHub Actions (`.github/workflows/schematy.yml`, `schematy-esf.yml`) z serwerów MF
+(crd.gov.pl, gov.pl, podatki.gov.pl) — środowisko budowania programu nie ma do nich dostępu. Manifest z adresami
+i sumami SHA-256: `MF/manifest.json`, log: `MF/esf2/log.txt`.
 
-- **Pobierz z serwera MF** — pobiera schemat JPK_V7M(3) z crd.gov.pl wraz ze schematami importowanymi
-  (tylko z domen gov.pl);
-- **Wczytaj z pliku…** — plik `.xsd` albo archiwum `.zip` pobrane ze strony MF (podatki.gov.pl).
+| Struktura | Plik używany przez program | Źródło |
+|---|---|---|
+| JPK_V7M(3) / JPK_V7K(3) | `Schemat_JPK_V7M(3)_v1-0E.xsd`, `Schemat_JPK_V7K(3)_v1-0E.xsd` | crd.gov.pl/wzor/2025/12/19/14090, 14089 |
+| JPK_V7M(2) / JPK_V7K(2) | `Schemat_JPK_V7M(2)_v1-0E.xsd`, `Schemat_JPK_V7K(2)_v1-0E.xsd` | crd.gov.pl/wzor/2021/12/27/11148, 11149 |
+| JPK_KR_PD(1) v1-1 (JPK_CIT) | `Schemat_JPK_KR_PD(1)_v1-1.xsd` | gov.pl/web/kas/struktury-jpk-w-podatkach-dochodowych |
+| e-Sprawozdanie SFJINZ(2) | `esf2/nazwane/Schemat_SFJINZ(2)_v1-0E.xsd` (+ SFJINT, SFJMAZ, SFJMIZ) | crd.gov.pl/wzor/2025/08/07/13817 |
 
-Program generuje pliki JPK w przestrzeni nazw odczytanej z wczytanego schematu. Do czasu wczytania schematu pliki
-JPK/e-SF mają status „WYGENEROWANY — NIEZWALIDOWANY” i nie są oznaczane jako poprawne.
+Pliki w `MF/` są niezmienionymi kopiami; nazwy „Schemat_…” to kopie plików `schemat.xsd` pod nazwami używanymi
+przez program, a `esf2/nazwane/` — kopie plików `zalacznik_oi_*` (przekierowania CRWDE) pod nazwami z `schemaLocation`.

@@ -106,20 +106,34 @@ public class FinancialStatementTests
         var sb = new StatementBuilder(t.Db);
         var company = await t.Db.Companies.AsNoTracking().SingleAsync();
         var pdf = new PdfReportExporter().Export(notes);
-        var x = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, await sb.BalanceSheetAsync(y.Id, y.EndDate), null,
-            await sb.ProfitAndLossAsync(y.Id, y.EndDate), null, new XsdValidator(t.Directory),
-            new FinancialStatementXmlBuilder.Extras(await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default), null,
-                await sb.EquityChangesAsync(y.Id, y.EndDate), null, await sb.CashFlowAsync(y.Id, y.EndDate), null, texts["kontynuacja"], texts["zasady"], pdf));
-        var ns = FinancialStatementXmlBuilder.Ns;
+        var validator = new XsdValidator(Path.Combine(AppContext.BaseDirectory, "schemas"));
+        var extras = new FinancialStatementXmlBuilder.Extras(null, null,
+            await sb.EquityChangesAsync(y.Id, y.EndDate), null, await sb.CashFlowAsync(y.Id, y.EndDate), null, texts["kontynuacja"], texts["zasady"], pdf,
+            AverageEmployment: 0m, IncomeTax: new FinancialStatementXmlBuilder.IncomeTaxInfo(4700m, 0, 0, 0, 0, 0, 0, 0, 0, 4700m, 423m));
+        DomainException noPkd = Assert.Throws<DomainException>(() => FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate,
+            new StatementValues { AsOf = y.EndDate }, null, new StatementValues { AsOf = y.EndDate }, null, validator, extras));
+        Assert.Contains("PKD", noPkd.Message);
+        company.PkdCode = "6920A"; // PKD 2025
+        company.Voivodeship = "mazowieckie";
+        company.County = "Warszawa";
+        company.Commune = "Warszawa";
+        var bsCur = await sb.BalanceSheetAsync(y.Id, y.EndDate);
+        var plCur = await sb.ProfitAndLossAsync(y.Id, y.EndDate);
+        // wariant porównawczy z zestawieniem zmian w kapitale, RPP, informacją dodatkową i informacją o podatku dochodowym
+        var x = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, extras);
+        Assert.True(x.Validation.IsValid, string.Join(Environment.NewLine, x.Validation.Errors.Take(15)));
+        var jin = FinancialStatementXmlBuilder.Jin;
+        var dtsf = FinancialStatementXmlBuilder.Dtsf;
         var root = x.Document.Root!;
-        Assert.NotNull(root.Descendants(ns + "RZiSKalk").SingleOrDefault());
-        Assert.Null(root.Descendants(ns + "RZiSPor").SingleOrDefault());
-        Assert.NotNull(root.Element(ns + "ZestZmianWKapitale"));
-        Assert.NotNull(root.Element(ns + "RachPrzeplywow"));
-        var content = root.Descendants(FinancialStatementXmlBuilder.Dtsf + "Zawartosc").Single().Value;
-        Assert.Equal(pdf, Convert.FromBase64String(content));
+        Assert.Equal("17160.00", root.Descendants(jin + "Aktywa").Single().Element(dtsf + "KwotaA")!.Value);
+        Assert.Equal("4277.00", root.Descendants(jin + "RZiSPor").Single().Element(jin + "L")!.Element(dtsf + "KwotaA")!.Value);
+        Assert.Equal(pdf, Convert.FromBase64String(root.Descendants(dtsf + "Zawartosc").Single().Value));
         Assert.DoesNotContain(x.NotImplemented, n => n.StartsWith("Dodatkowe informacje"));
-        Assert.False(x.Validation.IsValid); // brak schematu e-SF → NIEZWALIDOWANY
+        // wariant kalkulacyjny
+        var xk = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator,
+            extras with { CalculationVariant = await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default) });
+        Assert.True(xk.Validation.IsValid, string.Join(Environment.NewLine, xk.Validation.Errors.Take(15)));
+        Assert.Equal("4277.00", xk.Document.Root!.Descendants(jin + "RZiSKalk").Single().Element(jin + "O")!.Element(dtsf + "KwotaA")!.Value);
     }
 
     private sealed class Fake(Func<string, (HttpStatusCode, string)> f) : HttpMessageHandler
@@ -166,7 +180,7 @@ public class FinancialStatementTests
             Assert.True(validator.Validate(new XDocument(new XElement(t + "JPK", "abc")), PelnaKsiegowosc.Infrastructure.Jpk.JpkV7Rules.SchemaFile, "test").IsValid);
             Assert.False(validator.Validate(new XDocument(new XElement(t + "JPK", "abcdefgh")), PelnaKsiegowosc.Infrastructure.Jpk.JpkV7Rules.SchemaFile, "test").IsValid);
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => lib.DownloadAsync(SchemaLibrary.Known.Single(k => k.Name.StartsWith("e-Sprawozdanie"))));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => lib.DownloadAsync(SchemaLibrary.Known.Single(k => k.Name.StartsWith("FA(3)")))); // schemat dołączony — bez adresu pobrania
         }
         finally
         {

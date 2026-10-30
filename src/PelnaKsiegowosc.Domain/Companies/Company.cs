@@ -176,6 +176,8 @@ public class Company : Entity
     public string? Voivodeship { get; set; }
     /// <summary>Powiat i gmina siedziby — wymagane w adresie JPK_KR_PD i e-Sprawozdaniu.</summary>
     public string? County { get; set; }
+    /// <summary>Podstawowy przedmiot działalności — kod PKD 2025 bez kropek, np. 6920Z (wymagany w e-Sprawozdaniu).</summary>
+    public string? PkdCode { get; set; }
     public string? Commune { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }

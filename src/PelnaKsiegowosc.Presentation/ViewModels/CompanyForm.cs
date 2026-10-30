@@ -20,6 +20,7 @@ public sealed partial class CompanyForm : ObservableObject
     [ObservableProperty] private string? _voivodeship;
     [ObservableProperty] private string? _county;
     [ObservableProperty] private string? _commune;
+    [ObservableProperty] private string? _pkdCode;
     [ObservableProperty] private string? _email;
     [ObservableProperty] private string? _phone;
     [ObservableProperty] private string? _taxOfficeCode;
@@ -45,7 +46,7 @@ public sealed partial class CompanyForm : ObservableObject
     {
         FullName = c.FullName; ShortName = c.ShortName; Nip = c.Nip; Regon = c.Regon; Krs = c.Krs; RegistryCourt = c.RegistryCourt;
         Street = c.Street; BuildingNumber = c.BuildingNumber; ApartmentNumber = c.ApartmentNumber; PostalCode = c.PostalCode; City = c.City;
-        Voivodeship = c.Voivodeship; County = c.County; Commune = c.Commune; Email = c.Email; Phone = c.Phone; TaxOfficeCode = c.TaxOfficeCode; BankIban = c.DefaultBankAccountIban;
+        Voivodeship = c.Voivodeship; County = c.County; Commune = c.Commune; PkdCode = c.PkdCode; Email = c.Email; Phone = c.Phone; TaxOfficeCode = c.TaxOfficeCode; BankIban = c.DefaultBankAccountIban;
         InvoiceFooter = c.InvoiceFooter; RegistrationDate = c.RegistrationDate?.ToString("dd.MM.yyyy"); IsSmallCitTaxpayer = c.IsSmallCitTaxpayer;
         LegalForm = LegalFormChoices.First(x => x.Value == c.LegalForm);
         VatStatus = VatStatuses.First(x => x.Value == c.VatStatus);
@@ -70,7 +71,7 @@ public sealed partial class CompanyForm : ObservableObject
         c.Nip = Nip.Trim();
         c.Regon = Parse.Trim(Regon); c.Krs = Parse.Trim(Krs); c.RegistryCourt = Parse.Trim(RegistryCourt);
         c.Street = Street.Trim(); c.BuildingNumber = BuildingNumber.Trim(); c.ApartmentNumber = Parse.Trim(ApartmentNumber);
-        c.PostalCode = PostalCode.Trim(); c.City = City.Trim(); c.Voivodeship = Parse.Trim(Voivodeship); c.County = Parse.Trim(County); c.Commune = Parse.Trim(Commune);
+        c.PostalCode = PostalCode.Trim(); c.City = City.Trim(); c.Voivodeship = Parse.Trim(Voivodeship); c.County = Parse.Trim(County); c.Commune = Parse.Trim(Commune); c.PkdCode = Parse.Trim(PkdCode)?.Replace(".", "").Replace(" ", "").ToUpperInvariant();
         c.Email = Parse.Trim(Email); c.Phone = Parse.Trim(Phone); c.TaxOfficeCode = Parse.Trim(TaxOfficeCode);
         c.DefaultBankAccountIban = Parse.Trim(BankIban)?.Replace(" ", ""); c.InvoiceFooter = Parse.Trim(InvoiceFooter);
         c.RegistrationDate = Parse.OptionalDate(RegistrationDate, "Data rejestracji w KRS");

@@ -24,17 +24,17 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | UoR art. 32 | amortyzacja bilansowa | metody liniowa, degresywna, jednorazowa | Z/W |
 | UoR art. 45–46, zał. nr 1 | bilans, RZiS | wariant porównawczy i kalkulacyjny (klucz podziału kosztów rodzajowych), dane porównawcze | Z/W |
 | UoR art. 48, 48a, 48b, zał. nr 1 | informacja dodatkowa, zestawienie zmian w kapitale, rachunek przepływów | tabele z ksiąg + opisy użytkownika; RPP metodą pośrednią z kontrolą zmiany środków pieniężnych | Z/W |
-| UoR art. 45 ust. 1f | sprawozdanie w strukturze logicznej | XML z RZiS (wariant wg polityki), zmianami w kapitale, RPP i informacją dodatkową (PDF); walidacja po wczytaniu schematu XSD | Z/W |
+| UoR art. 45 ust. 1f | sprawozdanie w strukturze logicznej | struktura SFJINZ(2) (CRWDE 2025/08/07/13817) z RZiS wg polityki, zmianami w kapitale, RPP, informacją dodatkową (PDF) i informacją o podatku dochodowym; walidacja oficjalnym schematem w testach | Z/W |
 | UoR art. 53, 69 | zatwierdzenie i złożenie sprawozdania | projekty uchwał (zatwierdzenie, podział zysku, absolutorium), terminy w kalendarzu | Z/W |
 | UoR art. 71–76 | ochrona i przechowywanie | szyfrowane kopie, weryfikacja, retencja, okresy przechowywania | Z/W |
 | VAT art. 106e | elementy faktury | generator FA(3) w zakresie typowych faktur krajowych i korekt | Z/W |
 | VAT art. 106ga i n. | KSeF | wysyłka i pobieranie (token), walidacja XSD FA(3); test na atrapie API | Z/W |
 | VAT art. 86 | prawo i termin odliczenia | wymagane potwierdzenie zakresu i okresu, kontrola terminów | Z/W |
 | VAT art. 109 ust. 3 | ewidencja VAT | rejestry z polami JPK | Z/W |
-| Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | generator (miesięczny i kwartalny, osoba fizyczna i niefizyczna); przestrzeń nazw z wczytanego schematu; mapowanie pól wymaga weryfikacji | Z/W |
+| Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | wersje (2) i (3) wg okresu, miesięczny i kwartalny, osoba fizyczna i niefizyczna; walidacja oficjalnymi schematami w testach | Z |
 | VAT art. 99 ust. 2, art. 103 ust. 2 | rozliczenie kwartalne | deklaracja za kwartał w ostatnim miesiącu, ewidencja miesięczna | Z/W |
 | VAT art. 100 | informacja podsumowująca VAT-UE | zestawienie WDT, WNT, usług (art. 100 ust. 1 pkt 4) wg kontrahentów | Z/W |
-| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD) | księgi ze znacznikami bilansowymi, RZiS i podatkowymi; nazwy elementów do weryfikacji schematem | Cz |
+| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD(1) v1-1) | ZOiS7 ze słownikiem znaczników MF przypisywanym automatycznie z pozycji sprawozdania, znaczniki PD, dziennik, RPD; walidacja oficjalnym schematem w testach | Z/W |
 | CIT art. 27 | zeznanie CIT-8, CIT-8/O | zestawienie kwot z uzgodnienia wyniku, zaliczek i odliczeń | Z/W |
 | CIT art. 26 ust. 3 | IFT-2R / CIT-10Z | zestawienie wypłat na rzecz nierezydentów (ocena WHT — użytkownik) | Cz |
 | PIT art. 8, 27, 30c, 44, 45 | dochód wspólników / właściciela, PIT-36, PIT-36L | podział dochodu wg udziałów, skala / liniowy, odliczenie składek | Z/W |

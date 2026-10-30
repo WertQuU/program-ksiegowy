@@ -20,6 +20,7 @@
       <Button Content="Eksport XLSX…" Command="{Binding ExportXlsxCommand}" />
       <Button Content="Eksport CSV…" Command="{Binding ExportCsvCommand}" />
       <Button Content="Sprawozdanie finansowe XML…" Command="{Binding FinancialStatementXmlCommand}" />
+      <CheckBox Content="Sprawozdanie podlega badaniu" IsChecked="{Binding AuditRequired}" />
     </WrapPanel>
     <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding ShowCostKey}" Margin="0,4">
       <StackPanel Spacing="6">
