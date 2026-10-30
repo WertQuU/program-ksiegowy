@@ -42,7 +42,8 @@ public static partial class FinancialStatementXmlBuilder
         string? GoingConcern = null, string? Policies = null,
         byte[]? NotesPdf = null, string NotesFileName = "informacja-dodatkowa.pdf",
         decimal AverageEmployment = 0m, bool AuditRequired = false, IncomeTaxInfo? IncomeTax = null, IncomeTaxInfo? IncomeTaxPrev = null,
-        bool GoingConcernThreatened = false, StatementScope Scope = StatementScope.Inna, string? Simplifications = null);
+        bool GoingConcernThreatened = false, StatementScope Scope = StatementScope.Inna, string? Simplifications = null,
+        bool InThousands = false);
 
     public static string FormaPrawna(LegalForm f) => f switch
     {
@@ -108,6 +109,11 @@ public static partial class FinancialStatementXmlBuilder
         StatementValues pl, StatementValues? plPrev, XsdValidator validator, Extras? extras = null)
     {
         extras ??= new Extras();
+        if (extras.InThousands)
+        {
+            var zl = Build(company, from, to, prepared, bs, bsPrev, pl, plPrev, validator, extras with { InThousands = false });
+            return ToThousands(zl, extras.Scope, validator);
+        }
         if (extras.Scope != StatementScope.Inna) return BuildSimplified(company, from, to, prepared, bs, bsPrev, pl, plPrev, validator, extras);
         var notImplemented = new List<string>();
         if (string.IsNullOrWhiteSpace(company.PkdCode)) throw new DomainException("Uzupełnij kod PKD przeważającej działalności w danych jednostki (np. 6920Z) — jest wymagany w e-Sprawozdaniu.");

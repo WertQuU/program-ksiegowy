@@ -184,6 +184,7 @@ public sealed partial class ReportsViewModel : SectionViewModel
 
     /// <summary>Sprawozdanie podlega obowiązkowi badania (art. 64 UoR) — pole P_9 e-Sprawozdania.</summary>
     [ObservableProperty] private bool _auditRequired;
+    [ObservableProperty] private bool _inThousands;
 
     /// <summary>Średnioroczne zatrudnienie w etatach (umowy o pracę) — z ewidencji płacowej.</summary>
     private static async Task<decimal> AverageEmploymentAsync(Data.KsiegiDbContext db, DateOnly from, DateOnly to)
@@ -237,7 +238,7 @@ public sealed partial class ReportsViewModel : SectionViewModel
             notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf",
             AverageEmployment: await AverageEmploymentAsync(db, y.StartDate, y.EndDate), AuditRequired: AuditRequired,
             IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null,
-            Scope: scope);
+            Scope: scope, InThousands: InThousands);
         var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
         var target = await Dialogs.SaveFileAsync("Sprawozdanie finansowe (XML)", $"sprawozdanie-finansowe-{y.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
@@ -245,6 +246,6 @@ public sealed partial class ReportsViewModel : SectionViewModel
         await Dialogs.ShowTextAsync("Sprawozdanie finansowe XML", $"Zapisano {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
             (r.NotImplemented.Count > 0 ? "Elementy niewygenerowane / do wykonania poza programem:" + Environment.NewLine + string.Join(Environment.NewLine, r.NotImplemented) + Environment.NewLine : "") +
             string.Join(Environment.NewLine, r.Validation.Errors.Take(30)) +
-            $"{Environment.NewLine}Struktura: {scope switch { StatementScope.Mikro => "SFJMIZ(2) — jednostka mikro, zał. nr 4 UoR", StatementScope.Mala => "SFJMAZ(2) — jednostka mała, zał. nr 5 UoR", _ => "SFJINZ(2) — zał. nr 1 UoR" }} (MF, sprawozdania sporządzane od 1.01.2026; uproszczenia wybiera się w polityce rachunkowości). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");
+            $"{Environment.NewLine}Struktura: {scope switch { StatementScope.Mikro => "SFJMI", StatementScope.Mala => "SFJMA", _ => "SFJIN" }}{(InThousands ? "T" : "Z")}(2) — {scope switch { StatementScope.Mikro => "jednostka mikro, zał. nr 4 UoR", StatementScope.Mala => "jednostka mała, zał. nr 5 UoR", _ => "zał. nr 1 UoR" }}, kwoty {(InThousands ? "w tysiącach złotych" : "w złotych")} (MF, sprawozdania sporządzane od 1.01.2026; uproszczenia wybiera się w polityce rachunkowości). Plik podpisz w aplikacji e-Sprawozdania MF i złóż w e-KRS (lub KAS dla podmiotów spoza KRS).");
     });
 }

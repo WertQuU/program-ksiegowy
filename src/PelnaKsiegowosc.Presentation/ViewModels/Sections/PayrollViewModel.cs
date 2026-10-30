@@ -35,7 +35,14 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private string _firstName = "";
     [ObservableProperty] private string _lastName = "";
     [ObservableProperty] private string _pesel = "";
-    [ObservableProperty] private string _address = "";
+    [ObservableProperty] private string _street = "";
+    [ObservableProperty] private string _houseNumber = "";
+    [ObservableProperty] private string _flatNumber = "";
+    [ObservableProperty] private string _postalCode = "";
+    [ObservableProperty] private string _city = "";
+    [ObservableProperty] private string _voivodeship = "";
+    [ObservableProperty] private string _county = "";
+    [ObservableProperty] private string _commune = "";
     [ObservableProperty] private string _iban = "";
     [ObservableProperty] private string _taxOffice = "";
     [ObservableProperty] private Choice<ContractType> _contract;
@@ -73,7 +80,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
         {
             await using var db = Session.OpenDb();
             var e = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id);
-            FirstName = e.FirstName; LastName = e.LastName; Pesel = e.Pesel ?? ""; Address = e.Address ?? ""; Iban = e.BankAccountIban ?? ""; TaxOffice = e.TaxOfficeCode ?? "";
+            FirstName = e.FirstName; LastName = e.LastName; Pesel = e.Pesel ?? ""; Street = e.Street ?? ""; HouseNumber = e.HouseNumber ?? ""; FlatNumber = e.FlatNumber ?? ""; PostalCode = e.PostalCode ?? ""; City = e.City ?? ""; Voivodeship = e.Voivodeship ?? ""; County = e.County ?? ""; Commune = e.Commune ?? ""; Iban = e.BankAccountIban ?? ""; TaxOffice = e.TaxOfficeCode ?? "";
             Contract = ContractTypes.First(c => c.Value == e.ContractType); Costs = CostTypes.First(c => c.Value == e.Costs);
             Gross = e.Gross.ToString("N2", Money.Pl); Fraction = e.WorkTimeFraction.ToString("0.####", Money.Pl);
             StartDate = e.StartDate.ToPl(); EndDate = e.EndDate?.ToPl() ?? "";
@@ -125,7 +132,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
     private Employee FromForm(Guid? id) => new()
     {
         Id = id ?? Guid.CreateVersion7(),
-        FirstName = FirstName.Trim(), LastName = LastName.Trim(), Pesel = Parse.Trim(Pesel), Address = Parse.Trim(Address), BankAccountIban = Parse.Trim(Iban),
+        FirstName = FirstName.Trim(), LastName = LastName.Trim(), Pesel = Parse.Trim(Pesel), Street = Parse.Trim(Street), HouseNumber = Parse.Trim(HouseNumber), FlatNumber = Parse.Trim(FlatNumber), PostalCode = Parse.Trim(PostalCode), City = Parse.Trim(City),
+        Voivodeship = Parse.Trim(Voivodeship), County = Parse.Trim(County), Commune = Parse.Trim(Commune),
+        Address = Parse.Trim(string.Join(", ", new[] { $"{Street} {HouseNumber}{(string.IsNullOrWhiteSpace(FlatNumber) ? "" : "/" + FlatNumber)}".Trim(), $"{PostalCode} {City}".Trim() }.Where(x => x.Length > 0))), BankAccountIban = Parse.Trim(Iban),
         TaxOfficeCode = Parse.Trim(TaxOffice), ContractType = Contract.Value, Costs = Costs.Value, Gross = Parse.Amount(Gross, "Wynagrodzenie brutto"),
         WorkTimeFraction = Parse.Amount(Fraction, "Wymiar etatu"), StartDate = Parse.Date(StartDate, "Data rozpoczęcia"), EndDate = Parse.OptionalDate(EndDate, "Data zakończenia"),
         Pit2 = Pit2, YouthRelief = YouthRelief, StudentUnder26 = Student, VoluntarySickness = VoluntarySickness, ExemptFromFp = ExemptFromFp, Ppk = Ppk

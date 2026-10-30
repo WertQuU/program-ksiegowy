@@ -30,6 +30,15 @@ public class Employee : CompanyEntity
     public string? Pesel { get; set; }
     public DateOnly? BirthDate { get; set; }
     public string? Address { get; set; }
+    /// <summary>Adres zamieszkania (PIT-11 poz. 19–27).</summary>
+    public string? Street { get; set; }
+    public string? HouseNumber { get; set; }
+    public string? FlatNumber { get; set; }
+    public string? PostalCode { get; set; }
+    public string? City { get; set; }
+    public string? Voivodeship { get; set; }
+    public string? County { get; set; }
+    public string? Commune { get; set; }
     public string? BankAccountIban { get; set; }
     /// <summary>Kod urzędu skarbowego właściwego dla podatnika (PIT-11).</summary>
     public string? TaxOfficeCode { get; set; }

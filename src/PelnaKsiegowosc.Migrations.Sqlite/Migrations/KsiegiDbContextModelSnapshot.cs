@@ -2154,6 +2154,14 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<DateOnly?>("BirthDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("City")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Commune")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("TEXT");
 
@@ -2170,6 +2178,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<Guid>("CounterpartyId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("County")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
@@ -2184,8 +2196,16 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("FlatNumber")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal>("Gross")
                         .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("HouseNumber")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
@@ -2203,6 +2223,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<bool>("Pit2")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("PostalCode")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("Ppk")
                         .HasColumnType("INTEGER");
 
@@ -2217,10 +2241,18 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Street")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("StudentUnder26")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("TaxOfficeCode")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Voivodeship")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 

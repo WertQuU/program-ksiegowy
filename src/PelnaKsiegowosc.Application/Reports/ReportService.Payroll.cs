@@ -134,7 +134,10 @@ public sealed partial class ReportService
 
     /// <summary>Dane informacji PIT-11 dla jednej osoby (rok).</summary>
     public sealed record Pit11Person(Guid EmployeeId, string FirstName, string LastName, string? Pesel, DateOnly? BirthDate, string? TaxOfficeCode,
-        IReadOnlyList<Pit11Source> Sources, decimal Social, decimal Health, decimal ExemptEmployment, decimal ExemptCivil);
+        IReadOnlyList<Pit11Source> Sources, decimal Social, decimal Health, decimal ExemptEmployment, decimal ExemptCivil, Pit11Address? Address = null);
+
+    /// <summary>Adres zamieszkania podatnika (PIT-11 poz. 19–27).</summary>
+    public sealed record Pit11Address(string? Voivodeship, string? County, string? Commune, string? Street, string? HouseNumber, string? FlatNumber, string City, string? PostalCode);
 
     public async Task<List<Pit11Person>> Pit11DataAsync(int year, CancellationToken ct = default)
     {
@@ -154,7 +157,8 @@ public sealed partial class ReportService
                 }).ToList();
             result.Add(new Pit11Person(e.Id, e.FirstName, e.LastName, e.Pesel, e.BirthDate ?? Domain.Validation.Identifiers.BirthDateFromPesel(e.Pesel), e.TaxOfficeCode, sources,
                 g.Sum(i => i.SocialEmployee), g.Sum(i => i.Health),
-                g.Where(i => i.ContractType == ContractType.UmowaOPrace).Sum(i => i.ExemptRevenue), g.Where(i => i.ContractType != ContractType.UmowaOPrace).Sum(i => i.ExemptRevenue)));
+                g.Where(i => i.ContractType == ContractType.UmowaOPrace).Sum(i => i.ExemptRevenue), g.Where(i => i.ContractType != ContractType.UmowaOPrace).Sum(i => i.ExemptRevenue),
+                string.IsNullOrWhiteSpace(e.City) ? null : new Pit11Address(e.Voivodeship, e.County, e.Commune, e.Street, e.HouseNumber, e.FlatNumber, e.City!, e.PostalCode)));
         }
         return result.OrderBy(p => p.LastName).ThenBy(p => p.FirstName).ToList();
     }
