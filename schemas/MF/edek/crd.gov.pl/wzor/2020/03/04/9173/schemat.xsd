@@ -1,0 +1,434 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" xmlns:tns="http://crd.gov.pl/wzor/2020/03/04/9173/" targetNamespace="http://crd.gov.pl/wzor/2020/03/04/9173/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd"/>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="APA-C (1)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:annotation>
+					<xsd:documentation>Cel złożenia: 1 - złożenie sprawozdania, 2 - korekta sprawozdania</xsd:documentation>
+				</xsd:annotation>
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_7"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresOd" type="tns:TData"/>
+			<xsd:element name="OkresDo" type="tns:TData"/>
+			<xsd:element name="KodUrzedu">
+				<xsd:annotation>
+					<xsd:documentation>Miejsce składania - Szef Krajowej Administracji Skarbowej</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:string">
+						<xsd:enumeration value="0000"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="APA-C"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>SPRAWOZDANIE O REALIZACJI UPRZEDNIEGO POROZUMIENIA CENOWEGO DLA CELÓW PODATKU DOCHODOWEGO OD OSÓB PRAWNYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OsobaNiefizyczna" type="etd:TIdentyfikatorOsobyNiefizycznej1"/>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="tns:PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Uprzednie porozumienie cenowe, którego dotyczy sprawozdanie, podmioty powiązane, których dotyczy uprzednie porozumienie cenowe, metoda weryfikacji ceny transferowej w okresie, za który składane jest sprawozdanie, indywidualne informacje określone w uprzednim porozumieniu cenowym</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Pouczenie">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższego pouczenia:
+Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie podatku na uszczuplenie grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym.
+</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP">
+			<xsd:selector xpath="tns:PozycjeSzczegolowe/tns:P_D"/>
+			<xsd:field xpath="tns:P_D16"/>
+		</xsd:unique>
+		<xsd:unique name="klucz_NrId">
+			<xsd:selector xpath="tns:PozycjeSzczegolowe/tns:P_D"/>
+			<xsd:field xpath="tns:P_D17"/>
+			<xsd:field xpath="tns:P_D19A"/>
+		</xsd:unique>
+	</xsd:element>
+	<xsd:simpleType name="TRodzajId">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj Identyfikatora Zagranicznego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>numer identyfikacyjny TIN</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>numer ubezpieczeniowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>paszport</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>urzędowy dokument stwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="8">
+				<xsd:annotation>
+					<xsd:documentation>inny rodzaj identyfikacji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="9">
+				<xsd:annotation>
+					<xsd:documentation>inny dokument potwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodKrajuISO">
+		<xsd:annotation>
+			<xsd:documentation>Uzupełnienie słownika kodów krajów o brakujące kody wg ISO 3166</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:normalizedString">
+			<xsd:enumeration value="SX">
+				<xsd:annotation>
+					<xsd:documentation>WYSPA SINT MAARTEN (CZĘŚĆ HOLENDERSKA WYSPY)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="BQ">
+				<xsd:annotation>
+					<xsd:documentation>BONAIRE, SINT EUSTATIUS I SABA</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="SS">
+				<xsd:annotation>
+					<xsd:documentation>SUDAN POŁUDNIOWY</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="CW">
+				<xsd:annotation>
+					<xsd:documentation>CURAÇAO</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodKrajuWydaniaISO">
+		<xsd:union memberTypes="etd:TKodKrajuWydania tns:TKodKrajuISO"/>
+	</xsd:simpleType>
+	<xsd:simpleType name="TData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla dat definiujących rok podatkowy</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2018-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla dat dotyczących uprzedniego porozumienia cenowego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2014-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:sequence>
+					<xsd:annotation>
+						<xsd:documentation>Uprzednie porozumienie cenowe, którego dotyczy sprawozdanie</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_9" type="tns:TLData">
+						<xsd:annotation>
+							<xsd:documentation>Data wydania uprzedniego porozumienia cenowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_10" type="etd:TZnakowy">
+						<xsd:annotation>
+							<xsd:documentation>Numer uprzedniego porozumienia cenowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_11" type="tns:TLData">
+						<xsd:annotation>
+							<xsd:documentation>Okres obowiązywania uprzedniego porozumienia cenowego - od</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_12" type="tns:TLData">
+						<xsd:annotation>
+							<xsd:documentation>Okres obowiązywania uprzedniego porozumienia cenowego - do</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_13" type="etd:TWybor1_3">
+						<xsd:annotation>
+							<xsd:documentation>Rodzaj porozumienia: 1 - jednostronne uprzednie porozumienie cenowe, 2 - dwustronne, 3 - wielostronne</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_D" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Podmioty powiązane, których dotyczy uprzednie porozumienie cenowe</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_D14">
+								<xsd:annotation>
+									<xsd:documentation>Nazwa pełna / nazwisko</xsd:documentation>
+								</xsd:annotation>
+								<!--Nazwisko - dotyczy osób fizycznych-->
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:token">
+										<xsd:minLength value="1"/>
+										<xsd:maxLength value="240"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_D15" type="etd:TImie" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Pierwsze imię</xsd:documentation>
+								</xsd:annotation>
+								<!--Dotyczy osób fizycznych-->
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="P_D16" type="etd:TNrNIP">
+									<xsd:annotation>
+										<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:sequence>
+									<!--Należy wypełnić w przypadku nieposiadania identyfikatora podatkowego NIP.-->
+									<xsd:element name="P_D17" type="etd:TNrIdentyfikacjiPodatkowej">
+										<xsd:annotation>
+											<xsd:documentation>Numer identyfikacyjny podmiotu zagranicznego</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_D18" type="tns:TRodzajId">
+										<xsd:annotation>
+											<xsd:documentation>Rodzaj numeru identyfikacyjnego, o którym mowa w poz. 17</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_D19A" type="tns:TKodKrajuWydaniaISO">
+										<xsd:annotation>
+											<xsd:documentation>Kraj wydania numeru identyfikacyjnego, o którym mowa w poz. 17</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:choice>
+							<xsd:choice>
+								<xsd:element name="AdresPol">
+									<!--Nie dotyczy podmiotów zagranicznych.-->
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="P_D20A" type="etd:TKodKraju" fixed="PL">
+												<xsd:annotation>
+													<xsd:documentation>Kod kraju</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D21" type="etd:TJednAdmin" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Województwo</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D22" type="etd:TJednAdmin" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Powiat</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D23" type="etd:TJednAdmin" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Gmina</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D24" type="etd:TUlica" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Ulica</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D25" type="etd:TNrBudynku">
+												<xsd:annotation>
+													<xsd:documentation>Nr domu</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D26" type="etd:TNrLokalu" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Nr lokalu</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D27" type="etd:TMiejscowosc">
+												<xsd:annotation>
+													<xsd:documentation>Miejscowość</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D28" type="etd:TKodPocztowy" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Kod pocztowy</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+								<xsd:element name="AdresZagr">
+									<xsd:complexType>
+										<xsd:sequence>
+											<xsd:element name="P_D20A" type="tns:TKodKrajuWydaniaISO">
+												<xsd:annotation>
+													<xsd:documentation>Kod kraju</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D24" type="etd:TUlica" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Ulica</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D25" type="etd:TNrBudynku" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Nr domu</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D26" type="etd:TNrLokalu" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Nr lokalu</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D27" type="etd:TMiejscowosc">
+												<xsd:annotation>
+													<xsd:documentation>Miejscowość</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+											<xsd:element name="P_D28" type="etd:TKodPocztowy" minOccurs="0">
+												<xsd:annotation>
+													<xsd:documentation>Kod pocztowy</xsd:documentation>
+												</xsd:annotation>
+											</xsd:element>
+										</xsd:sequence>
+									</xsd:complexType>
+								</xsd:element>
+							</xsd:choice>
+						</xsd:sequence>
+						<xsd:attribute name="typ" use="required" fixed="G"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:sequence>
+					<!--W przypadku decyzji w sprawie porozumienia wydanej na podstawie przepisów działu IIA ustawy z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2019 r. poz. 900, z późn. zm.) w brzmieniu obowiązującym przed dniem wejścia w życie ustawy, należy wskazać informacje dotyczące metody ustalania ceny transferowej.-->
+					<xsd:element name="P_29" type="etd:TTekstowy">
+						<xsd:annotation>
+							<xsd:documentation>Przyjęta w uprzednim porozumieniu cenowym metoda weryfikacji ceny transferowej</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_30" type="etd:TTekstowy">
+						<xsd:annotation>
+							<xsd:documentation>Wielkość sprzedaży towarów i usług uzyskanej przy zastosowaniu cen transferowych</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_31" type="etd:TTekstowy">
+						<xsd:annotation>
+							<xsd:documentation>Wysokość cen transferowych objętych uprzednim porozumieniem cenowym stosowanych z podmiotami powiązanymi</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_32" type="etd:TTekstowy">
+						<xsd:annotation>
+							<xsd:documentation>Okres stosowania metody weryfikacji ceny transferowej</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_F" minOccurs="0" maxOccurs="unbounded">
+					<xsd:annotation>
+						<xsd:documentation>Indywidualne informacje określone w uprzednim porozumieniu cenowym</xsd:documentation>
+					</xsd:annotation>
+					<!--Nie dotyczy decyzji w sprawie porozumienia wydanej na podstawie przepisów działu IIA ustawy z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa w brzmieniu obowiązującym przed dniem wejścia w życie ustawy.-->
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:annotation>
+								<xsd:documentation>Indywidualne informacje</xsd:documentation>
+							</xsd:annotation>
+							<xsd:element name="P_F33" type="etd:TTekstowy">
+								<xsd:annotation>
+									<xsd:documentation>Zakres informacji określony w uprzednim porozumieniu cenowym</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_F34" type="etd:TTekstowy">
+								<xsd:annotation>
+									<xsd:documentation>Treść informacji</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="typ" use="required" fixed="G"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="P_35" type="etd:TTekstowy" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Inne istotne informacje dla uprzedniego porozumienia cenowego</xsd:documentation>
+					</xsd:annotation>
+					<!--W szczególności należy wskazać informacje o zmianie stosunków gospodarczych powodującej istotną zmianę w zakresie elementów uprzedniego porozumienia cenowego (informacja o rodzaju, przyczynie i skutkach finansowych zmiany), jeżeli taka zmiana wystąpiła.-->
+				</xsd:element>
+				<xsd:element name="P_36">
+					<xsd:annotation>
+						<xsd:documentation>Data wypełnienia sprawozdania</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TData">
+							<xsd:minInclusive value="2020-01-01"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

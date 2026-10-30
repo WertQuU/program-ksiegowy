@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" xmlns:tns="http://crd.gov.pl/wzor/2020/02/17/9125/" targetNamespace="http://crd.gov.pl/wzor/2020/02/17/9125/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd"/>
+	<!--Przez urząd skarbowy, do którego jest adresowana deklaracja rozumie się urząd skarbowy, przy pomocy którego właściwy dla składającego naczelnik urzędu skarbowego wykonuje swoje zadania.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="DSF-1 (1)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="DSF"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Rok">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TRok">
+						<xsd:minInclusive value="2019"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="DSF-1"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>DEKLARACJA O WYSOKOŚCI DANINY SOLIDARNOŚCIOWEJ W ROKU KALENDARZOWYM</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TOsobaFizyczna3">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Składający"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="tns:PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Obliczenie wysokości daniny solidarnościowej</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Pouczenia">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższych pouczeń:
+					W przypadku niewpłacenia w obowiązującym terminie kwoty z poz. 25 lub wpłacenia jej w niepełnej wysokości deklaracja stanowi podstawę do wystawienia tytułu wykonawczego, zgodnie z przepisami o postępowaniu egzekucyjnym w administracji.
+Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie daniny solidarnościowej na uszczuplenie grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym.</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:sequence>
+					<xsd:element name="P_18">
+						<xsd:annotation>
+							<xsd:documentation>Łączne dochody</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TKwota2Nieujemna">
+								<xsd:minExclusive value="1000000"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+						<!--Należy wpisać sumę dochodów podlegających opodatkowaniu na zasadach określonych w art. 27 ust. 1, 9 i 9a, art. 30b, art. 30c i art. 30f ustawy.-->
+						<!-- -->
+						<!--W sumie dochodów uwzględnia się dochody podlegające wykazaniu w zeznaniach: PIT-36, PIT-36L, PIT-37, PIT-38, PIT-CFC oraz w rocznym obliczeniu podatku PIT-40A, których termin złożenia upływa w okresie od dnia 1 maja roku poprzedzającego rok wskazany w poz. 3 do dnia 30 kwietnia roku wskazanego w poz. 3. 
+							Jeżeli obowiązek składania deklaracji podlega wykonaniu w terminie do dnia 30 kwietnia 2020 r., w sumie dochodów uwzględnia się dochody uzyskane od dnia 1  stycznia 2019 r. wykazywane w  PIT-36, PIT-36L, PIT-37, PIT-38,  PIT-CFC oraz PIT-40A, których termin złożenia upływa w okresie od dnia 1 stycznia 2019 r. do dnia 30 kwietnia 2020 r. Dochody z rocznego obliczenia podatku PIT-40A uwzględnia się, jeżeli podatek wynikający z tego rozliczenia jest podatkiem należnym, o którym mowa w art. 34 ust. 9 ustawy.-->
+					</xsd:element>
+					<xsd:element name="P_19" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Składki na ubezpieczenia społeczne, o których mowa w art. 26 ust. 1 pkt 2 i 2a ustawy</xsd:documentation>
+						</xsd:annotation>
+						<!--Należy wykazać kwotę składek podlegających odliczeniu od dochodów, o których mowa w poz. 18.-->
+					</xsd:element>
+					<xsd:element name="P_20" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwoty, o których mowa w art. 30f ust. 5 ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_21" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochody po pomniejszeniach</xsd:documentation>
+						</xsd:annotation>
+						<!--Od kwoty z poz. 18 należy odjąć sumę kwot z poz. 19 i 20.-->
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_22" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Podstawa obliczenia daniny solidarnościowej</xsd:documentation>
+					</xsd:annotation>
+					<!--Od kwoty z poz. 21 należy odjąć 1 000 000,00 zł.-->
+				</xsd:element>
+				<xsd:element name="P_23" type="etd:TKwota2Nieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Danina solidarnościowa</xsd:documentation>
+					</xsd:annotation>
+					<!--4% kwoty z poz. 22.-->
+				</xsd:element>
+				<xsd:element name="P_24" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Podatek zapłacony za granicą</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_25" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Należna danina solidarnościowa - do zapłaty</xsd:documentation>
+					</xsd:annotation>
+					<!--Od kwoty z poz. 23 należy odjąć kwotę z poz. 24. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

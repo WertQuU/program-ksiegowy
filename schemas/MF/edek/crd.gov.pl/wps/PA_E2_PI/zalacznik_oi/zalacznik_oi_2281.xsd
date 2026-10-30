@@ -1,0 +1,537 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:czkw="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/03/23/eD/CITKW/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/03/23/eD/CITKW/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/StrukturyDanych_v6-0E.xsd"/>
+	<!--Załącznik do zeznania CIT-8.-->
+	<!-- -->
+	<!--Wypełniają podatnicy, którzy na podstawie art. 7aa ust. 1 i 8 ustawy są obowiązani do rozliczenia przychodów i kosztów uzyskania przychodów lub ustalenia dochodu z przekształcenia i podatku należnego, w związku z wyborem opodatkowania ryczałtem od dochodów kapitałowych, zwanym dalej „ryczałtem”.-->
+	<!-- -->
+	<!--W przypadku podatników, o których mowa w art. 7aa ust. 8 ustawy, w poz. 4 i 5 należy wpisać dzień przekształcenia, który jest pierwszym dniem roku podatkowego podatnika.-->
+	<!-- -->
+	<!--Informację wypełniają w sposób odpowiedni również podatnicy, o których mowa w art. 28k ust. 1 pkt 5 lub 6 ustawy, oraz podmioty, o których mowa w art. 28k ust. 2 ustawy, którzy wybrali opodatkowanie ryczałtem i w 2021 r. złożą zawiadomienie o wyborze tego opodatkowania w terminie do końca pierwszego miesiąca pierwszego roku podatkowego, w którym mają być opodatkowani ryczałtem, zgodnie z art. 9 ustawy z dnia 28 listopada 2020 r. zmianie ustawy o podatku dochodowym od osób prawnych oraz niektórych innych ustaw (Dz. U. poz. 2122). Podatnicy ci i podmioty te nie wykazują przychodów, o których mowa w art. 12 ust. 4 ustawy, oraz kosztów niestanowiących kosztów uzyskania przychodów.-->
+	<!-- -->
+	<!--W przypadku przekształcenia spółki wypełnia spółka przekształcona, a w przypadku przekształcenia osoby fizycznej prowadzącej działalność gospodarczą i spółki nieposiadającej osobowości prawnej - spółka powstała po przekształceniu.-->
+	<xsd:complexType name="TNaglowek_CIT_KW">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czkw:TKodFormularza_CIT_KW">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT/KW (1)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza" type="xsd:byte" fixed="1"/>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czkw:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czkw:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2020-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TTekstowy">
+		<xsd:annotation>
+			<xsd:documentation>Typ tekstowy do 2000 znaków</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TTekstowy">
+			<xsd:maxLength value="2000"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza_CIT_KW">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT/KW"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT_KW">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O PRZYCHODACH, KOSZTACH, DOCHODZIE Z PRZEKSZTAŁCENIA ORAZ PODATKU NALEŻNYM W ZWIĄZKU Z WYBOREM OPODATKOWANIA RYCZAŁTEM OD DOCHODÓW SPÓŁEK KAPITAŁOWYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="czkw:TNaglowek_CIT_KW"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dodatkowe, przychody, koszty uzyskania przychodów oraz dochód z przekształcenia zgodnie z art. 7aa ust. 1 ustawy, przychody, koszty uzyskania przychodów, dochód z przekształcenia oraz podatek należny, zgodnie z art. 7aa ust. 8 i 9 ustawy, rozliczenie nieodliczonej straty na podstawie art. 7 ust. 7 i 8 ustawy, informacja o zapłacie podatku, dodatkowe dane i wyjaśnienia mające znaczenie dla rozliczenia podatku</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Dane dodatkowe</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_16" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik został utworzony w wyniku przekształcenia spółki: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_17" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik został utworzony z przekształcenia przedsiębiorcy będącego osobą fizyczną wykonującą we własnym imieniu działalność gospodarczą: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_18" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik został utworzony z przekształcenia spółki niebędącej osobą prawną: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_19" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik został utworzony w wyniku innych przekształceń niż wymienione w poz. 16-18: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dane osoby fizycznej prowadzącej działalność gospodarczą (wypełniają podatnicy, którzy wybrali wartość 1 w poz. 17)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_20" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Imię i nazwisko</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_21">
+									<xsd:annotation>
+										<xsd:documentation>Identyfikator podatkowy NIP / numer PESEL</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="xsd:string">
+											<xsd:pattern value="\d{10}"/>
+											<xsd:pattern value="\d{11}"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące spółki niebędącej osobą prawną oraz jej wspólników</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence>
+									<xsd:element name="P_22" type="etd:TZnakowy">
+										<xsd:annotation>
+											<xsd:documentation>Nazwa spółki</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_23" type="etd:TNrNIP">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy NIP spółki</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence>
+									<xsd:element name="P_24" type="etd:TZnakowy">
+										<xsd:annotation>
+											<xsd:documentation>Nazwa (imię i nazwisko) wspólnika</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_25">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy NIP / numer PESEL wspólnika</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:string">
+												<xsd:pattern value="\d{10}"/>
+												<xsd:pattern value="\d{11}"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:element name="P_26" type="etd:TZnakowy">
+										<xsd:annotation>
+											<xsd:documentation>Nazwa (imię i nazwisko) wspólnika</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_27">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy NIP / numer PESEL wspólnika</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:string">
+												<xsd:pattern value="\d{10}"/>
+												<xsd:pattern value="\d{11}"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:element name="P_28" type="etd:TZnakowy">
+										<xsd:annotation>
+											<xsd:documentation>Nazwa (imię i nazwisko) wspólnika</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_29">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy NIP / numer PESEL wspólnika</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:string">
+												<xsd:pattern value="\d{10}"/>
+												<xsd:pattern value="\d{11}"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące podmiotów przekształcanych, innych niż wykazane w części B1. I B.2.</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_30">
+									<xsd:annotation>
+										<xsd:documentation>Forma przekształcenia</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="xsd:byte">
+											<xsd:enumeration value="1">
+												<xsd:annotation>
+													<xsd:documentation>Forma przekształcenia: 1 - podział</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+											<xsd:enumeration value="2">
+												<xsd:annotation>
+													<xsd:documentation>Forma przekształcenia: 2 - łączenie</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+											<xsd:enumeration value="3">
+												<xsd:annotation>
+													<xsd:documentation>Forma przekształcenia: 3 - wniesienie wkładu</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+											<xsd:enumeration value="4">
+												<xsd:annotation>
+													<xsd:documentation>Forma przekształcenia: 4 - inne</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Nazwa podmiotu przekształcanego (w tym wnoszącego wkład)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TNrNIP">
+									<xsd:annotation>
+										<xsd:documentation>Identyfikator podatkowy NIP podmiotu przekształcanego (w tym wnoszącego wkład)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Przychody z zysków kapitałowych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_33" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podatnika za lata podatkowe poprzedzające pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do przychodów na podstawie art. 12 ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty zaliczone do kosztów uzyskania przychodów na podstawie art. 15 ust. 1 ustawy w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podatnika zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_37" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem przychody</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 37 należy wpisać sumę kwot z poz. 33 i 35. W poz. 38 należy wpisać sumę kwot z poz. 34 i 36. Kwoty te należy przenieść odpowiednio do poz. 56 lub 57 zeznania CIT-8 lub poz. 18 załącznika CIT/IP.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Przychody z innych źródeł przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podatnika za lata podatkowe poprzedzające pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do przychodów na podstawie art. 12 ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty zaliczone do kosztów uzyskania przychodów na podstawie art. 15 ust. 1 ustawy w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podatnika zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_38" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem przychody</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 37 należy wpisać sumę kwot z poz. 33 i 35. W poz. 38 należy wpisać sumę kwot z poz. 34 i 36. Kwoty te należy przenieść odpowiednio do poz. 56 lub 57 zeznania CIT-8 lub poz. 18 załącznika CIT/IP.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty uzyskania przychodów z zysków kapitałowych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_39" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody zaliczone do przychodów na podstawie art. 12 ust. 1 ustawy w latach poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podatnika, zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_41" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podatnika za lata podatkowe poprzedzające pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do kosztów uzyskania przychodów na podstawie art. 15 ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_43" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 43 należy wpisać sumę kwot z poz. 39 i 41. W poz. 44 należy wpisać sumę kwot z poz. 40 i 42. Kwoty te należy przenieść odpowiednio do poz. 74 i 75 zeznania CIT-8 lub poz. 19 załącznika CIT/IP.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty uzyskania przychody z innych źródeł przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_40" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody zaliczone do przychodów na podstawie art. 12 ust. 1 ustawy w latach poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podatnika, zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_42" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podatnika za lata podatkowe poprzedzające pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do kosztów uzyskania przychodów na podstawie art. 15 ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_44" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 43 należy wpisać sumę kwot z poz. 39 i 41. W poz. 44 należy wpisać sumę kwot z poz. 40 i 42. Kwoty te należy przenieść odpowiednio do poz. 74 i 75 zeznania CIT-8 lub poz. 19 załącznika CIT/IP.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochód z przekształcenia </xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_45" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość rynkowa składników majątku ustalona na dzień przekształcenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_46" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość podatkowa składników majątku ustalona na dzień przekształcenia</xsd:documentation>
+									</xsd:annotation>
+									<!--Przez wartość podatkową składnika majątku rozumie się wartość niezaliczoną uprzednio w jakiejkolwiek formie do kosztów uzyskania przychodów w rozumieniu art. 15 ustawy lub art. 22 ustawy z dnia 26 lipca 1991 r. o podatku dochodowym od osób fizycznych (Dz. U. z 2020 r. poz. 1426, z późn. zm.), zwanej dalej „ustawą o podatku dochodowym od osób fizycznych”, jaka zostałaby przyjęta przez podatnika za taki koszt, gdyby składnik ten został przez niego odpłatnie zbyty.-->
+								</xsd:element>
+								<xsd:element name="P_47" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 45 należy odjąć kwotę z poz. 46. Jeżeli liczba jest liczba ujemną, należy wpisać 0.-->
+								</xsd:element>
+								<xsd:element name="P_48" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatek należny</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatek obliczony wg stawki, o której mowa w art. 19 ust. 1 pkt 1 ustawy. Podatek należy przenieść do poz. 254 zeznania CIT-8.-->
+								</xsd:element>
+							</xsd:sequence>
+							<!--W przypadku przekształcenia spółki wypełnia spółka przekształcona, a w przypadku przekształcenia osoby fizycznej prowadzącej działalność gospodarczą i spółki nieposiadającej osobowości prawnej - spółka powstała po przekształceniu.-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Przychody</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_49" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podmiotu przekształcanego za lata poprzedzające pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do przychodów opodatkowanych podatkiem dochodowym na podstawie przepisów ustawy lub ustawy o podatku dochodowym od osób fizycznych</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty zaliczone do kosztów uzyskania przychodów na podstawie przepisów ustawy albo ustawy o podatku dochodowym od osób fizycznych w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podmiotu przekształcanego, zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_51" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem przychody</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać sumę kwot z poz. 49 i 50.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_52" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody zaliczone do przychodów na podstawie przepisów ustawy albo ustawy o podatku dochodowym od osób fizycznych w latach poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały uwzględnione dotychczas w wyniku finansowym netto podmiotu przekształcanego zgodnie z przepisami o rachunkowości</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_53" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uwzględnione, zgodnie z przepisami o rachunkowości, w wyniku finansowym netto podmiotu przekształcanego w latach poprzedzających pierwszy rok opodatkowania ryczałtem, jeżeli nie zostały zaliczone dotychczas do kosztów uzyskania przychodów na podstawie przepisów ustawy albo ustawy o podatku dochodowym od osób fizycznych</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_54" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem koszty uzyskania przychodów</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać sumę kwot z poz. 52 i 53.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochód</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_55" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 51 należy odjąć kwotę z poz. 54. Jeżeli różnica jest liczba ujemną, należy wpisać 0.-->
+								</xsd:element>
+								<xsd:element name="P_56" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatek należny</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatek obliczony wg stawki, o której mowa w art. 19 ust. 1 pkt 1 ustawy.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochód z przekształcenia</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_57" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość rynkowa składników majątku ustalona na dzień przekształcenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_58" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość podatkowa składników majątku ustalona na dzień przekształcenia</xsd:documentation>
+									</xsd:annotation>
+									<!--Przez wartość podatkową składnika majątku rozumie się wartość niezaliczoną uprzednio w jakiejkolwiek formie do kosztów uzyskania przychodów w rozumieniu art. 15 ustawy lub art. 22 ustawy z dnia 26 lipca 1991 r. o podatku dochodowym od osób fizycznych (Dz. U. z 2020 r. poz. 1426, z późn. zm.), zwanej dalej „ustawą o podatku dochodowym od osób fizycznych”, jaka zostałaby przyjęta przez podatnika za taki koszt, gdyby składnik ten został przez niego odpłatnie zbyty.-->
+								</xsd:element>
+								<xsd:element name="P_59" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 57 należy odjąć kwotę z poz. 58. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+								</xsd:element>
+								<xsd:element name="P_60" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podatek należny</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatek obliczony wg stawki, o której mowa w art. 19 ust. 1 pkt 1 ustawy.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_61" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Razem podatek należny do zapłaty</xsd:documentation>
+								</xsd:annotation>
+								<!--Należy wpisać sumę kwot z poz. 56 i 60. Sumę podatku należy przenieść do poz. 254 zeznania CIT-8.-->
+							</xsd:element>
+							<!--Część E wypełniają podatnicy, którzy w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem ponieśli stratę ze źródła przychodów i nabyli prawo do jej odliczenia na podstawie art. 7 ust. 5 ustawy, ale pozostała nieodliczona część straty. Straty wykazane w poz. 62 i 65 powinny wynikać z części B.2 informacji CIT-8/O. Straty z poz. 63 i 66 należy przenieść odpowiednio do poz. 104 i 105 zeznania CIT-8. W przypadku odliczenia nieodliczonej straty na podstawie art. 7 ust. 7 ustawy od dochodu za drugi rok podatkowy bezpośrednio poprzedzający pierwszy rok opodatkowania ryczałtem, podatnik wypełnia poz. 64 i 67 załącznika CIT/KW oraz składa korektę zeznania CIT-8. W przypadku utraty prawa do rozliczenia straty na podstawie art. 7 ust. 7 ustawy należy skorygować dokonane wcześniej odliczenia, poprzez złożenie korekty zeznania CIT-8 za lata podatkowe, w których dokonano tego odliczenia.-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rozliczenie nieodliczonej straty z zysków kapitałowych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_62" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata nieodliczona od dochodu z zysków kapitałowych w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem, do odliczenia na podstawie art. 7 ust. 7 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_63" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata do odliczenia za pierwszy rok bezpośrednio poprzedzający pierwszy rok opodatkowania ryczałtem (rok bieżący)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_64" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata do odliczenia za drugi rok bezpośrednio poprzedzający pierwszy rok opodatkowania ryczałtem</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rozliczenie nieodliczonej straty z innych źródeł przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_65" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata nieodliczona od dochodu z innych źródeł przychodów w latach podatkowych poprzedzających pierwszy rok opodatkowania ryczałtem, do odliczenia na podstawie art. 7 ust. 7 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_66" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata do odliczenia za pierwszy rok bezpośrednio poprzedzający pierwszy rok opodatkowania ryczałtem (rok bieżący)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_67" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Strata do odliczenia za drugi rok bezpośrednio poprzedzający pierwszy rok opodatkowania ryczałtem</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_68" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość podatku należnego do zapłaty za rok podatkowy wskazany w poz. 4 i 5 wzrosła o co najmniej 50% w porównaniu do podatku, jaki powstałby, gdyby nie uwzględniono przychodów, kosztów lub dochodu wykazanych w części C: (wypełniają podatnicy, którzy nie zostali utworzeni w wyniku przekształcenia spółki, oraz podatnicy, którzy wybrali w poz. 16 wartość 1) 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_69" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Zapłata nadwyżki podatku nastąpi w częściach zgodnie z art. 7aa ust. 3 ustawy (wypełnia podatnik, który w poz. 68 wybrali wartość 1): 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+									<!--Jeżeli po uwzględnieniu przychodów, kosztów lub dochodu wykazanych w części C wysokość zobowiązania podatkowego należnego za rok podatkowy wzrośnie o co najmniej 50% w porównaniu do zobowiązania podatkowego, jakie powstałoby, gdyby nie uwzględniono tych przychodów, kosztów lub dochodu, powstałą w ten sposób nadwyżkę zobowiązania podatkowego podatnik może zapłacić w częściach w okresie nie dłuższym niż 3 lata, licząc od końca roku podatkowego poprzedzającego pierwszy rok opodatkowania ryczałtem (art. 7aa ust. 3 ustawy).-->
+								</xsd:element>
+								<xsd:element name="P_70" type="czkw:TTekstowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość oraz daty zapłaty każdej części podatku (wypełniają podatnicy, którzy zaznaczyli w poz. 69 wybrali wartość 1)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_71" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Zapłata podatku wykazanego w poz. 61 nastąpi w częściach, na podstawie art. 7aa ust. 9 pkt 4 ustawy: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik dokonuje zapłaty podatku w częściach w okresie nie dłuższym niż 2 lata, licząc od końca pierwszego roku opodatkowania ryczałtem (art. 7aa ust. 9 pkt 4 ustawy).-->
+								</xsd:element>
+								<xsd:element name="P_72" type="czkw:TTekstowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość oraz daty zapłaty każdej części podatku (wypełniają podatnicy, którzy zaznaczyli w poz. 71 wybrali wartość 1)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_73" type="czkw:TTekstowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dodatkowe dane i wyjaśnienia</xsd:documentation>
+								</xsd:annotation>
+								<!--W części G podatnik wykazuje wszelkie dane i wyjaśnienia istotne dla rozliczenia podatku w związku z wyborem opodatkowania ryczałtem, w szczególności dane wspólników (nazwa lub imię i nazwisko oraz identyfikator podatkowy NIP lub numer PESEL) spółki niebędącej osobą prawną, występujących ponad liczbę wykazaną w części B.2.-->
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

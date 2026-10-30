@@ -1,0 +1,543 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://crd.gov.pl/wzor/2011/12/22/735/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" targetNamespace="http://crd.gov.pl/wzor/2011/12/22/735/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/ORD-ZU(2)_v2-0E.xsd"/>
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="IFT-1R (8)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="8"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_7"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="TDataP">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="TDataP">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TDataP">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2011-01-01"/>
+			<xsd:whiteSpace value="collapse"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TRodzajId">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj Identyfikatora Zagranicznego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>numer identyfikacyjny TIN</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>numer ubezpieczeniowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>paszport</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>urzędowy dokument stwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="8">
+				<xsd:annotation>
+					<xsd:documentation>inny rodzaj identyfikacji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="9">
+				<xsd:annotation>
+					<xsd:documentation>inny dokument potwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="IFT-1/IFT-1R"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O WYSOKOŚCI PRZYCHODU (DOCHODU) UZYSKANEGO PRZEZ OSOBY FIZYCZNE NIEMAJĄCE W POLSCE MIEJSCA ZAMIESZKANIA [INFORMATION ON REVENUE (INCOME) DERIVED BY NONRESIDENT NATURAL PERSONS]</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TPodmiotDowolnyBezAdresu2">
+								<xsd:sequence>
+									<xsd:element name="AdresZamieszkaniaSiedziby">
+										<xsd:complexType>
+											<xsd:complexContent>
+												<xsd:extension base="etd:TAdres">
+													<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+												</xsd:extension>
+											</xsd:complexContent>
+										</xsd:complexType>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Płatnik/Podmiot Wypłacający"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OsobaFizZagr">
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="etd:TIdentyfikatorOsobyFizycznejZagranicznej">
+											<xsd:sequence>
+												<xsd:element name="NrId">
+													<xsd:annotation>
+														<xsd:documentation>Numer identyfikacyjny podatnika [Taxpayer identification number]</xsd:documentation>
+													</xsd:annotation>
+													<xsd:complexType>
+														<xsd:simpleContent>
+															<xsd:extension base="etd:TNrDokumentuStwierdzajacegoTozsamosc">
+																<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_26"/>
+															</xsd:extension>
+														</xsd:simpleContent>
+													</xsd:complexType>
+												</xsd:element>
+												<xsd:element name="RodzajNrId">
+													<xsd:annotation>
+														<xsd:documentation>Rodzaj numeru identyfikacyjnego (dokumentu stwierdzającego tożsamość) [Type of identification number (identity document)]</xsd:documentation>
+													</xsd:annotation>
+													<xsd:complexType>
+														<xsd:simpleContent>
+															<xsd:extension base="TRodzajId">
+																<xsd:attribute name="poz" use="required" fixed="P_27"/>
+															</xsd:extension>
+														</xsd:simpleContent>
+													</xsd:complexType>
+												</xsd:element>
+												<xsd:element name="KodKrajuWydania">
+													<xsd:annotation>
+														<xsd:documentation>Kod kraju wydania numeru identyfikacyjnego [Country code of issue of identification number]</xsd:documentation>
+													</xsd:annotation>
+													<xsd:complexType>
+														<xsd:simpleContent>
+															<xsd:extension base="etd:TKodKrajuWydania">
+																<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_27A"/>
+															</xsd:extension>
+														</xsd:simpleContent>
+													</xsd:complexType>
+												</xsd:element>
+											</xsd:sequence>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="AdresZamieszkania">
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="etd:TAdresZagraniczny">
+											<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Odbiorca Należności"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Rodzaje przychodów (dochodów) i wysokość pobranego zryczałtowanego podatku [Type of revenue (income) and amount of tax withheld]</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Oswiadczenie">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:enumeration value="Oświadczam, że są mi znane przepisy Kodeksu karnego skarbowego o odpowiedzialności za uchybienie obowiązkom płatnika/podmiotu.[I declare herewith that I am aware of the penal sanctions provided for the Fiscal Penal Code for the infringement of tax remitter/entity duties.]"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D1 - Symbol 8</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_34" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od dochodów z żeglugi morskiej, żeglugi śródlądowej i transportu lotniczego [Amount of income exempted from taxation of Income from shipping, inland waterways and transport]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_35" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od dochodów z żeglugi morskiej, żeglugi śródlądowej i transportu lotniczego [Amount of taxable income of income from shipping, inland waterways and transport]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_36">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od dochodów z żeglugi morskiej, żeglugi śródlądowej i transportu lotniczego [Rate of tax of income from shipping, inland waterways and transport]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="10"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_37" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od dochodów z żeglugi morskiej, żeglugi śródlądowej i transportu lotniczego [Amount of tax withheld of income from shipping, inland waterways and transport]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D2 - Symbol 10</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_38" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od dywidend [Amount of income exempted from taxation of Dividends]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_39" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od dywidend [Amount of taxable income of Dividends]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_40">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od dywidend [Rate of tax of Dividends]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="19"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_41" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od dywidend [Amount of tax withheld of  Dividends]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D3 - Symbol 11</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_42" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od odsetek [Amount of income exempted from taxation of Interest]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_43" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od odsetek [Amount of taxable income of Interest]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_44">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od odsetek [Rate of tax of Interest]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_45" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od odsetek [Amount of tax withheld  of Interest]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D4 - Symbol 12</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_46" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od należności licencyjnych [Amount of income exempted from taxation of Royalties]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_47" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od należności licencyjnych [Amount of taxable income of Royalties]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_48">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  należności licencyjnych [Rate of tax of Royalties]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_49" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od  należności licencyjnych [Amount of tax withheld of Royalties]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D5 - Symbol 14</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_50" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od dochodu z wykonywania wolnych zawodów [Amount of income exempted from taxation of Independent Personal Services]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_51" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od  dochodu z wykonywania wolnych zawodów [Amount of taxable income of Independent Personal Services]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_52">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  dochodu z wykonywania wolnych zawodów [Rate of tax of Independent Personal Services]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_53" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od  dochodu z wykonywania wolnych zawodów [Amount of tax withheld of Independent Personal Services]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D6 - Symbol 16</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_54" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od wynagrodzenia dyrektorów  [Amount of income exempted from taxation of Directors’ Fees]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_55" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od  wynagrodzenia dyrektorów  [Amount of taxable income of Directors’ Fees]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_56">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  wynagrodzenia dyrektorów [Rate of tax of Directors’ Fees]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_57" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od  wynagrodzenia dyrektorów [Amount of tax withheld of Directors’ Fees]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D7 - Symbol 17</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_58" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od dochodu z działalności artystycznej lub sportowej [Amount of income exempted from taxation of Artists and Sportsmen]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_59" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od dochodu z działalności artystycznej lub sportowej [Amount of taxable income of Artists and Sportsmen]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_60">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  dochodu z działalności artystycznej lub sportowej [Rate of tax of Artists and Sportsmen]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_61" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od  dochodu z działalności artystycznej lub sportowej [Amount of tax withheld of Artists and Sportsmen]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D8 - Symbol 18</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_62" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od dochodu  z emerytury lub renty i innych podobnych świadczeń [Amount of income exempted from taxation of Pension and other similar payments]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_63" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od dochodu  z emerytury lub renty i innych podobnych świadczeń [Amount of taxable income of Pension and other similar payments]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_64">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  dochodu  z emerytury lub renty i innych podobnych świadczeń [Rate of tax of Pension and other similar payments]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_65" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od dochodu z emerytury lub renty i innych podobnych świadczeń [Amount of tax withheld of Pension and other similar payments]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D9 - Symbol 21</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_66" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od innych dochodów [Amount of income exempted from taxation of Other Income]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_67" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od innych dochodów [Amount of taxable income of Other Income]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_68">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  innych dochodów [Rate of tax of Other Income]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_69" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od innych dochodów [Amount of tax withheld of Other Income]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>D10 - Symbol 99</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_70" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu zwolnionego z opodatkowania od przychodu określonego zgodnie z art.29-30a ustawy [Amount of income exempted from taxation of Income determined pursuant to Art.29-30a of the Act]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_71" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota dochodu podlegającego opodatkowaniu od przychodu określonego zgodnie z art.29-30a ustawy [Amount of taxable income of Income determined pursuant to Art.29-30a of the Act]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_72">
+						<xsd:annotation>
+							<xsd:documentation>Stawka podatku od  przychodu określonego zgodnie z art.29-30a ustawy [Rate of tax of Income determined pursuant to Art.29-30a of the Act]</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="etd:TProcentowy">
+								<xsd:maxInclusive value="20"/>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_73" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku od przychodu określonego zgodnie z art.29-30a ustawy [Amount of tax withheld of Income determined pursuant to Art.29-30a of the Act]</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_75">
+					<xsd:annotation>
+						<xsd:documentation>Data przekazania lub przesłania informacji podatnikowi [Date of conveying or sending information to taxpayer]</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="TDataP">
+							<xsd:minInclusive value="2012-01-01"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

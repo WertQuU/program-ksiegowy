@@ -1,0 +1,1147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:cztp="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/08/31/eD/CITTP/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:kpkd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/KodyPKD/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2017/08/31/eD/CITTP/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/KodyPKD/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/KodyPKD/KodyPKD_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<!--Załącznik do zeznania CIT-8.-->
+	<!-- -->
+	<!--Należy wskazać jaki procent stanowi wartość transakcji / innych zdarzeń z poszczególnych kategorii (zarówno przychodowych, jak i kosztowych) w odniesieniu do całości przychodów podatnika. Podaną wartość zaokrągla się do pełnego procenta.-->
+	<!-- -->
+	<!--Należy podać kody państw według klasyfikacji ISO 3166 alpha 2 Country Code.-->
+	<xsd:complexType name="TNaglowek_CIT_TP">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="cztp:TKodFormularza_CIT_TP">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT/TP (1)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="1"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OkresOd" type="cztp:TLData"/>
+			<xsd:element name="OkresDo" type="cztp:TLData"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2017-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza_CIT_TP">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT/TP"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TWartoscTransakcji">
+		<xsd:annotation>
+			<xsd:documentation>Określa wartość transakcji (w mln zł)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>wartość transakcji 0,5-10 mln zł</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>wartość transakcji większa niż 10 mln zł, maksymalnie do 50 mln zł</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>wartość transakcji większa niż 50 mln zł</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TWybor1_2">
+		<xsd:annotation>
+			<xsd:documentation>Podwójne pole wyboru</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>tak</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>nie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TWybor1">
+		<xsd:annotation>
+			<xsd:documentation>Pojedyncze pole wyboru</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>tak</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodKrajuISO">
+		<xsd:annotation>
+			<xsd:documentation>Uzupełnienie słownika kodów krajów o brakujące kody wg ISO 3166</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:normalizedString">
+			<xsd:enumeration value="SX">
+				<xsd:annotation>
+					<xsd:documentation>WYSPA SINT MAARTEN (CZĘŚĆ HOLENDERSKA WYSPY)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="BQ">
+				<xsd:annotation>
+					<xsd:documentation>BONAIRE, SINT EUSTATIUS I SABA</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="SS">
+				<xsd:annotation>
+					<xsd:documentation>SUDAN POŁUDNIOWY</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="CW">
+				<xsd:annotation>
+					<xsd:documentation>CURAÇAO</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodKraju">
+		<xsd:union memberTypes="etd:TKodKraju cztp:TKodKrajuISO"/>
+	</xsd:simpleType>
+	<xsd:simpleType name="TProcentowy">
+		<xsd:annotation>
+			<xsd:documentation>Wartość procentowa zaokrąglona do pełnych procentów</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:integer">
+			<xsd:minExclusive value="0"/>
+			<xsd:maxInclusive value="100"/>
+			<xsd:whiteSpace value="collapse"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT_TP">
+		<xsd:annotation>
+			<xsd:documentation>UPROSZCZONE SPRAWOZDANIE za rok podatkowy</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="cztp:TNaglowek_CIT_TP"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikacja powiązań, informacje o podmiotach powiązanych, główny przedmiot działalności i profil funkcjonalny podatnika, restrukturyzacja, transakcje z podmiotami powiązanymi lub inne zdarzenia zachodzące pomiędzy podmiotami powiązanymi, lub w związku z którymi zapłata należności dokonywana jest bezpośrednio lub pośrednio na rzecz podmiotu mającego miejsce zamieszkania, siedzibę lub zarząd na terytorium lub w kraju stosującym szkodliwą konkurencję podatkową</xsd:documentation>
+					</xsd:annotation>
+					<!--Wypełniając pozycje z sekcji F należy brać pod uwagę kwoty netto. Należy podawać wartości wynikające z wystawionych lub otrzymanych faktur, a jeżeli faktury nie są wystawiane lub otrzymywane w oparciu o umowę lub inny dokument, informację o otrzymanych lub przekazanych płatnościach związanych z tymi transakcjami lub zdarzeniami. Rodzaje transakcji lub innych zdarzeń w ramach sekcji F są rozumiane zgodnie z przepisami o rachunkowości.-->
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>B. Identyfikacja powiązań podatnika</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_8" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik posiada bezpośredni lub pośredni udział w kapitale innego podmiotu nie mniejszy niż 25%?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_9" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik posiada bezpośredniego lub pośredniego udziałowca, którego udział w kapitale podatnika jest nie mniejszy niż 25%?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_10" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik posiada bezpośredni lub pośredni udział w kapitale innego podmiotu nie mniejszy niż 50%?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_11" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik posiada bezpośredniego lub pośredniego udziałowca, którego udział w kapitale podatnika jest nie mniejszy niż 50%?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_12" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy członek zarządu podatnika bierze udział bezpośrednio lub pośrednio w zarządzaniu lub w kontroli podmiotów krajowych lub przedsiębiorstw położonych za granicą?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy występują powiązania o charakterze rodzinnym pomiędzy podmiotami krajowymi lub osobami pełniącymi w tych podmiotach funkcje zarządzające lub kontrolne albo nadzorcze?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_14" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik posiada zagraniczny zakład?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podmiot składający sprawozdanie jest zakładem zagranicznego podmiotu?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>C. Informacje o podmiotach powiązanych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_16" type="etd:TNaturalny">
+									<xsd:annotation>
+										<xsd:documentation>Liczba podmiotów powiązanych, z którymi podatnik dokonywał transakcji / innych zdarzeń, mających siedzibę na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_17" type="etd:TNaturalny">
+									<xsd:annotation>
+										<xsd:documentation>Liczba podmiotów powiązanych, z którymi podatnik dokonywał transakcji / innych zdarzeń, mających siedzibę w innym państwie lub na innym terytorium</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>D. Główny przedmiot działalności i profil funkcjonalny podatnika</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_18" type="kpkd:PodklasyPKD_Type">
+									<xsd:annotation>
+										<xsd:documentation>Kod podstawowej działalności wg klasyfikacji PKD 1</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wskazać kod działalności, który odnosi się do głównego przedmiotu działalności podatnika. W przypadku prowadzenia działalności w obszarach opisanych więcej niż jednym kodem należy wskazać dwa najważniejsze.-->
+								</xsd:element>
+								<xsd:element name="P_19" type="kpkd:PodklasyPKD_Type" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kod podstawowej działalności wg klasyfikacji PKD 2</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wskazać kod działalności, który odnosi się do głównego przedmiotu działalności podatnika. W przypadku prowadzenia działalności w obszarach opisanych więcej niż jednym kodem należy wskazać dwa najważniejsze.-->
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Produkcja</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_20_1" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>rozbudowane funkcje i ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_20_2" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>ograniczone ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_20_3" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>prosta (usługa produkcyjna)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dystrybucja</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_21_1" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>rozbudowane funkcje i ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_21_2" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>ograniczone ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_21_3" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>komisant</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Badania i rozwój</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_22_1" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>rozbudowane funkcje i ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_22_2" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>ograniczone ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Finanse</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_23_1" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>bank</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_23_2" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>pozabankowa działalność finansowa</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_23_3" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>ubezpieczenia</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_23_4" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>pośrednictwo finansowe</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Usługi</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_24_1" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>rozbudowane funkcje i ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_24_2" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>ograniczone ryzyka</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_24_3" type="cztp:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>usługi o niskiej wartości dodanej</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>E. Restrukturyzacja</xsd:documentation>
+								</xsd:annotation>
+								<!--Poz. 27-30 wypełnia się tylko w przypadku pozytywnej odpowiedzi na pytanie z poz. 26.-->
+								<xsd:element name="P_25" type="cztp:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik w trakcie roku podatkowego zmienił strukturę lub formę prawną, w tym dokonując połączenia z innym podmiotem, podziału lub przejęcia innego podmiotu lub zorganizowanej części przedsiębiorstwa lub był przedmiotem takiego przejęcia?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:sequence>
+									<xsd:element name="P_26" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy zaistniały u podatnika w trakcie roku podatkowego zmiany w pełnionych funkcjach, ponoszonych ryzykach lub posiadanych aktywach?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:sequence minOccurs="0">
+										<xsd:element name="P_27" type="cztp:TWybor1_2">
+											<xsd:annotation>
+												<xsd:documentation>Czy podatnik otrzymał rekompensatę pieniężną za przeniesione na rzecz podmiotu powiązanego, w trakcie roku podatkowego funkcje, aktywa, ryzyka lub prawa?</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_28" type="cztp:TWybor1_2">
+											<xsd:annotation>
+												<xsd:documentation>Czy podatnik otrzymał rekompensatę w jakiejkolwiek formie innej niż pieniężna za przeniesione na rzecz podmiotu powiązanego, w trakcie roku podatkowego funkcje, aktywa, ryzyka lub prawa?</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_29" type="cztp:TWybor1_2">
+											<xsd:annotation>
+												<xsd:documentation>Czy podatnik wypłacił rekompensatę pieniężną za przejęte od podmiotu powiązanego w trakcie roku podatkowego funkcje, aktywa, ryzyka lub prawa?</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_30" type="cztp:TWybor1_2">
+											<xsd:annotation>
+												<xsd:documentation>Czy podatnik wypłacił rekompensatę w jakiejkolwiek formie innej niż pieniężna za przejęte od podmiotu powiązanego, w trakcie roku podatkowego funkcje, aktywa, ryzyka lub prawa?</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.1. Transakcje lub inne zdarzenia</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Sprzedaż towarów / wyrobów gotowych / surowców / półproduktów</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_31" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_32" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_33" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_34" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nabycie towarów / wyrobów gotowych / surowców / półproduktów</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_35" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_36" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_37" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_38" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu pełnionych funkcji komisanta / dystrybutora o ograniczonych ryzykach</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_39" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_40" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_41" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_42" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu pełnionych funkcji produkcji prostej / kontraktowej</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_43" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_44" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_45" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_46" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu pełnionych funkcji kontraktowych prac badawczo-rozwojowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_47" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_48" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_49" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_50" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu pełnionych funkcji komisanta / dystrybutora o ograniczonych ryzykach</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_51" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_52" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_53" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_54" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu pełnionych funkcji produkcji prostej / kontraktowej</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_55" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_56" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_57" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_58" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu pełnionych funkcji kontraktowych prac badawczo - rozwojowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_59" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_60" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_61" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_62" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu usług najmu i leasingu</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_63" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_64" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_65" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_66" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu usług najmu i leasingu</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_67" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_68" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_69" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_70" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu usług wewnątrzgrupowych</xsd:documentation>
+									</xsd:annotation>
+									<!--W tym w szczególności opłaty za zarządzanie, usługi tzw. centrów wspólnych - księgowe, prawne, IT, HR.-->
+									<xsd:element name="P_71" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_72" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_73" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_74" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu usług wewnątrzgrupowych</xsd:documentation>
+									</xsd:annotation>
+									<!--W tym w szczególności opłaty za zarządzanie, usługi tzw. centrów wspólnych - księgowe, prawne, IT, HR.-->
+									<xsd:element name="P_75" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_76" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_77" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_78" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.2. Transakcje finansowe</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z tytułu należności (otrzymywane)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_79" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_80" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_81" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_82" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty z tytułu zobowiązań (wypłacane)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_83" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_84" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_85" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_86" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z tytułu udzielonych gwarancji, poręczeń lub opłat ubezpieczeniowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_87" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_88" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_89" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_90" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty otrzymania gwarancji, poręczeń lub ubezpieczenia</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_91" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_92" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_93" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_94" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.3. Transakcje lub inne zdarzenia</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Sprzedaż rzeczowych aktywów trwałych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_95" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_96" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nabycie rzeczowych aktywów trwałych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_97" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_98" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Sprzedaż aktywów niematerialnych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_99" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_100" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nabycie aktywów niematerialnych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_101" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_102" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymywane należności licencyjne lub franczyza</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_103" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_104" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacane należności licencyjne lub franczyza</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_105" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_106" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Zbycie udziałów / akcji (długo i krótkoterminowych)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_107" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_108" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nabycie zorganizowanej części przedsiębiorstwa</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_109" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_110" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Sprzedaż zorganizowanej części przedsiębiorstwa</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_111" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_112" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Objęcie udziałów / akcji w podmiotach</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_113" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_114" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Sprzedaż długoterminowych aktywów finansowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_115" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_116" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Nabycie długoterminowych aktywów finansowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_117" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_118" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.4. Umowy o podziale kosztów prowadzące do wytworzenia wartości niematerialnych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość CCA</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_119" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_120" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość wkładu podatnika do CCA</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_121" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_122" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z tytułu uczestnictwa w CCA</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_123" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_124" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość wypłaconych przez podatnika dopłat innym uczestnikom CCA</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_125" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_126" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wysokość otrzymanych przez podatnika dopłat od innych uczestników CCA</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_127" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_128" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.5. Pozostałe transakcje / inne zdarzenia</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Otrzymane wynagrodzenie z tytułu innych transakcji /zdarzeń niż wymienione w części F.1-F.4</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_129" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_130" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_131" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_132" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wypłacone wynagrodzenie z tytułu Inne transakcji /zdarzeń niż wymienione w części F.1-F.4</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_133" type="cztp:TWartoscTransakcji">
+										<xsd:annotation>
+											<xsd:documentation>Wartość transakcji (w mln zł)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_134" type="cztp:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Czy transakcje / inne zdarzenia zachodziły wyłącznie z podmiotami powiązanymi?</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_135" type="cztp:TProcentowy">
+										<xsd:annotation>
+											<xsd:documentation>Procentowy udział w przychodach</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_136" type="cztp:TKodKraju" maxOccurs="unbounded">
+										<xsd:annotation>
+											<xsd:documentation>Kody państw siedziby stron transakcji</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.6. Inne</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_137" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik wykonał usługę bez wynagrodzenia na rzecz podmiotu powiązanego?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_138" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podmiot powiązany wykonał na rzecz podatnika usługę bez wynagrodzenia?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_139" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik dokonał przekazania towaru / wyrobów gotowych / surowców / półproduktów na rzecz podmiotu powiązanego bez wynagrodzenia?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_140" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podmiot powiązany dokonał przekazania towaru / wyrobów gotowych / surowców / półproduktów na rzecz podatnika bez wynagrodzenia?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_141" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik otrzymał nieodpłatnie rzeczowe aktywa trwałe lub aktywa niematerialne?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_142" type="cztp:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Czy podatnik dokonał nieodpłatnego przekazania rzeczowych aktywów trwałych lub aktywów niematerialnych?</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

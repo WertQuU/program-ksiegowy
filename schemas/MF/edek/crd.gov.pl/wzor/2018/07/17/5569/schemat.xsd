@@ -1,0 +1,944 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" xmlns:tns="http://crd.gov.pl/wzor/2018/07/17/5569/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/02/05/eD/ORDZU/" targetNamespace="http://crd.gov.pl/wzor/2018/07/17/5569/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/02/05/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/02/05/eD/ORDZU/ORD-ZU(3)_v1-0E.xsd"/>
+	<!--Ilekroć w deklaracji jest mowa o urzędzie skarbowym, w tym urzędzie skarbowym do którego adresowana jest deklaracja - oznacza to urząd skarbowy, przy pomocy którego właściwy dla podatnika naczelnik urzędu skarbowego wykonuje swoje zadania.-->
+	<!-- -->
+	<!--Zgodnie z art. 81 ustawy z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2018 r. poz. 800, z późn. zm.).-->
+	<!-- -->
+	<!--Wynagrodzenie z tytułu terminowego wpłacania podatku dochodowego za poszczególne miesiące, zgodnie z art. 28 ustawy z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2018 r. poz. 800, z późn. zm.).-->
+	<!-- -->
+	<!--Należna kwota do wpłaty do urzędu skarbowego - od kwoty pobranego podatku za poszczególne miesiące należy odpowiednio odjąć kwoty wynagrodzenia z tytułu terminowego wpłacania podatku. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT-6R (5)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="CIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="P"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="5"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_7"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT-6R"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2018-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TIdentyfikatorOsobyNiefizycznej">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych identyfikacyjnych o osobie niefizycznej</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="NIP" type="etd:TNrNIP">
+				<xsd:annotation>
+					<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="PelnaNazwa">
+				<xsd:annotation>
+					<xsd:documentation>Pełna nazwa</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="240"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>DEKLARACJA O WYSOKOŚCI POBRANEGO PRZEZ PŁATNIKA ZRYCZAŁTOWANEGO PODATKU DOCHODOWEGO OD OSÓB PRAWNYCH, OD DOCHODÓW (PRZYCHODÓW) OSIĄGNIĘTYCH PRZEZ PODATNIKA MAJĄCEGO SIEDZIBĘ LUB ZARZĄD NA TERYTORIUM RZECZYPOSPOLITEJ POLSKIEJ</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek"/>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:annotation>
+								<xsd:documentation/>
+							</xsd:annotation>
+							<xsd:element name="OsobaNiefizyczna" type="tns:TIdentyfikatorOsobyNiefizycznej"/>
+							<xsd:element name="AdresSiedziby">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="KodKraju" type="etd:TKodKraju" fixed="PL">
+											<xsd:annotation>
+												<xsd:documentation>Kraj</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Wojewodztwo" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Województwo</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Powiat" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Powiat</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Gmina" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Gmina</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa ulicy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrDomu" type="etd:TNrBudynku">
+											<xsd:annotation>
+												<xsd:documentation>Numer budynku</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer lokalu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa miejscowości</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="KodPocztowy" type="etd:TKodPocztowy">
+											<xsd:annotation>
+												<xsd:documentation>Kod pocztowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Poczta" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa urzędu pocztowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Płatnik"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:annotation>
+								<xsd:documentation/>
+							</xsd:annotation>
+							<xsd:element name="OsobaNiefizyczna" type="tns:TIdentyfikatorOsobyNiefizycznej"/>
+							<xsd:element name="AdresSiedziby">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="KodKraju" type="etd:TKodKraju" fixed="PL">
+											<xsd:annotation>
+												<xsd:documentation>Kraj</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Wojewodztwo" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Województwo</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Powiat" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Powiat</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Gmina" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Gmina</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa ulicy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrDomu" type="etd:TNrBudynku">
+											<xsd:annotation>
+												<xsd:documentation>Numer budynku</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer lokalu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa miejscowości</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="KodPocztowy" type="etd:TKodPocztowy">
+											<xsd:annotation>
+												<xsd:documentation>Kod pocztowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="Poczta" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa urzędu pocztowego</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="tns:PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>ZOBOWIĄZANIE PODATKOWE Z TYTUŁU UDZIAŁU W ZYSKACH OSÓB PRAWNYCH, O KTÓRYCH MOWA W ART. 22 UST. 1 USTAWY; DOCHÓD (PRZYCHÓD) I POBRANY PODATEK W ROKU PODATKOWYM - suma wypłaconych dywidend i innych przychodów (dochodów) z tytułu udziału w zyskach osób prawnych oraz pobranego podatku łącznie w roku podatkowym; DOCHÓD (PRZYCHÓD) I POBRANY PODATEK W POSZCZEGÓLNYCH MIESIĄCACH - suma wypłaconych dywidend i innych przychodów (dochodów) z tytułu udziału w zyskach osób prawnych oraz pobranego podatku w poszczególnych miesiącach.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Pouczenia">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższych pouczeń:
+								W przypadku niewpłacenia w obowiązującym terminie kwoty z poz. 58-63, 82-87, 106-111 i 130-134 lub wpłacenia jej w niepełnej wysokości niniejsza deklaracja stanowi podstawę do wystawienia tytułu wykonawczego zgodnie z przepisami ustawy z dnia 17 czerwca 1966 r. o postępowaniu egzekucyjnym w administracji (Dz. U. z 2017 r. poz. 1201, z późn. zm.).
+								Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie na uszczuplenie podatku grozi odpowiedzialnośc przewidziana w Kodeksie karnym skarbowym.
+						</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP">
+			<xsd:selector xpath="tns:Podmiot1|tns:Podmiot2"/>
+			<xsd:field xpath="tns:OsobaNiefizyczna/tns:NIP"/>
+		</xsd:unique>
+	</xsd:element>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="P_31" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Wypłacone dywidendy lub kwota udziału w zyskach osób prawnych</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_32" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dochód przeznaczony na podwyższenie kapitału zakładowego lub funduszu udziałowego oraz dochód stanowiący równowartość kwot przekazanych na ten kapitał (fundusz) z innych kapitałów (funduszy) osoby prawnej (art. 7b ust. 1 pkt 1 lit. f ustawy)</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_33" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dochód z udziału w zyskach osób prawnych, o którym mowa w art. 7b ust. 1 pkt 1 lit. m ustawy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_34" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Wartość niepodzielonych zysków w przypadku przekształcania spółek będących podatnikami w spółki osobowe</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_35" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Inne dochody (przychody) z tytułu udziału w zyskach osób prawnych (art. 7b ust. 1 pkt 1 ustawy)</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_36" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Razem dochód (przychód) z tytułu udziału w zysku osoby prawnej będącej płatnikiem</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_37" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Kwota dochodu (przychodu) przeznaczonego na cele statutowe lub inne cele określone w art. 17 ust. 1 ustawy w wysokości wykazanej w oświadczeniu podatnika zawartym w formularzu CIT-5</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_38" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Podstawa opodatkowania - art. 22 ust. 1 ustawy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_39" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Podatek należny</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 1</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_40" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_46" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_52" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_58" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 2</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_41" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_47" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_53" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_59" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 3</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_42" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_48" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_54" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_60" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 4</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_43" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_49" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_55" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_61" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 5</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_44" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_50" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_56" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_62" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 6</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_45" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_51" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_57" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_63" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 7</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_64" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_70" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_76" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_82" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 8</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_65" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_71" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_77" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_83" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 9</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_66" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_72" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_78" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_84" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 10</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_67" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_73" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_79" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_85" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 11</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_68" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_74" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_80" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_86" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 12</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_69" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_75" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_81" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_87" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 13</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_88" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_94" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_100" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_106" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 14</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_89" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_95" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_101" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_107" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 15</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_90" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_96" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_102" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_108" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 16</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_91" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_97" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_103" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_109" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 17</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_92" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_98" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_104" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_110" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 18</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_93" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_99" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_105" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_111" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 19</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_112" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_118" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_124" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_130" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 20</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_113" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_119" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_125" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_131" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 21</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_114" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_120" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_126" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_132" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 22</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_115" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_121" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_127" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_133" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Miesiąc 23</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_116" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_122" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Kwota pobranego podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_128" type="etd:TKwotaCNieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwota wynagrodzenia</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_134" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_117" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Razem - Podstawa opodatkowania</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_123" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Razem - Kwota pobranego podatku</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_129" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Razem - Kwota wynagrodzenia</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_135" type="etd:TKwotaCNieujemna">
+					<xsd:annotation>
+						<xsd:documentation>Razem - Należna kwota do wpłaty do urzędu skarbowego</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_136">
+					<xsd:annotation>
+						<xsd:documentation>Liczba miesięcy składających się na rok podatkowy płatnika</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:byte">
+							<xsd:minInclusive value="1"/>
+							<xsd:maxInclusive value="23"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

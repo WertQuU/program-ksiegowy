@@ -1,0 +1,186 @@
+ 99.1182%; height: 46px; text-align: center; vertical-align: middle;"> CIT CIT-6AR(1)_v1-0 2008-01-01 CIT-6AR(1)_v2-0E 2010-01-01 <td st	http://crd.gov.pl/wzor/2012/01/17/747/schemat.xsd
+th: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-6AR(1)_v2-0E 2010-01-01 ePUAP CIT-6AR(2)_v1-0E 2015-01-01 <td s	http://crd.gov.pl/wzor/2015/02/06/2046/schemat.xsd
+le;"> ePUAP CIT-6AR(2)_v1-0E 2015-01-01 ePUAP CIT-6AR(3)_v1-0E 2016-01-01 <td s	http://crd.gov.pl/wzor/2016/01/14/3089/schemat.xsd
+e;"> ePUAP CIT-6AR(3)_v1-0E 2016-01-01 ePUAP CIT-6AR(4)_v1-0E 2018-07-31 <td s	http://crd.gov.pl/wzor/2018/07/17/5568/schemat.xsd
+e;"> ePUAP CIT-6AR(4)_v1-0E 2018-07-31 ePUAP CIT-6AR(5)_v1-0E 2019-12-11 <td s	http://crd.gov.pl/wzor/2019/12/11/8930/schemat.xsd
+2009-12-31 CIT-6R(2)_v1-0p 2010-01-01 CIT-6R(2)_v2-0E 2010-01-01 <td sty	http://crd.gov.pl/wzor/2012/01/17/757/schemat.xsd
+dth: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-6R(2)_v2-0E 2010-01-01 ePUAP CIT-6R(3)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2048/schemat.xsd
+dle;"> ePUAP CIT-6R(3)_v1-0E 2015-01-01 ePUAP CIT-6R(4)_v1-0E 2016-01-01 <td st	http://crd.gov.pl/wzor/2016/01/14/3090/schemat.xsd
+le;"> ePUAP CIT-6R(4)_v1-0E 2016-01-01 ePUAP CIT-6R(5)_v1-0E 2018-07-31 <td st	http://crd.gov.pl/wzor/2018/07/17/5569/schemat.xsd
+le;"> ePUAP CIT-6R(5)_v1-0E 2018-07-31 ePUAP CIT-6R(5)_v1-1E 2019-01-25 <td st	http://crd.gov.pl/wzor/2019/01/25/6817/schemat.xsd
+le;"> ePUAP CIT-6R(5)_v1-1E 2019-01-25 ePUAP CIT-6R(6)_v1-0E 2019-12-11 <td st	http://crd.gov.pl/wzor/2019/12/11/8927/schemat.xsd
+: center; vertical-align: middle; height: 43px;"> ePUAP CIT-8(21)_v2-1 2007-01-01 CIT-8(21)_v3-2E 2009-11-01 <td st	http://crd.gov.pl/wzor/2014/01/02/1446/schemat.xsd
+h: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-8(21)_v3-2E 2009-11-01 ePUAP CIT-8(22)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2037/schemat.xsd
+le;"> ePUAP CIT-8(22)_v1-0E 2015-01-01 ePUAP CIT-8(23)_v2-0E 2016-01-01 <td st	http://crd.gov.pl/wzor/2016/05/17/3327/schemat.xsd
+le;"> ePUAP CIT-8(23)_v2-0E 2016-01-01 ePUAP CIT-8(24)_v2-0E 2016-03-05 <td st	http://crd.gov.pl/wzor/2016/05/18/3339/schemat.xsd
+le;"> ePUAP CIT-8(24)_v2-0E 2016-03-05 ePUAP CIT-8(24)_v3-0E 2017-02-06 <td st	http://crd.gov.pl/wzor/2017/02/06/3920/schemat.xsd
+le;"> ePUAP CIT-8(24)_v3-0E 2017-02-06 ePUAP CIT-8(24)_v4-0E 2017-06-20 <td st	http://crd.gov.pl/wzor/2017/06/06/4204/schemat.xsd
+le;"> ePUAP CIT-8(24)_v4-0E 2017-06-20 ePUAP CIT-8(25)_v1-0E 2017-09-26 <td st	http://crd.gov.pl/wzor/2017/09/12/4401/schemat.xsd
+le;"> ePUAP CIT-8(25)_v1-0E 2017-09-26 ePUAP CIT-8(26)_v1-0E 2018-08-09 <td st	http://crd.gov.pl/wzor/2018/07/26/5624/schemat.xsd
+f="http://crd.gov.pl/wzor/2017/09/12/4401/">ePUAP CIT-8(26)_v1-0E 2018-08-09 ePUAP CIT-8(27)_v1-0E 2019-04-13 <td style="width: 14.1807%; text-align: center; vertical-align: middle; height: 46px	http://crd.gov.pl/wzor/2019/03/29/7439/schemat.xsd
+AP CIT-8(27)_v1-0E 2019-04-13 ePUAP CIT-8(28)_v1-0E 2019-12-11 <td st	http://crd.gov.pl/wzor/2019/12/11/8928/schemat.xsd
+="http://crd.gov.pl/wzor/2019/03/29/7439/" target="_blank">ePUAP CIT-8(28)_v1-0E 2019-12-11 ePUAP CIT-8(28)_v2-0E 2020-02-07 <td st	http://crd.gov.pl/wzor/2020/02/07/9122/schemat.xsd
+px;"> ePUAP CIT-8(28)_v2-0E 2020-02-07 ePUAP CIT-8(29)_v1-0E 2020-05-25 <td st	http://crd.gov.pl/wzor/2020/05/25/9441/schemat.xsd
+px;"> ePUAP CIT-8(29)_v1-0E 2020-05-25 ePUAP CIT-8(30)_v1-0E 2021-04-10 <td s	http://crd.gov.pl/wzor/2021/03/26/10548/schemat.xsd
+;"> ePUAP CIT-8(30)_v1-0E 2021-04-10 ePUAP CIT-8(31)_v1-0E 2022-07-27 <td s	http://crd.gov.pl/wzor/2022/07/27/11655/schemat.xsd
+ center; vertical-align: middle; height: 46px;"> ePUAP CIT-8A(8)_v1-0 2007-01-01 CIT-8A(8)_v2-2E 2009-11-01 <td st	http://crd.gov.pl/wzor/2014/01/02/1447/schemat.xsd
+h: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-8A(8)_v2-2E 2009-11-01 ePUAP CIT-8A(9)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2038/schemat.xsd
+le;"> ePUAP CIT-8A(9)_v1-0E 2015-01-01 ePUAP CIT-8A(10)_v1-0E 2016-01-01 <td s	http://crd.gov.pl/wzor/2016/01/15/3110/schemat.xsd
+e;"> ePUAP CIT-8A(10)_v1-0E 2016-01-01 ePUAP CIT-8A(11)_v1-0E 2016-03-05 <td s	http://crd.gov.pl/wzor/2016/04/27/3319/schemat.xsd
+e;"> ePUAP CIT-8A(11)_v1-0E 2016-03-05 ePUAP CIT-8A(12)_v1-0E 2017-09-26 <td s	http://crd.gov.pl/wzor/2017/09/12/4400/schemat.xsd
+e;"> ePUAP CIT-8A(12)_v1-0E 2017-09-26 ePUAP CIT-8AB(1)_v1-0E 2018-08-09 <td s	http://crd.gov.pl/wzor/2018/07/26/5625/schemat.xsd
+e;"> ePUAP CIT-8AB(1)_v1-0E 2018-08-09 ePUAP CIT-8AB(2)_v1-0E 2019-03-29 <td s	http://crd.gov.pl/wzor/2019/03/29/7438/schemat.xsd
+e;"> ePUAP CIT-8AB(2)_v1-0E 2019-03-29 ePUAP CIT-8AB(3)_v1-0E 2019-12-11 <td s	http://crd.gov.pl/wzor/2019/12/11/8933/schemat.xsd
+x;"> ePUAP CIT-8AB(3)_v1-0E 2019-12-11 ePUAP CIT-8AB(3)_v2-0E 2020-02-07 <td s	http://crd.gov.pl/wzor/2020/02/07/9121/schemat.xsd
+x;"> ePUAP CIT-8AB(3)_v2-0E 2020-02-07 ePUAP CIT-8AB(3)_v3-0E 2020-04-28 <td s	http://crd.gov.pl/wzor/2020/04/28/9335/schemat.xsd
+x;"> ePUAP CIT-8AB(3)_v3-0E 2020-04-28 ePUAP CIT-8AB(4)_v1-0E 2020-05-25 2020-06-28</	http://crd.gov.pl/wzor/2020/05/25/9440/schemat.xsd
+a href="http://crd.gov.pl/wzor/2020/04/28/9335/">ePUAP CIT-8AB(4)_v1-0E 2020-05-25 2020-06-28 ePUAP CIT-8AB(4)_v1-1-E 2020-06-29 <td 	http://crd.gov.pl/wzor/2020/06/29/9666/schemat.xsd
+;"> ePUAP CIT-8AB(4)_v1-1-E 2020-06-29 ePUAP CIT-8AB(5)_v1-1-E 2021-04-10 <td	http://crd.gov.pl/wzor/2021/03/26/10547/schemat.xsd
+> ePUAP CIT-8AB(5)_v1-1-E 2021-04-10 ePUAP CIT-8AB(6)_v1-0E 2022-03-23 <td 	http://crd.gov.pl/wzor/2022/03/23/11434/schemat.xsd
+ center; vertical-align: middle; height: 46px;"> ePUAP CIT-8B(7)_v1-0 2007-01-01 CIT-8B(7)_v2-2E 2009-11-01 <td st	http://crd.gov.pl/wzor/2014/01/02/1448/schemat.xsd
+h: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-8B(7)_v2-2E 2009-11-01 ePUAP CIT-8B(8)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2040/schemat.xsd
+le;"> ePUAP CIT-8B(8)_v1-0E 2015-01-01 ePUAP CIT-8B(9)_v1-0E 2016-01-15 <td st	http://crd.gov.pl/wzor/2016/01/15/3109/schemat.xsd
+le;"> ePUAP CIT-8B(9)_v1-0E 2016-01-15 ePUAP CIT-8B(10)_v1-0E 2016-04-27 <td s	http://crd.gov.pl/wzor/2016/04/27/3321/schemat.xsd
+e;"> ePUAP CIT-8B(10)_v1-0E 2016-04-27 ePUAP CIT-8B(11)_v1-0E 2017-09-13 <td s	http://crd.gov.pl/wzor/2017/09/13/4409/schemat.xsd
+e;"> CIT-9R(2)_v1-0 2010-01-01 CIT-9R(3)_v1-0E 2010-01-01 <td sty	http://crd.gov.pl/wzor/2012/01/23/763/schemat.xsd
+dth: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-9R(3)_v1-0E 2010-01-01 ePUAP CIT-9R(4)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2047/schemat.xsd
+dle;"> ePUAP CIT-9R(4)_v1-0E 2015-01-01 ePUAP CIT-9R(5)_v1-0E 2016-01-14 <td st	http://crd.gov.pl/wzor/2016/01/14/3092/schemat.xsd
+le;"> ePUAP CIT-9R(5)_v1-0E 2016-01-14 ePUAP CIT-9R(6)_v1-0E 2018-07-31 <td st	http://crd.gov.pl/wzor/2018/07/31/5632/schemat.xsd
+le;"> ePUAP CIT-9R(6)_v1-0E 2018-07-31 ePUAP CIT-9R(7)_v1-0E 2019-12-11 <td st	http://crd.gov.pl/wzor/2019/12/11/8932/schemat.xsd
+"> 2009-12-31 CIT-10Z(1)_v1-1 2010-01-01 CIT-10Z(1)_v2-1E 2010-01-01 <td st	http://crd.gov.pl/wzor/2012/03/01/775/schemat.xsd
+th: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-10Z(1)_v2-1E 2010-01-01 ePUAP CIT-10Z(2)_v1-0E 2015-01-01 <td s	http://crd.gov.pl/wzor/2015/02/06/2035/schemat.xsd
+le;"> ePUAP CIT-10Z(2)_v1-0E 2015-01-01 ePUAP CIT-10Z(3)_v1-0E 2016-01-14 <td s	http://crd.gov.pl/wzor/2016/01/14/3091/schemat.xsd
+e;"> ePUAP CIT-10Z(3)_v1-0E 2016-01-14 ePUAP CIT-10Z(4)_v1-0E 2018-07-18 <td s	http://crd.gov.pl/wzor/2018/07/18/5595/schemat.xsd
+e;"> ePUAP CIT-10Z(4)_v1-0E 2018-07-18 ePUAP CIT-10Z(5)_v1-0E 2019-12-11 <td s	http://crd.gov.pl/wzor/2019/12/11/8925/schemat.xsd
+center; vertical-align: middle; height: 43px;"> ePUAP CIT-11R(1)_v1-0 2008-01-01 CIT-11R(1)_v2-0E 2010-01-01 <td st	http://crd.gov.pl/wzor/2012/01/17/750/schemat.xsd
+th: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-11R(1)_v2-0E 2010-01-01 ePUAP CIT-11R(2)_v1-0E 2015-01-01 <td s	http://crd.gov.pl/wzor/2015/02/06/2036/schemat.xsd
+le;"> ePUAP CIT-11R(2)_v1-0E 2015-01-01 ePUAP CIT-11R(3)_v1-0E 2016-01-14 <td s	http://crd.gov.pl/wzor/2016/01/14/3093/schemat.xsd
+e;"> ePUAP CIT-11R(3)_v1-0E 2016-01-14 ePUAP CIT-11R(4)_v1-0E 2018-07-18 <td s	http://crd.gov.pl/wzor/2018/07/18/5596/schemat.xsd
+e;"> ePUAP CIT-11R(4)_v1-0E 2018-07-18 ePUAP CIT-11R(5)_v1-0E 2019-12-11 <td s	http://crd.gov.pl/wzor/2019/12/11/8926/schemat.xsd
+="http://crd.gov.pl/wzor/2018/07/18/5596/">ePUAP CIT-11R(5)_v1-0E 2019-12-11 ePUAP CIT-14(1)_v1-0E 2019-07-31 <td style="width: 14.1807%; text-align: center; vertical-align: middle; height: 43px	http://crd.gov.pl/wzor/2019/07/16/8177/schemat.xsd
+AP CIT-14(1)_v1-0E 2019-07-31 ePUAP CIT-CFC(1)_v1-0E 2015-04-30 <td s	http://crd.gov.pl/wzor/2015/04/30/2199/schemat.xsd
+"http://crd.gov.pl/wzor/2019/07/16/8177/" target="_blank">ePUAP CIT-CFC(1)_v1-0E 2015-04-30 ePUAP CIT-CFC(2)_v1-1E 2016-08-11 <td s	http://crd.gov.pl/wzor/2016/08/11/3460/schemat.xsd
+e;"> ePUAP CIT-CFC(2)_v1-1E 2016-08-11 ePUAP CIT-CFC(3)_v1-0E 2020-01-09 <td s	http://crd.gov.pl/wzor/2020/01/09/8993/schemat.xsd
+gn: center; vertical-align: middle; height: 43px;"> ePUAP CIT-D(3)_v2-0 2007-01-01 CIT-D(3)_v3-0E 2009-11-01 <td styl	http://crd.gov.pl/wzor/2012/01/17/751/schemat.xsd
+idth: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> CIT-D(3)_v3-0E 2009-11-01 ePUAP CIT-D(4)_v1-0E 2015-01-01 <td sty	http://crd.gov.pl/wzor/2015/02/10/2049/schemat.xsd
+ddle;"> ePUAP CIT-D(4)_v1-0E 2015-01-01 ePUAP CIT-D(5)_v1-0E 2016-01-15 <td sty	http://crd.gov.pl/wzor/2016/01/15/3108/schemat.xsd
+dle;"> ePUAP CIT-D(5)_v1-0E 2016-01-15 ePUAP CIT-D(6)_v1-0E 2018-07-09 <td sty	http://crd.gov.pl/wzor/2018/07/31/5631/schemat.xsd
+px; text-align: center; vertical-align: middle;"> ePUAP CIT-ST(7)_v1-0 2007-01-01 CIT-ST(7)_v1-2E 2009-11-01 2014-08-3	http://crd.gov.pl/wzor/2014/01/02/1449/schemat.xsd
+t: 46px; text-align: center; vertical-align: middle;"> CIT-ST(7)_v1-2E 2009-11-01 2014-08-31 ePUAP CIT-ST(7)_v2-0E 2014-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2041/schemat.xsd
+le;"> ePUAP CIT-ST(7)_v2-0E 2014-01-01 ePUAP CIT-ST(7)_v5-0E 2018-07-13 <td st	http://crd.gov.pl/wzor/2018/06/29/5479/schemat.xsd
+f="http://crd.gov.pl/wzor/2015/02/06/2041/">ePUAP CIT-ST(7)_v5-0E 2018-07-13 ePUAP CIT-ST(7)_v6-0E 2019-02-21 <td style="width: 14.1807%; text-align: center; vertical-align: middle; height: 43px	http://crd.gov.pl/wzor/2019/02/06/6905/schemat.xsd
+AP CIT-ST(7)_v6-0E 2019-02-21 ePUAP CIT-ST(7)_v7-0E 2020-02-22 <td st	http://crd.gov.pl/wzor/2020/02/07/9118/schemat.xsd
+="http://crd.gov.pl/wzor/2019/02/06/6905/" target="_blank">ePUAP CIT-ST(7)_v7-0E 2020-02-22 ePUAP CIT-ST(7)_v8-0E 2021-01-26 <td s	http://crd.gov.pl/wzor/2021/01/26/10314/schemat.xsd
+46px;"> ePUAP CIT-ST(7)_v8-0E 2021-01-26 ePUAP CIT-ST(8)_v1-0E 2021-04-23 <td style=	http://crd.gov.pl/wzor/2021/04/23/10619/schemat.xsd
+ht: 46px;"> ePUAP CIT-ST(8)_v1-0E 2021-04-23 ePUAP CIT-TP(2)_v1-0E 2018-08-14 <td st	http://crd.gov.pl/wzor/2018/07/31/5633/schemat.xsd
+x;"> ePUAP CIT-TP(2)_v1-0E 2018-08-14 ePUAP CIT-TP(2)_v1-1E 2018-09-25 <td st	http://crd.gov.pl/wzor/2018/09/25/5834/schemat.xsd
+ href="http://crd.gov.pl/wzor/2018/07/31/5633/">ePUAP CIT-TP(2)_v1-1E 2018-09-25 ePUAP TPR-C(1)_v1-0E 2019-08-22 202	http://crd.gov.pl/wzor/2019/08/07/8334/schemat.xsd
+">ePUAP TPR-C(1)_v1-0E 2019-08-22 2020-03-30 ePUAP TPR-C(2)_v1-0E 2020-03-31 <td style="w	http://crd.gov.pl/wzor/2020/03/16/9199/schemat.xsd
+noopener" href="http://crd.gov.pl/wzor/2019/08/07/8334/" target="_blank">ePUAP TPR-C(2)_v1-0E 2020-03-31 ePUAP TPR-C(3)_v1-0E 2021-04-17 2021-06-17 <t	http://crd.gov.pl/wzor/2021/04/02/10567/schemat.xsd
+ 46px;"> ePUAP TPR-C(3)_v1-0E 2021-04-17 2021-06-17 ePUAP TPR-C(3)_v1-1E 2021-05-28 2021-06-17 <t	http://crd.gov.pl/wzor/2021/05/13/10636/schemat.xsd
+46px;"> ePUAP TPR-C(3)_v1-1E 2021-05-28 2021-06-17 ePUAP TPR-C(3)_v1-2E 2021-06-18 <td style="	http://crd.gov.pl/wzor/2021/06/18/10716/schemat.xsd
+ height: 46px;"> ePUAP TPR-C(3)_v1-2E 2021-06-18 ePUAP TPR-C(4)_v1-0E 2022-09-16 <td style="	http://crd.gov.pl/wzor/2022/09/16/11799/schemat.xsd
+ height: 45px;"> ePUAP TPR-C(4)_v1-0E 2022-09-16 ePUAP TPR-C(5)_v1-0E 2023-10-13 2023-10-05 <t	http://crd.gov.pl/wzor/2023/09/28/12868/schemat.xsd
+46px;"> ePUAP TPR-C(5)_v1-0E 2023-10-13 2023-10-05 ePUAP TPR-C(5)_v1-1E 2023-10-13 <td style="	http://crd.gov.pl/wzor/2023/10/06/12895/schemat.xsd
+ttp://crd.gov.pl/wzor/2023/10/06/12895/">ePUAP TPR-C(6)_1-0E 2025-12-31 ePUAP APA-C(1)_v1-0E 2020-03-19 2020-06-21 <td	http://crd.gov.pl/wzor/2020/03/04/9173/schemat.xsd
+middle;"> ePUAP APA-C(1)_v1-0E 2020-03-19 2020-06-21 ePUAP APA-C(1)_v1-1E 2020-06-22 <td style="w	http://crd.gov.pl/wzor/2020/06/22/9642/schemat.xsd
+height: 43px;"> ePUAP APA-C(1)_v1-1E 2020-06-22 ePUAP CIT-VC(1)_v1-0E 2014-03-03 <td st	http://crd.gov.pl/wzor/2017/02/17/3977/schemat.xsd
+dle;"> 2009-12-31 IFT-2(5)_v1-0 2010-01-01 IFT-2(5)_v1-0E 2012-01-01 <td styl	http://crd.gov.pl/wzor/2011/12/22/738/schemat.xsd
+idth: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> IFT-2(5)_v1-0E 2012-01-01 ePUAP IFT-2(6)_v1-0E 2015-01-01 <td sty	http://crd.gov.pl/wzor/2015/02/05/2034/schemat.xsd
+ddle;"> ePUAP IFT-2(6)_v1-0E 2015-01-01 ePUAP IFT-2(7)_v1-0E 2016-01-01 <td sty	http://crd.gov.pl/wzor/2016/01/20/3131/schemat.xsd
+dle;"> ePUAP IFT-2(7)_v1-0E 2016-01-01 ePUAP IFT-2(8)_v1-0E 2018-07-31 <td sty	http://crd.gov.pl/wzor/2018/07/17/5571/schemat.xsd
+dle;"> ePUAP IFT-2(8)_v1-0E 2018-07-31 ePUAP IFT-2(9)_v1-0E 2019-12-11 <td sty	http://crd.gov.pl/wzor/2019/12/11/8931/schemat.xsd
+dle;"> ePUAP IFT-2(9)_v1-0E 2019-12-11 ePUAP IFT-2(10)_v1-0E 2022-06-24 <td s	http://crd.gov.pl/wzor/2022/06/24/11589/schemat.xsd
+e;"> 2009-12-31 IFT-2R(5)_v1-0 2010-01-01 IFT-2R(5)_v1-0E 2011-01-01 <td sty	http://crd.gov.pl/wzor/2011/12/22/737/schemat.xsd
+dth: 29.2432%; height: 46px; text-align: center; vertical-align: middle;"> IFT-2R(5)_v1-0E 2011-01-01 ePUAP IFT-2R(6)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/06/2045/schemat.xsd
+dle;"> ePUAP IFT-2R(6)_v1-0E 2015-01-01 ePUAP IFT-2R(7)_v1-0E 2016-01-01 <td st	http://crd.gov.pl/wzor/2016/01/20/3130/schemat.xsd
+le;"> ePUAP IFT-2R(7)_v1-0E 2016-01-01 ePUAP IFT-2R(8)_v1-0E 2018-07-31 <td st	http://crd.gov.pl/wzor/2018/07/17/5570/schemat.xsd
+le;"> ePUAP IFT-2R(8)_v1-0E 2018-07-31 ePUAP IFT-2R(9)_v1-0E 2019-12-11 <td st	http://crd.gov.pl/wzor/2019/12/11/8929/schemat.xsd
+le;"> ePUAP IFT-2R(9)_v1-0E 2019-12-11 ePUAP IFT-2R(10)_v1-0E 2022-06-24 <td 	http://crd.gov.pl/wzor/2022/06/24/11588/schemat.xsd
+e;"> CIT-8_O(9)_Z_v1-0E 2015-01-01 ePUAP CIT-8_O(10)_Z_v1-0E 2016-01-01 <td style="width: 14.1807%; height: 46px; text-align: cen	http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_1134
+/1198687/CIT-ST_A(5)_Z_v1-0.xsd">CIT-ST_A(5)_Z_v1-0 2009-11-01 PIT DSF-1(1)_1-0E 2020-02-17 <td styl	http://crd.gov.pl/wzor/2020/02/17/9125/schemat.xsd
+gn: center; vertical-align: middle; height: 44px;"> ePUAP IFT-1(7)_v1-0 2008-01-01 2011-12-31 IFT-1(8)_v1-0E 2012-01-01 2012-03-30<	http://crd.gov.pl/wzor/2011/12/22/736/schemat.xsd
+ight: 46px; text-align: center; vertical-align: middle;"> IFT-1(8)_v1-0E 2012-01-01 2012-03-30 ePUAP IFT-1(9)_v1-0E 2012-01-01 2013-10-23<	http://crd.gov.pl/wzor/2012/05/14/832/schemat.xsd
+ef="http://crd.gov.pl/wzor/2011/12/22/736/">ePUAP IFT-1(9)_v1-0E 2012-01-01 2013-10-23 ePUAP IFT-1(10)_v1-0E 2013-10-24 2014-12-31</t	http://crd.gov.pl/wzor/2013/10/10/1321/schemat.xsd
+> ePUAP IFT-1(10)_v1-0E 2013-10-24 2014-12-31 ePUAP IFT-1(11)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2014/12/22/1954/schemat.xsd
+le;"> ePUAP IFT-1(11)_v1-0E 2015-01-01 ePUAP IFT-1(12)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2015/02/13/2054/schemat.xsd
+le;"> ePUAP IFT-1(12)_v1-0E 2015-01-01 ePUAP IFT-1(13)_v1-0E 2016-01-20 <td st	http://crd.gov.pl/wzor/2016/01/20/3129/schemat.xsd
+le;"> ePUAP IFT-1(13)_v1-0E 2016-01-20 ePUAP IFT-1(14)_v1-1E 2018-12-10 <td st	http://crd.gov.pl/wzor/2018/12/10/6354/schemat.xsd
+le;"> ePUAP IFT-1(14)_v1-1E 2018-12-10 ePUAP IFT-1(15)_v1-0E 2019-12-19 <td st	http://crd.gov.pl/wzor/2019/12/19/8977/schemat.xsd
+le;"> ePUAP IFT-1(15)_v1-0E 2019-12-19 ePUAP IFT-1(16)_v1-0E 2021-01-18 <td s	http://crd.gov.pl/wzor/2021/01/18/10306/schemat.xsd
+;"> ePUAP IFT-1(16)_v1-0E 2021-01-18 ePUAP IFT-1(16)_v2-0E 2022-03-28 <td s	http://crd.gov.pl/wzor/2022/03/28/11451/schemat.xsd
+align: middle; height: 46px;"> ePUAP IFT-1R(7)_v1-0 2007-01-01 2011-12-31 IFT-1R(8)_v1-0E 2011-01-01 2012-03-30	http://crd.gov.pl/wzor/2011/12/22/735/schemat.xsd
+ght: 46px; text-align: center; vertical-align: middle;"> IFT-1R(8)_v1-0E 2011-01-01 2012-03-30 ePUAP IFT-1R(9)_v1-0E 2012-01-01 2013-10-23	http://crd.gov.pl/wzor/2012/05/14/833/schemat.xsd
+f="http://crd.gov.pl/wzor/2011/12/22/735/">ePUAP IFT-1R(9)_v1-0E 2012-01-01 2013-10-23 ePUAP IFT-1R(10)_v1-0E 2013-10-24 2014-12-31</	http://crd.gov.pl/wzor/2013/10/10/1322/schemat.xsd
+ ePUAP IFT-1R(10)_v1-0E 2013-10-24 2014-12-31 ePUAP IFT-1R(11)_v1-0E 2015-01-01 <td s	http://crd.gov.pl/wzor/2014/12/22/1953/schemat.xsd
+e;"> ePUAP IFT-1R(11)_v1-0E 2015-01-01 ePUAP IFT-1R(12)_v1-0E 2015-01-01 <td s	http://crd.gov.pl/wzor/2015/02/13/2055/schemat.xsd
+e;"> ePUAP IFT-1R(12)_v1-0E 2015-01-01 ePUAP IFT-1R(13)_v1-0E 2016-01-20 <td s	http://crd.gov.pl/wzor/2016/01/20/3128/schemat.xsd
+e;"> ePUAP IFT-1R(13)_v1-0E 2016-01-20 ePUAP IFT-1R(14)_v1-1E 2018-12-10 <td s	http://crd.gov.pl/wzor/2018/12/10/6353/schemat.xsd
+e;"> ePUAP IFT-1R(14)_v1-1E 2018-12-10 ePUAP IFT-1R(15)_v1-0E 2019-12-19 <td s	http://crd.gov.pl/wzor/2019/12/19/8976/schemat.xsd
+e;"> ePUAP IFT-1R(15)_v1-0E 2019-12-19 ePUAP IFT-1R(16)_v1-0E 2021-01-15 <td 	http://crd.gov.pl/wzor/2021/01/15/10301/schemat.xsd
+"> ePUAP IFT-1R(16)_v1-0E 2021-01-15 ePUAP IFT-1R(16)_v2-0E 2022-03-28 <td 	http://crd.gov.pl/wzor/2022/03/28/11450/schemat.xsd
+l-align: middle; height: 46px;"> ePUAP IFT-3(4)_v1-1 2008-01-01 2012-02-12 IFT-3(5)_v1-0E 2012-01-01 2012-03-30<	http://crd.gov.pl/wzor/2011/12/23/739/schemat.xsd
+ight: 46px; text-align: center; vertical-align: middle;"> IFT-3(5)_v1-0E 2012-01-01 2012-03-30 ePUAP IFT-3(6)_v1-0E 2012-01-01 2014-12-31 	http://crd.gov.pl/wzor/2012/05/14/836/schemat.xsd
+ ePUAP IFT-3(6)_v1-0E 2012-01-01 2014-12-31 ePUAP IFT-3(7)_v1-1E 2015-01-07 <td sty	http://crd.gov.pl/wzor/2015/01/07/1965/schemat.xsd
+ddle;"> ePUAP IFT-3(7)_v1-1E 2015-01-07 ePUAP IFT-3(8)_v1-0E 2017-01-31 <td sty	http://crd.gov.pl/wzor/2017/02/28/4010/schemat.xsd
+nter; vertical-align: middle;"> ePUAP IFT-3R(4)_v1-1 2008-01-01 2012-02-12 IFT-3R(5)_v1-0E 2012-01-01 2012-03-30	http://crd.gov.pl/wzor/2011/12/23/740/schemat.xsd
+ght: 46px; text-align: center; vertical-align: middle;"> IFT-3R(5)_v1-0E 2012-01-01 2012-03-30 ePUAP IFT-3R(6)_v1-0E 2012-01-01 2014-12-31</td	http://crd.gov.pl/wzor/2012/05/14/835/schemat.xsd
+ ePUAP IFT-3R(6)_v1-0E 2012-01-01 2014-12-31 ePUAP IFT-3R(7)_v1-1E 2015-01-07 <td st	http://crd.gov.pl/wzor/2015/01/07/1966/schemat.xsd
+dle;"> ePUAP IFT-3R(7)_v1-1E 2015-01-07 ePUAP IFT-3R(8)_v1-0E 2017-01-31 <td st	http://crd.gov.pl/wzor/2017/02/28/4009/schemat.xsd
+008-12-31 PIT-4R(3)_v1-0 2011-01-01 2013-10-23 PIT-4R(3)_v1-0E 2009-01-01 2013-11-30	http://crd.gov.pl/wzor/2011/12/12/718/schemat.xsd
+ght: 46px; text-align: center; vertical-align: middle;"> PIT-4R(3)_v1-0E 2009-01-01 2013-11-30 ePUAP PIT-4R(4)_v1-1E 2013-10-24 <td st	http://crd.gov.pl/wzor/2013/11/21/1378/schemat.xsd
+dle;"> ePUAP PIT-4R(4)_v1-1E 2013-10-24 ePUAP PIT-4R(5)_v1-0E* 2015-01-01 <td s	http://crd.gov.pl/wzor/2014/12/08/1883/schemat.xsd
+e;"> ePUAP PIT-4R(5)_v1-0E* 2015-01-01 ePUAP PIT-4R(6)_v1-0E* 2016-01-01 <td s	http://crd.gov.pl/wzor/2015/12/22/3031/schemat.xsd
+e;"> ePUAP PIT-4R(6)_v1-0E* 2016-01-01 ePUAP PIT-4R(7)_v1-0E* 2018-02-23 <td s	http://crd.gov.pl/wzor/2018/02/23/5077/schemat.xsd
+e;"> ePUAP PIT-4R(7)_v1-0E* 2018-02-23 ePUAP PIT-4R(8)_v1-0E* 2018-12-06 <td s	http://crd.gov.pl/wzor/2018/12/06/6329/schemat.xsd
+e;"> ePUAP PIT-4R(8)_v1-0E* 2018-12-06 ePUAP PIT-4R(9)_v1-0E* 2019-12-19 2020-07-07</	http://crd.gov.pl/wzor/2019/12/19/8975/schemat.xsd
+a href="http://crd.gov.pl/wzor/2018/12/06/6329/">ePUAP PIT-4R(9)_v1-0E* 2019-12-19 2020-07-07 ePUAP PIT-4R(9)_v1-1-E* 2020-07-08 2020-08-18<	http://crd.gov.pl/wzor/2020/07/08/9715/schemat.xsd
+ href="http://crd.gov.pl/wzor/2019/12/19/8975/">ePUAP PIT-4R(9)_v1-1-E* 2020-07-08 2020-08-18 ePUAP PIT-4R(9)_v1-2E* 2020-08-19 <td s	http://crd.gov.pl/wzor/2020/08/19/9863/schemat.xsd
+x;"> ePUAP PIT-4R(9)_v1-2E* 2020-08-19 ePUAP PIT-4R(10)_v1-0E* 2020-11-28 2021-01-19	http://crd.gov.pl/wzor/2020/11/13/10089/schemat.xsd
+ref="http://crd.gov.pl/wzor/2020/08/19/9863/">ePUAP PIT-4R(10)_v1-0E* 2020-11-28 2021-01-19 ePUAP PIT-4R(11)_v1-0E* 2021-01-20 <td	http://crd.gov.pl/wzor/2021/01/05/10281/schemat.xsd
+ ePUAP PIT-4R(11)_v1-0E* 2021-01-20 ePUAP PIT-4R(12)_v1-0E* 2021-04-17 <td	http://crd.gov.pl/wzor/2021/04/02/10568/schemat.xsd
+31 PIT-6(8)_v2-0 2010-01-01 2011-12-31 PIT-6(9)_v1-0E 2012-01-01 2013-10-23<	http://crd.gov.pl/wzor/2011/12/12/719/schemat.xsd
+ight: 46px; text-align: center; vertical-align: middle;"> PIT-6(9)_v1-0E 2012-01-01 2013-10-23 ePUAP PIT-6(10)_v1-0E 2013-10-24 2014-12-31</t	http://crd.gov.pl/wzor/2013/10/10/1324/schemat.xsd
+> ePUAP PIT-6(10)_v1-0E 2013-10-24 2014-12-31 ePUAP PIT-6(11)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2014/12/10/1905/schemat.xsd
+le;"> ePUAP PIT-6(11)_v1-0E 2015-01-01 ePUAP PIT-6(12)_v1-0E 2016-01-01 <td st	http://crd.gov.pl/wzor/2016/01/05/3058/schemat.xsd
+le;"> ePUAP PIT-6(12)_v1-0E 2016-01-01 ePUAP PIT-6(13)_v1-0E 2018-12-06 <td st	http://crd.gov.pl/wzor/2018/12/06/6328/schemat.xsd
+middle;"> ePUAP PIT-6(13)_v1-0E 2018-12-06 ePUAP PIT-6(14)_v1-0E 2019-12-19 <td style="	http://crd.gov.pl/wzor/2019/12/19/8983/schemat.xsd
+ PIT-8C(4)_v1-0 2011-01-01 2011-11-30 PIT-8C(5)_v1-1E 2011-01-01 2013-10-23	http://crd.gov.pl/wzor/2012/01/17/753/schemat.xsd
+ght: 46px; text-align: center; vertical-align: middle;"> PIT-8C(5)_v1-1E 2011-01-01 2013-10-23 ePUAP PIT-8C(6)_v1-0E 2013-10-24 2014-12-31</t	http://crd.gov.pl/wzor/2013/10/10/1325/schemat.xsd
+> ePUAP PIT-8C(6)_v1-0E 2013-10-24 2014-12-31 ePUAP PIT-8C(7)_v1-0E 2015-01-01 <td st	http://crd.gov.pl/wzor/2014/12/05/1880/schemat.xsd
+le;"> ePUAP PIT-8C(7)_v1-0E 2015-01-01 ePUAP PIT-8C(8)_v1-0E 2016-01-01 <td st	http://crd.gov.pl/wzor/2016/01/05/3057/schemat.xsd
+le;"> ePUAP PIT-8C(8)_v1-0E 2016-01-01 ePUAP PIT-8C(9)_v1-0E 2018-12-06 <td st	http://crd.gov.pl/wzor/2018/12/06/6330/schemat.xsd
+le;"> ePUAP PIT-8C(9)_v1-0E 2018-12-06 ePUAP PIT-8C(10)_v1-0E 2019-12-19 2020-07-07</	http://crd.gov.pl/wzor/2019/12/19/8982/schemat.xsd
+a href="http://crd.gov.pl/wzor/2018/12/06/6330/">ePUAP PIT-8C(10)_v1-0E 2019-12-19 2020-07-07 ePUAP PIT-8C(10)_v1-1E 2020-07-08 <td s	http://crd.gov.pl/wzor/2020/07/08/9714/schemat.xsd
+x;"> ePUAP PIT-8C(10)_v1-1E 2020-07-08 ePUAP PIT-8C(11)_v1-0E 2022-08-10 <td 	http://crd.gov.pl/wzor/2022/08/10/11661/schemat.xsd
+p> PIT-11(18)_v1-0 2011-01-01 2011-11-30 PIT-11(19)_v1-0E 2011-01-01 2013-10-2	http://crd.gov.pl/wzor/2011/12/12/725/schemat.xsd
+ht: 46px; text-align: center; vertical-align: middle;"> PIT-11(19)_v1-0E 2011-01-01 2013-10-24 ePUAP PIT-11(20)_v1-0E 2013-10-25 2014-12-31</	http://crd.gov.pl/wzor/2013/10/11/1327/schemat.xsd
+ ePUAP PIT-11(20)_v1-0E 2013-10-25 2014-12-31 ePUAP PIT-11(21)_v1-0E* 2015-01-01 <td 	http://crd.gov.pl/wzor/2014/12/08/1887/schemat.xsd
+;"> ePUAP PIT-11(21)_v1-0E* 2015-01-01 ePUAP PIT-11(22)_v1-1E* 2015-01-01 <td 	http://crd.gov.pl/wzor/2015/02/23/2094/schemat.xsd
+;"> ePUAP PIT-11(22)_v1-1E* 2015-01-01 ePUAP PIT-11(23)_v1-0E* 2016-01-11 <td 	http://crd.gov.pl/wzor/2016/01/11/3066/schemat.xsd
+;"> ePUAP PIT-11(23)_v1-0E* 2016-01-11 ePUAP PIT-11(24)_v1-0E* 2018-12-06 <td 	http://crd.gov.pl/wzor/2018/12/06/6319/schemat.xsd
+;"> ePUAP PIT-11(24)_v1-0E* 2018-12-06 ePUAP PIT-11(25)_v1-0E* 2019-12-19 <td 	http://crd.gov.pl/wzor/2019/12/19/8981/schemat.xsd
+;"> ePUAP PIT-11(25)_v1-0E* 2019-12-19 ePUAP PIT-11(25)_v1-1E* 2020-07-10 <td 	http://crd.gov.pl/wzor/2020/07/10/9720/schemat.xsd
+;"> ePUAP PIT-11(25)_v1-1E* 2020-07-10 ePUAP PIT-11(26)v1-0E* 2020-11-28 <td 	http://crd.gov.pl/wzor/2020/11/13/10091/schemat.xsd
+"> ePUAP PIT-11(26)v1-0E* 2020-11-28 ePUAP PIT-11(27)v1-0E* 2021-03-04 <td 	http://crd.gov.pl/wzor/2021/03/04/10477/schemat.xsd
+ ePUAP PIT-11(27)v1-0E* 2021-03-04 ePUAP PIT-11(28)v1-0E* 2022-03-17 <td 	http://crd.gov.pl/wzor/2022/03/17/11409/schemat.xsd
+ ePUAP PIT-11(28)v1-0E* 2022-03-17 ePUAP PIT-11(29)_v1-1E* 2022-11-09 <td	http://crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd
+ ePUAP PIT-11(29)_v1-1E* 2022-11-09 ePUAP PIT-11A(18)_v1-0E* 2015-11-13 <td	http://crd.gov.pl/wzor/2015/11/13/2880/schemat.xsd
+> ePUAP PIT-11A(18)_v1-0E* 2015-11-13 ePUAP PIT-11A(19)_v1-0E* 2018-12-06 <td	http://crd.gov.pl/wzor/2018/12/06/6320/schemat.xsd
+"> ePUAP PIT-11A(19)_v1-0E* 2018-12-06 ePUAP PIT-11A(20)_v1-0E* 2020-10-15 <td	http://crd.gov.pl/wzor/2020/09/30/9956/schemat.xsd
+dle;"> ePUAP PIT-11A(20)_v1-0E* 2020-10-15 ePUAP PIT-11A(21)_v1-0E* 2022-09-29 <td sty	http://crd.gov.pl/wzor/2022/09/29/11830/schemat.xsd
+: 60px;"> ePUAP PIT-11A(21)_v1-0E* 2022-09-29 ePUAP PIT-11K(19)_v1-0E 2011-01-01 2013-10-	http://crd.gov.pl/wzor/2011/12/12/722/schemat.xsd
+ttp://crd.gov.pl/wzor/2022/09/29/11830/">ePUAP PIT-11K(19)_v1-0E 2011-01-01 2013-10-24 ePUAP PIT-11K(20)_v1-0E 2013-10-25 2014-12-31<	http://crd.gov.pl/wzor/2013/10/11/1326/schemat.xsd
+a href="http://crd.gov.pl/wzor/2011/12/12/722/">ePUAP PIT-11K(20)_v1-0E 2013-10-25 2014-12-31 ePUAP PIT-11K(21)_v1-0E 2015-01-01 <td 	http://crd.gov.pl/wzor/2014/12/10/1906/schemat.xsd
+;"> ePUAP PIT-11K(21)_v1-0E 2015-01-01 ePUAP PIT-11K(22)_v1-0E 2015-01-01 <td 	http://crd.gov.pl/wzor/2015/01/20/2010/schemat.xsd
+;"> ePUAP PIT-11K(22)_v1-0E 2015-01-01 ePUAP PIT-11K(23)_v1-0E 2016-01-20 <td 	http://crd.gov.pl/wzor/2016/01/20/3127/schemat.xsd
+;"> ePUAP PIT-11K(23)_v1-0E 2016-01-20 ePUAP PIT-11K(24)_v1-0E 2019-02-06 <td 	http://crd.gov.pl/wzor/2019/02/06/6906/schemat.xsd
+;"> ePUAP PIT-11K(24)_v1-0E 2019-02-06 ePUAP PIT-11K(25)_v1-0E 2019-12-19 <td 	http://crd.gov.pl/wzor/2019/12/19/8973/schemat.xsd
+-align: middle; height: 46px;"> ePUAP PIT-14(5)_v1-0 2008-01-01 2011-11-30 PIT-14(6)_v1-0E 2011-01-01 2013-12-06	http://crd.gov.pl/wzor/2011/12/12/723/schemat.xsd
+ght: 46px; text-align: center; vertical-align: middle;"> PIT-14(6)_v1-0E 2011-01-01 2013-12-06 ePUAP PIT-14(7)_v1-0E 2013-01-01 <td st	http://crd.gov.pl/wzor/2013/11/22/1383/schemat.xsd
+> PIT-36(16)_v1-0* 2010-01-01 2011-12-31 PIT-36(17)_v1-0E* 2011-01-01 2012-12-	http://crd.gov.pl/wzor/2012/01/17/752/schemat.xsd
+t: 46px; text-align: center; vertical-align: middle;"> PIT-36(17)_v1-0E* 2011-01-01 2012-12-31 ePUAP PIT-36(18)_v1-0E* 2012-01-01 2013-12	http://crd.gov.pl/wzor/2012/12/07/1068/schemat.xsd
+ttp://crd.gov.pl/wzor/2012/01/17/752/">ePUAP PIT-36(18)_v1-0E* 2012-01-01 2013-12-09 ePUAP PIT-36(19)_v1-0E* 2013-01-01 2014-12-31<	http://crd.gov.pl/wzor/2013/11/25/1384/schemat.xsd
+ href="http://crd.gov.pl/wzor/2012/12/07/1068/">ePUAP PIT-36(19)_v1-0E* 2013-01-01 2014-12-31 ePUAP PIT-36(20)_v1-1E* 2015-01-01 <td 	http://crd.gov.pl/wzor/2014/12/31/1961/schemat.xsd
+;"> ePUAP PIT-36(20)_v1-1E* 2015-01-01 ePUAP PIT-36(22)_v1-0E* 2016-01-01 <td 	http://crd.gov.pl/wzor/2016/01/05/3059/schemat.xsd
+;"> ePUAP PIT-36(22)_v1-0E* 2016-01-01 ePUAP PIT-36(23)_v1-1E* 2016-08-18 <td 	http://crd.gov.pl/wzor/2016/08/18/3470/schemat.xsd

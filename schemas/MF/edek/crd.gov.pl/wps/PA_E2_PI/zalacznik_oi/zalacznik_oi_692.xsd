@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:z2k="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/12/15/eD/PIT2K/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/12/15/eD/PIT2K/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<xsd:complexType name="TNaglowek_PIT-2K">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="z2k:TKodFormularza_2K">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT-2K (6)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="6"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_2K">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-2K"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TRodzajInwestycji">
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>budowa budynku mieszkalnego</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>wniesienie wkładu budowlanego lub mieszkaniowego do spółdzielni mieszkaniowej na nabycie prawa do nowo budowanego budynku mieszkalnego albo lokalu mieszkalnego w takim budynku</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>zakup nowo wybudowanego budynku mieszkalnego lub lokalu mieszkalnego w takim budynku od gminy albo od osoby, która wybudowała ten budynek w wykonywaniu działalności gospodarczej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>nadbudowa lub rozbudowa budynku na cele mieszkalne, lub przebudowa (przystosowanie) budynku niemieszkalnego, jego części lub pomieszczenia niemieszkalnego na cele mieszkalne, w wyniku których powstanie samodzielne mieszkanie spełniające wymagania określone w przepisach prawa budowlanego</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_PIT-2K">
+		<xsd:annotation>
+			<xsd:documentation>OŚWIADCZENIE O WYSOKOŚCI WYDATKÓW ZWIĄZANYCH Z INWESTYCJĄ SŁUŻĄCĄ ZASPOKOJENIU POTRZEB MIESZKANIOWYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="z2k:TNaglowek_PIT-2K"/>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TOsobaFizyczna1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2" minOccurs="0">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TOsobaFizyczna1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Małżonek"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Informacja o wydatkach związanych z inwestycją służącą zaspokojeniu potrzeb mieszkaniowych</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_29" type="z2k:TRodzajInwestycji">
+								<xsd:annotation>
+									<xsd:documentation>Rodzaj inwestycji</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_30" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Kwota poniesionych wydatków</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_31" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>W tym kwota wydatków udokumentowana fakturami</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_32" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rok rozpoczęcia budowy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TRok">
+										<xsd:minInclusive value="1990"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_33" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rok zakończenia budowy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TRok">
+										<xsd:minInclusive value="2002"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_34">
+								<xsd:annotation>
+									<xsd:documentation>Rok uzyskania kredytu mieszkaniowego</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TRok">
+										<xsd:minInclusive value="2002"/>
+										<xsd:maxInclusive value="2006"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_35" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Kwota uzyskanego kredytu mieszkaniowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Oswiadczenie">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:enumeration value="Oświadczam, że są mi znane przepisy Kodeksu karnego skarbowego o odpowiedzialności za podanie danych niezgodnych z rzeczywistością."/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

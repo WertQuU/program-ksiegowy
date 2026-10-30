@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:czbr="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/04/21/eD/CITBR/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/04/21/eD/CITBR/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2016/01/25/eD/DefinicjeTypy/StrukturyDanych_v4-0E.xsd"/>
+	<!--Załącznik do zeznań: CIT-8, CIT-8A i CIT-8B-->
+	<xsd:complexType name="TNaglowek_CIT-BR">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czbr:TKodFormularza_BR">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT-BR (1)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza" type="xsd:byte" fixed="1"/>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czbr:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czbr:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2016-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza_BR">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT-BR"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT-BR">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O ODLICZENIACH OD PODSTAWY OPODATKOWANIA KOSZTÓW UZYSKANIA PRZYCHODÓW PONIESIONYCH NA DZIAŁALNOŚĆ BADAWCZO-ROZWOJOWĄ</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="czbr:TNaglowek_CIT-BR"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Odliczenia od podstawy opodatkowania kosztów uzyskania przychodów poniesionych na działalność badawczo-rozwojową, o których mowa w art. 18d ustawy, zwanych dalej „kosztami kwalifikowanymi", rodzaje działalności badawczo-rozwojowej, w ramach których są ponoszone koszty kwalifikowane, dane jednostki naukowej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_6" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>Łączna liczba składanych załączników CIT-BR</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_9" type="etd:TWybor1_2">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik jest mikroprzedsiębiorcą, małym lub średnim przedsiębiorcą w rozumieniu przepisów o swobodzie działalności gospodarczej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_10" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Koszty kwalifikowane dotyczące należności i składek, o których mowa w art. 18d ust. 2 pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_11" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota podlegająca odliczeniu na podstawie art. 18d ust. 7 pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota odliczenia nie może przekroczyć 30% kwoty z poz. 10.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_12" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty kwalifikowane dotyczące nabycia materiałów i surowców, o których mowa w art. 18d ust. 2 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty kwalifikowane dotyczące m.in. ekspertyz, opinii, usług doradczych, o których mowa w art. 18d ust. 2 pkt 3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_14" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty kwalifikowane dotyczące odpłatnego korzystania z aparatury naukowo-badawczej, o których mowa w art. 18d ust. 2 pkt 4 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Koszty kwalifikowane dotyczące odpisów amortyzacyjnych, o których mowa w art. 18d ust. 3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_16" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem koszty kwalifikowane, o których mowa w art. 18d ust. 2 pkt 2-4 i ust. 3 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_17" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota podlegająca odliczeniu na podstawie art. 18d ust. 7 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Jeżeli podatnik zaznaczył kwadrat nr 1 w poz. 9, kwota odliczenia nie może przekroczyć 20% kwoty z poz. 16. Jeżeli podatnik zaznaczył kwadrat nr 2 w poz. 9, kwota odliczenia nie może przekroczyć 10% kwoty z poz. 16.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_18" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane odliczane z poprzednich lat na podstawie art. 18d ust. 8 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_19" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Kwota kosztów kwalifikowanych do odliczenia</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_20" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Kwota kosztów kwalifikowanych do odliczenia w latach następnych na podstawie art. 18d ust. 8 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Rodzaje działalności badawczo-rozwojowej, w ramach których są ponoszone koszty kwalifikowane</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_21" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Badania naukowe </xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Prace rozwojowe</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_23" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj badań naukowych</xsd:documentation>
+									</xsd:annotation>
+									<!--Wypełniają podatnicy, którzy wybrali 1 - tak w poz. 21.-->
+									<xsd:simpleType>
+										<xsd:restriction base="xsd:byte">
+											<xsd:enumeration value="1">
+												<xsd:annotation>
+													<xsd:documentation>badania podstawowe</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+											<xsd:enumeration value="2">
+												<xsd:annotation>
+													<xsd:documentation>badania stosowane</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+											<xsd:enumeration value="3">
+												<xsd:annotation>
+													<xsd:documentation>badania przemysłowe</xsd:documentation>
+												</xsd:annotation>
+											</xsd:enumeration>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_D" minOccurs="0" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Dane jednostki naukowej</xsd:documentation>
+								</xsd:annotation>
+								<!--Jednostka naukowa w rozumieniu ustawy z dnia 30 kwietnia 2010 r. o zasadach finansowania nauki (Dz. U.  z 2014 r. poz. 1620, z późn. zm.), z którą podatnik zawarł umowę lub porozumienie, na podstawie którego są prowadzone badania podstawowe.-->
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:annotation>
+											<xsd:documentation>Dane identyfikacyjne i adres siedziby</xsd:documentation>
+										</xsd:annotation>
+										<!--Wypełniają podatnicy, którzy zaznaczyli kwadrat nr 1 w poz. 23.-->
+										<xsd:element name="P_D24">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa pełna</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:token">
+													<xsd:minLength value="1"/>
+													<xsd:maxLength value="240"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+										<xsd:element name="P_D25A" type="etd:TKodKraju">
+											<xsd:annotation>
+												<xsd:documentation>Kod kraju</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D26" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Województwo</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D27" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Powiat</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D28" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Gmina</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D29" type="etd:TUlica" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Ulica</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D30" type="etd:TNrBudynku" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nr domu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D31" type="etd:TNrLokalu" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nr lokalu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D32" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Miejscowość</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D33" type="etd:TKodPocztowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Kod pocztowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D34" type="etd:TMiejscowosc" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Poczta</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

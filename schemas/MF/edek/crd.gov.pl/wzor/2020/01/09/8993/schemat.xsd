@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:czfi="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/01/02/eD/CITCFI/" xmlns:czst="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2019/01/24/eD/CITSTZ/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" xmlns:tns="http://crd.gov.pl/wzor/2020/01/09/8993/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/ORDZU/" targetNamespace="http://crd.gov.pl/wzor/2020/01/09/8993/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2019/01/24/eD/CITSTZ/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2019/01/24/eD/CITSTZ/CIT-ST(7)_Z_v6-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/01/02/eD/CITCFI/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/01/02/eD/CITCFI/CIT_CFI(1)_Z_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/ORDZU/ORD-ZU(3)_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd"/>
+	<!--Przez urząd, do którego jest adresowane zeznanie, rozumie się urząd skarbowy, przy pomocy którego właściwy dla podatnika naczelnik urzędu skarbowego wykonuje swoje zadania.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CITCFC (3)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="CIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_7"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TDataP">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TDataP">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT-CFC"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TDataP">
+		<xsd:annotation>
+			<xsd:documentation>Typ daty definiującej rok podatkowy</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2019-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TOsobaNiefizyczna">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych o osobie niefizycznej</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="OsobaNiefizyczna" type="etd:TIdentyfikatorOsobyNiefizycznej1"/>
+			<xsd:element name="AdresSiedziby">
+				<xsd:complexType>
+					<xsd:complexContent>
+						<xsd:extension base="etd:TAdresPolski1">
+							<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+						</xsd:extension>
+					</xsd:complexContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>ZEZNANIE O WYSOKOŚCI OSIĄGNIĘTEGO DOCHODU Z ZAGRANICZNEJ JEDNOSTKI KONTROLOWANEJ I NALEŻNEGO PODATKU DOCHODOWEGO OD OSÓB PRAWNYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TOsobaNiefizyczna">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="tns:PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące kraju siedziby podatnika prowadzącego zakład zagraniczny na terytorium Rzeczypospolitej Polskiej, dochód podatnika z zagranicznej jednostki kontrolowanej, odliczenia od dochodu, podstawa opodatkowania, obliczenie podatku, informacje o załącznikach</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Pouczenia">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższych pouczeń:
+W przypadku niewpłacenia w obowiązującym terminie podatku z poz. 45 lub wpłacenia go w niepełnej wysokości niniejsze zeznanie stanowi podstawę do wystawienia tytułu wykonawczego, zgodnie z art. 3a § 1 pkt 1 ustawy z dnia 17 czerwca 1966 r. o postępowaniu egzekucyjnym w administracji (Dz. U. z 2019 r. poz. 1438, z późn. zm.).
+
+Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie podatku na uszczuplenie grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym.
+						</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:element ref="czst:Zalacznik_CIT-ST" minOccurs="0"/>
+							<xsd:element ref="czfi:Zalacznik_CIT_CFI" minOccurs="0" maxOccurs="unbounded"/>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU" minOccurs="0"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:simpleType name="TKodKrajuISO">
+		<xsd:annotation>
+			<xsd:documentation>Uzupełnienie słownika kodów krajów o brakujące kody wg ISO 3166</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:normalizedString">
+			<xsd:enumeration value="SX">
+				<xsd:annotation>
+					<xsd:documentation>WYSPA SINT MAARTEN (CZĘŚĆ HOLENDERSKA WYSPY)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="BQ">
+				<xsd:annotation>
+					<xsd:documentation>BONAIRE, SINT EUSTATIUS I SABA</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="SS">
+				<xsd:annotation>
+					<xsd:documentation>SUDAN POŁUDNIOWY</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="CW">
+				<xsd:annotation>
+					<xsd:documentation>CURAÇAO</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodKrajuWydaniaISO">
+		<xsd:union memberTypes="etd:TKodKrajuWydania tns:TKodKrajuISO"/>
+	</xsd:simpleType>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="P_7A" type="etd:TWybor1_2" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Rodzaj korekty. Wartość: 1 - korekta zeznania, o której mowa w art. 81 Ordynacji podatkowej, 2 - korekta zeznania, o której mowa w art. 81b § 1a Ordynacji podatkowej</xsd:documentation>
+					</xsd:annotation>
+					<!--Ilekroć jest mowa o Ordynacji podatkowej oznacza to ustawę z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2019 r. poz. 900, z późn. zm.).-->
+					<!-- -->
+					<!--Ad. wartość 2 - Korekta składana w toku postępowania podatkowego w sprawie unikania opodatkowania. Korektę składa się wraz z uzasadnieniem przyczyn korekty.-->
+				</xsd:element>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące kraju siedziby podatnika prowadzącego zakład zagraniczny na terytorium Rzeczypospolitej Polskiej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_18" type="tns:TKodKrajuWydaniaISO">
+						<xsd:annotation>
+							<xsd:documentation>Kod kraju</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_19" type="etd:TMiejscowosc">
+						<xsd:annotation>
+							<xsd:documentation>Miejscowość</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence>
+					<xsd:element name="P_20">
+						<xsd:annotation>
+							<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 1 - art. 24a ust. 2 pkt 1 lit. a ustawy, 2 - art. 24a ust. 2 pkt 1 lit. b ustawy, 3 - art. 24a ust. 2 pkt 1 lit. c ustawy, 4 - art. 24a ust. 2 pkt 1 lit. d ustawy, 5 - art. 24a ust. 2 pkt 1 lit. e ustawy, 6 - art. 24a ust. 2 pkt 1 lit. f ustawy, 7 - art. 24a ust. 2 pkt 1 lit. g ustawy, 8 - art. 24a ust. 2b ustawy</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="xsd:byte">
+								<xsd:enumeration value="1">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 1 - art. 24a ust. 2 pkt 1 lit. a ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="2">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 2 - art. 24a ust. 2 pkt 1 lit. b ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="3">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 3 - art. 24a ust. 2 pkt 1 lit. c ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="4">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 4 - art. 24a ust. 2 pkt 1 lit. d ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="5">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 5 - art. 24a ust. 2 pkt 1 lit. e ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="6">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 6 - art. 24a ust. 2 pkt 1 lit. f ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="7">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 7 - art. 24a ust. 2 pkt 1 lit. g ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="8">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczna jednostka kontrolowana jest zagraniczną jednostką, o której mowa w: 8 - art. 24a ust. 2b ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_21" type="etd:TWybor1_3" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>W przypadku wyboru w poz. 20 wartości 5, w zagranicznej jednostce kontrolowanej będącej fundacją, trustem lub innym podmiotem albo stosunkiem prawnym o charakterze powierniczym, podatnikiem jest: 1 - wyłącznie założyciel (fundator), 2 - założyciel (fundator) oraz beneficjent, 3 - wyłącznie beneficjent</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_22" type="etd:TWybor1_3">
+					<xsd:annotation>
+						<xsd:documentation>Zagraniczna jednostka jest zagraniczną jednostką kontrolowaną, o której mowa w: 1 - art. 24a ust. 3 pkt 1 ustawy, 2 - art. 24a ust. 3 pkt 2 ustawy, 3 - art. 24a ust. 3 pkt 3 ustawy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:sequence>
+					<xsd:annotation>
+						<xsd:documentation>Dane identyfikacyjne zagranicznej jednostki kontrolowanej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_23" type="etd:TZnakowy">
+						<xsd:annotation>
+							<xsd:documentation>Nazwa pełna zagranicznej jednostki kontrolowanej</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_24" type="tns:TKodKrajuWydaniaISO">
+						<xsd:annotation>
+							<xsd:documentation>Kod kraju wydania numeru identyfikacyjnego</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_25" type="etd:TNrIdentyfikacjiPodatkowej">
+						<xsd:annotation>
+							<xsd:documentation>Zagraniczny numer identyfikacyjny</xsd:documentation>
+						</xsd:annotation>
+						<!--Przez zagraniczny numer identyfikacyjny rozumie się numer identyfikacji podatkowej zagranicznej jednostki kontrolowanej. W przypadku braku numeru identyfikacji podatkowej, podatnik podaje inny, właściwy dla celów rejestracji działalności zagranicznej jednostki, numer wpisu wraz ze wskazaniem nazwy rejestru.-->
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence>
+					<xsd:annotation>
+						<xsd:documentation>Adres siedziby lub zarządu zagranicznej jednostki kontrolowanej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_26A" type="tns:TKodKrajuWydaniaISO">
+						<xsd:annotation>
+							<xsd:documentation>Kod kraju</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_27" type="etd:TMiejscowosc">
+						<xsd:annotation>
+							<xsd:documentation>Nazwa miejscowości</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_28" type="etd:TKodPocztowy" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kod pocztowy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_29" type="etd:TUlica" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Nazwa ulicy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_30" type="etd:TNrBudynku" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Numer budynku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_31" type="etd:TNrLokalu" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Numer lokalu</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence>
+					<xsd:annotation>
+						<xsd:documentation>Dane o prowadzeniu przez zagraniczną jednostkę kontrolowaną, o której mowa w art. 24a ust. 18 ustawy, istotnej rzeczywistej działalności gospodarczej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_32" type="etd:TWybor1_2">
+						<xsd:annotation>
+							<xsd:documentation>Zagraniczna jednostka kontrolowana, podlegająca opodatkowaniu od całości swoich dochodów w państwie członkowskim Unii Europejskiej lub państwie należącym do Europejskiego Obszaru Gospodarczego prowadzi istotną rzeczywistą działalność gospodarczą: 1 - tak, 2 - nie</xsd:documentation>
+						</xsd:annotation>
+						<!--W przypadku zaznaczenia w poz. 32 kwadratu nr 1, podatnik nie wypełnia części C, D, E, F i G oraz nie składa załącznika CIT/CFI.-->
+					</xsd:element>
+					<xsd:sequence minOccurs="0">
+						<xsd:element name="P_33_1" type="etd:TWybor1" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki : 1 - z art. 24a ust. 18 pkt 1 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_33_2" type="etd:TWybor1" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki: 1 - z art. 24a ust. 18 pkt 2 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_33_3" type="etd:TWybor1" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki: 1 - z art. 24a ust. 18 pkt 3 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_33_4" type="etd:TWybor1" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki: 1 - z art. 24a ust. 18 pkt 4 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_33_5" type="etd:TWybor1" minOccurs="0">
+							<xsd:annotation>
+								<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki: 1 - z art. 24a ust. 18 pkt 5 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:sequence minOccurs="0">
+							<xsd:element name="P_33_6" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>W przypadku zaznaczenia w poz. 32 kwadratu nr 1, rzeczywista działalność gospodarcza spełnia przesłanki: 1 - inne, pozwalające uznać, że prowadzi rzeczywistą działalność gospodarczą</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_34" type="etd:TTekstowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wskazanie innych przesłanek, pozwalających uznać, że zagraniczna jednostka kontrolowana prowadzi rzeczywistą działalność gospodarczą</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełniają podatnicy, którzy w poz. 33 wybrali wartość 6-->
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:sequence>
+				</xsd:sequence>
+				<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Kwota odpowiadająca dochodowi zagranicznej jednostki kontrolowanej, o którym mowa w art. 24a ust. 4 ustawy, w takiej części, jaka odpowiada posiadanym przez podatnika prawom do uczestnictwa w zysku tej jednostki</xsd:documentation>
+					</xsd:annotation>
+					<!--Należy wpisać sumę kwot z poz. 13 ze wszystkich załączników CIT/CFI składanych do tego zeznania.-->
+				</xsd:element>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Odliczenia od dochodu</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_36" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dywidenda otrzymana od zagranicznej jednostki kontrolowanej, o której mowa w art. 24a ust. 4 pkt 1 ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_37" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dochód z odpłatnego zbycia udziału w zagranicznej jednostce kontrolowanej, o którym mowa w art. 24a ust. 4 pkt 2 ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_38" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwoty, o których mowa w art. 24a ust. 5 ustawy, nieodliczone w latach poprzednich</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_39" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dochód po odliczeniach</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_40" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Kwoty do odliczenia w następnych, kolejno po sobie następujących pięciu latach podatkowych</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_41" type="etd:TKwotaCNieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:sequence>
+					<xsd:annotation>
+						<xsd:documentation>Obliczenie podatku</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_42" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Obliczony podatek - zgodnie z art. 24a ust. 1 ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_43" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Odliczenie podatku zapłaconego przez zagraniczną spółkę kontrolowaną (art. 24a ust. 12 ustawy)</xsd:documentation>
+						</xsd:annotation>
+						<!--Przez podatek zapłacony przez jednostkę zależną, o którym mowa w art. 24a ust. 11 ustawy, należy rozumieć podatek w części, w jakiej kwota odpowiadająca dochodowi z zagranicznej jednostki kontrolowanej została wykazana w zeznaniu podatnika.-->
+					</xsd:element>
+					<xsd:element name="P_44" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Podatek należny po odliczeniach za rok podatkowy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_45" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Podatek należny po odliczeniach za rok podatkowy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Informacje o załącznikach</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_46" type="etd:TWybor1" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Liczba załączników CIT-ST składanych do zeznania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_47" type="etd:TNaturalny" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Liczba załączników CIT/CFI składanych do zeznania</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>
