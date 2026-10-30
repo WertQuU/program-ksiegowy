@@ -174,6 +174,9 @@ public class Company : Entity
     public string City { get; set; } = "";
     public string Country { get; set; } = "PL";
     public string? Voivodeship { get; set; }
+    /// <summary>Powiat i gmina siedziby — wymagane w adresie JPK_KR_PD i e-Sprawozdaniu.</summary>
+    public string? County { get; set; }
+    public string? Commune { get; set; }
     public string? Email { get; set; }
     public string? Phone { get; set; }
 

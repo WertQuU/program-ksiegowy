@@ -18,9 +18,21 @@ PAGES = [
     "https://www.podatki.gov.pl/e-sprawozdania-finansowe/struktury-logiczne-e-sprawozdan-finansowych/",
     "https://www.gov.pl/web/kas/struktury-e-sprawozdan",
     "https://www.gov.pl/web/kas/struktury-jpk",
+    "https://www.gov.pl/web/kas/struktury-jpk-w-podatkach-dochodowych",
+    "https://podatki-arch.mf.gov.pl/e-sprawozdania-finansowe/",
+    "https://podatki-arch.mf.gov.pl/e-sprawozdania-finansowe/struktury-e-sprawozdan/",
+    "https://podatki-arch.mf.gov.pl/e-sprawozdania-finansowe/struktury-logiczne/",
+    "https://www.podatki.gov.pl/wyszukiwarka/?q=JednostkaInnaWZlotych",
+    "https://www.gov.pl/web/kas/wyszukiwarka?query=JednostkaInnaWZlotych",
+    "https://www.gov.pl/web/finanse/struktury-e-sprawozdan",
+    "https://www.gov.pl/web/finanse/struktury-logiczne-e-sprawozdan-finansowych",
+    "https://www.gov.pl/web/kas/struktury-logiczne-e-sprawozdan-finansowych",
 ]
 SEEDS = [
     "http://crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
+    "http://www.mf.gov.pl/schematy/SF/DefinicjeTypySprawozdaniaFinansowe/2018/07/09/JednostkaInnaWZlotych(1)_v1-3.xsd",
+    "https://www.mf.gov.pl/schematy/SF/DefinicjeTypySprawozdaniaFinansowe/2018/07/09/JednostkaInnaWZlotych(1)_v1-3.xsd",
+    "http://www.mf.gov.pl/schematy/SF/DefinicjeTypySprawozdaniaFinansowe/2018/07/09/DefinicjeTypySprawozdaniaFinansowe_v1-2.xsd",
 ]
 UA = {"User-Agent": "Mozilla/5.0 (pelna-ksiegowosc schema fetcher)"}
 XS = "{http://www.w3.org/2001/XMLSchema}"
@@ -116,7 +128,7 @@ while queue:
         all_hrefs.append(f"{page}\t{full}")
         if low.endswith(".xsd") or low.endswith(".zip") or "crd.gov.pl/wzor" in low or "/attachment/" in low or "/media/" in low and not low.endswith((".jpg", ".png", ".pdf", ".svg")):
             links.append((page, full))
-        elif depth < 2 and urllib.parse.urlparse(full).netloc.endswith(("podatki.gov.pl", "www.gov.pl")) and any(k in low for k in KEYWORDS):
+        elif depth < 2 and urllib.parse.urlparse(full).netloc.endswith(("podatki.gov.pl", "www.gov.pl", "podatki-arch.mf.gov.pl", "mf.gov.pl")) and any(k in low for k in KEYWORDS):
             queue.append((full, depth + 1))
 links = list(dict.fromkeys(links))
 

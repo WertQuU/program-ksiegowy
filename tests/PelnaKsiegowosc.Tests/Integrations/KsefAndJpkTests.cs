@@ -249,25 +249,27 @@ public class KsefAndJpkTests
     }
 
     [Fact]
-    public async Task Jpk_cit_contains_trial_balance_with_tax_markers_and_journal()
+    public async Task Jpk_cit_is_valid_against_official_jpk_kr_pd_schema()
     {
         await using var t = await PelnaKsiegowosc.Tests.Integration.FullYearScenarioTests.BuildFullYearAsync(closeYear: true);
         var fy = await t.Db.FiscalYears.AsNoTracking().SingleAsync(f => f.Id == t.Year.Id);
-        var dir = Path.Combine(t.Directory, "schematy");
-        Directory.CreateDirectory(dir);
-        File.WriteAllText(Path.Combine(dir, JpkKrPdBuilder.SchemaFile), """<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://jpk.mf.gov.pl/test/kr_pd/"><xsd:element name="Inny"/></xsd:schema>""");
-        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, new XsdValidator(dir));
-        XNamespace ns = "http://jpk.mf.gov.pl/test/kr_pd/";
-        Assert.Equal(ns, r.Document.Root!.Name.Namespace); // przestrzeń nazw z wczytanego schematu
-        var zois = r.Document.Descendants(ns + "ZOiSWiersz").ToList();
-        var sales = zois.Single(z => z.Element(ns + "KodKonta")!.Value == "700-01");
-        Assert.Equal("PD_P", sales.Element(ns + "ZnacznikPD")!.Value);
-        Assert.Equal("R.A.I", sales.Element(ns + "ZnacznikRZiS")!.Value);
+        await Assert.ThrowsAsync<DomainException>(() => JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, Validator())); // brak powiatu/gminy
+        t.Company.Voivodeship = "mazowieckie";
+        t.Company.County = "Warszawa";
+        t.Company.Commune = "Warszawa";
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, Validator());
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(15)));
+        var ns = JpkKrPdBuilder.Ns;
+        var zois = r.Document.Descendants(ns + "ZOiS7").ToList();
+        string Marker(string acc) => zois.Single(z => z.Element(ns + "S_1")!.Value == acc).Element(ns + "S_12_1")!.Value;
+        Assert.Equal("RPAI_RKAI_POZ", Marker("700-01"));
+        Assert.Equal("BABIII1c1_SPKR", Marker("130-01"));
+        Assert.Equal("BPAI", Marker("801"));
+        Assert.Equal("BAAII1c_W", Marker("010-03"));
+        Assert.Equal("BAAII1c_U", Marker("070-03"));
         var ctrl = r.Document.Descendants(ns + "Ctrl").Single();
-        Assert.Equal(ctrl.Element(ns + "SumaWinien")!.Value, ctrl.Element(ns + "SumaMa")!.Value);
-        Assert.Equal(ctrl.Element(ns + "SumaWinienZOiS")!.Value, ctrl.Element(ns + "SumaMaZOiS")!.Value);
-        Assert.True(r.Document.Descendants(ns + "DziennikWiersz").Count() > 5);
-        Assert.False(r.Validation.IsValid); // schemat testowy nie opisuje struktury → plik NIEZWALIDOWANY
+        Assert.Equal(ctrl.Element(ns + "C_4")!.Value, ctrl.Element(ns + "C_5")!.Value);
+        Assert.True(r.Document.Descendants(ns + "Dziennik").Count() > 5);
     }
 }
 
