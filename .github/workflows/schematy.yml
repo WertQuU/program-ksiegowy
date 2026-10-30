@@ -1,0 +1,29 @@
+name: Schematy XSD
+
+# Pobiera oficjalne schematy XSD MF (środowisko budowania programu nie ma dostępu do serwerów MF)
+# i zapisuje je w repozytorium w katalogu schemas/MF.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/fetch-schemas.py'
+      - '.github/workflows/schematy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pobranie schematów
+        run: python3 tools/fetch-schemas.py schemas/MF
+      - name: Zapis w repozytorium
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas/MF
+          if git diff --cached --quiet; then echo "Bez zmian"; exit 0; fi
+          git commit -m "Oficjalne schematy XSD MF (pobrane automatycznie)"
+          git push origin HEAD:${GITHUB_REF_NAME}
