@@ -1,17 +1,17 @@
-STRONA https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it (85138 B)
+STRONA https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it (85130 B)
 STRONA https://podatki.gov.pl/podatki-firmowe/cit/formularze-cit -> https://podatki.gov.pl/podatki-firmowe/cit/formularze-cit (131951 B)
-STRONA https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit -> https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit (154578 B)
+STRONA https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit -> https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit (154577 B)
 STRONA https://podatki.gov.pl/podatki-firmowe/vat/formularze-vat -> https://podatki.gov.pl/podatki-firmowe/vat/formularze-vat (108303 B)
 STRONA https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ -> https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ (623355 B)
-STRONA http://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it (85143 B)
+STRONA http://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it (85144 B)
 STRONA https://podatki.gov.pl/podatki-osobiste/pit/formularze-pit -> https://podatki.gov.pl/podatki-osobiste/pit/formularze-pit (108136 B)
 STRONA https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-uslugi-web-services-systemu-e-deklaracje -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-uslugi-web-services-systemu-e-deklaracje (71443 B)
-STRONA https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje (68101 B)
-STRONA https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ -> https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ (623228 B)
-STRONA http://podatki.gov.pl/podatki-firmowe/cit/formularze-cit -> https://podatki.gov.pl/podatki-firmowe/cit/formularze-cit (131952 B)
-STRONA http://podatki.gov.pl/podatki-firmowe/pit/formularze-pit -> https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit (154578 B)
+STRONA https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje (68100 B)
+STRONA https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ -> https://podatki-arch.mf.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/ (623355 B)
+STRONA http://podatki.gov.pl/podatki-firmowe/cit/formularze-cit -> https://podatki.gov.pl/podatki-firmowe/cit/formularze-cit (131953 B)
+STRONA http://podatki.gov.pl/podatki-firmowe/pit/formularze-pit -> https://podatki.gov.pl/podatki-firmowe/pit/formularze-pit (154579 B)
 STRONA http://podatki.gov.pl/podatki-firmowe/vat/formularze-vat -> https://podatki.gov.pl/podatki-firmowe/vat/formularze-vat (108305 B)
-STRONA http://podatki.gov.pl/podatki-osobiste/pit/formularze-pit -> https://podatki.gov.pl/podatki-osobiste/pit/formularze-pit (108137 B)
+STRONA http://podatki.gov.pl/podatki-osobiste/pit/formularze-pit -> https://podatki.gov.pl/podatki-osobiste/pit/formularze-pit (108136 B)
 STRONA http://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-uslugi-web-services-systemu-e-deklaracje -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-uslugi-web-services-systemu-e-deklaracje (71444 B)
 STRONA http://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje -> https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it/informacja-na-temat-certyfikatu-ssl-serwera-testowego-uslugi-web-services-systemu-e-deklaracje (68101 B)
 NAJNOWSZY CIT-8(31) 2022/07/27/11655
@@ -73,8 +73,8 @@ ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2730.
 ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2732.xsd (23128 B) 
 ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2699.xsd (2408 B) 
 ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2425.xsd (26437 B) 
-NAJNOWSZY PIT-36(28) 2021/01/21/10311
-ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2021/01/21/10311/schemat.xsd (165250 B) PIT-36(28)
+NAJNOWSZY PIT-36(28) 2021/02/24/10448
+ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2021/02/24/10448/schemat.xsd (165250 B) PIT-36(28)
 ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2153.xsd (17183 B) 
 ZAPISANO schemas/MF/edek/crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/StrukturyDanych_v7-0E.xsd (31546 B) 
 ZAPISANO schemas/MF/edek/crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/ElementarneTypyDanych_v7-0E.xsd (12227 B) 
@@ -117,22 +117,27 @@ NAJNOWSZY PIT-4R(12) 2021/04/02/10568
 ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2021/04/02/10568/schemat.xsd (51471 B) PIT-4R(12)
 NAJNOWSZY PIT-8AR(12) 2022/04/15/11486
 ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2022/04/15/11486/schemat.xsd (123366 B) PIT-8AR(12)
-NAJNOWSZY VAT-UE(5) 2020/07/03/9690
-ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2020/07/03/9690/schemat.xsd (11764 B) VAT-UE(5)
-ZAPISANO schemas/MF/edek/crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_820.xsd (4796 B) 
+NAJNOWSZY VAT-UE(5) 2021/01/12/10293
+ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2021/01/12/10293/schemat.xsd (11772 B) VAT-UE(5)
+NAJNOWSZY VAT-UEK(5) 2021/01/26/10316
+ZAPISANO schemas/MF/edek/crd.gov.pl/wzor/2021/01/26/10316/schemat.xsd (18194 B) VAT-UEK(5)
+E-FORMULARZ CIT-8(34) https://klient-eformularz.mf.gov.pl/declaration/form/ea558c0d-c74b-433f-9b4c-011b2fba2711 -> https://klient-eformularz.mf.gov.pl/declaration/form/ea558c0d-c74b-433f-9b4c-011b2fba2711 [text/html] 25906 B; wzory: []
+E-FORMULARZ IFT-2R(12) https://klient-eformularz.mf.gov.pl/declaration/form/90bdeffd-c161-44dc-a4ac-96a6a14d7852 -> https://klient-eformularz.mf.gov.pl/declaration/form/90bdeffd-c161-44dc-a4ac-96a6a14d7852 [text/html] 25900 B; wzory: []
+E-FORMULARZ PIT-4R(13) https://klient-eformularz.mf.gov.pl/declaration/form/e0e684c7-3f1c-4889-bed6-dfd13f768eec -> https://klient-eformularz.mf.gov.pl/declaration/form/e0e684c7-3f1c-4889-bed6-dfd13f768eec [text/html] 25907 B; wzory: []
+E-FORMULARZ PIT-8AR(14) https://klient-eformularz.mf.gov.pl/declaration/form/000770e7-1338-4e6b-bda4-f2a7285e0894 -> https://klient-eformularz.mf.gov.pl/declaration/form/000770e7-1338-4e6b-bda4-f2a7285e0894 [text/html] 25901 B; wzory: []
 STRONA https://www.zus.pl/ -> https://www.zus.pl/ (1063518 B)
 ! strona https://www.zus.pl/firmy/programy-i-aplikacje: HTTP Error 404: 
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-przedsiebiorcy-ceidg- -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-przedsiebiorcy-ceidg- (992320 B)
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-spolki-krs- -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-spolki-krs- (986783 B)
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-rodzica-zatrudniajacego-nianie -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-rodzica-zatrudniajacego-nianie (993487 B)
-STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-podmiotu-pelniacego-role-platnika-zagranicznego -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-podmiotu-pelniacego-role-platnika-zagranicznego (997134 B)
+STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-podmiotu-pelniacego-role-platnika-zagranicznego -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-podmiotu-pelniacego-role-platnika-zagranicznego (997132 B)
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-do-dobrowolnych-ubezpieczen -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-do-dobrowolnych-ubezpieczen (981592 B)
-STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-ubezpieczonego/czlonka-rodziny-ubezpieczonego -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-ubezpieczonego/czlonka-rodziny-ubezpieczonego (989875 B)
+STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-ubezpieczonego/czlonka-rodziny-ubezpieczonego -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-ubezpieczonego/czlonka-rodziny-ubezpieczonego (989869 B)
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-o-pracy-w-szczegolnych-warunkach-lub-o-szczegolnym-charakterze -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/zgloszenie-o-pracy-w-szczegolnych-warunkach-lub-o-szczegolnym-charakterze (983832 B)
 STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/dane-identyfikacyjne-platnika/ubezpieczonego -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/dane-identyfikacyjne-platnika/ubezpieczonego (983145 B)
-STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/opis-spraw -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/opis-spraw (989748 B)
-STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/zawieszenie-dzialalnosci -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/zawieszenie-dzialalnosci (986708 B)
-STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-przedsiebiorcy-ceidg- -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-przedsiebiorcy-ceidg- (984840 B)
+STRONA https://www.zus.pl/firmy/zgloszenie-platnika/firmy/opis-spraw -> https://www.zus.pl/firmy/zgloszenie-platnika/firmy/opis-spraw (989747 B)
+STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/zawieszenie-dzialalnosci -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/zawieszenie-dzialalnosci (986723 B)
+STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-przedsiebiorcy-ceidg- -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-przedsiebiorcy-ceidg- (984819 B)
 STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-spolki-krs- -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-spolki-krs- (985758 B)
 STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-rodzica-zatrudniajacego-nianie -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-rodzica-zatrudniajacego-nianie (982124 B)
 STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-podmiotu-pelniacego-role-platnika-zagranicznego -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-podmiotu-pelniacego-role-platnika-zagranicznego (986603 B)
@@ -141,8 +146,8 @@ STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/wyrejestrowanie-u
 STRONA https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/opis-spraw -> https://www.zus.pl/firmy/wyrejestrowanie-platnika/firmy/opis-spraw (996176 B)
 STRONA https://www.zus.pl/firmy/zmiana/korekta-danych/zmiana-danych/korekta-platnika-/firmy -> https://www.zus.pl/firmy/zmiana/korekta-danych/zmiana-danych/korekta-platnika-/firmy (984795 B)
 STRONA https://www.zus.pl/firmy/rozliczenia-z-zus/kalkulator-odsetkowy-dla-platnikow-skladek-zus -> https://www.zus.pl/firmy/rozliczenia-z-zus/kalkulator-odsetkowy-dla-platnikow-skladek-zus (997697 B)
-STRONA https://www.zus.pl/firmy/program-platnik/o-programie-platnik -> https://www.zus.pl/firmy/program-platnik/o-programie-platnik (980682 B)
-STRONA https://www.zus.pl/firmy/program-platnik/pobierz -> https://www.zus.pl/firmy/program-platnik/pobierz (988774 B)
+STRONA https://www.zus.pl/firmy/program-platnik/o-programie-platnik -> https://www.zus.pl/firmy/program-platnik/o-programie-platnik (980660 B)
+STRONA https://www.zus.pl/firmy/program-platnik/pobierz -> https://www.zus.pl/firmy/program-platnik/pobierz (988787 B)
 ZAPISANO schemas/MF/edek/zip/PakietyAktualizacjaP2_X_328.zip/Pakiety_328_metryka_X.xml KEDU
 ZAPISANO schemas/MF/edek/zip/PakietyAktualizacjaP2_X_328.zip/Pakiety_328_pub_slp.xsd KEDU
 ZAPISANO schemas/MF/edek/zip/PakietyAktualizacjaP2_X_328.zip/Pakiety_328_UZALCentrala.xml KEDU
@@ -853,5 +858,5 @@ ZAPISANO schemas/MF/edek/zip/Platnik_szkolenie_1.4.zip/P_atnik_szkolenie_1.4/Lek
 ZAPISANO schemas/MF/edek/zip/Platnik_szkolenie_1.4.zip/P_atnik_szkolenie_1.4/Lekcje/L99/story_content/frame.xml KEDU
 ZAPISANO schemas/MF/edek/zip/Platnik_szkolenie_1.4.zip/P_atnik_szkolenie_1.4/meta.xml KEDU
 ZAPISANO schemas/MF/edek/zip/Platnik_szkolenie_1.4.zip/P_atnik_szkolenie_1.4/story_content/frame.xml KEDU
-STRONA https://www.zus.pl/firmy/program-platnik/poradnik -> https://www.zus.pl/firmy/program-platnik/poradnik (1029462 B)
+STRONA https://www.zus.pl/firmy/program-platnik/poradnik -> https://www.zus.pl/firmy/program-platnik/poradnik (1029461 B)
 STRONA https://www.zus.pl/firmy/program-platnik/interaktywny-platnik-plus -> https://www.zus.pl/firmy/program-platnik/interaktywny-platnik-plus (985317 B)
