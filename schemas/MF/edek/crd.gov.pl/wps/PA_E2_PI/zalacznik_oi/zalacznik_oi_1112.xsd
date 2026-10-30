@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:zd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2015/12/31/eD/PITD/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2015/12/31/eD/PITD/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<xsd:complexType name="TNaglowek_PIT_D">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="zd:TKodFormularza_D">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT/D (25)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="25"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_D">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT/D"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TIdentyfikatorOsobyFizycznej1">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych identyfikacyjnych o osobie fizycznej z identyfikatorem NIP albo PESEL</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:choice>
+				<xsd:element name="NIP" type="etd:TNrNIP">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PESEL" type="etd:TNrPESEL">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy numer PESEL</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:element name="ImiePierwsze" type="etd:TImie">
+				<xsd:annotation>
+					<xsd:documentation>Pierwsze imię</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Nazwisko" type="etd:TNazwisko">
+				<xsd:annotation>
+					<xsd:documentation>Nazwisko</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataUrodzenia">
+				<xsd:annotation>
+					<xsd:documentation>Data urodzenia</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TData">
+						<xsd:maxInclusive value="2030-12-31"/>
+						<xsd:pattern value="((\d{4})-(\d{2})-(\d{2}))"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:element name="Zalacznik_PIT_D">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O ODLICZENIU WYDATKÓW MIESZKANIOWYCH W ROKU PODATKOWYM</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="zd:TNaglowek_PIT_D"/>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="zd:TIdentyfikatorOsobyFizycznej1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2" minOccurs="0">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="zd:TIdentyfikatorOsobyFizycznej1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Małżonek"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Odliczenia od dochodu (przychodu), odliczenia od podatku</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_10" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki poniesione na spłatę odsetek od kredytu (pożyczki), przypadające do odliczenia w roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_11" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota wydatków przypadająca do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_12" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przypadająca do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_14" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Kwota wydatków mieszkaniowych - do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_16" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Kwota wydatków mieszkaniowych - do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_17" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki mieszkaniowe poniesione w roku podatkowym - rodzaj</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_18" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki mieszkaniowe poniesione w roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_19" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Odliczenia, które nie znalazły pokrycia w dochodzie (przychodzie) za lata ubiegłe</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_20" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem do odliczenia w roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_21" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przypadająca do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przypadająca do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_23" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_24" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Kwota wydatków mieszkaniowych - do odliczenia od przychodu w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_25" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_26" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek- Kwota wydatków mieszkaniowych - do odliczenia od dochodu w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_27" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Kwota przysługującego odliczenia z tytułu systematycznego gromadzenia w roku podatkowym oszczędności na jednym rachunku oszczędnościowo-kredytowym i w jednym banku prowadzącym kasę mieszkaniową</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_28" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia, które nie znalazły pokrycia w podatku za lata ubiegłe - kwota odliczenia</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:element name="P_29" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem do odliczenia w roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_30" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przypadająca do odliczenia od podatku w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przypadająca do odliczenia od podatku w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od podatku w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_33" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Kwota wydatków mieszkaniowych - do odliczenia od podatku w PIT-28</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik - Kwota wydatków mieszkaniowych - do odliczenia od podatku w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Małżonek - Kwota wydatków mieszkaniowych - do odliczenia od podatku w PIT-36 lub w PIT-37</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP_PESEL">
+			<xsd:selector xpath="zd:Podmiot1|zd:Podmiot2"/>
+			<xsd:field xpath="zd:NIP|zd:PESEL"/>
+		</xsd:unique>
+	</xsd:element>
+</xsd:schema>

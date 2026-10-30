@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="http://crd.gov.pl/wzor/2013/10/11/1327/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:zr="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/09/18/eD/PITR/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" targetNamespace="http://crd.gov.pl/wzor/2013/10/11/1327/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/09/18/eD/PITR/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2013/09/18/eD/PITR/PIT-R(16)_Z_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/ORD-ZU(2)_v2-0E.xsd"/>
+	<!--Ilekroć w informacji jest mowa o urzędzie skarbowym - oznacza to urząd skarbowy, którym kieruje właściwy dla podatnika naczelnik urzędu skarbowego.-->
+	<!-- -->
+	<!--Zgodnie z art. 81 Ordynacji podatkowej płatnik może skorygować złożoną informację przez złożenie informacji korygującej wraz z dołączonym pisemnym uzasadnieniem przyczyn korekty.-->
+	<!-- -->
+	<!--W kwocie przychodów, wykazanych odpowiednio w poz. Przychód, nie uwzględnia się przychodów wolnych od podatku na podstawie przepisów ustawy oraz przychodów, od których na podstawie przepisów Ordynacji podatkowej zaniechano poboru podatku; jednakże w poz. Dochód zwolniony od podatku należy wykazać dochody zwolnione od podatku na podstawie umów o unikaniu podwójnego opodatkowania lub innych umów międzynarodowych.-->
+	<!-- -->
+	<!--W kwocie kosztów uzyskania przychodów wykazuje się koszty faktycznie uwzględnione przez płatnika przy poborze zaliczek na podatek.-->
+	<!-- -->
+	<!--W poz. 66-69 nie wykazuje się składek, których podstawę wymiaru stanowi dochód (przychód) zwolniony od podatku na podstawie ustawy, oraz składek, których podstawę wymiaru stanowi dochód, od którego na podstawie przepisów Ordynacji podatkowej zaniechano poboru podatku, a w przypadku składek zagranicznych, których podstawę wymiaru stanowi dochód (przychód) zwolniony od podatku na podstawie umów o unikaniu podwójnego opodatkowania.-->
+	<!-- -->
+	<!--Ilekroć w informacji jest mowa o Ordynacji podatkowej - oznacza to ustawę z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2012 r. poz. 749, z późn. zm.).-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT-11 (20)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="20"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_6"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Rok">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TRok">
+						<xsd:minInclusive value="2013"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-11"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O DOCHODACH ORAZ O POBRANYCH ZALICZKACH NA PODATEK DOCHODOWY</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TPodmiotDowolnyBezAdresu2">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Płatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="etd:TOsobaFizyczna1">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+								<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_10A"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Informacja o kosztach uzyskania przychodu z tytułu stosunku służbowego, stosunku pracy, spółdzielczego stosunku pracy oraz pracy nakładczej, dochodach podatnika, pobranych zaliczkach oraz pobranych składkach, o przychodach zwolnionych od podatku oraz o załączniku.</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Pouczenie">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:enumeration value="Za uchybienie obowiązkom płatnika grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym."/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element ref="zr:Zalacznik_PIT-R" minOccurs="0"/>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU" minOccurs="0"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>1. Należności ze stosunku: pracy, służbowego, spółdzielczego i z pracy nakładczej, a także zasiłki pieniężne z ubezpieczenia społecznego wypłacone przez zakład pracy, o którym mowa w art. 31 ustawy, oraz płatników, o których mowa w art. 42e ust. 1 ustawy</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_24" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Informacja o kosztach uzyskania przychodu. Koszty uzyskania przychodów, wykazane w poz. 26, zostały uwzględnione do wysokości przysługującej podatnikowi</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="xsd:byte">
+								<xsd:enumeration value="1">
+									<xsd:annotation>
+										<xsd:documentation>z jednego stosunku pracy (stosunków pokrewnych)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="2">
+									<xsd:annotation>
+										<xsd:documentation>z więcej niż jednego stosunku pracy (stosunków pokrewnych)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="3">
+									<xsd:annotation>
+										<xsd:documentation>z jednego stosunku pracy (stosunków pokrewnych), podwyższone w związku z zamieszkiwaniem podatnika poza miejscowością, w której znajduje się zakład pracy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+								<xsd:enumeration value="4">
+									<xsd:annotation>
+										<xsd:documentation>z więcej niż jednego stosunku pracy (stosunków pokrewnych), podwyższone w związku z zamieszkiwaniem podatnika poza miejscowością, w której znajduje się zakład pracy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_25" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_26" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_27" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_28" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dochód zwolniony od podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_29" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:sequence minOccurs="0">
+						<xsd:element name="P_30" type="etd:TKwota2Nieujemna">
+							<xsd:annotation>
+								<xsd:documentation>Przychody, do których zastosowano odliczenie kosztów uzyskania przychodów na podstawie art. 22 ust. 9 pkt 3 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_31" type="etd:TKwota2Nieujemna">
+							<xsd:annotation>
+								<xsd:documentation>Koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 3 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>2. Należności z tytułu członkostwa w rolniczej spółdzielni produkcyjnej lub innej spółdzielni zajmującej się produkcją rolną oraz zasiłki pieniężne z ubezpieczenia społecznego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_32" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_33" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_34" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>3. Emerytury - renty zagraniczne</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_35" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_36" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_37" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dochód zwolniony od podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_38" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>4. Należności za pracę przypadające tymczasowo aresztowanym lub skazanym</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_39" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_40" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_41" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>5. Świadczenia wypłacone z Funduszów: Pracy i Gwarantowanych Świadczeń Pracowniczych</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_42" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_43" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_44" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>6. Działalność wykonywana osobiście, o której mowa w art. 13 pkt 2, 4, 6 (z wyjątkiem czynności wymienionych w wierszu 7) i 7-9 ustawy, w tym umowy zlecenia i o dzieło</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_45" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_46" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_47" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_48" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>7. Czynności związane z pełnieniem obowiązków społecznych lub obywatelskich (art. 13 pkt 5 i 6 ustawy)</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_49" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_51" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_52" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>8. Prawa autorskie i inne prawa, o których mowa w art. 18 ustawy</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_53" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_54" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_55" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:sequence minOccurs="0">
+						<xsd:element name="P_56" type="etd:TKwota2Nieujemna">
+							<xsd:annotation>
+								<xsd:documentation>Przychody, do których zastosowano koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 1-3 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+						<xsd:element name="P_57" type="etd:TKwota2Nieujemna">
+							<xsd:annotation>
+								<xsd:documentation>Koszty uzyskania przychodów na podstawie art. 22 ust. 9 pkt 1-3 ustawy</xsd:documentation>
+							</xsd:annotation>
+						</xsd:element>
+					</xsd:sequence>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>9. Należności wynikające z umowy aktywizacyjnej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_58" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_59" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Koszty uzyskania przychodów</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_60" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_61" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>10. Inne źródła</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_62" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_63" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Dochód</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_64" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>Dochód zwolniony od podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_65" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka pobrana przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:element name="P_66" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Składki na ubezpieczenia społeczne, o których mowa w przepisach ustawy, podlegające odliczeniu od dochodu</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_67" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>w tym zagraniczne, o których mowa w art. 26 ust. 1 pkt 2a ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:element name="P_68" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Składki na ubezpieczenie zdrowotne, o których mowa w przepisach ustawy, podlegające odliczeniu od podatku</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_69" type="etd:TKwota2Nieujemna" minOccurs="0">
+						<xsd:annotation>
+							<xsd:documentation>w tym zagraniczne, o których mowa w art. 27b ust. 1 pkt 2 ustawy</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_70" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Przychody otrzymywane z zagranicy, o których mowa w art. 21 ust. 1 pkt 74 ustawy, między innymi renty inwalidzkie z tytułu inwalidztwa wojennego</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_71" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Przychody pochodzące ze środków bezzwrotnej pomocy zagranicznej, o których mowa w art. 21 ust. 1 pkt 46 ustawy</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_72" type="etd:TWybor1_2">
+					<xsd:annotation>
+						<xsd:documentation>Do niniejszej informacji dołączono informację PIT-R: 1- tak, 2 - nie</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

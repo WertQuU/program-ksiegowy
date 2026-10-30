@@ -1,0 +1,459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:cz8o="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2012/01/19/eD/CIT8O/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2012/01/19/eD/CIT8O/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<xsd:complexType name="TNaglowek_CIT-8_O">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="cz8o:TKodFormularza_CO">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT8/O (8)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="3-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza" fixed="8">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="8"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="cz8o:TLDataOd2">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="cz8o:TLDataDo2">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TLDataOd2">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty od</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:date">
+			<xsd:minInclusive value="2009-11-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLDataDo2">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty do</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:date">
+			<xsd:minInclusive value="2011-09-30"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza_CO">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT-8/O"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT-8_O">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O ODLICZENIACH OD DOCHODU I OD PODATKU ORAZ O DOCHODACH WOLNYCH I ZWOLNIONYCH OD PODATKU</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="cz8o:TNaglowek_CIT-8_O"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dochody (przychody) wolne i odliczenia od dochodu, odliczenia z tytułu wydatków inwestycyjnych, od podstawy opodatkowania oraz zwolnienia, zaniechania, obniżki i odliczenia od podatku, dane informacyjne</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_8" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody) wolne od podatku na podstawie art.17 ust.1 ustawy - przeznaczone na cele statutowe lub inne cele wymienione w tym przepisie (art.17 ust.1 pkt 4a-4p, 4u, 5, 5a,21, 26, 37, 39, 40 i 42-46)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_9" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody) wolne od podatku na podstawie art.17 ust.1 pkt 4 ustawy w części przeznaczonej na cele statutowe</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_10" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody organizacji pożytku publicznego wolne na podstawie art.17 ust.1 pkt 6c ustawy, w części przeznaczonej na działalność statutową, z wyłączeniem działalności gospodarczej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_11" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody wolne od podatku zgodnie z art.17 ust.1 pkt 34 ustawy, uzyskane z działalności gospodarczej prowadzonej na terenie specjalnej strefy ekonomicznej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_12" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Pozostałe dochody (przychody) wolne od podatku na podstawie art.17 ust.1 ustawy, z wyjątkiem wymienionych w poz.8-11</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_13" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody wolne od podatku w zakresie określonym ustawą wymienioną w art.40 ust.2 pkt 3 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_14" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody spółek zarządzających specjalnymi strefami ekonomicznymi, wolne od podatku na podstawie przepisów wykonawczych do ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych (Dz.U. Nr 123, poz.600, ze zm.)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_15" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody wolne od podatku na podstawie ustawy o specjalnych strefach ekonomicznych i przepisów wykonawczych do tej ustawy, w oparciu o zezwolenia uzyskane przed dniem 1 stycznia 2001 r., osiągnięte przez podatników, którzy nie wystąpili o zmianę zezwoleń, zgodnie z art.6 ustawy z dnia 2 października 2003 r. o zmianie ustawy o specjalnych strefach ekonomicznych i niektórych ustaw (Dz.U. Nr 188, poz.1840, ze zm.)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_16" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody wolne od podatku na podstawie ustawy o specjalnych strefach ekonomicznych i przepisów wykonawczych do tej ustawy, w oparciu o zezwolenia uzyskane przed dniem 1 stycznia 2001 r., osiągnięte przez podatników, którzy korzystają ze zwolnienia na podstawie zmienionego zezwolenia i jednocześnie nie przekroczyli maksymalnej dopuszczalnej wielkości pomocy publicznej (art.5 ustawy wymienionej w poz.15)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_17" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody zwolnione od podatku na podstawie art.20 ust.3 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_18" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Inne dochody (przychody) wolne (zwolnione) od podatku, w tym na podstawie odrębnych ustaw - Tytuł</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_19" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Inne dochody (przychody) wolne (zwolnione) od podatku, w tym na podstawie odrębnych ustaw</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_20" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Razem dochody wolne</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_21">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia straty</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota poniesionej straty</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_23" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty odliczona w latach poprzednich</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_24" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty do odliczenia w roku bieżącym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_25">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia straty</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_26" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota poniesionej straty</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_27" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty odliczona w latach poprzednich</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_28" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty do odliczenia w roku bieżącym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_29">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia straty</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_30" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota poniesionej straty</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty odliczona w latach poprzednich</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty do odliczenia w roku bieżącym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_33">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia straty</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota poniesionej straty</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty odliczona w latach poprzednich</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty do odliczenia w roku bieżącym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_37">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia straty</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_38" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota poniesionej straty</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_39" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty odliczona w latach poprzednich</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_40" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota straty do odliczenia w roku bieżącym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_41" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Kwota strat z lat ubiegłych podlegająca odliczeniu</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_42" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia darowizn zgodnie z art.18 ust.1 pkt 1 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_43" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia darowizn na cele kultu religijnego, zgodnie z art.18 ust.1 pkt 7 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_44" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia darowizn na podstawie odrębnych ustaw</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_45" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Ogółem odliczenia darowizn </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_46" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia zgodnie z art.18 ust.1 pkt 6 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_47" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Inne odliczenia niż wymienione w poz.42-44 i 46 - Tytuł</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_48" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Inne odliczenia niż wymienione w poz.42-44 i 46</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_49" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Razem odliczenia od dochodu </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wydatki inwestycyjne, o których mowa w art.39 ust.4 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_51" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dodatkowa obniżka dochodu przysługująca na podstawie §10 rozporządzenia R.M. z dnia 24 stycznia 1995 r. w sprawie odliczeń od dochodu wydatków inwestycyjnych oraz obniżek podatku dochodowego w gminach zagrożonych szczególnie wysokim bezrobociem strukturalnym (Dz.U. Nr 14, poz.63, ze zm.) w związku z art.6 ust.2 ustawy z dnia 21 listopada 1996 r. o zmianie ustawy o podatku dochodowym od osób prawnych (Dz.U. Nr 137, poz.639)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_52" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Razem odliczenia od dochodu </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_53" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wydatki na nabycie nowej technologii </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_54" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia od podatku zgodnie z art.20 ustawy </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_55" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Inne odliczenia od podatku </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_56" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Zwolnienie na podstawie art.23 ustawy z dnia 14 czerwca 1991 r. o spółkach z udziałem zagranicznym (Dz.U. Nr 60, poz.253, ze zm.) - Numer decyzji Ministra Finansów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_57" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zwolnienie na podstawie art.23 ustawy z dnia 14 czerwca 1991 r. o spółkach z udziałem zagranicznym (Dz.U. Nr 60, poz.253, ze zm.) </xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_58" type="etd:TData">
+									<xsd:annotation>
+										<xsd:documentation>Zwolnienie na podstawie art.23 ustawy z dnia 14 czerwca 1991 r. o spółkach z udziałem zagranicznym (Dz.U. Nr 60, poz.253, ze zm.) - Data decyzji Ministra Finansów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_59" type="etd:TData">
+									<xsd:annotation>
+										<xsd:documentation>Zaniechanie poboru podatku na podstawie rozporządzeń Ministra Finansów - Data rozporządzenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_60" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zaniechanie poboru podatku na podstawie rozporządzeń Ministra Finansów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_61" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Zaniechanie poboru podatku na podstawie rozporządzeń Ministra Finansów - Tytuł rozporządzenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_62" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Obniżki z innych tytułów - Tytuł</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_63" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Obniżki z innych tytułów</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_64" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Ogółem zwolnienia, zaniechania, obniżki i odliczenia od podatku</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_65" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody), o których mowa w art.10 ustawy, w wysokości wykazanej w oświadczeniu CIT-5 lub deklaracji CIT-6AR, przeznaczone na cele statutowe lub inne cele wymienione w art.17 ust.1 ustawy </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_66" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody), o których mowa w art.10 ustawy w związku z art.17 ust.1 pkt 20 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_67" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dochody (przychody), o których mowa w art.10 ustawy, inne niż wymienione w opisie do poz.65 i 66, a podlegające opodatkowaniu</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_68" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Pobrany przez płatnika podatek od dochodów (przychodów) z poz.67, jednak w kwocie nie większej niż wykazana w „Informacji o wysokości pobranego podatku dochodowego” </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_69" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wpłacony bezpośrednio przez podatnika podatek od dochodu z poz.67, jednak w kwocie nie większej niż wykazana w deklaracji CIT-6AR</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_70" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Suma dochodów uzyskanych w roku podatkowym i w latach poprzedzających rok podatkowy, w tym także dochody uzyskane przed 1995 r. (art.6 ust.2 ustawy z dnia 2 grudnia 1994 r. o zmianie niektórych ustaw regulujących zasady opodatkowania... - Dz.U. z 1995 r. Nr 5, poz.25), i niewydatkowanych do końca roku podatkowego - art.25 ust.4 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_71" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Kwoty, o których mowa w art.21 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_72" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatek potrącony od wypłat z poz.71 - art.26 ust.1 ustawy </xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:czip="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/05/13/eD/CITIP/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/05/13/eD/CITIP/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/03/11/eD/DefinicjeTypy/StrukturyDanych_v6-0E.xsd"/>
+	<!--Załącznik do zeznań: CIT-8 i CIT-8AB.-->
+	<!-- -->
+	<!--Wypełniają podatnicy, do których ma zastosowanie art. 24d ustawy. Podatnicy wypełniają załącznik CIT/IP po uprzednim obliczeniu dochodu (straty) dla każdego kwalifikowanego prawa własności intelektualnej.-->
+	<xsd:complexType name="TNaglowek_CIT_IP">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czip:TKodFormularza_CIT_IP">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CIT/IP (2)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza" type="xsd:byte" fixed="2"/>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czip:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czip:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2020-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TKodFormularza_CIT_IP">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT/IP"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT_IP">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O WYSOKOŚCI DOCHODU (STRATY) Z KWALIFIKOWANYCH PRAW WŁASNOŚCI INTELEKTUALNEJ ORAZ PODATKU DOCHODOWEGO OD OSÓB PRAWNYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="czip:TNaglowek_CIT_IP"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące kwalifikowanych praw własności intelektualnej, w tym ekspektatyw ich uzyskania, zwanych kwalifikowanymi prawami, dane dotyczące łącznych przychodów, kosztów uzyskania przychodów i dochodów uzyskanych z kwalifikowanych praw, podstawa opodatkowania / strata, obliczenie podatku, zmniejszenia i zwiększenia podstawy opodatkowania (straty) o wartość wierzytelności i zobowiązań wynikających z transakcji handlowych, dane dotyczące zezwolenia lub decyzji o wsparciu</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_6" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>Łączna liczba składanych załączników</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące kwalifikowanych praw własności intelektualnej, w tym ekspektatyw ich uzyskania, zwanych kwalifikowanymi prawami</xsd:documentation>
+								</xsd:annotation>
+								<!--Rodzaj kwalifikowanego prawa własności intelektualnej podlegającego ochronie prawnej na podstawie przepisów odrębnych ustaw lub ratyfikowanych umów międzynarodowych, których stroną jest Rzeczpospolita Polska, oraz innych umów międzynarodowych, których stroną jest Unia Europejska, których przedmiot ochrony został wytworzony, rozwinięty lub ulepszony przez podatnika w ramach prowadzonej przez niego działalności badawczo-rozwojowej (art. 24d ust. 2 ustawy).-->
+								<xsd:element name="P_8" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Patent - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_9" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Prawo ochronne na wzór użytkowy - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_10" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Prawo z rejestracji wzoru przemysłowego - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_11" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Prawo z rejestracji topografii układu scalonego - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_12" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowe prawo ochronne dla patentu na produkt leczniczy lub produkt ochronny roślin - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Prawo z rejestracji produktu leczniczego i produktu leczniczego weterynaryjnego dopuszczonych do obrotu - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_14" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wyłączne prawo, o którym mowa w ustawie z dnia 26 czerwca 2003 r. o ochronie prawnej odmian roślin (Dz. U. z 2018 r. poz. 432, z późn. zm.) - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Autorskie prawo do programu komputerowego - Liczba</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_16" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Ekspektatywa - Liczba</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wskazać ekspektatywy według stanu na ostatni dzień roku podatkowego, za który jest składane zeznanie.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące łącznych przychodów, kosztów uzyskania przychodów i dochodów uzyskanych z kwalifikowanych praw</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_17" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwalifikowany dochód z kwalifikowanego prawa obliczany jest dla tego samego rodzaju produktu lub usługi lub dla tej samej grupy produktów lub usług: 1 - tak</xsd:documentation>
+									</xsd:annotation>
+									<!--Wypełnia podatnik, który oblicza dochody zgodnie z art. 24d ust. 9 ustawy.-->
+								</xsd:element>
+								<xsd:element name="P_18" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Przychody z kwalifikowanych praw</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_19" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Koszty uzyskania przychodów związane z kwalifikowanymi prawami</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_20" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwalifikowany dochód (dochody) z kwalifikowanych praw obliczony (obliczone) zgodnie z art. 24d ust. 4 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 20 należy wykazać sumę kwalifikowanych dochodów z kwalifikowanych praw zgodnie z art. 24d ust. 3 ustawy.-->
+								</xsd:element>
+								<xsd:element name="P_21" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwalifikowany dochód z kwalifikowanych praw obliczony zgodnie z art. 24d ustawy, zwolniony od podatku - na podstawie art. 17 ust. 1 pkt 34 i 34a ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Dochód z kwalifikowanych praw niepodlegający opodatkowaniu stawką 5%, o której mowa w art. 24d ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--W przypadku gdy wskaźnik, o którym mowa w art. 24d ust. 4 ustawy, jest niższy niż wartość 1, część dochodu z kwalifikowanych praw nie podlega opodatkowaniu stawką 5%.-->
+									<!-- -->
+									<!--Kwotę z poz. 22 należy przenieść do poz. 84 lub 85 CIT-8 lub do poz. 64 lub 65 CIT-8AB.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Podstawa opodatkowania / strata</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_23" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwotę z poz. 20 należy pomniejszyć o kwotę z poz. 21 (podaje się po zaokrągleniu do pełnych złotych)-->
+								</xsd:element>
+								<xsd:element name="P_24" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Strata (straty) z kwalifikowanych praw poniesiona (-e) w bieżącym roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zmniejszenia podstawy opodatkowania/zwiększenia straty (jeżeli do dnia złożenia zeznania podatkowego wierzytelność nie została uregulowana lub zbyta)</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełnia podatnik, który na podstawie art. 18f ustawy rozlicza wierzytelności lub zobowiązania wynikające z art. 4 pkt 1a ustawy z dnia 13 marca 2013 r. o przeciwdziałaniu nadmiernym opóźnieniom w transakcjach handlowych. Wierzytelności lub zobowiązania podatnik wykazuje w informacjach CIT/WZ lub CIT/WZG, będącymi załącznikami odpowiednio do zeznań CIT-8 i CIT-8AB, składanych za rok podatkowy, w którym upłynęło 90 dni od dnia upływu terminu zapłaty określonego na fakturze (rachunku) lub w umowie, jeżeli do dnia złożenia zeznania wierzytelność/zobowiązanie nie zostały uregulowane lub wierzytelność nie została zbyta. W przypadku gdy wierzytelność lub zobowiązanie są rozliczane na zasadach ogólnych oraz na zasadach art. 24d ustawy, podatnik dokonuje zmniejszenia lub zwiększenia podstawy opodatkowania lub straty w takiej proporcji, w jakiej wierzytelność lub zobowiązanie rozliczane na zasadach art. 24d ustawy przypada na wierzytelność lub zobowiązanie rozliczane na zasadach ogólnych.-->
+								<xsd:element name="P_25" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania, o których mowa w art. 18f ust. 1 pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 14 załącznika CIT/WZ lub odpowiednio z poz. 15 załącznika CIT/WZG. Poz. 25 wypełnia się, jeżeli kwota z poz. 23 jest większa od 0 (kwota zmniejszenia nie może przekroczyć kwoty z poz. 23).-->
+								</xsd:element>
+								<xsd:element name="P_26" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających podstawę opodatkowania, do rozliczenia w kolejnych latach podatkowych, nie dłużej niż przez okres 3 lat (art. 18f ust. 3 ustawy)</xsd:documentation>
+									</xsd:annotation>
+									<!--W poz. 26 wpisuje się nadwyżkę kwoty z poz. 14 załącznika CIT/WZ lub odpowiednio z poz. 15 załącznika CIT/WZG nad kwotą z poz. 23.-->
+								</xsd:element>
+								<xsd:element name="P_27" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających stratę, o których mowa w art. 18f ust. 2 pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 14 załącznika CIT/WZ lub odpowiednio z poz. 15 załącznika CIT/WZG. Poz. 27 wypełnia się, jeżeli kwota z poz. 24 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Zwiększenia podstawy opodatkowania/zmniejszenia straty (jeżeli do dnia złożenia zeznania podatkowego zobowiązanie nie zostało uregulowane)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_28" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających podstawę opodatkowania, o których mowa w art. 18f ust. 1 pkt 2 i ust. 4 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 21 załącznika CIT/WZ lub odpowiednio poz. 22 załącznika CIT/WZG. Poz. 28 wypełnia się, jeżeli kwota z poz. 23 jest równa lub większa od 0-->
+								</xsd:element>
+								<xsd:element name="P_29" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających stratę, o których mowa w art. 18f ust. 2 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 21 załącznika CIT/WZ lub odpowiednio z poz. 22 załącznika CIT/WZG. Poz. 29 wypełnia się, jeżeli kwota z poz. 24 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Pozostałe zwiększenia i zmniejszenia podstawy opodatkowania (straty)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_30" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zwiększających podstawę opodatkowania, o których mowa w art. 18f ust. 7 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 30 załącznika CIT/WZ lub odpowiednio z poz. 31 załącznika CIT/WZG. Poz. 30 wypełnia się, jeżeli kwota z poz. 23 jest równa lub większa od 0.-->
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności zmniejszających stratę, o których mowa w art. 18f ust. 7 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 30 załącznika CIT/WZ lub odpowiednio z poz. 31 załącznika CIT/WZG. Poz. 31 wypełnia się, jeżeli kwota z poz. 24 jest większa od 0-->
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania, o których mowa w art. 18f ust. 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 39 załącznika CIT/WZ lub odpowiednio z poz. 40 załącznika CIT/WZG. Poz. 32 wypełnia się, jeżeli kwota z poz. 23 jest większa od 0 (kwota zmniejszenia nie może przekroczyć kwoty z poz. 23).-->
+								</xsd:element>
+								<xsd:element name="P_33" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zmniejszających podstawę opodatkowania do odliczenia w kolejnych latach podatkowych</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik rozlicza nieodliczoną wartość zobowiązania w kolejnych latach podatkowych, nie dłużej niż przez okres 3 lat, licząc od końca roku podatkowego, za który powstało prawo do zmniejszenia.-->
+									<!-- -->
+									<!--W poz. 33 wpisuje się nadwyżkę kwoty z poz. 39 załącznika CIT/WZ lub odpowiednio z poz. 40 załącznika CIT/WZG nad kwotą z poz. 23.-->
+								</xsd:element>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań zwiększających stratę, o których mowa w art. 18f ust. 7 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę z poz. 39 załącznika CIT/WZ lub odpowiednio z poz. 40 załącznika CIT/WZG. Poz. 34 wypełnia się, jeżeli kwota z poz. 24 jest większa od 0.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Obliczenie podatku</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_35" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania po uwzględnieniu kwot z części E</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwotę z poz. 23 należy powiększyć o sumę kwot z poz. 28 i 30 oraz pomniejszyć o sumę kwot z poz. 25 i 32. (podaje się po zaokrągleniu do pełnych złotych)-->
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Strata po uwzględnieniu kwot z części E</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwotę z poz. 24 należy powiększyć o sumę kwot z poz. 27 i 34 oraz pomniejszyć o sumę kwot z 29 i 31. (podaje się po zaokrągleniu do pełnych złotych)-->
+								</xsd:element>
+								<xsd:element name="P_37" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Obliczony podatek zgodnie z art. 24d ust. 1 ustawy przy zastosowaniu stawki 5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy obliczyć podatek od kwoty z poz. 35. Kwotę należy wpisać odpowiednio w poz. 247 CIT-8 lub poz. 289 CIT-8AB. (podaje się po zaokrągleniu do pełnych złotych)-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_G" minOccurs="0" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące zezwolenia lub decyzji o wsparciu</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełnia podatnik, o którym mowa w art. 17 ust. 1 pkt 34 i 34a ustawy.-->
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:annotation>
+											<xsd:documentation>Rodzaj kwalifikowanego prawa</xsd:documentation>
+										</xsd:annotation>
+										<xsd:element name="P_G38" type="etd:TZnakowy">
+											<xsd:annotation>
+												<xsd:documentation>Numer zezwolenia lub decyzji o wsparciu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_G39" type="etd:TData">
+											<xsd:annotation>
+												<xsd:documentation>Data wydania zezwolenia lub decyzji o wsparciu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_G40">
+											<xsd:annotation>
+												<xsd:documentation>Jednostka terytorialna realizacji inwestycji (należy podać informację zgodnie z NUTS 2016 EUROSTAT)</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:string">
+													<xsd:pattern value="PL[24-9]{1}[1-4]{1}[1-9]{1}"/>
+													<xsd:pattern value="PL[2]{2}[ABC]{1}"/>
+													<xsd:pattern value="PL21A|PLZZZ"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+										<xsd:element name="P_G41" type="etd:TKwota2Nieujemna">
+											<xsd:annotation>
+												<xsd:documentation>Dochód z kwalifikowanych praw podlegający zwolnieniu z podatku</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

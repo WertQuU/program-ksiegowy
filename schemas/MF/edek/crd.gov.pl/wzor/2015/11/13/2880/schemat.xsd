@@ -1,0 +1,427 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" xmlns:tns="http://crd.gov.pl/wzor/2015/11/13/2880/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" targetNamespace="http://crd.gov.pl/wzor/2015/11/13/2880/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/10/07/eD/ORDZU/ORD-ZU(2)_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/DefinicjeTypy/StrukturyDanych_v3-0E.xsd"/>
+	<!--Informację o dochodach (PIT-11A) organy rentowe sporządzają podatnikom, którym nie sporządzają rocznego obliczenia podatku (PIT-40A) (np. podatnikom uzyskującym dochody z zasiłków pieniężnych z ubezpieczenia społecznego), oraz podatnikom, którym wypłacają jedynie świadczenia określone w art. 21 ust. 1 pkt 2, 75 i 100 ustawy.-->
+	<!-- -->
+	<!--Osoby, które od organu rentowego otrzymały PIT-11A, do zeznania podatkowego PIT-36 albo PIT-37 przenoszą kwoty wykazane w części D oraz w części E w poz. 42, 43 i 44 otrzymanej informacji, zgodnie z opisami zamieszczonymi na zeznaniach.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT11A (18)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PIT"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="18"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_6"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Rok">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TRok">
+						<xsd:minInclusive value="2015"/>
+						<xsd:maxInclusive value="2030"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="etd:TKodUS"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-11A"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TRodzajId">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj Identyfikatora Zagranicznego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>numer identyfikacyjny TIN</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>numer ubezpieczeniowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>paszport</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>urzędowy dokument stwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="8">
+				<xsd:annotation>
+					<xsd:documentation>inny rodzaj identyfikacji podatkowej</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="9">
+				<xsd:annotation>
+					<xsd:documentation>inny dokument potwierdzający tożsamość</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TIdentyfikatorOsobyNiefizycznej">
+		<xsd:annotation>
+			<xsd:documentation>Pełny zestaw danych identyfikacyjnych o osobie niefizycznej</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="NIP" type="etd:TNrNIP">
+				<xsd:annotation>
+					<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="PelnaNazwa">
+				<xsd:annotation>
+					<xsd:documentation>Pełna nazwa organu rentowego</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="240"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="SkroconaNazwa" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Skrócona nazwa organu rentowego</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:token">
+						<xsd:minLength value="1"/>
+						<xsd:maxLength value="70"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="REGON" type="etd:TNrREGON">
+				<xsd:annotation>
+					<xsd:documentation>Numer REGON</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TIdentyfikatorOsobyFizycznej">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych identyfikacyjnych o osobie fizycznej z identyfikatorem NIP albo PESEL</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:choice>
+				<xsd:element name="NIP" type="etd:TNrNIP">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="PESEL" type="etd:TNrPESEL">
+					<xsd:annotation>
+						<xsd:documentation>Identyfikator podatkowy numer PESEL</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:choice>
+			<xsd:element name="ImiePierwsze" type="etd:TImie">
+				<xsd:annotation>
+					<xsd:documentation>Pierwsze imię</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Nazwisko" type="etd:TNazwisko">
+				<xsd:annotation>
+					<xsd:documentation>Nazwisko</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="DataUrodzenia">
+				<xsd:annotation>
+					<xsd:documentation>Data urodzenia</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TData">
+						<xsd:maxInclusive value="2030-12-31"/>
+						<xsd:pattern value="((\d{4})-(\d{2})-(\d{2}))"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodPocztowy">
+		<xsd:annotation>
+			<xsd:documentation>Kod pocztowy</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TZnakowy">
+			<xsd:maxLength value="20"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TAdresZagraniczny">
+		<xsd:annotation>
+			<xsd:documentation>Informacje opisujące adres zagraniczny</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodKraju">
+				<xsd:annotation>
+					<xsd:documentation>Kod Kraju [Country Code]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TKodKraju">
+						<xsd:pattern value="P[A-KM-Z]"/>
+						<xsd:pattern value="[A-OQ-Z][A-Z]"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodPocztowy" type="tns:TKodPocztowy" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Kod pocztowy [Postal code]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa miejscowości [City]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa ulicy [Street]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrDomu" type="etd:TNrBudynku" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Numer budynku [Building number]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Numer lokalu [Flat number]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TAdres">
+		<xsd:annotation>
+			<xsd:documentation>Dane określające adres</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:sequence>
+				<xsd:element name="AdresPol" type="etd:TAdresPolski"/>
+			</xsd:sequence>
+			<xsd:sequence>
+				<xsd:element name="AdresZagr" type="tns:TAdresZagraniczny"/>
+			</xsd:sequence>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodKrajuWydania">
+		<xsd:annotation>
+			<xsd:documentation>Kod kraju wydania numeru identyfikacyjnego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TKodKraju">
+			<xsd:pattern value="P[A-KM-Z]"/>
+			<xsd:pattern value="[A-OQ-Z][A-Z]"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O DOCHODACH UZYSKANYCH OD ORGANU RENTOWEGO</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OsobaNiefizyczna" type="tns:TIdentyfikatorOsobyNiefizycznej"/>
+							<xsd:element name="AdresSiedziby">
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="etd:TAdresPolski">
+											<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Płatnik"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Podmiot2">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="OsobaFizyczna">
+								<xsd:complexType>
+									<xsd:complexContent>
+										<xsd:extension base="tns:TIdentyfikatorOsobyFizycznej"/>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="AdresZamieszkania" minOccurs="0">
+								<xsd:complexType>
+									<xsd:annotation>
+										<xsd:documentation>Informacje opisujące adres</xsd:documentation>
+									</xsd:annotation>
+									<xsd:complexContent>
+										<xsd:extension base="tns:TAdres">
+											<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+										</xsd:extension>
+									</xsd:complexContent>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+						<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element ref="tns:PozycjeSzczegolowe"/>
+				<xsd:element name="Pouczenie">
+					<xsd:simpleType>
+						<xsd:restriction base="xsd:string">
+							<xsd:enumeration value="Za uchybienie obowiązkom płatnika grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym."/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU" minOccurs="0"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+		<xsd:unique name="klucz_NIP">
+			<xsd:selector xpath="tns:Podmiot1|tns:Podmiot2"/>
+			<xsd:field xpath=".//tns:NIP"/>
+		</xsd:unique>
+	</xsd:element>
+	<xsd:element name="PozycjeSzczegolowe">
+		<xsd:annotation>
+			<xsd:documentation>Dochody podatnika oraz zaliczki na podatek, informacja o dokonanych zwrotach (potrąceniach), przychodach zwolnionych od podatku oraz o składce na ubezpieczenie zdrowotne</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<!--W przypadku wyboru opcji 1 w poz. 20, nie wypełnia się elementów dot. poz. 22-24. W przypadku wyboru opcji 2 w poz. 20, w elementach dot. (odpowiednio) poz. 28-37 należy podać kraj inny niż Polska oraz adres zamieszkania za granicą; dodatkowo kod kraju wydania dokumentu powinien być zgodny z krajem adresu zamieszkania.-->
+				<xsd:choice>
+					<xsd:element name="P_20_1">
+						<xsd:annotation>
+							<xsd:documentation>Rodzaj obowiązku podatkowego podatnika: 1 - nieograniczony obowiązek podatkowy (rezydent)</xsd:documentation>
+						</xsd:annotation>
+						<xsd:simpleType>
+							<xsd:restriction base="xsd:byte">
+								<xsd:enumeration value="1">
+									<xsd:annotation>
+										<xsd:documentation>nieograniczony obowiązek podatkowy (rezydent)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:enumeration>
+							</xsd:restriction>
+						</xsd:simpleType>
+					</xsd:element>
+					<xsd:element name="P_20_2">
+						<xsd:annotation>
+							<xsd:documentation>Rodzaj obowiązku podatkowego podatnika: 2 - ograniczony obowiązek podatkowy (nierezydent)</xsd:documentation>
+						</xsd:annotation>
+						<xsd:complexType>
+							<xsd:sequence>
+								<xsd:element name="NrId" type="etd:TNrDokumentuStwierdzajacegoTozsamosc">
+									<xsd:annotation>
+										<xsd:documentation>Zagraniczny numer identyfikacyjny podatnika</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy podać numer służący identyfikacji dla celów podatkowych lub ubezpieczeń społecznych uzyskany w państwie, w którym podatnik ma miejsce zamieszkania. W przypadku braku takiego numeru należy podać numer dokumentu stwierdzającego tożsamość podatnika, uzyskanego w tym państwie.-->
+								</xsd:element>
+								<xsd:element name="RodzajNrId" type="tns:TRodzajId">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj numeru identyfikacyjnego (dokumentu stwierdzającego tożsamość)</xsd:documentation>
+									</xsd:annotation>
+									<!--Wypełnia płatnik, który podał zagraniczny numer identyfikacyjny podatnika.-->
+								</xsd:element>
+								<xsd:element name="KodKrajuWydania" type="tns:TKodKrajuWydania">
+									<xsd:annotation>
+										<xsd:documentation>Kod kraju wydania numeru identyfikacyjnego (dokumentu stwierdzającego tożsamość)</xsd:documentation>
+									</xsd:annotation>
+									<!--Wypełnia płatnik, który podał zagraniczny numer identyfikacyjny podatnika.-->
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:complexType>
+					</xsd:element>
+				</xsd:choice>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Emerytury - renty oraz inne krajowe świadczenia, o których mowa w art. 34 ust. 7 ustawy</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_38" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód (Dochód)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_39" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka na podatek pobrana i odprowadzona przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:sequence minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Zasiłki pieniężne z ubezpieczenia społecznego</xsd:documentation>
+					</xsd:annotation>
+					<xsd:element name="P_40" type="etd:TKwota2Nieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Przychód (Dochód)</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+					<xsd:element name="P_41" type="etd:TKwotaCNieujemna">
+						<xsd:annotation>
+							<xsd:documentation>Zaliczka na podatek pobrana i odprowadzona przez płatnika</xsd:documentation>
+						</xsd:annotation>
+					</xsd:element>
+				</xsd:sequence>
+				<xsd:element name="P_42" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Kwota dokonanego w roku podatkowym zwrotu (potrącenia), o którym mowa w art. 34 ust. 10-10b ustawy, nieuwzględniona przy poborze zaliczek przez organ rentowy - odliczenie od dochodu</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_43" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Kwota składki na ubezpieczenie zdrowotne, o której mowa w art. 27b ustawy, tj. do wysokości 7,75% podstawy jej wymiaru - odliczenie od podatku</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_44" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Zwrot uprzednio zapłaconej i odliczonej składki na ubezpieczenie zdrowotne, otrzymany bezpośrednio od organu rentowego - doliczenie do podatku</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="P_45" type="etd:TKwota2Nieujemna" minOccurs="0">
+					<xsd:annotation>
+						<xsd:documentation>Przychód zwolniony od podatku na podstawie art. 21 ust. 1 pkt 2, 75 i 100 ustawy, np. renty przyznane na podstawie odrębnych przepisów o zaopatrzeniu inwalidów wojennych i wojskowych oraz ich rodzin, renty wypłacane osobom represjonowanym i członkom ich rodzin</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

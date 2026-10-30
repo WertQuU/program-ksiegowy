@@ -1,0 +1,1220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" xmlns:ssra="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/11/30/eD/SSERA/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/11/30/eD/SSERA/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2018/08/24/eD/DefinicjeTypy/StrukturyDanych_v5-0E.xsd"/>
+	<!--Podstawa prawna udzielenia pomocy - w przypadku gdy:
+- pomoc została udzielona na podstawie ustawy, należy podać: tytuł aktu prawnego, datę aktu i ogólne określenie podmiotu aktu oraz oznaczenie roku, numeru i pozycji Dziennika Ustaw, w którym został opublikowany, oraz oznaczenie przepisu będącego podstawą udzielenia pomocy (w kolejności: artykuł ustawy, ustęp, punkt, litera, tiret),
+- pomoc została udzielona na podstawie aktu wykonawczego do ustawy, należy podać: oznaczenie, rodzaj aktu, oraz oznaczenie roku, numeru i pozycji Dziennika Ustaw, w którym został opublikowany, oraz oznaczenie przepisu będącego podstawą udzielenia pomocy (w kolejności: paragraf, ustęp, punkt, litera, tiret),
+- pomoc została udzielona na podstawie decyzji lub uchwały, należy podać kolejno: nazwę aktu, datę wydania i organ wydający ten akt,
+- pomoc została udzielona na podstawie umowy, należy podać: przedmiot umowy, datę jej zawarcia oraz strony umowy.-->
+	<!-- -->
+	<!--Dzień udzielenia pomocy
+- należy podać dzień wydania decyzji albo zawarcia umowy, na podstawie której była udzielona pomoc, a jeżeli udzielenie pomocy nastąpiło na podstawie aktu normatywnego, bez wymogu i wydania decyzji albo zawarcia umowy:
+a) dzień, w którym zgodnie z odrębnymi przepisami upływa termin złożenia deklaracji albo innego dokumentu określającego wartość pomocy z zastrzeżeniem lit. b),
+b) dzień, w którym zgodnie z odrębnymi przepisami upływa termin złożenia zeznania rocznego - w przypadku udzielenia pomocy w podatku dochodowym,
+c) dzień faktycznego przysporzenia przedsiębiorcy korzyści finansowych - w przypadku braku obowiązku złożenia deklaracji albo innego dokumentu określającego wartość pomocy.-->
+	<!-- -->
+	<!--Wartość udzielonej pomocy - należy ją przedstawić jako ekwiwalent dotacji netto obliczony zgodnie z rozporządzeniem Rady Ministrów wydanym na podstawie art. 11 ust. 2 ustawy z dnia 30 kwietnia 2004 r. o postępowaniu w sprawach dotyczących pomocy publicznej, na dzień udzielenia pomocy.-->
+	<!-- -->
+	<!--Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia - należy podać wartość pomocy określoną w kol. 3 po jej zdyskontowaniu na dzień uzyskania zezwolenia, zgodnie z przepisami rozporządzenia Rady Ministrów, wydanego na podstawie art. 4 ust. 4 ustawy z dnia 20 października 1994 r. o specjalnych strefach ekonomicznych (Dz. U. z 2015 r. poz. 282).-->
+	<!-- -->
+	<!--Rodzaj podatku lub inne wsparcie, objęte pomocą - należy podać nazwę zobowiązania, w którym udzielona została pomoc publiczna.-->
+	<!-- -->
+	<!--Rodzaj kosztu - wg klasyfikacji ujętej w części C.2 formularza SSE-R, podając odpowiednie lp.-->
+	<xsd:complexType name="TNaglowek_SSE-R_A">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="ssra:TKodFormularza_RA">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="SSER/A (3)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="3-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="3"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_RA">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="SSE-R/A"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Data udzielenia pomocy</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2001-01-01"/>
+			<xsd:maxInclusive value="2030-12-31"/>
+			<xsd:pattern value="((\d{4})-(\d{2})-(\d{2}))"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLRok">
+		<xsd:annotation>
+			<xsd:documentation>Rok poniesienia kosztu</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TRok">
+			<xsd:minInclusive value="1995"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TRodzajKosztu">
+		<xsd:annotation>
+			<xsd:documentation>Rodzaj kosztu wg klasyfikacji ujętej w części C.2. formularza SSE-R</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:byte">
+			<xsd:enumeration value="1">
+				<xsd:annotation>
+					<xsd:documentation>Zakup albo wytworzenie we własnym zakresie środków trwałych lub ich spłata określona w umowie leasingu lub innej umowie o podobnym charakterze, z wyłączeniem środków transportu nabywanych przez przedsiębiorcę prowadzącego działalność gospodarczą w sektorze transportu, pod warunkiem zaliczenia ich - zgodnie z odrębnymi przepisami - do składników majątku podatnika</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="2">
+				<xsd:annotation>
+					<xsd:documentation>Rozbudowa lub modernizacja istniejących środków trwałych, zaliczonych do wartości początkowej tych środków trwałych zgodnie z przepisami o podatku dochodowym</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="3">
+				<xsd:annotation>
+					<xsd:documentation>Wytworzenie lub zakup wartości niematerialnych i prawnych związanych z uzyskaniem patentów, licencji operacyjnych bądź opatentowanych licencji typu know-how</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="4">
+				<xsd:annotation>
+					<xsd:documentation>Wkłady niepieniężne wniesione do przedsiębiorstwa przed dniem 01.05.2004 r., spełniające kryteria kosztów kwalifikujących się do objęcia pomocą - zgodnie z odrębnymi przepisami</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_SSE-R_A">
+		<xsd:annotation>
+			<xsd:documentation>ROZLICZENIE ZDYSKONTOWANEJ WARTOŚCI UDZIELONEJ POMOCY PUBLICZNEJ I KOSZTÓW KWALIFIKUJĄCYCH SIĘ DO OBJĘCIA TĄ POMOCĄ</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="ssra:TNaglowek_SSE-R_A"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące otrzymanej pomocy publicznej, rozliczenie zdyskontowanej wartości kosztów kwalifikujących się do objęcia pomocą, poniesionych od dnia uzyskania zezwolenia</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_2">
+								<xsd:annotation>
+									<xsd:documentation>Nr załącznika</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TNaturalny">
+										<xsd:minInclusive value="1"/>
+										<xsd:maxInclusive value="99"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_4" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_5" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_6" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_7" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_8" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_9" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_10" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_11" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_12" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_14" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_16" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_17" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_18" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_19" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_20" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_21" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_23" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_24" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_25" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_26" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_27" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_28" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_29" type="etd:TTekstowy">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa prawna udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_30" type="ssra:TLData">
+									<xsd:annotation>
+										<xsd:documentation>Dzień udzielenia pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość udzielonej pomocy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość pomocy na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_33" type="etd:TZnakowy">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj podatku lub inne wsparcie objęte pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_34" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_35">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_37" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_38" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_39" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_40">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_41" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_42" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_43" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_44" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_45">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_46" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_47" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_48" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_49" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_50">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_51" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_52" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_53" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_54" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_55">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_56" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_57" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_58" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_59" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_60">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_61" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_62" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_63" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_64" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_65">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_66" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_67" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_68" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_69" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_70">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_71" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_72" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_73" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_74" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_75">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_76" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_77" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_78" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_79" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_80">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_81" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_82" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_83" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_84" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_85">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_86" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_87" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_88" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_89" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_90">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_91" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_92" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_93" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_94" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_95">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_96" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_97" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_98" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_99" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_100">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_101" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_102" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_103" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_104" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_105">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_106" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_107" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_108" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_109" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_110">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_111" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_112" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_113" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_114" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_115">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_116" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_117" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_118" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_119" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_120">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_121" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_122" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_123" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_124" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_125">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_126" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_127" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_128" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_129" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_130">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_131" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_132" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_133" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_134" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_135">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_136" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_137" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_138" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_139" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_140">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_141" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_142" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_143" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_144" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_145">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_146" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_147" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_148" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_149" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_150">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_151" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_152" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_153" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_154" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_155">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_156" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_157" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_158" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation/>
+								</xsd:annotation>
+								<xsd:element name="P_159" type="etd:TMiesiac">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_160">
+									<xsd:annotation>
+										<xsd:documentation>Rok poniesienia kosztu kwalifikującego się do objęcia pomocą</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="ssra:TLRok">
+											<xsd:maxInclusive value="2006"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_161" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_162" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Zdyskontowana wartość kosztu na dzień uzyskania zezwolenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_163" type="ssra:TRodzajKosztu">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj kosztu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>
