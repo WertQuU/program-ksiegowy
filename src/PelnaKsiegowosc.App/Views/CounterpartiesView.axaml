@@ -15,6 +15,8 @@
       <Button Content="Zapisz" Command="{Binding SaveCommand}" Classes="accent" />
       <Button Content="Pobierz dane z białej listy (po NIP)" Command="{Binding FetchFromWhiteListCommand}" />
       <Button Content="Sprawdź rachunek na białej liście" Command="{Binding CheckAccountCommand}" />
+      <Button Content="Zweryfikuj kontrahenta (VAT, KRS, VIES)" Command="{Binding VerifyCommand}" />
+      <Button Content="Otwórz KRZ (dłużnicy)" Command="{Binding OpenKrzCommand}" />
     </WrapPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding WhiteListInfo}" Classes="info" Foreground="{DynamicResource PkStatus}" />
     <Border DockPanel.Dock="Top" Classes="panel">

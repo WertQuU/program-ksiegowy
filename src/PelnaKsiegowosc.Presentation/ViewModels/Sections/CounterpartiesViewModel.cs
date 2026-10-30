@@ -69,6 +69,23 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
                         (s.IsActiveVatPayer ? "" : " UWAGA: podmiot nie jest czynnym podatnikiem VAT — VAT z jego faktur zwykle nie podlega odliczeniu.");
     });
 
+    /// <summary>Weryfikacja kontrahenta w bezpłatnych rejestrach (biała lista, KRS, VIES).</summary>
+    [RelayCommand]
+    private Task VerifyAsync() => RunAsync(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(Nip) && string.IsNullOrWhiteSpace(VatEu)) throw new DomainException("Wpisz NIP (lub numer VAT UE dla kontrahenta zagranicznego).");
+        using var wl = new HttpClient { BaseAddress = Infrastructure.WhiteList.WhiteListClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        using var krs = new HttpClient { BaseAddress = Infrastructure.Counterparties.CounterpartyVerifier.KrsBaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        using var vies = new HttpClient { BaseAddress = Infrastructure.Counterparties.CounterpartyVerifier.ViesBaseUrl, Timeout = TimeSpan.FromSeconds(30) };
+        var report = await new Infrastructure.Counterparties.CounterpartyVerifier(wl, krs, vies).CheckAsync(Parse.Trim(Nip), null, Country, Parse.Trim(VatEu), Session.Clock.Today);
+        WhiteListInfo = report.Summary;
+        await Session.AuditAsync("KONTRAHENT_ZWERYFIKOWANY", "Counterparty", _editedId?.ToString(), $"{Nip} {VatEu}: {report.Summary}");
+        await Dialogs.ShowTextAsync($"Weryfikacja kontrahenta {Name}", report.ToString());
+    });
+
+    [RelayCommand]
+    private void OpenKrz() => Dialogs.OpenInSystem(Infrastructure.Counterparties.CounterpartyVerifier.KrzUrl);
+
     /// <summary>Sprawdzenie, czy rachunek kontrahenta jest w wykazie (ważne przy płatnościach powyżej 15 000 zł).</summary>
     [RelayCommand]
     private Task CheckAccountAsync() => RunAsync(async () =>
