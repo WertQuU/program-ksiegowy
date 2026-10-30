@@ -40,7 +40,9 @@ def handle(url, depth=0, seen=set()):
                 save(os.path.basename(n), z.read(n))
         return
     if b"http://www.w3.org/2001/XMLSchema" in data[:4000]:
-        name = os.path.basename(urllib.parse.urlparse(final).path) or "schemat.xsd"
+        path = urllib.parse.urlparse(final).path
+        m = re.search(r"/wzor/(\d{4})/(\d\d)/(\d\d)/(\d+)/", path)
+        name = f"wzor-{m.group(1)}-{m.group(2)}-{m.group(3)}-{m.group(4)}.xsd" if m else (os.path.basename(path) or "schemat.xsd")
         save(name if name.endswith(".xsd") else name + ".xsd", data)
         for loc in re.findall(rb'schemaLocation="([^"]+)"', data):
             handle(urllib.parse.urljoin(final, loc.decode()), depth + 1)
