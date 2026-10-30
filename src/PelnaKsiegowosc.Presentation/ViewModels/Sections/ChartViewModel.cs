@@ -35,6 +35,31 @@ public sealed partial class ChartViewModel : SectionViewModel
     public List<Choice<AccountType>> Types { get; } = Choices.Of<AccountType>();
     public List<Choice<CitClassification>> CitClasses { get; } = Choices.Of<CitClassification>();
 
+    // kreator konta — prostymi słowami
+    public List<Choice<string>> WizardPurposes { get; } = AccountWizard.Purposes.Select(p => new Choice<string>(p.Key, p.Label)).ToList();
+    public List<Choice<TaxAnswer>> TaxAnswers { get; } = new() { new(TaxAnswer.Tak, "Tak — wydatek związany z działalnością"), new(TaxAnswer.Nie, "Nie (np. kary, reprezentacja)"), new(TaxAnswer.NieWiem, "Nie wiem — oznacz do sprawdzenia") };
+    [ObservableProperty] private Choice<string>? _wizardPurpose;
+    [ObservableProperty] private Choice<TaxAnswer>? _wizardTax;
+    [ObservableProperty] private string _wizardName = "";
+    [ObservableProperty] private string _wizardHint = "Wybierz, do czego ma służyć konto — program sam nada numer i powiąże je ze sprawozdaniem i CIT.";
+
+    partial void OnWizardPurposeChanged(Choice<string>? value)
+    {
+        var p = AccountWizard.Purposes.FirstOrDefault(x => x.Key == value?.Value);
+        WizardHint = p is null ? "" : $"Przykłady: {p.Explanation}. Konto powstanie jako podkonto {p.Parent}" +
+            (p.IsCost || p.IsRevenue ? "; odpowiedz, czy to koszt/przychód podatkowy." : ".");
+    }
+
+    [RelayCommand]
+    private Task WizardAddAsync() => ChangeAsync(async () =>
+    {
+        if (WizardPurpose is null) throw new DomainException("Wybierz, do czego ma służyć konto.");
+        await using var db = Session.OpenDb();
+        var a = await new AccountWizard(db, Session.User, Session.Clock).CreateAsync(ChartId, WizardPurpose.Value, WizardName, (WizardTax ?? TaxAnswers[2]).Value);
+        WizardName = "";
+        WizardHint = $"Dodano konto {a.Number} „{a.Name}”. Możesz go używać od razu w dokumentach i kategoriach wydatków.";
+    }, "Konto dodane.");
+
     protected override async Task LoadCoreAsync()
     {
         await using var db = Session.OpenDb();

@@ -14,10 +14,12 @@ public sealed partial class ClosingViewModel : SectionViewModel
     {
         MonthClose = new MonthCloseViewModel(s, d);
         Valuation = new ValuationViewModel(s, d);
+        YearClose = new YearCloseViewModel(s, d);
     }
 
     public MonthCloseViewModel MonthClose { get; }
     public ValuationViewModel Valuation { get; }
+    public YearCloseViewModel YearClose { get; }
 
     [ObservableProperty] private TableData _periods = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedPeriod;
@@ -35,6 +37,7 @@ public sealed partial class ClosingViewModel : SectionViewModel
     {
         await MonthClose.RefreshAsync();
         await Valuation.RefreshAsync();
+        await YearClose.RefreshAsync();
         var y = Session.CurrentYear;
         var t = new TableData(new TableColumn("Okres", Width: 0.6), new TableColumn("Od", ColumnKind.Date), new TableColumn("Do", ColumnKind.Date), new TableColumn("Status"),
             new TableColumn("Zamknięto", ColumnKind.Text, 1.2), new TableColumn("Ponowne otwarcia", ColumnKind.Integer, 0.6));

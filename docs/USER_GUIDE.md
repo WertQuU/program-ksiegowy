@@ -70,6 +70,12 @@ każdy ma swój przycisk i pokazuje, czy jest zrobiony:
 7. Kopia zapasowa.
 8. Zamknięcie miesiąca.
 
+## Plan kont — kreator konta
+
+W sekcji Plan kont kreator „Dodaj konto prostymi słowami”: wybierz, do czego ma służyć konto (np. „Koszt: usługa od firmy
+zewnętrznej”, „Rachunek bankowy”), wpisz nazwę i odpowiedz, czy to koszt/przychód podatkowy. Program sam nada numer
+(kolejne podkonto), przypisze pozycję bilansu/RZiS i klasyfikację CIT. Pełny formularz dla księgowego jest poniżej.
+
 ## Płace
 
 1. **Płace → Osoby i umowy**: wpisz osobę, rodzaj umowy (o pracę, zlecenie, dzieło, powołanie) i kwotę brutto;
@@ -112,6 +118,11 @@ w kartotece pracownika uzupełnij PESEL i kod urzędu skarbowego). Pozostałe de
 wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 
 ## Koniec roku
+
+Najprościej: Zamknięcie → zakładka **„Zamknij rok (kreator)”** — 8 kroków w kolejności (miesiące, inwentaryzacja,
+odpisy i rezerwy, amortyzacja, podatek i podatek odroczony, zamknięcie roku, sprawozdanie, deklaracje i uchwały),
+każdy z przyciskiem prowadzącym we właściwe miejsce. Szczegóły kroków:
+
 
 1. Inwentaryzacja (Deklaracje → Inwentaryzacja, potwierdzenia sald, protokół kasy; Magazyn → spis z natury).
    **Wycena na dzień bilansowy** (Zamknięcie → „Odpisy i rezerwy”): propozycje odpisów aktualizujących należności

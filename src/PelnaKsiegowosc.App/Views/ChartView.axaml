@@ -30,7 +30,20 @@
         <Button Content="Utwórz plan kont" Command="{Binding CreateFromTemplateCommand}" Classes="accent" Margin="0,6,0,0" />
       </StackPanel>
     </Border>
-    <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding HasChart}">
+    <Border DockPanel.Dock="Top" Classes="card" IsVisible="{Binding HasChart}" Margin="0,0,0,8">
+      <StackPanel Spacing="6">
+        <TextBlock Text="Kreator: dodaj konto prostymi słowami" FontWeight="SemiBold" />
+        <WrapPanel Classes="toolbar">
+          <ComboBox ItemsSource="{Binding WizardPurposes}" SelectedItem="{Binding WizardPurpose}" MinWidth="320" PlaceholderText="1. Do czego ma służyć konto?" />
+          <TextBox Text="{Binding WizardName}" Watermark="2. Nazwa, np. Ochrona obiektu" MinWidth="240" />
+          <ComboBox ItemsSource="{Binding TaxAnswers}" SelectedItem="{Binding WizardTax}" MinWidth="280" PlaceholderText="3. Czy to koszt/przychód podatkowy?" />
+          <Button Content="Dodaj konto" Command="{Binding WizardAddCommand}" Classes="accent" />
+        </WrapPanel>
+        <TextBlock Text="{Binding WizardHint}" Classes="cardnote" TextWrapping="Wrap" />
+      </StackPanel>
+    </Border>
+    <Expander DockPanel.Dock="Top" Header="Dla księgowego: konto z pełnymi parametrami (numer, pozycje sprawozdania, CIT)" IsExpanded="True" IsVisible="{Binding HasChart}" Margin="0,0,0,8">
+    <Border Classes="panel">
       <StackPanel>
         <Grid Classes="form" ColumnDefinitions="110,140,90,*,90,220" RowDefinitions="Auto,Auto">
           <TextBlock Text="Numer" /><TextBox Grid.Column="1" Text="{Binding Number}" />
@@ -50,6 +63,7 @@
         </WrapPanel>
       </StackPanel>
     </Border>
+    </Expander>
     <c:TableView Table="{Binding Accounts}" SelectedRow="{Binding Selected}" />
   </DockPanel>
 </UserControl>

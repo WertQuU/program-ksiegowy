@@ -37,6 +37,31 @@
           </StackPanel>
         </ScrollViewer>
       </TabItem>
+      <TabItem Header="Zamknij rok (kreator)">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="0,8,0,0">
+            <WrapPanel Classes="toolbar"><Button Content="Sprawdź stan" Command="{Binding YearClose.RefreshCommand}" /></WrapPanel>
+            <TextBlock Text="{Binding YearClose.Summary}" Classes="h2" Margin="0" TextWrapping="Wrap" />
+            <ItemsControl ItemsSource="{Binding YearClose.Steps}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="s:CloseStep">
+                  <Border Classes="issue" BorderBrush="{Binding Color}">
+                    <Grid ColumnDefinitions="40,*,Auto">
+                      <TextBlock Text="{Binding Mark}" FontSize="22" Foreground="{Binding Color}" VerticalAlignment="Center" />
+                      <StackPanel Grid.Column="1" Spacing="3">
+                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"><Run Text="{Binding Number}" />. <Run Text="{Binding Title}" /></TextBlock>
+                        <TextBlock Text="{Binding Status}" Foreground="{Binding Color}" TextWrapping="Wrap" />
+                        <TextBlock Text="{Binding Explanation}" Classes="cardnote" TextWrapping="Wrap" />
+                      </StackPanel>
+                      <Button Grid.Column="2" Content="{Binding ActionLabel}" Command="{Binding ActionCommand}" IsEnabled="{Binding Applicable}" VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
       <TabItem Header="Odpisy i rezerwy">
         <ScrollViewer>
           <StackPanel Spacing="8" Margin="0,8,0,0">
