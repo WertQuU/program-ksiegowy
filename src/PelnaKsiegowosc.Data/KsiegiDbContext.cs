@@ -10,6 +10,7 @@ using PelnaKsiegowosc.Domain.Counterparties;
 using PelnaKsiegowosc.Domain.Documents;
 using PelnaKsiegowosc.Domain.FixedAssets;
 using PelnaKsiegowosc.Domain.Ledger;
+using PelnaKsiegowosc.Domain.Payroll;
 using PelnaKsiegowosc.Domain.Periods;
 using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Domain.Settlements;
@@ -53,6 +54,9 @@ public class KsiegiDbContext : DbContext
     public DbSet<CitAdjustment> CitAdjustments => Set<CitAdjustment>();
     public DbSet<CitAdvance> CitAdvances => Set<CitAdvance>();
     public DbSet<FixedAsset> FixedAssets => Set<FixedAsset>();
+    public DbSet<Employee> Employees => Set<Employee>();
+    public DbSet<PayrollList> PayrollLists => Set<PayrollList>();
+    public DbSet<PayrollItem> PayrollItems => Set<PayrollItem>();
     public DbSet<FixedAssetOperation> FixedAssetOperations => Set<FixedAssetOperation>();
     public DbSet<DepreciationCharge> DepreciationCharges => Set<DepreciationCharge>();
     public DbSet<DepreciationRun> DepreciationRuns => Set<DepreciationRun>();
@@ -187,6 +191,18 @@ public class KsiegiDbContext : DbContext
         });
         m.Entity<CitAdvance>(e => { e.HasIndex(x => new { x.FiscalYearId, x.PeriodNumber }).IsUnique(); e.Property(x => x.RatePercent).HasPrecision(7, 4); e.Property(x => x.WarningsText).HasMaxLength(int.MaxValue); });
         m.Entity<CitAdjustment>(e => e.HasIndex(x => x.FiscalYearId));
+
+        m.Entity<Employee>(e =>
+        {
+            e.HasIndex(x => new { x.CompanyId, x.LastName, x.FirstName });
+            e.Property(x => x.WorkTimeFraction).HasPrecision(7, 4);
+        });
+
+        m.Entity<PayrollList>(e =>
+        {
+            e.HasMany(x => x.Items).WithOne().HasForeignKey(i => i.PayrollListId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => new { x.CompanyId, x.Number }).IsUnique();
+        });
 
         m.Entity<FixedAsset>(e =>
         {

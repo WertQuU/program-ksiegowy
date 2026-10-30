@@ -1,0 +1,198 @@
+using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Application.Audit;
+using PelnaKsiegowosc.Application.Ledger;
+using PelnaKsiegowosc.Application.Setup;
+using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Counterparties;
+using PelnaKsiegowosc.Domain.Payroll;
+using PelnaKsiegowosc.Domain.Security;
+using PelnaKsiegowosc.Domain.Validation;
+
+namespace PelnaKsiegowosc.Application.Payroll;
+
+/// <summary>
+/// Kadry i płace: ewidencja osób (umowa o pracę, zlecenie, dzieło, powołanie), listy płac z wyliczeniem ZUS/PIT
+/// i księgowanie: Wn 404 / Ma 230 (netto per osoba — rozrachunek do wypłaty), Ma 220-03 (ZUS i zdrowotna pracownika),
+/// Ma 220-02 (zaliczki PIT); Wn 405 / Ma 220-03 (składki pracodawcy, FP, FGŚP).
+/// </summary>
+public sealed class PayrollService
+{
+    public const string AccidentRateKey = "place.stopa-wypadkowa";
+    public const decimal DefaultAccidentRate = 1.67m;
+    private readonly KsiegiDbContext _db;
+    private readonly ICurrentUser _user;
+    private readonly IClock _clock;
+
+    public PayrollService(KsiegiDbContext db, ICurrentUser user, IClock clock)
+    {
+        _db = db;
+        _user = user;
+        _clock = clock;
+    }
+
+    public Task<decimal> AccidentRateAsync(CancellationToken ct = default) =>
+        new SettingsService(_db, _clock).GetAsync(_user.CompanyId, AccidentRateKey, () => DefaultAccidentRate, ct);
+
+    public async Task SetAccidentRateAsync(decimal rate, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        if (rate is < 0.67m or > 3.33m) throw new DomainException("Stopa składki wypadkowej musi mieścić się w przedziale 0,67–3,33% (zawiadomienie ZUS).");
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, AccidentRateKey, rate, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private static void Validate(Employee e)
+    {
+        var r = new ValidationResult();
+        if (string.IsNullOrWhiteSpace(e.FirstName) || string.IsNullOrWhiteSpace(e.LastName)) r.Error("Podaj imię i nazwisko.");
+        if (!string.IsNullOrWhiteSpace(e.Pesel) && !Identifiers.IsValidPesel(e.Pesel)) r.Error("PESEL jest nieprawidłowy.");
+        if (e.Gross < 0) r.Error("Wynagrodzenie nie może być ujemne.");
+        if (e.WorkTimeFraction is <= 0 or > 1) r.Error("Wymiar etatu podaj jako ułamek z przedziału (0; 1], np. 0,5.");
+        if (e.EndDate is { } end && end < e.StartDate) r.Error("Data zakończenia umowy jest wcześniejsza niż data rozpoczęcia.");
+        if (e.StudentUnder26 && e.ContractType != ContractType.UmowaZlecenie) r.Error("Zwolnienie ucznia/studenta do 26 lat dotyczy umowy zlecenia.");
+        if (e.Costs == CostsOfIncome.Podwyzszone && e.ContractType != ContractType.UmowaOPrace) r.Error("Podwyższone koszty (300 zł) dotyczą umowy o pracę.");
+        r.ThrowIfInvalid();
+    }
+
+    public async Task<Employee> AddEmployeeAsync(Employee e, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        Validate(e);
+        var code = "P" + (await _db.Employees.CountAsync(x => x.CompanyId == _user.CompanyId, ct) + 1).ToString("000");
+        while (await _db.Counterparties.AnyAsync(c => c.CompanyId == _user.CompanyId && c.Code == code, ct)) code += "A";
+        var cp = new Counterparty
+        {
+            CompanyId = _user.CompanyId, Code = code, Name = e.FullName, Kind = CounterpartyKind.OsobaFizyczna, Pesel = e.Pesel,
+            BankAccountIban = e.BankAccountIban, DefaultPaymentDays = 0, CreatedAtUtc = _clock.UtcNow
+        };
+        cp.Validate().ThrowIfInvalid();
+        _db.Counterparties.Add(cp);
+        e.CompanyId = _user.CompanyId;
+        e.CounterpartyId = cp.Id;
+        e.CreatedAtUtc = _clock.UtcNow;
+        _db.Employees.Add(e);
+        await new AuditService(_db, _clock).AddAsync(_user, "PRACOWNIK_DODANY", "Employee", e.Id.ToString(), $"{e.FullName}; {e.ContractType}", ct);
+        await _db.SaveChangesAsync(ct);
+        return e;
+    }
+
+    public async Task UpdateEmployeeAsync(Employee changed, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        Validate(changed);
+        var e = await _db.Employees.FirstAsync(x => x.Id == changed.Id && x.CompanyId == _user.CompanyId, ct);
+        _db.Entry(e).CurrentValues.SetValues(changed);
+        e.CompanyId = _user.CompanyId;
+        var cp = await _db.Counterparties.FirstAsync(c => c.Id == e.CounterpartyId, ct);
+        cp.Name = e.FullName;
+        cp.Pesel = e.Pesel;
+        cp.BankAccountIban = e.BankAccountIban;
+        await new AuditService(_db, _clock).AddAsync(_user, "PRACOWNIK_ZMIENIONY", "Employee", e.Id.ToString(), e.FullName, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Wartości narastające danej osoby z list zaksięgowanych w roku wypłaty, wypłaconych przed wskazaną datą.</summary>
+    private async Task<PayrollYearToDate> YearToDateAsync(Guid employeeId, DateOnly paymentDate, Guid? excludeList, CancellationToken ct)
+    {
+        var yearStart = new DateOnly(paymentDate.Year, 1, 1);
+        var items = await (from i in _db.PayrollItems.AsNoTracking()
+                           join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                           where i.EmployeeId == employeeId && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                                 l.PaymentDate >= yearStart && l.PaymentDate <= paymentDate && l.Id != excludeList
+                           select i).ToListAsync(ct);
+        return new PayrollYearToDate(items.Sum(i => i.SocialBasis), items.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue));
+    }
+
+    /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>
+    public async Task<PayrollList> CreateListAsync(DateOnly month, DateOnly paymentDate, string? description = null, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        var m = new DateOnly(month.Year, month.Month, 1);
+        var end = m.AddMonths(1).AddDays(-1);
+        var employees = await _db.Employees.AsNoTracking()
+            .Where(e => e.CompanyId == _user.CompanyId && e.IsActive && e.StartDate <= end && (e.EndDate == null || e.EndDate >= m))
+            .OrderBy(e => e.LastName).ThenBy(e => e.FirstName).ToListAsync(ct);
+        if (employees.Count == 0) throw new DomainException("Brak osób z umową aktywną w tym miesiącu — dodaj pracowników w zakładce „Osoby”.");
+        var count = await _db.PayrollLists.CountAsync(l => l.CompanyId == _user.CompanyId && l.PaymentDate.Year == paymentDate.Year, ct);
+        var list = new PayrollList
+        {
+            CompanyId = _user.CompanyId, Month = m, PaymentDate = paymentDate, Number = $"LP/{count + 1}/{paymentDate.Year}",
+            Description = description ?? $"Lista płac za {m:MM.yyyy}", RulesVersion = PayrollRules.Version, CreatedAtUtc = _clock.UtcNow
+        };
+        var rules = PayrollRules.For(paymentDate.Year);
+        var accident = await AccidentRateAsync(ct);
+        foreach (var e in employees)
+        {
+            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident);
+            it.PayrollListId = list.Id;
+            list.Items.Add(it);
+        }
+        _db.PayrollLists.Add(list);
+        await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_UTWORZONA", "PayrollList", list.Id.ToString(), $"{list.Number}; {list.Items.Count} os.", ct);
+        await _db.SaveChangesAsync(ct);
+        return list;
+    }
+
+    public async Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        var it = await _db.PayrollItems.FirstAsync(i => i.Id == itemId, ct);
+        var list = await _db.PayrollLists.FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
+        var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == it.EmployeeId, ct);
+        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct));
+        fresh.Id = it.Id;
+        fresh.PayrollListId = list.Id;
+        _db.Entry(it).CurrentValues.SetValues(fresh);
+        await _db.SaveChangesAsync(ct);
+        return it;
+    }
+
+    public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Robocza) throw new DomainException("Nie można usunąć zaksięgowanej listy płac.");
+        _db.PayrollLists.Remove(list);
+        await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_USUNIETA", "PayrollList", list.Id.ToString(), list.Number, ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<PayrollList> PostAsync(Guid listId, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
+        if (list.Items.Count == 0) throw new DomainException("Lista płac jest pusta.");
+        var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
+        var lines = new List<LineInput>
+        {
+            new("404", list.Items.Sum(i => i.Gross), 0, Description: "Wynagrodzenia brutto")
+        };
+        foreach (var i in list.Items.Where(i => i.Net != 0))
+            lines.Add(new LineInput("230", 0, i.Net, employees[i.EmployeeId].CounterpartyId, $"Wynagrodzenie netto — {i.EmployeeName}"));
+        var zusEmployee = list.Items.Sum(i => i.SocialEmployee + i.Health);
+        var pit = list.Items.Sum(i => i.TaxAdvance);
+        var employer = list.Items.Sum(i => i.EmployerCost);
+        if (zusEmployee != 0) lines.Add(new LineInput("220-03", 0, zusEmployee, Description: "Składki ZUS i zdrowotna potrącone z wynagrodzeń"));
+        if (pit != 0) lines.Add(new LineInput("220-02", 0, pit, Description: "Zaliczki na PIT / podatek zryczałtowany"));
+        if (employer != 0)
+        {
+            lines.Add(new LineInput("405", employer, 0, Description: "Składki ZUS pracodawcy, FP, FGŚP"));
+            lines.Add(new LineInput("220-03", 0, employer, Description: "Składki ZUS pracodawcy, FP, FGŚP"));
+        }
+        var date = list.Month.AddMonths(1).AddDays(-1);
+        if (list.PaymentDate < date) date = list.PaymentDate;
+        var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, list.PaymentDate, date,
+            $"{list.Description} ({list.Number})", "LP", list.Number, lines), ct);
+        list.Status = PayrollStatus.Zaksiegowana;
+        list.JournalEntryId = entry.Id;
+        foreach (var item in await _db.OpenItems.Where(o => o.JournalEntryId == entry.Id).ToListAsync(ct)) item.DueDate = list.PaymentDate;
+        foreach (var item in _db.OpenItems.Local.Where(o => o.JournalEntryId == entry.Id)) item.DueDate = list.PaymentDate;
+        await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_ZAKSIEGOWANA", "PayrollList", list.Id.ToString(), $"{list.Number}; zapis {entry.JournalNumber}", ct);
+        await _db.SaveChangesAsync(ct);
+        return list;
+    }
+}

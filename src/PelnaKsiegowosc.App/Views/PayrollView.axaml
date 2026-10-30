@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:s="using:PelnaKsiegowosc.Presentation.ViewModels.Sections"
+             xmlns:c="using:PelnaKsiegowosc.App.Controls"
+             x:Class="PelnaKsiegowosc.App.Views.PayrollView"
+             x:DataType="s:PayrollViewModel">
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
+    <TabControl>
+      <TabItem Header="1. Osoby i umowy">
+        <DockPanel>
+          <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+            <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding FirstName}" />
+            <TextBlock Grid.Column="2" Text="Nazwisko" /><TextBox Grid.Column="3" Text="{Binding LastName}" />
+            <TextBlock Grid.Column="4" Text="PESEL" /><TextBox Grid.Column="5" Text="{Binding Pesel}" />
+            <TextBlock Grid.Row="1" Text="Rodzaj umowy" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ContractTypes}" SelectedItem="{Binding Contract}" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="Brutto miesięcznie" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Gross}" />
+            <TextBlock Grid.Row="1" Grid.Column="4" Text="Wymiar etatu" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding Fraction}" Watermark="1 = pełny etat" />
+            <TextBlock Grid.Row="2" Text="Koszty uzyskania" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding CostTypes}" SelectedItem="{Binding Costs}" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="Umowa od / do" />
+            <Grid Grid.Row="2" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding StartDate}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding EndDate}" Watermark="bezterminowa" Margin="0,2,12,2" /></Grid>
+            <TextBlock Grid.Row="2" Grid.Column="4" Text="Kod urzędu skarb." /><TextBox Grid.Row="2" Grid.Column="5" Text="{Binding TaxOffice}" />
+            <TextBlock Grid.Row="3" Text="Adres" /><TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Address}" />
+            <TextBlock Grid.Row="3" Grid.Column="4" Text="Rachunek do wypłaty" /><TextBox Grid.Row="3" Grid.Column="5" Text="{Binding Iban}" />
+            <WrapPanel Grid.Row="4" Grid.ColumnSpan="6" Classes="toolbar">
+              <CheckBox Content="Złożył PIT-2 (kwota zmniejszająca 300 zł)" IsChecked="{Binding Pit2}" />
+              <CheckBox Content="Ulga dla młodych (do 26 lat)" IsChecked="{Binding YouthRelief}" />
+              <CheckBox Content="Uczeń/student do 26 lat (zlecenie bez ZUS)" IsChecked="{Binding Student}" />
+              <CheckBox Content="Dobrowolne chorobowe (zlecenie)" IsChecked="{Binding VoluntarySickness}" />
+              <CheckBox Content="Zwolnienie z FP/FGŚP" IsChecked="{Binding ExemptFromFp}" />
+            </WrapPanel>
+            <WrapPanel Grid.Row="5" Grid.ColumnSpan="6" Classes="toolbar">
+              <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />
+              <Button Content="Zapisz zmiany zaznaczonej" Command="{Binding SaveEmployeeCommand}" />
+              <TextBlock Text="Stopa wypadkowa %:" /><TextBox Text="{Binding AccidentRate}" MinWidth="70" />
+              <Button Content="Zapisz stopę" Command="{Binding SaveAccidentRateCommand}" />
+            </WrapPanel>
+          </Grid>
+          <c:TableView Table="{Binding Employees}" SelectedRow="{Binding SelectedEmployee}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="2. Listy płac">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Za miesiąc (mm.rrrr):" /><TextBox Text="{Binding ListMonth}" MinWidth="90" />
+            <TextBlock Text="Data wypłaty:" /><TextBox Text="{Binding PaymentDate}" MinWidth="100" />
+            <Button Content="Utwórz listę płac" Command="{Binding CreateListCommand}" Classes="accent" />
+            <Button Content="Zaksięguj zaznaczoną" Command="{Binding PostListCommand}" />
+            <Button Content="Usuń roboczą" Command="{Binding DeleteListCommand}" />
+            <Button Content="Wydruk listy" Command="{Binding PrintListCommand}" />
+          </WrapPanel>
+          <c:TableView DockPanel.Dock="Top" Table="{Binding Lists}" SelectedRow="{Binding SelectedList}" MaxHeight="200" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Zmień brutto zaznaczonej osoby (np. niepełny miesiąc, premia):" /><TextBox Text="{Binding NewGross}" MinWidth="110" />
+            <Button Content="Przelicz" Command="{Binding ChangeGrossCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />
+        </DockPanel>
+      </TabItem>
+      <TabItem Header="3. ZUS i PIT (deklaracje)">
+        <DockPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Miesiąc wypłat:" /><TextBox Text="{Binding ZusMonth}" MinWidth="90" />
+            <Button Content="ZUS DRA / RCA" Command="{Binding ZusReportCommand}" />
+            <TextBlock Text="Rok:" /><TextBox Text="{Binding ReportYear}" MinWidth="70" />
+            <Button Content="PIT-4R i PIT-8AR" Command="{Binding Pit4RCommand}" />
+            <Button Content="PIT-11" Command="{Binding Pit11Command}" />
+            <Button Content="Zapisz PDF…" Command="{Binding ExportReportPdfCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Report}" />
+        </DockPanel>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</UserControl>

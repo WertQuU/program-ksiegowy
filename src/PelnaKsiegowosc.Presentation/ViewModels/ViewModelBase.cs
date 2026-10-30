@@ -81,6 +81,7 @@ public abstract partial class SectionViewModel : ViewModelBase
 
     private static readonly Dictionary<string, string> Guides = new()
     {
+        ["PayrollViewModel"] = "Płace krok po kroku: 1) dodaj osobę i umowę, 2) utwórz listę płac za miesiąc, 3) sprawdź kwoty i zaksięguj, 4) wypłać netto i zapłać ZUS (do 15.) oraz PIT (do 20.) w sekcji Bank. Zestawienia do DRA, PIT-4R i PIT-11 znajdziesz na dole.",
         ["DashboardViewModel"] = "Tu widzisz, co wymaga uwagi. Pracuj od góry: najpierw pozycje „BŁĄD”, potem „UWAGA”. Przycisk „Przejdź” prowadzi tam, gdzie problem się naprawia.",
         ["CompanyViewModel"] = "Dane firmy, osoby odpowiedzialne i polityka rachunkowości. Politykę zatwierdza kierownik jednostki — bez tego program nie pozwoli księgować.",
         ["DocumentsViewModel"] = "Wszystkie dowody księgowe. Dokument przechodzi drogę: roboczy → zatwierdzony → zaksięgowany. Zaksięgowanego nie zmienia się — wystawia się korektę.",

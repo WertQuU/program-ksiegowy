@@ -34,7 +34,7 @@ public enum IssueSeverity
 public enum AppArea
 {
     Pulpit, Jednostka, Dokumenty, Sprzedaz, Zakupy, Ksiegowosc, PlanKont, Kontrahenci, Bank, Vat, Cit, SrodkiTrwale, Kapital,
-    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc, Przepisy
+    Raporty, Zamkniecie, Archiwum, Backupy, Integracje, Ustawienia, Pomoc, Przepisy, Place
 }
 
 /// <summary>Wykryty problem: co jest nie tak, dlaczego to ważne i jak to naprawić.</summary>
@@ -288,6 +288,8 @@ public sealed class BookkeepingAssistant
         var years = await _db.FiscalYears.AsNoTracking().Include(f => f.Periods).Where(f => f.CompanyId == companyId).ToListAsync(ct);
         var advances = await _db.CitAdvances.AsNoTracking().Where(a => a.CompanyId == companyId).ToListAsync(ct);
         var docs = await _db.Documents.AsNoTracking().Where(d => d.CompanyId == companyId && (d.Status == DocumentStatus.Zatwierdzony || d.Status == DocumentStatus.Roboczy)).Select(d => d.IssueDate).ToListAsync(ct);
+        var payDates = await _db.PayrollLists.AsNoTracking().Where(l => l.CompanyId == companyId && l.Status == Domain.Payroll.PayrollStatus.Zaksiegowana).Select(l => l.PaymentDate).ToListAsync(ct);
+        var zusDay = LegalForms.IsCitTaxpayer(company.LegalForm) ? 15 : 20;
 
         for (var m = new DateOnly(from.Year, from.Month, 1).AddMonths(-1); m <= to; m = m.AddMonths(1))
         {
@@ -325,6 +327,14 @@ public sealed class BookkeepingAssistant
                     jpk && settled, AppArea.Vat));
             }
 
+            if (payDates.Any(d => d >= m && d <= monthEnd))
+            {
+                list.Add(new Deadline(Domain.Cit.CitCalculator.ShiftToBusinessDay(new DateOnly(m.Year, m.Month, zusDay).AddMonths(1)), $"ZUS (DRA/RCA) za {m:MM.yyyy}",
+                    $"Deklaracja rozliczeniowa i składki do {zusDay}. dnia następnego miesiąca (art. 47 ust. 1 ustawy o sus). Zestawienie: Płace → ZUS DRA / RCA.", false, AppArea.Place, Informational: true));
+                list.Add(new Deadline(Domain.Cit.CitCalculator.ShiftToBusinessDay(new DateOnly(m.Year, m.Month, 20).AddMonths(1)), $"Zaliczki PIT od wynagrodzeń za {m:MM.yyyy}",
+                    "Wpłata pobranych zaliczek i podatku zryczałtowanego do 20. dnia następnego miesiąca (art. 38 ust. 1, art. 42 ust. 1 ustawy o PIT).", false, AppArea.Place, Informational: true));
+            }
+
             if (LegalForms.IsCitTaxpayer(company.LegalForm) && period is not null &&
                 (company.CitAdvanceMethod == CitAdvanceMethod.Miesieczne || period.Number % 3 == 0))
             {
@@ -334,6 +344,13 @@ public sealed class BookkeepingAssistant
                     "Wpłata zaliczki do 20. dnia następnego miesiąca (art. 25 ust. 1 ustawy o CIT)" + (adv is null ? "; zaliczki nie wyliczono." : $"; do zapłaty {Money.Format(adv.AdvanceDue)} zł."),
                     adv?.IsApproved == true, AppArea.Cit));
             }
+        }
+
+        foreach (var y in payDates.Select(d => d.Year).Distinct())
+        {
+            var due = Domain.Cit.CitCalculator.ShiftToBusinessDay(new DateOnly(y + 1, 1, 31));
+            if (due >= from && due <= to)
+                list.Add(new Deadline(due, $"PIT-4R, PIT-8AR i PIT-11 za {y}", "Deklaracje roczne płatnika i informacje PIT-11 do urzędu do końca stycznia; PIT-11 podatnikowi do końca lutego. Zestawienia: Płace → PIT-4R / PIT-11.", false, AppArea.Place, Informational: true));
         }
 
         foreach (var fy in years)
