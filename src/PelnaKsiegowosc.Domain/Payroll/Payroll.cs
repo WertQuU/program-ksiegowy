@@ -108,6 +108,8 @@ public class PayrollItem : Entity
     public decimal SocialBasis { get; set; }
     /// <summary>Dni choroby (wynagrodzenie chorobowe 80%, art. 92 KP) i nieobecności nieodpłatnej (dni robocze).</summary>
     public int SickDays { get; set; }
+    /// <summary>Dni choroby opłacone wynagrodzeniem chorobowym pracodawcy (do limitu art. 92 KP).</summary>
+    public int SickDaysEmployer { get; set; }
     public int UnpaidDays { get; set; }
     /// <summary>Wynagrodzenie chorobowe (bez składek społecznych; zdrowotna i PIT — tak).</summary>
     public decimal SickPay { get; set; }

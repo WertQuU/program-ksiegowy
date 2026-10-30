@@ -102,7 +102,7 @@ public sealed class PayrollService
                            where i.EmployeeId == employeeId && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
                                  l.PaymentDate >= yearStart && l.PaymentDate <= paymentDate && l.Id != excludeList
                            select i).ToListAsync(ct);
-        return new PayrollYearToDate(items.Sum(i => i.SocialBasis), items.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue));
+        return new PayrollYearToDate(items.Sum(i => i.SocialBasis), items.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue), items.Sum(i => i.SickDaysEmployer));
     }
 
     /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>

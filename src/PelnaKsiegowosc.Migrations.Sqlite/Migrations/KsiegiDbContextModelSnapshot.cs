@@ -1135,6 +1135,16 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool?>("WhiteListAccountOk")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateOnly?>("WhiteListCheckedOn")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("WhiteListRequestId")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Nip");
@@ -2437,6 +2447,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SickDays")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SickDaysEmployer")
                         .HasColumnType("INTEGER");
 
                     b.Property<decimal>("SickPay")

@@ -142,6 +142,21 @@ public sealed class BookkeepingAssistant
             Add("ZAKUP_DUPLIKAT", IssueSeverity.Blad, $"Faktura {g.Key.ExternalNumber} od {g.First().CounterpartyName} zarejestrowana {g.Count()} razy",
                 string.Join(", ", g.Select(d => d.Number)), "Anuluj zbędny dokument (jeżeli niezaksięgowany) albo wystornuj zapis.", AppArea.Zakupy);
 
+        // Przelewy > 15 000 zł na rachunek spoza białej listy (art. 15d ust. 1 pkt 2 ustawy o CIT, art. 117ba Ordynacji podatkowej)
+        var cpWl = await _db.Counterparties.AsNoTracking().Where(c => c.CompanyId == companyId).ToDictionaryAsync(c => c.Id, ct);
+        foreach (var d in docs.Where(d => d.IsPurchase && d.PaymentMethod == PaymentMethod.Przelew && d.GrossAmountPln > CashPaymentLimit && fy.Contains(d.IssueDate)
+                                          && d.CounterpartyId is { } cid && cpWl.TryGetValue(cid, out var c) && c.CountryCode == "PL" && !string.IsNullOrWhiteSpace(c.Nip)
+                                          && (c.WhiteListAccountOk != true || c.WhiteListCheckedOn is null || c.WhiteListCheckedOn < d.IssueDate)))
+        {
+            var c = cpWl[d.CounterpartyId!.Value];
+            Add("BIALA_LISTA_15000", IssueSeverity.Ostrzezenie, $"{d.Number}: przelew ponad 15 000 zł — sprawdź rachunek {c.Name} na białej liście",
+                c.WhiteListAccountOk == false
+                    ? $"Ostatnie sprawdzenie ({c.WhiteListCheckedOn?.ToPl()}): rachunku NIE MA w wykazie."
+                    : $"Brak sprawdzenia rachunku na dzień zlecenia przelewu (ostatnie: {c.WhiteListCheckedOn?.ToPl() ?? "nigdy"}).",
+                "Kontrahenci → „Sprawdź rachunek” w dniu zlecenia przelewu (identyfikator zapytania zachowaj jako dowód). Rachunek spoza wykazu: zapłać na rachunek z wykazu albo złóż ZAW-NR w ciągu 7 dni — inaczej kwota nie jest kosztem podatkowym i grozi solidarna odpowiedzialność za VAT.",
+                AppArea.Kontrahenci, d.Id);
+        }
+
         // Płatności gotówkowe > 15 000 zł (art. 15d ustawy o CIT, art. 19 ustawy Prawo przedsiębiorców)
         foreach (var d in docs.Where(d => d.IsPurchase && d.PaymentMethod == PaymentMethod.Gotowka && d.GrossAmountPln > CashPaymentLimit && fy.Contains(d.IssueDate)))
             Add("GOTOWKA_LIMIT", IssueSeverity.Ostrzezenie, $"Zakup {d.Number} za {Money.Format(d.GrossAmountPln)} zł opłacony gotówką",

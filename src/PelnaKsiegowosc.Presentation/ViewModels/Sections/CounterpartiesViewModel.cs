@@ -97,6 +97,19 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
             ? $"Rachunek JEST w wykazie podatników VAT (stan na {Session.Clock.Today.ToPl()}, identyfikator zapytania {requestId} — zachowaj jako dowód)."
             : $"Rachunku NIE MA w wykazie (zapytanie {requestId}). Płatność ponad 15 000 zł na ten rachunek może wyłączyć wydatek z kosztów i grozi odpowiedzialnością za VAT dostawcy — zawiadom urząd skarbowy (ZAW-NR) w ciągu 7 dni od zlecenia przelewu albo zapłać na rachunek z wykazu.";
         await Session.AuditAsync("BIALA_LISTA_RACHUNEK", "Counterparty", _editedId?.ToString(), $"{Nip}; {Iban}; {(assigned ? "TAK" : "NIE")}; {requestId}");
+        if (_editedId is { } id)
+        {
+            await using var db = Session.OpenDb();
+            var c = await db.Counterparties.FirstAsync(x => x.Id == id && x.CompanyId == Session.CompanyId);
+            if (string.Equals(c.BankAccountIban?.Replace(" ", ""), Iban.Replace(" ", ""), StringComparison.OrdinalIgnoreCase))
+            {
+                c.WhiteListCheckedOn = Session.Clock.Today;
+                c.WhiteListAccountOk = assigned;
+                c.WhiteListRequestId = requestId;
+                await db.SaveChangesAsync();
+            }
+            else WhiteListInfo += " (Zapisz kontrahenta z tym rachunkiem i sprawdź ponownie, aby wynik został zapamiętany.)";
+        }
     });
     private static readonly List<Choice<CounterpartyKind>> KindChoices = Enum.GetValues<CounterpartyKind>()
         .Select(k => new Choice<CounterpartyKind>(k, KindName(k))).ToList();

@@ -35,6 +35,10 @@ public class Counterparty : CompanyEntity
     public string? Email { get; set; }
     public string? Phone { get; set; }
     public string? BankAccountIban { get; set; }
+    /// <summary>Ostatnie sprawdzenie rachunku na białej liście (art. 15d ustawy o CIT, art. 117ba Ordynacji): data, wynik, identyfikator zapytania.</summary>
+    public DateOnly? WhiteListCheckedOn { get; set; }
+    public bool? WhiteListAccountOk { get; set; }
+    public string? WhiteListRequestId { get; set; }
     public int DefaultPaymentDays { get; set; } = 14;
     public bool IsRelatedParty { get; set; }
     public bool IsActive { get; set; } = true;

@@ -57,3 +57,22 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 
 Pozycje **Z/W** i **Cz** wymagają sprawdzenia przez księgowego, doradcę podatkowego lub prawnika przed
 wykorzystaniem wyników w rozliczeniach. Odpowiedzialność za rozliczenia ponosi użytkownik (§ 6 licencji).
+
+## Przegląd zgodności — 30.10.2026
+
+Sprawdzono parametry i mechanizmy wymagane przepisami (stan prawny znany na dzień przeglądu; pozycje „do potwierdzenia”
+wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
+
+| Obszar | Wynik | Działanie |
+|---|---|---|
+| UoR art. 14, 23–24 — trwałość zapisów, ciągłość, zamknięte okresy | zgodne: zapisu zaksięgowanego nie można usunąć ani zmienić (tylko storno/korekta), łańcuch sum kontrolnych, blokada zamkniętych okresów | — |
+| UoR art. 10 — polityka, plan kont, opis systemu | zgodne: zatwierdzenie polityki i planu kont blokuje księgowanie do czasu akceptacji; raport „Opis systemu” | dołączyć wydruk do dokumentacji |
+| Płace 2026 — płaca minimalna 4806 zł, limit 30-krotności 282 600 zł, stawki ZUS, FP 2,45%, FGŚP 0,10%, PIT 12/32%, próg 120 000 zł, PIT-2 300 zł, KUP 250/300 zł, ulga dla młodych 85 528 zł | zgodne | — |
+| Płace — parametry innych lat | **poprawiono**: dodano 2025 (4666 zł, 260 190 zł); dla roku bez zweryfikowanych parametrów program odmawia wyliczenia zamiast liczyć stawkami 2026 | aktualizacja programu co rok |
+| KP art. 92 — wynagrodzenie chorobowe | **poprawiono**: limit 33 dni w roku (14 dni od roku następującego po ukończeniu 50 lat); powyżej — informacja o zasiłku ZUS (Z-3) | — |
+| CIT art. 15d / Ordynacja art. 117ba — przelewy > 15 000 zł na rachunek spoza białej listy | **poprawiono**: wynik sprawdzenia rachunku zapamiętywany przy kontrahencie (data, wynik, identyfikator zapytania); asystent ostrzega o fakturach > 15 000 zł bez aktualnego sprawdzenia | sprawdzać w dniu zlecenia przelewu |
+| CIT art. 15b, VAT art. 89a/89b — należności i zobowiązania po 90 dniach | ostrzeżenia asystenta; korekty wprowadza użytkownik | — |
+| P.S.A. — kapitał akcyjny, test wypłacalności (art. 300^15 KSH), uchwały (zarząd / rada dyrektorów) | zgodne: nazwa kapitału, potwierdzenie testu wypłacalności przy wypłatach, projekty uchwał | rejestr akcjonariuszy prowadzi podmiot uprawniony (poza programem) |
+| JPK_CIT — termin | do potwierdzenia (reguła oznaczona w rejestrze przepisów) | sprawdzić termin w rozporządzeniu |
+| KSeF — terminy obowiązku, sankcje | do potwierdzenia (reguły w rejestrze przepisów) | — |
+| RODO | dane osobowe tylko w bazie lokalnej / własnym serwerze, szyfrowane kopie, brak telemetrii, dziennik zdarzeń | rejestr czynności przetwarzania prowadzi spółka |

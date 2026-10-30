@@ -250,7 +250,7 @@ public sealed class ValuationService
         foreach (var e in employees.OrderBy(e => e.LastName))
         {
             if (!unusedDays.TryGetValue(e.Id, out var days) || days <= 0) continue;
-            var item = PayrollCalculator.Compute(e, e.Gross, new PayrollYearToDate(), PayrollRules.Y2026, rate);
+            var item = PayrollCalculator.Compute(e, e.Gross, new PayrollYearToDate(), PayrollRules.For(year), rate);
             var daily = Math.Round((e.Gross + item.EmployerCost) / coefficient, 2, MidpointRounding.AwayFromZero);
             rows.Add(new HolidayProvisionRow(e.Id, $"{e.LastName} {e.FirstName}", days, daily, Money.Round(daily * days)));
         }

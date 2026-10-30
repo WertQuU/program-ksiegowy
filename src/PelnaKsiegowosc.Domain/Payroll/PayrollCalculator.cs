@@ -27,8 +27,20 @@ public sealed record PayrollRules(
         CostsStandard: 250m, CostsIncreased: 300m,
         YouthReliefLimit: 85528m, FlatRateLimit: 200m, FlatRate: 12m);
 
-    /// <summary>Parametry dla roku wypłaty; dla lat bez zweryfikowanych parametrów stosuje się 2026 (z ostrzeżeniem).</summary>
-    public static PayrollRules For(int year) => Y2026;
+    /// <summary>2025: płaca minimalna 4666 zł, limit 30-krotności 260 190 zł; stawki i progi jak w 2026.</summary>
+    public static PayrollRules Y2025 { get; } = Y2026 with { Year = 2025, MinimumWage = 4666m, AnnualPensionCap = 260190m };
+
+    /// <summary>Parametry dla roku wypłaty. Dla roku bez zweryfikowanych parametrów — błąd (nie liczymy płac na nieaktualnych stawkach).</summary>
+    public static PayrollRules For(int year) => year switch
+    {
+        2025 => Y2025,
+        2026 => Y2026,
+        _ => throw new Common.DomainException($"Brak zweryfikowanych parametrów płacowych na rok {year} (płaca minimalna, limit składek, stawki). " +
+                                              "Zaktualizuj program przed sporządzeniem listy płac za ten rok — sprawdź sekcję Przepisy.")
+    };
+
+    /// <summary>Limit dni wynagrodzenia chorobowego płaconego przez pracodawcę w roku (art. 92 KP): 33 dni, 14 dni od roku następującego po roku ukończenia 50 lat.</summary>
+    public static int EmployerSickDaysLimit(DateOnly? birthDate, int year) => birthDate is { } b && year > b.Year + 50 ? 14 : 33;
 }
 
 /// <summary>
@@ -39,7 +51,7 @@ public sealed record PayrollRules(
 public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
-public sealed record PayrollYearToDate(decimal PensionBasis = 0, decimal TaxBase = 0, decimal YouthExemptRevenue = 0);
+public sealed record PayrollYearToDate(decimal PensionBasis = 0, decimal TaxBase = 0, decimal YouthExemptRevenue = 0, int EmployerSickDays = 0);
 
 /// <summary>
 /// Wyliczenie wynagrodzenia: składki ZUS (pracownik i pracodawca, limit 30-krotności), składka zdrowotna, koszty uzyskania,
@@ -67,10 +79,16 @@ public static class PayrollCalculator
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
             var sickBasis = (a.SickBasis ?? gross) * (1 - 0.1371m);
-            it.SickPay = R2(sickBasis * a.SickRatePercent / 100m / 30m * a.SickDays);
+            // art. 92 KP: wynagrodzenie chorobowe płaci pracodawca do 33 dni w roku (14 dni — pracownik po 50. roku życia); dalej zasiłek ZUS
+            var limit = PayrollRules.EmployerSickDaysLimit(e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel), rules.Year);
+            var employerDays = Math.Clamp(limit - ytd.EmployerSickDays, 0, a.SickDays);
+            it.SickPay = R2(sickBasis * a.SickRatePercent / 100m / 30m * employerDays);
             it.SickDays = a.SickDays;
+            it.SickDaysEmployer = employerDays;
             it.UnpaidDays = a.UnpaidWorkingDays;
-            if (a.SickDays > 0) notes.Add($"choroba {a.SickDays} dni: wynagrodzenie chorobowe {it.SickPay:N2} zł (pierwsze 33 dni w roku płaci pracodawca, potem zasiłek ZUS)");
+            if (a.SickDays > 0) notes.Add($"choroba {a.SickDays} dni: wynagrodzenie chorobowe za {employerDays} dni {it.SickPay:N2} zł (limit pracodawcy {limit} dni w roku, wykorzystano wcześniej {ytd.EmployerSickDays})");
+            if (a.SickDays > employerDays)
+                notes.Add($"ZASIŁEK CHOROBOWY za {a.SickDays - employerDays} dni — wypłaca ZUS (zgłoś Z-3) lub płatnik zgłaszający do ubezpieczenia chorobowego ponad 20 osób; nie jest wliczany do tej listy");
             if (a.UnpaidWorkingDays > 0) notes.Add($"nieobecność nieodpłatna {a.UnpaidWorkingDays} dni roboczych");
         }
         gross = salary + it.SickPay;

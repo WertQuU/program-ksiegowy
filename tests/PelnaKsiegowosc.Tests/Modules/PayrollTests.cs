@@ -91,6 +91,23 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Employer_sick_pay_is_limited_to_33_or_14_days_and_rules_exist_only_for_verified_years()
+    {
+        var young = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace, BirthDate = new DateOnly(1990, 1, 1) };
+        var old = new Employee { FirstName = "C", LastName = "D", ContractType = ContractType.UmowaOPrace, BirthDate = new DateOnly(1970, 1, 1) }; // 56 lat → 14 dni
+        var y = PayrollCalculator.Compute(young, 6000m, new PayrollYearToDate(EmployerSickDays: 30), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        Assert.Equal(3, y.SickDaysEmployer);
+        Assert.Equal(Math.Round(6000m * 0.8629m * 0.8m / 30m * 3, 2), y.SickPay);
+        Assert.Contains("ZASIŁEK CHOROBOWY za 7 dni", y.Notes);
+        var o = PayrollCalculator.Compute(old, 6000m, new PayrollYearToDate(EmployerSickDays: 10), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        Assert.Equal(4, o.SickDaysEmployer);
+        Assert.Equal(14, PayrollRules.EmployerSickDaysLimit(new DateOnly(1970, 6, 1), 2026));
+        Assert.Equal(33, PayrollRules.EmployerSickDaysLimit(new DateOnly(1976, 6, 1), 2026)); // 50 lat w 2026 — limit 14 od 2027
+        Assert.Equal(4666m, PayrollRules.For(2025).MinimumWage);
+        Assert.Throws<DomainException>(() => PayrollRules.For(2027));
+    }
+
+    [Fact]
     public void Birth_date_is_read_from_pesel()
     {
         Assert.Equal(new DateOnly(1944, 5, 14), PelnaKsiegowosc.Domain.Validation.Identifiers.BirthDateFromPesel("44051401359"));

@@ -1140,6 +1140,16 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool?>("WhiteListAccountOk")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly?>("WhiteListCheckedOn")
+                        .HasColumnType("date");
+
+                    b.Property<string>("WhiteListRequestId")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Nip");
@@ -2442,6 +2452,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<int>("SickDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SickDaysEmployer")
                         .HasColumnType("integer");
 
                     b.Property<decimal>("SickPay")
