@@ -6,6 +6,11 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      wydanie:
+        description: 'Wersja do wydania (np. 1.0.0) — pusta: tylko testy i pakiety'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -64,7 +69,8 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Wersja
         run: |
-          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"; else echo "VERSION=1.0.0" >> "$GITHUB_ENV"; fi
+          if [ -n "${{ inputs.wydanie }}" ]; then echo "VERSION=${{ inputs.wydanie }}" >> "$GITHUB_ENV";
+          elif [ "${GITHUB_REF_TYPE}" = "tag" ]; then echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"; else echo "VERSION=1.0.0" >> "$GITHUB_ENV"; fi
       - name: Publikacja (self-contained linux-x64)
         run: |
           dotnet publish src/PelnaKsiegowosc.App/PelnaKsiegowosc.App.csproj -c Release -r linux-x64 --self-contained true -p:Version=$VERSION -o artifacts/linux-x64
@@ -95,7 +101,7 @@ jobs:
       - name: Wersja
         shell: pwsh
         run: |
-          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '1.0.0' }
+          $v = if ('${{ inputs.wydanie }}' -ne '') { '${{ inputs.wydanie }}' } elseif ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '1.0.0' }
           "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: Publikacja (self-contained win-x64)
         shell: pwsh
@@ -141,7 +147,7 @@ jobs:
 
   release:
     name: Wydanie (tag v*)
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.wydanie != '')
     needs: [linux, windows]
     runs-on: ubuntu-latest
     permissions:
@@ -157,6 +163,8 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: pakiety/*
-          name: Pełna Księgowość ${{ github.ref_name }}
-          body_path: docs/wydania/${{ github.ref_name }}.md
+          tag_name: ${{ inputs.wydanie != '' && format('v{0}', inputs.wydanie) || github.ref_name }}
+          target_commitish: ${{ github.sha }}
+          name: Pełna Księgowość ${{ inputs.wydanie != '' && format('v{0}', inputs.wydanie) || github.ref_name }}
+          body_path: docs/wydania/${{ inputs.wydanie != '' && format('v{0}', inputs.wydanie) || github.ref_name }}.md
           generate_release_notes: true
