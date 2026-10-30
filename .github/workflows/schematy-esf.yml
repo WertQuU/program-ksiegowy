@@ -1,0 +1,33 @@
+name: Schematy e-Sprawozdań
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/fetch-esf.py'
+      - '.github/workflows/schematy-esf.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Narzędzia
+        run: sudo apt-get install -y poppler-utils >/dev/null
+      - name: Pobranie
+        timeout-minutes: 10
+        run: python3 tools/fetch-esf.py schemas/MF/esf
+      - name: Zapis w repozytorium
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schemas/MF/esf
+          if git diff --cached --quiet; then echo "Bez zmian"; exit 0; fi
+          git commit -m "Schematy e-Sprawozdań MF (pobrane automatycznie)"
+          git pull --no-rebase origin ${GITHUB_REF_NAME} || true
+          git push origin HEAD:${GITHUB_REF_NAME}
