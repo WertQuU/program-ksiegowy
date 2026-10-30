@@ -42,8 +42,8 @@ http://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd -> http://crd.gov.pl/wzor/20
 ZAPISANO schemas/MF/esf2/crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd (36408 B)
 https://www.gov.pl/web/kas/struktury-e-sprawozdan -> https://www.gov.pl/web/kas/struktury-e-sprawozdan [text/html;charset=UTF-8] 41059 B
 ZAPISANO schemas/MF/esf2/https___www_gov_pl_web_kas_struktury_e_sprawozdan.html (41059 B)
-https://www.podatki.gov.pl/e-sprawozdania-finansowe/ -> https://podatki.gov.pl/e-sprawozdania-finansowe [text/html; charset=utf-8] 274080 B
-ZAPISANO schemas/MF/esf2/https___podatki_gov_pl_e_sprawozdania_finansowe.html (274080 B)
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/ -> https://podatki.gov.pl/e-sprawozdania-finansowe [text/html; charset=utf-8] 274041 B
+ZAPISANO schemas/MF/esf2/https___podatki_gov_pl_e_sprawozdania_finansowe.html (274041 B)
 ! https://podatki.gov.pl/media/3xfpk0rg/esprawozdania_opisapi_v-5-0-za&: HTTP Error 404: Not Found
 https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip -> https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip [application/x-zip-compressed] 3145 B
   ZIP: ['fileMetrics.xsd', 'metricsTypes.xsd']
