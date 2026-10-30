@@ -292,11 +292,14 @@ public class KsefAndJpkTests
     {
         await using var t = await PelnaKsiegowosc.Tests.Integration.FullYearScenarioTests.BuildFullYearAsync(closeYear: true);
         var fy = await t.Db.FiscalYears.AsNoTracking().SingleAsync(f => f.Id == t.Year.Id);
-        await Assert.ThrowsAsync<DomainException>(() => JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, Validator())); // brak powiatu/gminy
+        var rec = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(fy.Id, 12);
+        // RPD z uzgodnienia: dochód = wynik brutto − K1 − K2 + K3 + K4 + K5 − K6 + K7 − K8
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+        await Assert.ThrowsAsync<DomainException>(() => JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, rec.Rpd, false, t.Clock.UtcNow, Validator())); // brak powiatu/gminy
         t.Company.Voivodeship = "mazowieckie";
         t.Company.County = "Warszawa";
         t.Company.Commune = "Warszawa";
-        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, false, t.Clock.UtcNow, Validator());
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, fy, rec.Rpd, false, t.Clock.UtcNow, Validator());
         Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(15)));
         var ns = JpkKrPdBuilder.Ns;
         var zois = r.Document.Descendants(ns + "ZOiS7").ToList();

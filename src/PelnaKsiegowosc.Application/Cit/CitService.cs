@@ -33,6 +33,8 @@ public sealed class CitReconciliation
     /// <summary>Zyski kapitałowe (art. 7b) — odrębne źródło, zawsze 19%; strata z jednego źródła nie pomniejsza dochodu z drugiego.</summary>
     public CitComputation CapitalGains { get; set; } = null!;
     public ReducedRateDecision Rate { get; set; } = null!;
+    /// <summary>Części RPD (JPK_KR_PD) wyliczone z tego samego uzgodnienia.</summary>
+    public CitRpd Rpd { get; set; } = null!;
     /// <summary>Korekty z art. 18f wyliczone dla okresu (zapisywane w historii przy zapisie zaliczki).</summary>
     public List<CitLiabilityAdjustment> LiabilityAdjustments { get; } = new();
     public bool SmallTaxpayerEvidenceMissing { get; set; }
@@ -66,7 +68,7 @@ public sealed class CitService
         _clock = clock;
     }
 
-    public async Task<CitAdjustment> AddAdjustmentAsync(Guid fiscalYearId, int periodNumber, CitAdjustmentType type, decimal amount, string description, string? legalBasis, CancellationToken ct = default, Guid? openItemId = null, bool capitalGains = false)
+    public async Task<CitAdjustment> AddAdjustmentAsync(Guid fiscalYearId, int periodNumber, CitAdjustmentType type, decimal amount, string description, string? legalBasis, CancellationToken ct = default, Guid? openItemId = null, bool capitalGains = false, bool bookedInPriorYears = false)
     {
         _user.Require(Permission.ManageCit);
         if (amount <= 0) throw new DomainException("Kwota korekty musi być dodatnia (kierunek określa rodzaj korekty).");
@@ -93,6 +95,7 @@ public sealed class CitService
             LegalBasis = legalBasis,
             OpenItemId = openItemId,
             CapitalGains = capitalGains,
+            BookedInPriorYears = bookedInPriorYears && type is CitAdjustmentType.ZwiekszeniePrzychodow or CitAdjustmentType.DodatkowyKUP,
             UserId = _user.UserId,
             CreatedAtUtc = _clock.UtcNow
         };
@@ -112,6 +115,13 @@ public sealed class CitService
     /// <summary>Kurs EUR NBP z pierwszego dnia roboczego października roku poprzedzającego rok podatkowy (status małego podatnika).</summary>
     public Task<decimal?> StatusEurRateAsync(int octoberYear, CancellationToken ct = default) =>
         new SettingsService(_db, _clock).GetAsync<decimal?>(_user.CompanyId, StatusRateKey(octoberYear), () => null, ct);
+
+    /// <summary>1 października poprzedniego roku podatkowego (z danych programu albo — gdy poprzedniego roku nie ma — roku o tej samej długości).</summary>
+    public async Task<DateOnly> StatusOctoberAsync(Domain.Periods.FiscalYear fy, CancellationToken ct = default)
+    {
+        var prev = await _db.FiscalYears.AsNoTracking().FirstOrDefaultAsync(f => f.CompanyId == fy.CompanyId && f.EndDate == fy.StartDate.AddDays(-1), ct);
+        return CitCalculator.StatusRateOctober(prev?.StartDate ?? fy.StartDate.AddYears(-1), fy.StartDate.AddDays(-1));
+    }
 
     public Task SetStatusEurRateAsync(int octoberYear, decimal rate, CancellationToken ct = default) =>
         SetRateAsync(StatusRateKey(octoberYear), rate, ct);
@@ -224,11 +234,48 @@ public sealed class CitService
         }
         r.BookResultBeforeTax = r.BookRevenue - (r.BookCosts - tb.Where(t => t.IsLeaf && t.Account.Number is "870" or "872").Sum(t => t.CumulativeDebit - t.CumulativeCredit));
 
-        foreach (var adj in await UnpaidLiabilitiesAsync(fy, period.EndDate, r, ct))
+        // RPD: różnice trwałe i przejściowe. Przejściowe z wyceny — zapisy z kontami odpisów aktualizujących i rezerw:
+        // utworzenie (NKUP) → K_5, wykorzystanie/rozwiązanie zmniejszające NKUP → K_6, przychód z rozwiązania → K_2.
+        var valuationAccounts = new[] { Settlements.ValuationService.AllowanceAccount, Settlements.ValuationService.ProvisionAccount, Settlements.ValuationService.EmployeeProvisionAccount };
+        var valuationLines = await (from l in _db.JournalLines.AsNoTracking()
+                                    join e in _db.JournalEntries.AsNoTracking() on l.EntryId equals e.Id
+                                    where e.FiscalYearId == fy.Id && e.Status == EntryStatus.Zaksiegowany && e.Kind != EntryKind.Zamkniecie && e.Kind != EntryKind.BilansOtwarcia
+                                          && e.PostingDate <= period.EndDate
+                                          && _db.JournalLines.Any(v => v.EntryId == e.Id && valuationAccounts.Contains(v.AccountNumber))
+                                    select new { l.EntryId, l.AccountId, l.Debit, l.Credit, l.CitClassification }).ToListAsync(ct);
+        decimal valNkupUp = 0, valNkupDown = 0, valRevenue = 0;
+        foreach (var g in valuationLines.Where(l => accById.TryGetValue(l.AccountId, out var a) && a.IsResultAccount && !depAccounts.Contains(a.Number)).GroupBy(l => l.EntryId))
+        {
+            var nkup = g.Where(l => (l.CitClassification ?? accById[l.AccountId].CitClassification) == CitClassification.KosztNiepodatkowy && accById[l.AccountId].Type == AccountType.WynikoweKosztowe)
+                .Sum(l => l.Debit - l.Credit);
+            if (nkup > 0) valNkupUp += nkup; else valNkupDown -= nkup;
+            valRevenue += g.Where(l => accById[l.AccountId].CitClassification == CitClassification.PrzychodNiepodatkowy && accById[l.AccountId].Type == AccountType.WynikowePrzychodowe)
+                .Sum(l => l.Credit - l.Debit);
+        }
+        var permanentRevenue = r.Adjustments.Where(a => a.Item.StartsWith("Przychody niepodatkowe")).Sum(a => -a.Amount) - valRevenue;
+        var allNkup = r.Adjustments.Where(a => a.Item.StartsWith("Koszty NKUP")).Sum(a => a.Amount);
+        var depNonDeductible = inRange.Sum(c => c.TaxNonDeductibleAmount);
+        var depTemporary = depAccounts.Count == 0 ? 0m : tb.Where(t => t.IsLeaf && depAccounts.Contains(t.Account.Number)).Sum(t => t.CumulativeDebit - t.CumulativeCredit) - inRange.Sum(c => c.TaxAmount);
+        // wykorzystanie/rozwiązanie najpierw dotyczy odpisów i rezerw z bilansu otwarcia (NKUP lat ubiegłych → K_6),
+        // nadwyżka — rezerw utworzonych w tym roku (pomniejsza K_5)
+        var priorValuation = Math.Max(0, tb.Where(t => t.IsLeaf && valuationAccounts.Any(v => t.Account.Number == v || t.Account.Number.StartsWith(v + "-")))
+            .Sum(t => t.OpeningCredit - t.OpeningDebit));
+        var valPrior = Math.Min(valNkupDown, priorValuation);
+        var valCurrent = valNkupUp - (valNkupDown - valPrior);
+        decimal k1 = permanentRevenue, k2 = valRevenue, k3 = 0, k4 = allNkup - (valNkupUp - valNkupDown) + depNonDeductible,
+                k5 = Math.Max(0, valCurrent) + Math.Max(0, depTemporary), k6 = valPrior + Math.Max(0, -valCurrent), k7 = 0, k8 = Math.Max(0, -depTemporary);
+
+        var liability = await UnpaidLiabilitiesAsync(fy, period.EndDate, r, ct);
+        var increasedThisYear = liability.Where(a => a.Kind == CitLiabilityAdjustmentKind.Zwiekszenie).Select(a => a.OpenItemId).ToHashSet();
+        foreach (var adj in liability)
         {
             var sign = adj.Kind == CitLiabilityAdjustmentKind.Zwiekszenie ? 1 : -1;
             taxCost -= sign * adj.AmountOperating;
             capCost -= sign * adj.AmountCapital;
+            var amount = adj.AmountOperating + adj.AmountCapital;
+            if (sign > 0) k5 += amount;                                     // KUP ujęty w księgach, niezapłacony — przejściowo nie KUP
+            else if (increasedThisYear.Contains(adj.OpenItemId)) k5 -= amount; // zapłata w tym samym roku znosi zwiększenie
+            else k6 += amount;                                              // zwiększenie z lat ubiegłych — KUP w roku zapłaty
         }
 
         var adjustments = await _db.CitAdjustments.AsNoTracking().Where(a => a.FiscalYearId == fy.Id && a.PeriodNumber <= uptoPeriod).ToListAsync(ct);
@@ -236,16 +283,23 @@ public sealed class CitService
         {
             switch (a.Type)
             {
-                case CitAdjustmentType.ZwiekszeniePrzychodow: taxRev += a.Amount; break;
-                case CitAdjustmentType.ZmniejszeniePrzychodow: taxRev -= a.Amount; break;
-                case CitAdjustmentType.KosztNKUP: if (a.CapitalGains) capCost -= a.Amount; else taxCost -= a.Amount; break;
-                case CitAdjustmentType.DodatkowyKUP: if (a.CapitalGains) capCost += a.Amount; else taxCost += a.Amount; break;
+                case CitAdjustmentType.ZwiekszeniePrzychodow: taxRev += a.Amount; if (a.BookedInPriorYears) k3 += a.Amount; else k7 += a.Amount; break;
+                case CitAdjustmentType.ZmniejszeniePrzychodow: taxRev -= a.Amount; k2 += a.Amount; break;
+                case CitAdjustmentType.KosztNKUP: if (a.CapitalGains) capCost -= a.Amount; else taxCost -= a.Amount; k5 += a.Amount; break;
+                case CitAdjustmentType.DodatkowyKUP:
+                    if (a.CapitalGains) capCost += a.Amount; else taxCost += a.Amount;
+                    if (a.BookedInPriorYears || a.OpenItemId is not null) k6 += a.Amount; else k8 += a.Amount;
+                    break;
                 case CitAdjustmentType.OdliczenieOdDochodu: r.Deductions += a.Amount; break;
             }
             r.Adjustments.Add(new($"Korekta: {a.Description}", a.Type is CitAdjustmentType.ZmniejszeniePrzychodow or CitAdjustmentType.DodatkowyKUP or CitAdjustmentType.OdliczenieOdDochodu ? -a.Amount : a.Amount, a.LegalBasis ?? "korekta ręczna"));
         }
         r.TaxRevenue = taxRev + capRev;
         r.TaxCosts = taxCost + capCost;
+        r.Rpd = new CitRpd(k1, k2, k3, k4, k5, k6, k7, k8);
+        var rpdGap = r.Rpd.TaxIncomeFrom(r.BookResultBeforeTax) - (r.TaxRevenue - r.TaxCosts);
+        if (rpdGap != 0)
+            r.Warnings.Add($"RPD nie uzgadnia się z dochodem o {Money.Format(rpdGap)} zł (pozycje „do analizy” lub ręczne zapisy amortyzacji) — sprawdź przed wysłaniem JPK_CIT.");
         var settings = new SettingsService(_db, _clock);
         var eurRate = await settings.GetAsync<decimal?>(fy.CompanyId, LimitRateKey(fy.StartDate), () => null, ct);
         var excluded = await settings.GetAsync(fy.CompanyId, ExclusionKey, () => false, ct);
@@ -283,7 +337,8 @@ public sealed class CitService
     private async Task<(bool Exceeded, bool Verified, string Message)> SmallTaxpayerCheckAsync(Domain.Periods.FiscalYear fy, SettingsService settings, CancellationToken ct)
     {
         var confirmedGross = await settings.GetAsync<decimal?>(fy.CompanyId, $"cit.sprzedazPoprzedniegoRoku.{fy.Id}", () => null, ct);
-        var statusRate = await StatusEurRateAsync(fy.StartDate.Year - 1, ct);
+        var october = await StatusOctoberAsync(fy, ct);
+        var statusRate = await StatusEurRateAsync(october.Year, ct);
         if (confirmedGross is { } verified && statusRate is { } fx)
         {
             var verifiedLimit = CitCalculator.SmallTaxpayerLimitPln(fx);
@@ -291,7 +346,7 @@ public sealed class CitService
         }
         var prev = await _db.FiscalYears.AsNoTracking().FirstOrDefaultAsync(f => f.CompanyId == fy.CompanyId && f.EndDate == fy.StartDate.AddDays(-1), ct);
         if (prev is null) return (false, false, "Status małego podatnika (art. 4a pkt 10) zadeklarowany w danych spółki — poprzedni rok nie jest prowadzony w programie, potwierdź kompletną ewidencję przychodów ze sprzedaży z VAT ≤ 2 mln euro.");
-        var octoberYear = fy.StartDate.Year - 1;
+        var octoberYear = october.Year;
         var rate = await settings.GetAsync<decimal?>(fy.CompanyId, StatusRateKey(octoberYear), () => null, ct);
         var docs = await _db.Documents.AsNoTracking()
             .Where(d => d.CompanyId == fy.CompanyId && (d.Kind == Domain.Documents.DocumentKind.FakturaSprzedazy || d.Kind == Domain.Documents.DocumentKind.KorektaSprzedazy)

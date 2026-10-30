@@ -171,8 +171,9 @@ public sealed partial class CitViewModel : SectionViewModel
         ManualAdjustments = manual;
         var pl = System.Globalization.CultureInfo.GetCultureInfo("pl-PL");
         EurRate = (await svc.LimitEurRateAsync(year.StartDate))?.ToString("0.0000", pl) ?? "";
-        StatusEurRate = (await svc.StatusEurRateAsync(year.StartDate.Year - 1))?.ToString("0.0000", pl) ?? "";
-        RateLabels = $"Limit 9% (przychody {year.Name}): kurs z 1. dnia roboczego roku podatkowego od {year.StartDate.ToPl()}. Status małego podatnika: kurs z 1. dnia roboczego października {year.StartDate.Year - 1} r.";
+        var october = await svc.StatusOctoberAsync(year);
+        StatusEurRate = (await svc.StatusEurRateAsync(october.Year))?.ToString("0.0000", pl) ?? "";
+        RateLabels = $"Limit 9% (przychody {year.Name}): kurs z 1. dnia roboczego roku podatkowego od {year.StartDate.ToPl()}. Status małego podatnika: kurs z 1. dnia roboczego października poprzedniego roku podatkowego ({october.ToPl()}).";
         ReducedRateExcluded = await svc.ReducedRateExcludedAsync();
         JpkCit2025 = await svc.JpkCit2025Async();
         var t = new TableData(new TableColumn("Pozycja", Width: 3), new TableColumn("Kwota", ColumnKind.Money), new TableColumn("Podstawa / uwagi", Width: 2));
@@ -259,7 +260,7 @@ public sealed partial class CitViewModel : SectionViewModel
         var svc = new CitService(db, Session.User, Session.Clock);
         var y = Session.CurrentYear;
         if (!string.IsNullOrWhiteSpace(EurRate)) await svc.SetLimitEurRateAsync(y.StartDate, ParseRate(EurRate, "Kurs EUR (limit 9%)"));
-        if (!string.IsNullOrWhiteSpace(StatusEurRate)) await svc.SetStatusEurRateAsync(y.StartDate.Year - 1, ParseRate(StatusEurRate, "Kurs EUR (mały podatnik)"));
+        if (!string.IsNullOrWhiteSpace(StatusEurRate)) await svc.SetStatusEurRateAsync((await svc.StatusOctoberAsync(y)).Year, ParseRate(StatusEurRate, "Kurs EUR (mały podatnik)"));
         await svc.SetReducedRateExcludedAsync(ReducedRateExcluded);
         await svc.SetJpkCit2025Async(JpkCit2025);
     }, "Zapisano warunki stawki 9%.");
@@ -293,12 +294,13 @@ public sealed partial class CitViewModel : SectionViewModel
         var y = Session.CurrentYear;
         using var http = new HttpClient { BaseAddress = Infrastructure.Nbp.NbpClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
         var nbp = new Infrastructure.Nbp.NbpClient(http);
-        var limit = await nbp.RateOnFirstBusinessDayAsync("EUR", y.StartDate);
-        var status = await nbp.RateOnFirstBusinessDayAsync("EUR", new DateOnly(y.StartDate.Year - 1, 10, 1));
         await using var db = Session.OpenDb();
         var svc = new CitService(db, Session.User, Session.Clock);
+        var october = await svc.StatusOctoberAsync(y);
+        var limit = await nbp.RateOnFirstBusinessDayAsync("EUR", y.StartDate);
+        var status = await nbp.RateOnFirstBusinessDayAsync("EUR", october);
         await svc.SetLimitEurRateAsync(y.StartDate, limit.Mid);
-        await svc.SetStatusEurRateAsync(y.StartDate.Year - 1, status.Mid);
+        await svc.SetStatusEurRateAsync(october.Year, status.Mid);
         StatusMessage = $"NBP: {limit.Mid:0.0000} (tabela {limit.TableNumber} z {limit.EffectiveDate.ToPl()}), {status.Mid:0.0000} (tabela {status.TableNumber} z {status.EffectiveDate.ToPl()}).";
     }, "Pobrano kursy euro z NBP.");
 
@@ -339,8 +341,11 @@ public sealed partial class CitViewModel : SectionViewModel
         var year = Session.CurrentYear;
         await using var db = Session.OpenDb();
         var company = await db.Companies.AsNoTracking().FirstAsync(c => c.Id == Session.CompanyId);
-        var fy = await db.FiscalYears.AsNoTracking().FirstAsync(f => f.Id == year.Id);
-        var r = await JpkKrPdBuilder.BuildAsync(db, company, fy, false, Session.Clock.UtcNow, Session.Validator);
+        var fy = await db.FiscalYears.AsNoTracking().Include(f => f.Periods).FirstAsync(f => f.Id == year.Id);
+        var rec = await new CitService(db, Session.User, Session.Clock).ReconcileAsync(fy.Id, fy.Periods.Count);
+        var r = await JpkKrPdBuilder.BuildAsync(db, company, fy, rec.Rpd, false, Session.Clock.UtcNow, Session.Validator);
+        if (rec.Warnings.FirstOrDefault(w => w.StartsWith("RPD")) is { } gap)
+            throw new DomainException(gap + " Plik JPK_CIT nie został zapisany — część RPD musi odpowiadać rozliczeniu podatku.");
         var target = await Dialogs.SaveFileAsync("Zapisz JPK_CIT (JPK_KR_PD)", $"JPK_CIT-{year.Name}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return;
         r.Document.Save(target);

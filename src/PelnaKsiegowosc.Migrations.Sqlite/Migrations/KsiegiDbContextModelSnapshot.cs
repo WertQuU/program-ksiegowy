@@ -674,6 +674,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("BookedInPriorYears")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("CapitalGains")
                         .HasColumnType("INTEGER");
 

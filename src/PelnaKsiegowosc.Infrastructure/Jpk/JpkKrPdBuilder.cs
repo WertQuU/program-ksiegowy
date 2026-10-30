@@ -85,7 +85,9 @@ public static class JpkKrPdBuilder
         return t.Length > max ? t[..max] : t;
     }
 
-    public static async Task<JpkResult> BuildAsync(KsiegiDbContext db, Company company, FiscalYear fy, bool correction, DateTime generatedUtc, XsdValidator validator, CancellationToken ct = default)
+    /// <param name="rpd">Części RPD z rocznego uzgodnienia CIT (CitService.ReconcileAsync za ostatni okres roku) — te same
+    /// liczby co w zeznaniu, w tym korekty art. 18f, różnice amortyzacji oraz odpisy i rezerwy.</param>
+    public static async Task<JpkResult> BuildAsync(KsiegiDbContext db, Company company, FiscalYear fy, CitRpd rpd, bool correction, DateTime generatedUtc, XsdValidator validator, CancellationToken ct = default)
     {
         var ns = Ns;
         var warnings = new List<string>();
@@ -198,25 +200,14 @@ public static class JpkKrPdBuilder
         var ctrl = new XElement(ns + "Ctrl", E("C_1", dzienniki.Count), E("C_2", M(dzSum)), E("C_3", lines), E("C_4", M(sumDt)), E("C_5", M(sumCt)));
         if (sumDt != sumCt) warnings.Add($"Suma zapisów Wn ({Money.Format(sumDt)}) ≠ Ma ({Money.Format(sumCt)}).");
 
-        // Rozliczenie podatku dochodowego — różnice z kwalifikacji kont/pozycji oraz korekt wprowadzonych w sekcji CIT
-        decimal Effective(Func<CitClassification, bool> pred, bool revenue) => entries.Where(e => e.Kind != EntryKind.Zamkniecie && e.Kind != EntryKind.BilansOtwarcia)
-            .SelectMany(e => e.Lines).Where(l => accounts.TryGetValue(l.AccountId, out var a) && a.IsResultAccount && a.ProfitLossLine != "R.A.II" && pred(l.CitClassification ?? a.CitClassification))
-            .Sum(l => revenue ? l.Credit - l.Debit : l.Debit - l.Credit);
-        var adjustments = await db.CitAdjustments.AsNoTracking().Where(a => a.FiscalYearId == fy.Id).ToListAsync(ct);
-        decimal Adj(CitAdjustmentType t) => adjustments.Where(a => a.Type == t).Sum(a => a.Amount);
-        var rpd = new XElement(ns + "RPD",
-            E("K_1", M(Effective(c => c == CitClassification.PrzychodNiepodatkowy, true))),
-            E("K_2", M(Adj(CitAdjustmentType.ZmniejszeniePrzychodow))),
-            E("K_3", M(0)),
-            E("K_4", M(Effective(c => c == CitClassification.KosztNiepodatkowy, false))),
-            E("K_5", M(Adj(CitAdjustmentType.KosztNKUP))),
-            E("K_6", M(0)),
-            E("K_7", M(Adj(CitAdjustmentType.ZwiekszeniePrzychodow))),
-            E("K_8", M(Adj(CitAdjustmentType.DodatkowyKUP))));
+        // Rozliczenie podatku dochodowego — z rocznego uzgodnienia CIT (różnice trwałe i przejściowe, art. 18f, korekty)
+        var rpdElement = new XElement(ns + "RPD",
+            E("K_1", M(rpd.K1)), E("K_2", M(rpd.K2)), E("K_3", M(rpd.K3)), E("K_4", M(rpd.K4)),
+            E("K_5", M(rpd.K5)), E("K_6", M(rpd.K6)), E("K_7", M(rpd.K7)), E("K_8", M(rpd.K8)));
 
         var doc = new XDocument(new XDeclaration("1.0", "UTF-8", null),
             new XElement(ns + "JPK", new XAttribute(XNamespace.Xmlns + "tns", ns.NamespaceName), new XAttribute(XNamespace.Xmlns + "etd", Etd.NamespaceName),
-                naglowek, podmiot, kontrahenci, zois, dzienniki, ctrl, rpd));
+                naglowek, podmiot, kontrahenci, zois, dzienniki, ctrl, rpdElement));
         var validation = validator.Validate(doc, SchemaFile, "JPK_KR_PD(1)");
         if (!validation.IsValid) warnings.Add("Plik JPK_CIT nie przeszedł walidacji oficjalnym schematem XSD — popraw wskazane dane przed wysłaniem.");
         warnings.Add("Znaczniki pozycji (S_12_1) wynikają z przypisania kont do pozycji bilansu i RZiS, znaczniki podatkowe (S_12_3) — z kwalifikacji CIT kont. Przy wątpliwościach zmień przypisanie konta w planie kont.");

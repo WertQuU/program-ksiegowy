@@ -316,6 +316,49 @@ public class ReviewFixesTests
     }
 
     [Fact]
+    public void Small_taxpayer_rate_uses_october_of_the_previous_tax_year()
+    {
+        // rok kalendarzowy 2026 → poprzedni rok 2025 → 1.10.2025
+        Assert.Equal(new DateOnly(2025, 10, 1), CitCalculator.StatusRateOctober(new DateOnly(2025, 1, 1), new DateOnly(2025, 12, 31)));
+        // rok 1.11.2026–31.10.2027 → poprzedni 1.11.2025–31.10.2026 → październik 2026
+        Assert.Equal(new DateOnly(2026, 10, 1), CitCalculator.StatusRateOctober(new DateOnly(2025, 11, 1), new DateOnly(2026, 10, 31)));
+        // rok 1.04.2026–31.03.2027 → poprzedni 1.04.2025–31.03.2026 → październik 2025
+        Assert.Equal(new DateOnly(2025, 10, 1), CitCalculator.StatusRateOctober(new DateOnly(2025, 4, 1), new DateOnly(2026, 3, 31)));
+        // poprzedni rok krótki bez października (1.01–30.06.2026) → ostatni październik przed jego końcem
+        Assert.Equal(new DateOnly(2025, 10, 1), CitCalculator.StatusRateOctober(new DateOnly(2026, 1, 1), new DateOnly(2026, 6, 30)));
+    }
+
+    [Fact]
+    public async Task Rpd_parts_come_from_the_cit_reconciliation_and_explain_the_tax_income()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var ledger = t.Ledger();
+        var d = new DateOnly(2026, 1, 20);
+        await ledger.CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 20000m, 0), new("700-01", 0, 20000m)));
+        await ledger.CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("409-02", 300m, 0), new("130-01", 0, 300m)));  // reprezentacja — NKUP trwały
+        await t.Db.SaveChangesAsync();
+        var fz = await PurchaseAsync(t, cp.Id, "FZ/1", 1000m);                                                         // niezapłacona → art. 18f
+        var valuation = new Application.Settlements.ValuationService(t.Db, t.User, t.Clock);
+        var prov = await valuation.CreateProvisionAsync(Domain.Settlements.ProvisionKind.Urlopowa, "Urlopy 2026", 800m, d);
+        await valuation.UseProvisionAsync(prov.Id, 200m, new DateOnly(2026, 3, 31), release: true);                    // przejściowe: 800 − 200
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        await cit.QualifyLiabilityAsync((await t.Db.OpenItems.SingleAsync(o => o.DocumentId == fz.Id)).Id, true, "Transakcja handlowa między przedsiębiorcami, brak wyłączeń");
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZwiekszeniePrzychodow, 500m, "Przychód podatkowy ujęty w księgach 2025", "art. 12 ust. 3", bookedInPriorYears: true);
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.DodatkowyKUP, 150m, "KUP 2026 ujęty w księgach 2025", "art. 15 ust. 4", bookedInPriorYears: true);
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZwiekszeniePrzychodow, 70m, "Przychód nieujęty w księgach", "art. 12");
+
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(300m, rec.Rpd.K4);
+        Assert.Equal(1000m + 600m, rec.Rpd.K5);   // art. 18f + rezerwa netto
+        Assert.Equal(500m, rec.Rpd.K3);
+        Assert.Equal(150m, rec.Rpd.K6);
+        Assert.Equal(70m, rec.Rpd.K7);
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+        Assert.DoesNotContain(rec.Warnings, w => w.StartsWith("RPD"));
+    }
+
+    [Fact]
     public async Task Jpk_shows_art100_services_in_k11_and_k12_and_never_marks_mpp()
     {
         await using var t = await TestBooks.CreateAsync();

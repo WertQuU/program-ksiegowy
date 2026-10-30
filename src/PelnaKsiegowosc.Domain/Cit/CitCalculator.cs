@@ -15,6 +15,11 @@ public class CitAdjustment : CompanyEntity
     /// <summary>Ręczna korekta art. 18f: zobowiązanie źródłowe. Wyklucza równoległe rozliczenie automatyczne.</summary>
     public Guid? OpenItemId { get; set; }
     public bool CapitalGains { get; set; }
+    /// <summary>
+    /// Przychód podatkowy / KUP bieżącego roku ujęty w księgach lat ubiegłych (RPD K_3 / K_6 w JPK_KR_PD) — np. odwrócenie
+    /// różnicy przejściowej z poprzedniego roku. Bez oznaczenia: przychód / koszt nieujmowany w księgach (K_7 / K_8).
+    /// </summary>
+    public bool BookedInPriorYears { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -79,6 +84,17 @@ public class CitAdvance : CompanyEntity
     public Guid UserId { get; set; }
     public DateTime CalculatedAtUtc { get; set; }
     public string? WarningsText { get; set; }
+}
+
+/// <summary>
+/// Rozliczenie podatku dochodowego (część RPD JPK_KR_PD): K_1 przychody zwolnione (trwałe), K_2 przychody niepodlegające
+/// opodatkowaniu w roku bieżącym, K_3 przychody podatkowe roku ujęte w księgach lat ubiegłych, K_4 NKUP trwałe, K_5 koszty
+/// nieuznawane za KUP w roku bieżącym (przejściowe), K_6 KUP roku ujęte w księgach lat ubiegłych, K_7 przychody podatkowe
+/// nieujmowane w księgach, K_8 KUP nieujmowane w księgach. Dochód = wynik brutto − K_1 − K_2 + K_3 + K_4 + K_5 − K_6 + K_7 − K_8.
+/// </summary>
+public sealed record CitRpd(decimal K1, decimal K2, decimal K3, decimal K4, decimal K5, decimal K6, decimal K7, decimal K8)
+{
+    public decimal TaxIncomeFrom(decimal bookResultBeforeTax) => bookResultBeforeTax - K1 - K2 + K3 + K4 + K5 - K6 + K7 - K8;
 }
 
 public sealed record ReducedRateDecision(decimal RatePercent, decimal LimitPln, string Reason, bool RateMissing);
@@ -148,6 +164,22 @@ public static class CitCalculator
     {
         if (eurRateFirstBusinessDayOfOctober <= 0) throw new DomainException("Kurs euro musi być dodatni.");
         return RoundToThousand(ReducedRateLimitEur * eurRateFirstBusinessDayOfOctober);
+    }
+
+    /// <summary>
+    /// Dzień kursu dla statusu małego podatnika: pierwszy dzień roboczy października poprzedniego roku podatkowego
+    /// (art. 4a pkt 10) — 1 października przypadający w poprzednim roku podatkowym; gdy poprzedni rok podatkowy nie obejmuje
+    /// października (rok krótszy), ostatni 1 października przed jego końcem. Dla roku kalendarzowego 2026 → 1.10.2025.
+    /// </summary>
+    public static DateOnly StatusRateOctober(DateOnly previousTaxYearStart, DateOnly previousTaxYearEnd)
+    {
+        for (var y = previousTaxYearEnd.Year; y >= previousTaxYearStart.Year; y--)
+        {
+            var oct = new DateOnly(y, 10, 1);
+            if (oct >= previousTaxYearStart && oct <= previousTaxYearEnd) return oct;
+        }
+        var last = new DateOnly(previousTaxYearEnd.Year, 10, 1);
+        return last <= previousTaxYearEnd ? last : last.AddYears(-1);
     }
 
     private static decimal RoundToThousand(decimal v) => Math.Round(v / 1000m, 0, MidpointRounding.AwayFromZero) * 1000m;
