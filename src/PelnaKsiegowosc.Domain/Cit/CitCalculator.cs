@@ -106,13 +106,11 @@ public static class CitCalculator
     /// <summary>Limit przychodów dla stawki 9% (art. 19 ust. 1 pkt 2) i statusu małego podatnika (art. 4a pkt 10): 2 000 000 euro.</summary>
     public const decimal ReducedRateLimitEur = 2_000_000m;
 
-    /// <summary>Liczba pełnych miesięcy kalendarzowych w roku podatkowym (miesiąc niepełny nie jest liczony).</summary>
+    /// <summary>Pełne okresy 30 dni roku podatkowego, z uwzględnieniem obu dni granicznych (art. 19).</summary>
     public static int FullMonths(DateOnly start, DateOnly end)
     {
-        var first = start.Day == 1 ? start : new DateOnly(start.Year, start.Month, 1).AddMonths(1);
-        var n = 0;
-        for (var m = first; m.AddMonths(1).AddDays(-1) <= end; m = m.AddMonths(1)) n++;
-        return n;
+        if (end < start) throw new DomainException("Koniec roku poprzedza jego początek.");
+        return (end.DayNumber - start.DayNumber + 1) / 30;
     }
 
     /// <summary>

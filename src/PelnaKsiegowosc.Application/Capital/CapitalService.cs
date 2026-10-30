@@ -262,7 +262,33 @@ public sealed class CapitalService
         var paid = events.Where(e => e.Type == CapitalEventType.WplataWkladu)
             .Sum(e => e.TotalAmount - legacyPaid.Where(l => l.EntryId == e.JournalEntryId).Sum(l => l.Credit));
         var total = subscribed.Sum(e => e.TotalAmount);
-        var share = total == 0 ? 1m : subscribed.Sum(e => e.ShareCapitalAmount) / total;
+        var capital = subscribed.Sum(e => e.ShareCapitalAmount);
+        // Częściowe korekty: źródłem jest rozliczenie konkretnego starego objęcia przez PK zmniejszające kapitał.
+        // Wpłaty wykluczamy po identyfikatorze zapisu, więc nie tworzą ponownie wkładu do wniesienia.
+        var old = events.Where(e => e.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny && !subscribed.Contains(e)).ToList();
+        var oldEntryIds = old.Select(e => e.JournalEntryId!.Value).ToList();
+        var oldItems = await _db.OpenItems.AsNoTracking().Where(o => oldEntryIds.Contains(o.JournalEntryId) && o.AccountNumber == p.ShareContributionsDue).ToListAsync(ct);
+        var paymentIds = events.Where(e => e.Type == CapitalEventType.WplataWkladu && e.JournalEntryId != null).Select(e => e.JournalEntryId!.Value).ToList();
+        foreach (var item in oldItems)
+        {
+            var corrections = await _db.SettlementAllocations.AsNoTracking()
+                .Where(a => a.OpenItemId == item.Id && !a.IsReversed && a.JournalEntryId != null && !paymentIds.Contains(a.JournalEntryId!.Value))
+                .ToListAsync(ct);
+            foreach (var correction in corrections)
+            {
+                var entry = await _db.JournalEntries.AsNoTracking().Include(e => e.Lines)
+                    .FirstAsync(e => e.Id == correction.JournalEntryId, ct);
+                if (entry.ReversedByEntryId != null) continue;
+                var capitalDebit = entry.Lines.Where(l => l.AccountNumber == p.ShareCapital).Sum(l => l.Debit - l.Credit);
+                var supplementaryDebit = entry.Lines.Where(l => l.AccountNumber == p.SupplementaryCapital).Sum(l => l.Debit - l.Credit);
+                var dueCredit = entry.Lines.Where(l => l.AccountNumber == p.ShareContributionsDue && l.CounterpartyId == item.CounterpartyId).Sum(l => l.Credit - l.Debit);
+                if (capitalDebit + supplementaryDebit <= 0 || dueCredit <= 0) continue;
+                var transferred = Math.Min(correction.AmountPln, Math.Min(dueCredit, capitalDebit + supplementaryDebit));
+                total += transferred;
+                capital += transferred * capitalDebit / (capitalDebit + supplementaryDebit);
+            }
+        }
+        var share = total == 0 ? 1m : capital / total;
         return (total - paid, share);
     }
 

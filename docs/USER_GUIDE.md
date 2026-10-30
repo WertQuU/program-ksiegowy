@@ -122,7 +122,7 @@ wysyłasz je przez e-Deklaracje / e-Urząd Skarbowy / PUE ZUS.
 W sekcji CIT → „Warunki stawki 9%” przycisk **Pobierz kursy z NBP** zapisuje dwa różne kursy:
 
 - **limit 9% w bieżącym roku** — kurs z pierwszego dnia roboczego roku podatkowego; limit to 2 mln euro (przy roku
-  krótszym lub dłuższym niż 12 miesięcy: 1/12 za każdy pełny miesiąc), przeliczony i zaokrąglony do 1000 zł;
+  krótszym lub dłuższym niż 12 miesięcy: 1/12 za każdy pełny okres 30 dni, liczony z oboma dniami granicznymi), przeliczony i zaokrąglony do 1000 zł;
 - **status małego podatnika** — kurs z pierwszego dnia roboczego października roku poprzedniego (sprzedaż z VAT
   w poprzednim roku ≤ 2 mln euro).
 
@@ -140,8 +140,25 @@ kapitał akcyjny przed wpłatą”). Zapisy nie są zmieniane automatycznie:
    pierwotny zostaje), objęcie trafia do ewidencji wkładów do wniesienia, a kapitał zostanie zaksięgowany przy wpłacie.
 2. **Wkład wpłacony w całości** — korekta nie jest potrzebna (kapitał odpowiada wniesionym wkładom).
 3. **Wpłacono część** — polecenie księgowania storno części niewpłaconej: Wn 801 (i 802 proporcjonalnie) / Ma 245-01
-   z kontrahentem akcjonariusza i rozrachunkiem objęcia, z opisem podstawy (art. 300³ KSH). Kolejne wpłaty program
-   rozliczy najpierw z pozostałym należnym wkładem, więc kapitał nie zostanie uznany podwójnie.
+   z kontrahentem akcjonariusza i rozrachunkiem objęcia, z opisem podstawy (art. 300³ KSH). Korekta musi rozliczać konkretny rozrachunek pierwotnego objęcia (nie wystarczy sam zapis na kontach).
+   Program odczytuje to powiązanie i przenosi skorygowaną część do ewidencji wkładów do wniesienia.
+   Kolejne wpłaty zwiększą kapitał dopiero w chwili wniesienia wkładu.
+
+### CIT — potwierdzenie danych podatkowych
+
+W „Warunkach stawki 9%” potwierdź sprzedaż poprzedniego roku wraz z VAT na podstawie kompletnej ewidencji
+(pozycje spoza faktur w programie także wymagają uwzględnienia). Suma zaksięgowanych faktur według daty operacji
+jest kontrolą pomocniczą; dokumenty robocze są pomijane. Dla małego podatnika po pierwszym roku brak potwierdzenia
+sprzedaży lub kursu październikowego blokuje zapis zaliczki 9%. Przekroczenie limitu oznacza stawkę 19%.
+
+W zakładce „Kwalifikacja art. 18f” wybierz zobowiązanie, określ stosowanie przepisu i zapisz uzasadnienie sprawdzonych
+warunków oraz wyłączeń. Sam NIP nie wystarcza. Automatyczna korekta obejmuje wyłącznie jawnie sklasyfikowane KUP
+lub koszty zysków kapitałowych. Części „DoAnalizy” i „NieDotyczy” wymagają oceny oraz ewentualnej udokumentowanej
+korekty ręcznej; nie są automatycznie doliczane do podstawy.
+
+Przeliczenie wcześniejszej zaliczki przelicza zapisane późniejsze niezatwierdzone zaliczki w jednej transakcji.
+Zatwierdzona późniejsza zaliczka blokuje operację. Historia art. 18f obejmuje najpóźniejszy zapisany okres,
+a dziennik zdarzeń zachowuje stan korekt dla każdego wyliczenia, powiązany z zaliczką i numerem okresu.
 
 ## Koniec roku
 

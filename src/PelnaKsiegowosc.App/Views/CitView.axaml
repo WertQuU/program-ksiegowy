@@ -23,6 +23,7 @@
         <TextBox Text="{Binding EurRate}" Watermark="np. 4,2156" MinWidth="90" />
         <TextBlock Text="Kurs EUR — mały podatnik:" />
         <TextBox Text="{Binding StatusEurRate}" Watermark="np. 4,2586" MinWidth="90" />
+        <Button Content="Potwierdź sprzedaż poprzedniego roku…" Command="{Binding ConfirmPreviousSalesCommand}" />
         <Button Content="Pobierz kursy z NBP" Command="{Binding FetchNbpRatesCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Spółka powstała z przekształcenia / połączenia / podziału / wniesienia przedsiębiorstwa (art. 19 ust. 1b–1c) — 9% wyłączone" IsChecked="{Binding ReducedRateExcluded}" />
         <CheckBox Content="Podatkowa grupa kapitałowa lub przychody ponad 50 mln euro (JPK_CIT od 2025 r.)" IsChecked="{Binding JpkCit2025}" />
@@ -42,6 +43,10 @@
     <TextBlock DockPanel.Dock="Bottom" Text="{Binding Warnings}" Classes="info" Foreground="#8a5300" />
     <TabControl>
       <TabItem Header="Uzgodnienie wyniku"><c:TableView Table="{Binding Reconciliation}" /></TabItem>
+      <TabItem Header="Kwalifikacja art. 18f"><DockPanel>
+        <Button DockPanel.Dock="Top" Content="Kwalifikuj zaznaczone zobowiązanie…" Command="{Binding QualifyLiabilityCommand}" />
+        <c:TableView Table="{Binding Liabilities}" SelectedRow="{Binding SelectedLiability}" />
+      </DockPanel></TabItem>
       <TabItem Header="Zaliczki"><c:TableView Table="{Binding Advances}" SelectedRow="{Binding SelectedAdvance}" /></TabItem>
     </TabControl>
   </DockPanel>

@@ -22,6 +22,96 @@ namespace PelnaKsiegowosc.Tests.Modules;
 /// <summary>Poprawki z przeglądu zgodności: stawka 9% CIT, art. 18f, JPK (K_11/K_12, MPP), harmonogram JPK_CIT.</summary>
 public class ReviewFixesTests
 {
+    [Theory]
+    [InlineData(2026, 1, 15, 2026, 2, 13, 1)]
+    [InlineData(2026, 1, 15, 2026, 2, 12, 0)]
+    [InlineData(2026, 1, 15, 2026, 3, 14, 1)]
+    [InlineData(2026, 2, 1, 2026, 2, 28, 0)]
+    [InlineData(2026, 1, 1, 2026, 12, 31, 12)]
+    public void Tax_year_months_are_complete_thirty_day_periods(int sy, int sm, int sd, int ey, int em, int ed, int expected)
+        => Assert.Equal(expected, CitCalculator.FullMonths(new(sy, sm, sd), new(ey, em, ed)));
+
+    [Fact]
+    public async Task Small_taxpayer_limit_overrides_company_flag_and_ignores_drafts()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        t.Year.IsFirstYear = false;
+        t.Company.IsSmallCitTaxpayer = true;
+        t.Db.FiscalYears.Add(new Domain.Periods.FiscalYear { CompanyId = t.Company.Id, Name = "2025",
+            StartDate = new(2025, 1, 1), EndDate = new(2025, 12, 31) });
+        var document = new Document { CompanyId = t.Company.Id, Kind = DocumentKind.FakturaSprzedazy,
+            Number = "FS/2025", IssueDate = new(2025, 12, 31), OperationDate = new(2025, 12, 31), GrossAmountPln = 9_000_000m };
+        t.Db.Documents.Add(document);
+        await t.Db.SaveChangesAsync();
+        var service = new CitService(t.Db, t.User, t.Clock);
+        await service.SetLimitEurRateAsync(t.Year.StartDate, 4m);
+        await service.SetStatusEurRateAsync(2025, 4m);
+        Assert.Equal(9m, (await service.ReconcileAsync(t.Year.Id, 1)).Rate.RatePercent);
+        await Assert.ThrowsAsync<DomainException>(() => service.ComputeAdvanceAsync(t.Year.Id, 1));
+        document.Status = DocumentStatus.Zaksiegowany;
+        await t.Db.SaveChangesAsync();
+        Assert.Equal(19m, (await service.ComputeAdvanceAsync(t.Year.Id, 1)).RatePercent);
+        Assert.True(t.Company.IsSmallCitTaxpayer);
+        await service.SetPreviousSalesAsync(t.Year.Id, 10_000_000m);
+        Assert.Equal(19m, (await service.ComputeAdvanceAsync(t.Year.Id, 1)).RatePercent);
+    }
+
+    [Fact]
+    public async Task Article18f_requires_qualification_and_explicit_tax_classification()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var document = await PurchaseAsync(t, cp.Id, "FZ/ANALIZA", 1000m);
+        var service = new CitService(t.Db, t.User, t.Clock);
+        Assert.Empty((await service.ReconcileAsync(t.Year.Id, 4)).LiabilityAdjustments);
+        var item = await t.Db.OpenItems.SingleAsync(o => o.DocumentId == document.Id);
+        await service.QualifyLiabilityAsync(item.Id, true, "Zweryfikowano warunki art. 18f");
+        Assert.Single((await service.ReconcileAsync(t.Year.Id, 4)).LiabilityAdjustments);
+        var account = await t.Db.Accounts.SingleAsync(a => a.Number == "402");
+        account.CitClassification = CitClassification.DoAnalizy;
+        await t.Db.SaveChangesAsync();
+        var unresolved = await service.ReconcileAsync(t.Year.Id, 4);
+        Assert.Empty(unresolved.LiabilityAdjustments);
+        Assert.Contains(unresolved.Warnings, w => w.Contains("nierozstrzygniętej"));
+    }
+
+    [Fact]
+    public async Task Partial_legacy_psa_correction_transfers_unpaid_contribution_and_accepts_next_payment()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var service = new CapitalService(t.Db, t.User, t.Clock);
+        var shareholder = await service.AddShareholderAsync("Akcjonariusz", null, false);
+        var cp = shareholder.CounterpartyId!.Value;
+        var date = new DateOnly(2026, 1, 2);
+        var subscription = await service.CreateEventAsync(new CapitalEvent
+        {
+            Type = CapitalEventType.ObjecieAkcjiWkladPieniezny, EventDate = date,
+            ShareholderId = shareholder.Id, ShareCapitalAmount = 5000m, AgreementReference = "Umowa"
+        });
+        var original = await t.Ledger().CreateAndPostAsync(TestBooks.Entry(date, "OLD", new("245-01", 5000m, 0, cp), new("801", 0, 5000m)));
+        subscription.JournalEntryId = original.Id;
+        subscription.Status = CapitalEventStatus.Zaksiegowany;
+        await t.Db.SaveChangesAsync();
+        async Task Pay(decimal amount, int day)
+        {
+            var payment = await service.CreateEventAsync(new CapitalEvent { Type = CapitalEventType.WplataWkladu,
+                ShareholderId = shareholder.Id, TotalAmount = amount, EventDate = new DateOnly(2026, 1, day) });
+            await service.ConfirmDocumentsAsync(payment.Id);
+            await service.PostEventAsync(payment.Id);
+        }
+        await Pay(1000m, 3);
+        var item = await t.Db.OpenItems.SingleAsync(o => o.JournalEntryId == original.Id);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 1, 4), "PK/KOREKTA",
+            new("801", 4000m, 0), new("245-01", 0, 4000m, cp, OpenItemId: item.Id)));
+        await t.Db.SaveChangesAsync();
+        Assert.Equal(4000m, (await service.UnpaidContributionAsync(shareholder.Id)).Unpaid);
+        Assert.Equal(-1000m, await t.BalanceAsync("801"));
+        await Pay(4000m, 5);
+        Assert.Equal(0m, (await service.UnpaidContributionAsync(shareholder.Id)).Unpaid);
+        Assert.Equal(-5000m, await t.BalanceAsync("801"));
+        await Assert.ThrowsAsync<DomainException>(() => Pay(1m, 6));
+    }
+
     [Fact]
     public void Reduced_rate_limit_uses_tax_year_rate_full_months_and_rounds_last()
     {
@@ -31,7 +121,7 @@ public class ReviewFixesTests
         Assert.Equal(4_216_000m, CitCalculator.ReducedRateLimitPln(4.2156m, 6));    // 1 000 000 € × 4,2156 = 4 215 600 → 4 216 000
         Assert.Equal(12_647_000m, CitCalculator.ReducedRateLimitPln(4.2156m, 18));  // 3 000 000 € × 4,2156 = 12 646 800 → 12 647 000
         Assert.Equal(12, CitCalculator.FullMonths(new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31)));
-        Assert.Equal(21, CitCalculator.FullMonths(new DateOnly(2026, 3, 15), new DateOnly(2027, 12, 31))); // marzec niepełny
+        Assert.Equal(21, CitCalculator.FullMonths(new DateOnly(2026, 3, 15), new DateOnly(2027, 12, 31))); // 657 dni: 21 pełnych okresów 30 dni
         Assert.Equal(8_517_000m, CitCalculator.SmallTaxpayerLimitPln(4.2586m)); // status: kurs z 1.10 roku poprzedniego
 
         Assert.Equal(9m, CitCalculator.DecideRate(true, false, 4.2156m, 12, 8_431_000m).RatePercent);
@@ -110,6 +200,8 @@ public class ReviewFixesTests
         await PurchaseAsync(t, person.Id, "R/1", 200m); // nie transakcja handlowa
 
         var cit = new CitService(t.Db, t.User, t.Clock);
+        foreach (var liability in await t.Db.OpenItems.Where(o => o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie && o.CounterpartyId == cp.Id).ToListAsync())
+            await cit.QualifyLiabilityAsync(liability.Id, true, "Zweryfikowano warunki transakcji i wyłączenia art. 18f");
         var march = await cit.ReconcileAsync(t.Year.Id, 3); // termin 29.01 + 90 dni = 29.04
         Assert.DoesNotContain(march.Adjustments, a => a.Basis.Contains("18f"));
         var april = await cit.ReconcileAsync(t.Year.Id, 4);
@@ -132,6 +224,14 @@ public class ReviewFixesTests
         Assert.Equal(2, history.Count);
         Assert.Equal(1000m, history.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zwiekszenie).AmountOperating);
         Assert.Equal(1000m, history.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zmniejszenie).AmountOperating);
+        await cit.ComputeAdvanceAsync(t.Year.Id, 3);
+        var afterEarlier = await t.Db.CitLiabilityAdjustments.Where(h => h.OpenItemId == item.Id).ToListAsync();
+        Assert.Equal(2, afterEarlier.Count);
+        Assert.Equal(1000m, afterEarlier.Single(h => h.Kind == CitLiabilityAdjustmentKind.Zmniejszenie).AmountOperating);
+        var later = await t.Db.CitAdvances.SingleAsync(a => a.PeriodNumber == 5);
+        await cit.ApproveAdvanceAsync(later.Id, true);
+        await Assert.ThrowsAsync<DomainException>(() => cit.ComputeAdvanceAsync(t.Year.Id, 3));
+        Assert.Equal(2, await t.Db.CitLiabilityAdjustments.CountAsync(h => h.OpenItemId == item.Id));
     }
 
     [Fact]

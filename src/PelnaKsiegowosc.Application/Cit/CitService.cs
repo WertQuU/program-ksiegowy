@@ -35,6 +35,7 @@ public sealed class CitReconciliation
     public ReducedRateDecision Rate { get; set; } = null!;
     /// <summary>Korekty z art. 18f wyliczone dla okresu (zapisywane w historii przy zapisie zaliczki).</summary>
     public List<CitLiabilityAdjustment> LiabilityAdjustments { get; } = new();
+    public bool SmallTaxpayerEvidenceMissing { get; set; }
     public List<string> Warnings { get; } = new();
     public List<(string Account, string Name, decimal Amount)> ToAnalyze { get; } = new();
 }
@@ -234,8 +235,16 @@ public sealed class CitService
         var settings = new SettingsService(_db, _clock);
         var eurRate = await settings.GetAsync<decimal?>(fy.CompanyId, LimitRateKey(fy.StartDate), () => null, ct);
         var excluded = await settings.GetAsync(fy.CompanyId, ExclusionKey, () => false, ct);
+        var small = company.IsSmallCitTaxpayer;
+        if (small && !fy.IsFirstYear && !excluded)
+        {
+            var check = await SmallTaxpayerCheckAsync(fy, settings, ct);
+            r.Warnings.Add(check.Message);
+            small = !check.Exceeded;
+            r.SmallTaxpayerEvidenceMissing = !check.Verified;
+        }
         // limit dotyczy wszystkich przychodów osiągniętych w roku podatkowym (obu źródeł)
-        r.Rate = CitCalculator.DecideRate(company.IsSmallCitTaxpayer || fy.IsFirstYear, excluded, eurRate,
+        r.Rate = CitCalculator.DecideRate(small || fy.IsFirstYear, excluded, eurRate,
             CitCalculator.FullMonths(fy.StartDate, fy.EndDate), taxRev + capRev);
         r.Operating = CitCalculator.Compute(taxRev, taxCost, r.Deductions, r.Rate.RatePercent);
         r.CapitalGains = CitCalculator.Compute(capRev, capCost, 0m, CitCalculator.StandardRate);
@@ -246,8 +255,6 @@ public sealed class CitService
         r.Warnings.Add("Stawka: " + r.Rate.Reason);
         if (r.Rate.RateMissing)
             r.Warnings.Add($"Uzupełnij kurs euro NBP z pierwszego dnia roboczego roku podatkowego ({fy.StartDate.ToPl()} lub następny dzień roboczy) — bez niego wyliczenia nie można zapisać jako zaliczki.");
-        if (company.IsSmallCitTaxpayer && !fy.IsFirstYear && !excluded)
-            r.Warnings.Add(await SmallTaxpayerCheckAsync(fy, settings, ct));
         if (capRev != 0 || capCost != 0)
             r.Warnings.Add($"Zyski kapitałowe rozliczono odrębnie po 19%: dochód {Money.Format(r.CapitalGains.Income)}, strata {Money.Format(r.CapitalGains.Loss)} (straty nie kompensuje się między źródłami; odliczenia przypisano do innych źródeł).");
         r.Warnings.Add("Wyliczenie nie uwzględnia automatycznie: limitów kosztów finansowania dłużnego, strat z lat ubiegłych (wprowadź jako korektę), ulg — wymagana weryfikacja przez doradcę podatkowego.");
@@ -259,23 +266,41 @@ public sealed class CitService
     /// po kursie NBP z pierwszego dnia roboczego października poprzedniego roku. Sprawdzane z faktur sprzedaży, jeśli poprzedni
     /// rok jest prowadzony w programie; w przeciwnym razie status pozostaje deklaracją użytkownika.
     /// </summary>
-    private async Task<string> SmallTaxpayerCheckAsync(Domain.Periods.FiscalYear fy, SettingsService settings, CancellationToken ct)
+    private async Task<(bool Exceeded, bool Verified, string Message)> SmallTaxpayerCheckAsync(Domain.Periods.FiscalYear fy, SettingsService settings, CancellationToken ct)
     {
+        var confirmedGross = await settings.GetAsync<decimal?>(fy.CompanyId, $"cit.sprzedazPoprzedniegoRoku.{fy.Id}", () => null, ct);
+        var statusRate = await StatusEurRateAsync(fy.StartDate.Year - 1, ct);
+        if (confirmedGross is { } verified && statusRate is { } fx)
+        {
+            var verifiedLimit = CitCalculator.SmallTaxpayerLimitPln(fx);
+            return (verified > verifiedLimit, true, $"Potwierdzona kompletna sprzedaż z VAT: {Money.Format(verified)} zł; limit małego podatnika {Money.Format(verifiedLimit)} zł.");
+        }
         var prev = await _db.FiscalYears.AsNoTracking().FirstOrDefaultAsync(f => f.CompanyId == fy.CompanyId && f.EndDate == fy.StartDate.AddDays(-1), ct);
-        if (prev is null) return "Status małego podatnika (art. 4a pkt 10) zadeklarowany w danych spółki — poprzedni rok nie jest prowadzony w programie, potwierdź przychody ze sprzedaży z VAT ≤ 2 mln euro.";
-        var octoberYear = prev.EndDate.Year;
+        if (prev is null) return (false, false, "Status małego podatnika (art. 4a pkt 10) zadeklarowany w danych spółki — poprzedni rok nie jest prowadzony w programie, potwierdź kompletną ewidencję przychodów ze sprzedaży z VAT ≤ 2 mln euro.");
+        var octoberYear = fy.StartDate.Year - 1;
         var rate = await settings.GetAsync<decimal?>(fy.CompanyId, StatusRateKey(octoberYear), () => null, ct);
         var docs = await _db.Documents.AsNoTracking()
             .Where(d => d.CompanyId == fy.CompanyId && (d.Kind == Domain.Documents.DocumentKind.FakturaSprzedazy || d.Kind == Domain.Documents.DocumentKind.KorektaSprzedazy)
-                        && d.IssueDate >= prev.StartDate && d.IssueDate <= prev.EndDate)
+                        && d.Status == Domain.Documents.DocumentStatus.Zaksiegowany
+                        && d.OperationDate >= prev.StartDate && d.OperationDate <= prev.EndDate)
             .Select(d => d.GrossAmountPln).ToListAsync(ct);
         var gross = docs.Sum();
         if (rate is null)
-            return $"Status małego podatnika: sprzedaż z VAT w roku {prev.Name} = {Money.Format(gross)} zł — uzupełnij kurs euro z 1. dnia roboczego października {octoberYear} r., aby program sprawdził limit 2 mln euro.";
+            return (false, false, $"Status małego podatnika: sprzedaż z VAT w roku {prev.Name} = {Money.Format(gross)} zł — uzupełnij kurs euro z 1. dnia roboczego października {octoberYear} r., aby program sprawdził limit 2 mln euro.");
         var limit = CitCalculator.SmallTaxpayerLimitPln(rate.Value);
-        return gross <= limit
-            ? $"Status małego podatnika potwierdzony: sprzedaż z VAT w roku {prev.Name} {Money.Format(gross)} zł ≤ {Money.Format(limit)} zł (art. 4a pkt 10)."
-            : $"UWAGA: sprzedaż z VAT w roku {prev.Name} {Money.Format(gross)} zł > {Money.Format(limit)} zł — spółka nie jest małym podatnikiem (art. 4a pkt 10); zmień oznaczenie w danych spółki.";
+        return (gross > limit, false, gross <= limit
+            ? $"Sprzedaż z zaksięgowanych dokumentów w roku {prev.Name}: {Money.Format(gross)} zł ≤ {Money.Format(limit)} zł. To kontrola pomocnicza — status wymaga potwierdzenia kompletnej ewidencji sprzedaży z VAT."
+            : $"Sprzedaż z VAT w roku {prev.Name}: {Money.Format(gross)} zł > {Money.Format(limit)} zł — zastosowano 19% mimo oznaczenia małego podatnika.");
+    }
+
+    public async Task SetPreviousSalesAsync(Guid fiscalYearId, decimal grossSales, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (grossSales < 0) throw new DomainException("Sprzedaż nie może być ujemna.");
+        await _db.FiscalYears.FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        await new SettingsService(_db, _clock).SetAsync<decimal?>(_user.CompanyId, $"cit.sprzedazPoprzedniegoRoku.{fiscalYearId}", grossSales, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_SPRZEDAZ_POTWIERDZONA", "FiscalYear", fiscalYearId.ToString(), $"Kompletna ewidencja sprzedaży z VAT: {Money.Xml(grossSales)}", ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>
@@ -292,10 +317,8 @@ public sealed class CitService
         var result = new List<CitLiabilityAdjustment>();
         var items = await (from o in _db.OpenItems.AsNoTracking()
                            join d in _db.Documents.AsNoTracking() on o.DocumentId equals d.Id
-                           join c in _db.Counterparties.AsNoTracking() on o.CounterpartyId equals c.Id
                            where o.CompanyId == fy.CompanyId && o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie && o.DueDate != null
                                  && (d.Kind == Domain.Documents.DocumentKind.FakturaZakupu || d.Kind == Domain.Documents.DocumentKind.Rachunek)
-                                 && ((c.Nip != null && c.Nip != "") || (c.VatEuNumber != null && c.VatEuNumber != ""))
                            select new { o.Id, o.Reference, o.AmountPln, o.JournalEntryId, DueDate = o.DueDate!.Value }).ToListAsync(ct);
         items = items.Where(i => i.DueDate.AddDays(90) <= asOf && i.AmountPln > 0).ToList();
         if (items.Count == 0) return result;
@@ -318,12 +341,21 @@ public sealed class CitService
                 {
                     var cls = l.CitClassification ?? l.AccountClass;
                     if (cls == CitClassification.KosztZyskiKapitalowe) cap += l.Debit;
-                    else if (cls is CitClassification.KosztPodatkowy or CitClassification.DoAnalizy or CitClassification.NieDotyczy) op += l.Debit;
+                    else if (cls == CitClassification.KosztPodatkowy) op += l.Debit;
+                    else if (cls is CitClassification.DoAnalizy or CitClassification.NieDotyczy)
+                        r.Warnings.Add($"Art. 18f: {i.Reference} wymaga analizy części podatkowej — nierozstrzygniętej kwoty nie objęto automatyczną korektą; wprowadź udokumentowaną korektę ręczną.");
                 }
                 else if (!l.Number.StartsWith("22")) assets += l.Debit; // VAT naliczony (22x) nie jest kosztem
             }
             if (assets > 0) assetPurchases.Add(i.Reference);
             if (op + cap == 0) continue;
+            var qualification = await new SettingsService(_db, _clock).GetAsync<bool?>(fy.CompanyId, $"cit.art18f.{i.Id}", () => null, ct);
+            if (qualification != true)
+            {
+                if (qualification is null)
+                    r.Warnings.Add($"Art. 18f: {i.Reference} wymaga analizy warunków transakcji i wyłączeń — brak kwalifikacji; korektę po weryfikacji wprowadź ręcznie.");
+                continue;
+            }
             var ratioOp = op / i.AmountPln;
             var ratioCap = cap / i.AmountPln;
             var day90 = i.DueDate.AddDays(90);
@@ -373,6 +405,17 @@ public sealed class CitService
         return result;
     }
 
+    /// <summary>Udokumentowana kwalifikacja transakcji i wyłączeń art. 18f; NIP sam nie potwierdza spełnienia warunków.</summary>
+    public async Task QualifyLiabilityAsync(Guid openItemId, bool applicable, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Podaj uzasadnienie kwalifikacji art. 18f (warunki i wyłączenia).");
+        await _db.OpenItems.FirstAsync(o => o.Id == openItemId && o.CompanyId == _user.CompanyId, ct);
+        await new SettingsService(_db, _clock).SetAsync<bool?>(_user.CompanyId, $"cit.art18f.{openItemId}", applicable, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_ART18F_KWALIFIKACJA", "OpenItem", openItemId.ToString(), $"{applicable}: {justification}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     private CitLiabilityAdjustment Adj(Domain.Periods.FiscalYear fy, Guid itemId, string reference, CitLiabilityAdjustmentKind kind, DateOnly date, decimal op, decimal cap) => new()
     {
         CompanyId = fy.CompanyId, FiscalYearId = fy.Id, OpenItemId = itemId, Reference = reference, Kind = kind, Date = date,
@@ -391,17 +434,48 @@ public sealed class CitService
     public async Task<CitAdvance> ComputeAdvanceAsync(Guid fiscalYearId, int periodNumber, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCit);
+        var later = await _db.CitAdvances.Where(a => a.FiscalYearId == fiscalYearId && a.PeriodNumber > periodNumber)
+            .OrderBy(a => a.PeriodNumber).ToListAsync(ct);
+        if (later.Any(a => a.IsApproved))
+            throw new DomainException("Późniejsza zaliczka jest zatwierdzona — wymagane kontrolowane ponowne otwarcie rozliczeń.");
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+        var advance = await ComputeSingleAdvanceAsync(fiscalYearId, periodNumber, ct);
+        foreach (var next in later) await ComputeSingleAdvanceAsync(fiscalYearId, next.PeriodNumber, ct);
+        await transaction.CommitAsync(ct);
+        return advance;
+    }
+
+    private async Task<CitAdvance> ComputeSingleAdvanceAsync(Guid fiscalYearId, int periodNumber, CancellationToken ct)
+    {
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
         var company = await _db.Companies.FirstAsync(c => c.Id == fy.CompanyId, ct);
         EnsureCitTaxpayer(company);
         if (company.CitAdvanceMethod == CitAdvanceMethod.Kwartalne && periodNumber % 3 != 0)
             throw new DomainException("Przy zaliczkach kwartalnych wylicza się je za okres kończący kwartał (3, 6, 9, 12).");
         var rec = await ReconcileAsync(fiscalYearId, periodNumber, ct);
+        if (rec.SmallTaxpayerEvidenceMissing && rec.Rate.RatePercent == CitCalculator.ReducedRate)
+            throw new DomainException("Potwierdź kompletną sprzedaż z VAT poprzedniego roku i kurs październikowy w warunkach stawki 9%.");
         if (rec.Rate.RateMissing)
             throw new DomainException($"Uzupełnij kurs euro NBP z pierwszego dnia roboczego roku podatkowego (limit przychodów dla stawki 9%, art. 19 ust. 1 pkt 2) — sekcja CIT → „Warunki stawki 9%” (można pobrać z NBP).");
-        // historia korekt z art. 18f: stan narastająco roku zastępuje poprzedni zapis
-        _db.CitLiabilityAdjustments.RemoveRange(await _db.CitLiabilityAdjustments.Where(h => h.FiscalYearId == fiscalYearId).ToListAsync(ct));
-        _db.CitLiabilityAdjustments.AddRange(rec.LiabilityAdjustments);
+        var approved = await _db.CitAdvances.AnyAsync(a => a.FiscalYearId == fiscalYearId && a.PeriodNumber == periodNumber && a.IsApproved, ct);
+        if (approved) throw new DomainException("Zaliczka za ten okres została zatwierdzona — nie można jej przeliczyć.");
+        // Odtwarzamy narastającą historię do najpóźniejszego zapisanego okresu, również przy przeliczeniu wcześniejszej zaliczki.
+        var lastPeriod = await _db.CitAdvances.Where(a => a.FiscalYearId == fiscalYearId)
+            .Select(a => (int?)a.PeriodNumber).MaxAsync(ct) ?? periodNumber;
+        var historyRec = lastPeriod > periodNumber ? await ReconcileAsync(fiscalYearId, lastPeriod, ct) : rec;
+        var savedHistory = await _db.CitLiabilityAdjustments.Where(h => h.FiscalYearId == fiscalYearId).ToListAsync(ct);
+        foreach (var calculated in historyRec.LiabilityAdjustments)
+        {
+            var saved = savedHistory.FirstOrDefault(h => h.OpenItemId == calculated.OpenItemId && h.Kind == calculated.Kind && h.Date == calculated.Date);
+            if (saved is null) _db.CitLiabilityAdjustments.Add(calculated);
+            else
+            {
+                saved.AmountOperating = calculated.AmountOperating;
+                saved.AmountCapital = calculated.AmountCapital;
+                savedHistory.Remove(saved);
+            }
+        }
+        _db.CitLiabilityAdjustments.RemoveRange(savedHistory);
         var previous = await _db.CitAdvances.Where(a => a.FiscalYearId == fiscalYearId && a.PeriodNumber < periodNumber).ToListAsync(ct);
         var prevDue = previous.Sum(a => a.AdvanceDue);
         var existing = await _db.CitAdvances.FirstOrDefaultAsync(a => a.FiscalYearId == fiscalYearId && a.PeriodNumber == periodNumber, ct);
@@ -423,6 +497,9 @@ public sealed class CitService
         adv.CalculatedAtUtc = _clock.UtcNow;
         adv.WarningsText = string.Join(Environment.NewLine, rec.Warnings);
         if (existing is null) _db.CitAdvances.Add(adv);
+        // Niezmienny ślad każdego wyliczenia, powiązany z zaliczką i jej okresem, również po kolejnych przeliczeniach.
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_ART18F_STAN_OKRESU", "CitAdvance", adv.Id.ToString(),
+            System.Text.Json.JsonSerializer.Serialize(new { fiscalYearId, periodNumber, rec.LiabilityAdjustments }), ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_ZALICZKA_WYLICZONA", "CitAdvance", adv.Id.ToString(), $"okres {periodNumber}: podatek narastająco {adv.CumulativeTax}, zaliczka {adv.AdvanceDue}", ct);
         await _db.SaveChangesAsync(ct);
         return adv;
@@ -433,6 +510,10 @@ public sealed class CitService
     {
         _user.Require(Permission.ManageCit);
         var adv = await _db.CitAdvances.FirstAsync(a => a.Id == advanceId, ct);
+        var current = await ReconcileAsync(adv.FiscalYearId, adv.PeriodNumber, ct);
+        if (current.Rate.RateMissing || (current.SmallTaxpayerEvidenceMissing && current.Rate.RatePercent == CitCalculator.ReducedRate)
+            || current.Computation.Tax != adv.CumulativeTax || current.Computation.RatePercent != adv.RatePercent)
+            throw new DomainException("Warunki lub dane CIT zmieniły się albo są niekompletne — przelicz zaliczkę przed zatwierdzeniem.");
         if (!analysisConfirmed && !string.IsNullOrWhiteSpace(adv.WarningsText) && adv.WarningsText.Contains("wymaga analizy"))
             throw new DomainException("Potwierdź weryfikację pozycji wymagających analizy podatkowej przed zatwierdzeniem zaliczki.");
         adv.IsApproved = true;

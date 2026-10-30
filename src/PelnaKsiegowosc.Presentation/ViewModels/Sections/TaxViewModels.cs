@@ -160,6 +160,10 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var svc = new CitService(db, Session.User, Session.Clock);
         var rec = await svc.ReconcileAsync(year.Id, Parse.Int(UptoPeriod, "Okres"));
+        var liabilities = new TableData(new TableColumn("Dokument", Width: 2), new TableColumn("Termin", ColumnKind.Date), new TableColumn("Kwota", ColumnKind.Money));
+        foreach (var item in await db.OpenItems.AsNoTracking().Where(o => o.CompanyId == Session.CompanyId && o.Side == Domain.Settlements.OpenItemSide.Zobowiazanie).OrderBy(o => o.DueDate).ToListAsync())
+            liabilities.Add(item.Id, item.Reference, item.DueDate, item.AmountPln);
+        Liabilities = liabilities;
         var pl = System.Globalization.CultureInfo.GetCultureInfo("pl-PL");
         EurRate = (await svc.LimitEurRateAsync(year.StartDate))?.ToString("0.0000", pl) ?? "";
         StatusEurRate = (await svc.StatusEurRateAsync(year.StartDate.Year - 1))?.ToString("0.0000", pl) ?? "";
@@ -194,6 +198,29 @@ public sealed partial class CitViewModel : SectionViewModel
             adv.Add(a.Id, a.PeriodNumber, a.PeriodEnd, a.CumulativeIncome, a.TaxBase, a.CumulativeTax, a.PreviouslyDue, a.AdvanceDue, a.PaymentDeadline, a.IsApproved);
         Advances = adv;
     }
+
+    [RelayCommand]
+    private Task ConfirmPreviousSalesAsync() => ChangeAsync(async () =>
+    {
+        var value = await Dialogs.PromptAsync("Status małego podatnika", "Podaj przychody ze sprzedaży wraz z VAT poprzedniego roku z kompletnej ewidencji podatkowej (także poza fakturami w programie):", "");
+        if (value is null) return;
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).SetPreviousSalesAsync(Session.CurrentYear.Id, Parse.Amount(value, "Sprzedaż z VAT"));
+    }, "Zapisano potwierdzoną sprzedaż poprzedniego roku.");
+
+    [ObservableProperty] private TableData _liabilities = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedLiability;
+
+    [RelayCommand]
+    private Task QualifyLiabilityAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedLiability?.Tag is not Guid id) throw new DomainException("Zaznacz zobowiązanie na liście art. 18f.");
+        var applicable = await Dialogs.ConfirmAsync("Kwalifikacja art. 18f", "Czy potwierdzasz transakcję handlową, ujęcie w KUP, opodatkowanie stron i spełnienie warunków oraz brak wyłączeń art. 18f (w tym terminu ustawowego)? Tak — podlega; Nie — nie podlega.");
+        var reason = await Dialogs.PromptAsync("Uzasadnienie kwalifikacji", "Opisz sprawdzone warunki i wyłączenia. Anuluj, aby pozostawić kwalifikację nierozstrzygniętą:", "");
+        if (reason is null) return;
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).QualifyLiabilityAsync(id, applicable, reason);
+    }, "Zapisano kwalifikację art. 18f.");
 
     [RelayCommand] private Task RecalculateAsync() => LoadAsync();
 
