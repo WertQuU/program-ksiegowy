@@ -1,9 +1,49 @@
-https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf -> https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf [application/pdf] 422470 B
-ZAPISANO schemas/MF/esf/informacja-o-strukturach-e-sf.pdf.txt (12550 B)
+http://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd -> http://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd [text/xml] 14369 B
+ZAPISANO schemas/MF/esf/schemat.xsd (14369 B)
+http://crd.gov.pl/xml/schematy/struktura/2009/11/16/struktura.xsd -> http://crd.gov.pl/xml/schematy/struktura/2009/11/16/struktura.xsd [application/octet-stream] 15049 B
+ZAPISANO schemas/MF/esf/struktura.xsd (15049 B)
+http://crd.gov.pl/xml/schematy/meta/2009/11/16/meta.xsd -> http://crd.gov.pl/xml/schematy/meta/2009/11/16/meta.xsd [application/octet-stream] 11766 B
+ZAPISANO schemas/MF/esf/meta.xsd (11766 B)
+http://crd.gov.pl/xml/schematy/instytucja/2009/11/16/instytucja.xsd -> http://crd.gov.pl/xml/schematy/instytucja/2009/11/16/instytucja.xsd [application/octet-stream] 6573 B
+ZAPISANO schemas/MF/esf/instytucja.xsd (6573 B)
+http://crd.gov.pl/xml/schematy/adres/2009/11/09/adres.xsd -> http://crd.gov.pl/xml/schematy/adres/2009/11/09/adres.xsd [application/octet-stream] 11809 B
+ZAPISANO schemas/MF/esf/adres.xsd (11809 B)
+http://crd.gov.pl/xml/schematy/zewnetrzne/2008/05/09/CountryCode.xsd -> http://crd.gov.pl/xml/schematy/zewnetrzne/2008/05/09/CountryCode.xsd [application/octet-stream] 9641 B
+ZAPISANO schemas/MF/esf/CountryCode.xsd (9641 B)
+http://crd.gov.pl/xml/schematy/osoba/2009/11/16/osoba.xsd -> http://crd.gov.pl/xml/schematy/osoba/2009/11/16/osoba.xsd [application/octet-stream] 12023 B
+ZAPISANO schemas/MF/esf/osoba.xsd (12023 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3417 [application/octet-stream; charset=UTF-8] 23755 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3417.xsd (23755 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/07/31/eD/StrukturyDanychSprFin/StrukturyDanychSprFin_v2-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3523 [application/octet-stream; charset=UTF-8] 110667 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3523.xsd (110667 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2023/09/06/eD/KodyKrajow/KodyKrajow_v13-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3001 [application/octet-stream; charset=UTF-8] 40927 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3001.xsd (40927 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/08/18/eD/KodyPKD/KodyPKD_v3-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_2384 [application/octet-stream; charset=UTF-8] 271720 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_2384.xsd (271720 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/01/01/eD/KodyPKD/KodyPKD_v4-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3359 [application/octet-stream; charset=UTF-8] 294221 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3359.xsd (294221 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/01/01/eD/KodyCECHKRAJOW/KodyCechKrajowWaluty_v6-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3360 [application/octet-stream; charset=UTF-8] 25775 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3360.xsd (25775 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/07/31/eD/JednostkaInnaStruktury/JednostkaInnaStrukturyDanychSprFin_v2-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3436 [application/octet-stream; charset=UTF-8] 731137 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3436.xsd (731137 B)
+http://crd.gov.pl/wzor/2025/08/04/13810/schemat.xsd -> http://crd.gov.pl/wzor/2025/08/04/13810/schemat.xsd [text/xml] 14394 B
+ZAPISANO schemas/MF/esf/schemat.xsd (14394 B)
+http://crd.gov.pl/wzor/2025/08/07/13818/schemat.xsd -> http://crd.gov.pl/wzor/2025/08/07/13818/schemat.xsd [text/xml] 25869 B
+ZAPISANO schemas/MF/esf/schemat.xsd (25869 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/07/31/eD/JednostkaMalaStruktury/JednostkaMalaStrukturyDanychSprFin_v2-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3437 [application/octet-stream; charset=UTF-8] 191159 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3437.xsd (191159 B)
+http://crd.gov.pl/wzor/2025/09/10/13846/schemat.xsd -> http://crd.gov.pl/wzor/2025/09/10/13846/schemat.xsd [text/xml] 25905 B
+ZAPISANO schemas/MF/esf/schemat.xsd (25905 B)
+http://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd -> http://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd [text/xml] 36361 B
+ZAPISANO schemas/MF/esf/schemat.xsd (36361 B)
+http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2025/07/31/eD/JednostkaMikroStruktury/JednostkaMikroStrukturyDanychSprFin_v2-0E.xsd -> http://crd.gov.pl/wps/PA_E2_PI/zalacznik_oi/zalacznik_oi_3438 [application/octet-stream; charset=UTF-8] 43736 B
+ZAPISANO schemas/MF/esf/zalacznik_oi_3438.xsd (43736 B)
+http://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd -> http://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd [text/xml] 36408 B
+ZAPISANO schemas/MF/esf/schemat.xsd (36408 B)
 https://www.gov.pl/web/kas/struktury-e-sprawozdan -> https://www.gov.pl/web/kas/struktury-e-sprawozdan [text/html;charset=UTF-8] 41059 B
 ZAPISANO schemas/MF/esf/https___www_gov_pl_web_kas_struktury_e_sprawozdan.html (41059 B)
-https://www.podatki.gov.pl/e-sprawozdania-finansowe/ -> https://podatki.gov.pl/e-sprawozdania-finansowe [text/html; charset=utf-8] 274067 B
-ZAPISANO schemas/MF/esf/https___podatki_gov_pl_e_sprawozdania_finansowe.html (274067 B)
+https://www.podatki.gov.pl/e-sprawozdania-finansowe/ -> https://podatki.gov.pl/e-sprawozdania-finansowe [text/html; charset=utf-8] 274057 B
+ZAPISANO schemas/MF/esf/https___podatki_gov_pl_e_sprawozdania_finansowe.html (274057 B)
 ! https://podatki.gov.pl/media/3xfpk0rg/esprawozdania_opisapi_v-5-0-za&: HTTP Error 404: Not Found
 https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip -> https://podatki.gov.pl/media/54ccdpc5/schema-metryki-2025.zip [application/x-zip-compressed] 3145 B
   ZIP: ['fileMetrics.xsd', 'metricsTypes.xsd']
@@ -90,6 +130,8 @@ http://www.w3.org/2001/10/xml-exc-c14n# -> https://www.w3.org/TR/2002/REC-xml-ex
 http://www.w3.org/2001/XMLSchema -> https://www.w3.org/2001/XMLSchema [application/xhtml+xml; charset=utf-8] 5808 B
 ZAPISANO schemas/MF/esf/XMLSchema.xsd (5808 B)
 http://www.w3.org/TR/1999/REC-xpath-19991116 -> https://www.w3.org/TR/1999/REC-xpath-19991116/ [text/html; charset=iso-8859-1] 117524 B
+https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf -> https://podatki.gov.pl/media/fdtdyk5c/informacja-o-strukturach-e-sf.pdf [application/pdf] 422470 B
+ZAPISANO schemas/MF/esf/informacja-o-strukturach-e-sf.pdf.txt (12550 B)
 https://podatki.gov.pl/media/ftdbiiqt/mf-cer-2.zip -> https://podatki.gov.pl/media/ftdbiiqt/mf-cer-2.zip [application/x-zip-compressed] 1166 B
   ZIP: ['mf-cer (2).cer']
 https://podatki.gov.pl/media/h5ie0xhn/esprawozdania_opisapi_v-6-0.pdf -> https://podatki.gov.pl/media/h5ie0xhn/esprawozdania_opisapi_v-6-0.pdf [application/pdf] 906088 B
