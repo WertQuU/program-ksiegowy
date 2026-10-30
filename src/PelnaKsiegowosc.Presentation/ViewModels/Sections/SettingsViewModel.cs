@@ -19,6 +19,14 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [ObservableProperty] private string _pathsInfo = "";
     [ObservableProperty] private List<Choice<int>> _otherProfiles = new();
     [ObservableProperty] private Choice<int>? _otherProfile;
+    public List<string> Themes { get; } = new() { "Jasny", "Ciemny", "Systemowy" };
+    [ObservableProperty] private string _theme = "Jasny";
+    private bool _loadingTheme;
+
+    partial void OnThemeChanged(string value)
+    {
+        if (!_loadingTheme && value != Session.Config.Theme) Session.SetTheme(value);
+    }
 
     protected override Task LoadCoreAsync()
     {
@@ -26,6 +34,9 @@ public sealed partial class SettingsViewModel : SectionViewModel
         ActiveInfo = $"Aktywna baza: {Session.DatabaseDescription}" + (p.Engine == DatabaseEngine.PostgreSql ? $" (rola: {Display.Enum(p.Role)})" : "") +
                      ". Program nie przełącza się samoczynnie między bazami — zmiana wymaga Twojej decyzji i ponownego uruchomienia.";
         Database.Load(p);
+        _loadingTheme = true;
+        Theme = Themes.Contains(Session.Config.Theme) ? Session.Config.Theme : "Jasny";
+        _loadingTheme = false;
         AttachmentsDirectory = Session.AttachmentsRoot;
         OtherProfiles = Session.Config.OtherProfiles.Select((x, i) => new Choice<int>(i, x.SafeDescription)).ToList();
         PathsInfo = $"Katalog danych: {Session.Paths.Root}{Environment.NewLine}Konfiguracja: {Session.Paths.ConfigFile}{Environment.NewLine}" +

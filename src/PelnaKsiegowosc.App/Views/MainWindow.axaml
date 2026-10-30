@@ -7,26 +7,26 @@
         Icon="avares://PelnaKsiegowosc/Assets/ikona.ico"
         WindowStartupLocation="CenterScreen">
   <DockPanel>
-    <Border DockPanel.Dock="Top" Background="#1F5FAD" Padding="16,10">
+    <Border DockPanel.Dock="Top" Background="{DynamicResource PkHeaderBg}" Padding="16,10">
       <Grid ColumnDefinitions="*,Auto,Auto">
         <StackPanel>
           <TextBlock Text="{Binding Title}" Foreground="White" FontSize="17" FontWeight="SemiBold" />
-          <TextBlock Text="{Binding CompanyLine}" Foreground="#dbe7f5" />
+          <TextBlock Text="{Binding CompanyLine}" Foreground="{DynamicResource PkHeaderSub}" />
         </StackPanel>
         <ComboBox Grid.Column="1" ItemsSource="{Binding Years}" SelectedItem="{Binding SelectedYear}" MinWidth="230" VerticalAlignment="Center" Margin="0,0,8,0" />
-        <Button Grid.Column="2" Content="Odśwież" Command="{Binding RefreshCommand}" VerticalAlignment="Center" />
+        <Button Grid.Column="2" Content="Odśwież" Command="{Binding RefreshCommand}" VerticalAlignment="Center" Classes="accent" />
       </Grid>
     </Border>
-    <Border DockPanel.Dock="Top" Background="#fff4ce" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
-      <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="#6b4e00" />
+    <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
     </Border>
-    <Border DockPanel.Dock="Bottom" Background="#FFFFFF" BorderBrush="#E3E8EE" BorderThickness="0,1,0,0" Padding="12,5">
+    <Border DockPanel.Dock="Bottom" Background="{DynamicResource PkFooterBg}" BorderBrush="{DynamicResource PkBorder}" BorderThickness="0,1,0,0" Padding="12,5">
       <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Text="{Binding Footer}" Foreground="#333" TextTrimming="CharacterEllipsis" />
-        <TextBlock Grid.Column="1" Text="{Binding SelectedSection.StatusMessage}" Foreground="#174e8c" FontWeight="SemiBold" Margin="12,0,0,0" />
+        <TextBlock Text="{Binding Footer}" Foreground="{DynamicResource PkMuted}" TextTrimming="CharacterEllipsis" />
+        <TextBlock Grid.Column="1" Text="{Binding SelectedSection.StatusMessage}" Foreground="{DynamicResource PkStatus}" FontWeight="SemiBold" Margin="12,0,0,0" />
       </Grid>
     </Border>
-    <Border DockPanel.Dock="Left" Width="236" Background="#FFFFFF" BorderBrush="#E3E8EE" BorderThickness="0,0,1,0">
+    <Border DockPanel.Dock="Left" Width="236" Background="{DynamicResource PkSidebarBg}" Classes="sidebar">
       <ListBox ItemsSource="{Binding MenuItems}" SelectedItem="{Binding SelectedMenuItem}" Background="Transparent">
         <ListBox.DataTemplates>
           <DataTemplate DataType="vm:MenuHeader">
@@ -44,8 +44,8 @@
     <Grid RowDefinitions="Auto,*">
       <ProgressBar IsIndeterminate="True" Height="3" IsVisible="{Binding SelectedSection.IsBusy}" />
       <DockPanel Grid.Row="1" Margin="20,14,20,8">
-        <Border DockPanel.Dock="Top" Background="#E8F0FA" CornerRadius="8" Padding="12,8" Margin="0,0,0,10">
-          <TextBlock Text="{Binding SelectedSection.Guide}" TextWrapping="Wrap" Foreground="#1B3A5C" />
+        <Border DockPanel.Dock="Top" Background="{DynamicResource PkGuideBg}" CornerRadius="8" Padding="12,8" Margin="0,0,0,10">
+          <TextBlock Text="{Binding SelectedSection.Guide}" TextWrapping="Wrap" Foreground="{DynamicResource PkGuideFg}" />
         </Border>
         <ContentControl Content="{Binding SelectedSection}" />
       </DockPanel>

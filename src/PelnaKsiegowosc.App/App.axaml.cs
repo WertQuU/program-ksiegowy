@@ -46,6 +46,8 @@ public partial class App : Avalonia.Application
             ErrorLog.Directory = paths.LogsDirectory;
             var config = AppConfig.LoadOrCreate(paths);
             var session = new AppSession(paths, config, SecretStoreFactory.Create(paths), new SystemClock());
+            ApplyTheme(config.Theme);
+            session.ThemeChanged += ApplyTheme;
 
             if (!config.SetupCompleted || config.TermsAcceptedVersion != Terms.Version || !await DatabaseHasBooksAsync(session))
             {
@@ -99,6 +101,14 @@ public partial class App : Avalonia.Application
             desktop.Shutdown(2);
         }
     }
+
+    public static void ApplyTheme(string theme) =>
+        Current!.RequestedThemeVariant = theme switch
+        {
+            "Ciemny" => Avalonia.Styling.ThemeVariant.Dark,
+            "Systemowy" => Avalonia.Styling.ThemeVariant.Default,
+            _ => Avalonia.Styling.ThemeVariant.Light
+        };
 
     private static async Task<bool> DatabaseHasBooksAsync(AppSession session)
     {

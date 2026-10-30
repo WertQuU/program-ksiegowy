@@ -74,6 +74,12 @@ public static class SelfTest
             dialogs.Errors.Clear();
         }
         await SelfTestScenario.RunOperationsAsync(main, dialogs);
+        App.ApplyTheme("Ciemny");
+        main.SelectedSection = main.Sections[0];
+        await main.Sections[0].LoadAsync();
+        Pump(window);
+        Shot(window, "24-PulpitCiemny");
+        App.ApplyTheme("Jasny");
         var sales = main.Sections.OfType<Presentation.ViewModels.Sections.SalesViewModel>().Single();
         main.SelectedSection = sales;
         await sales.NewCommand.ExecuteAsync(null);

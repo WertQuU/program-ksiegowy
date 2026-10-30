@@ -10,6 +10,11 @@
     <TextBlock DockPanel.Dock="Top" Text="{Binding ActiveInfo}" Classes="info" />
     <ScrollViewer>
       <StackPanel>
+        <TextBlock Text="Wygląd" Classes="h2" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="Motyw:" VerticalAlignment="Center" />
+          <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" />
+        </StackPanel>
         <TextBlock Text="Baza danych" Classes="h2" />
                 <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
           <TextBlock Text="Plik bazy" /><TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />

@@ -16,7 +16,7 @@
       <Button Content="Pobierz dane z białej listy (po NIP)" Command="{Binding FetchFromWhiteListCommand}" />
       <Button Content="Sprawdź rachunek na białej liście" Command="{Binding CheckAccountCommand}" />
     </WrapPanel>
-    <TextBlock DockPanel.Dock="Top" Text="{Binding WhiteListInfo}" Classes="info" Foreground="#1F5FAD" />
+    <TextBlock DockPanel.Dock="Top" Text="{Binding WhiteListInfo}" Classes="info" Foreground="{DynamicResource PkStatus}" />
     <Border DockPanel.Dock="Top" Classes="panel">
       <StackPanel>
         <TextBlock Text="{Binding FormHeader}" Classes="h2" Margin="0,0,0,6" />

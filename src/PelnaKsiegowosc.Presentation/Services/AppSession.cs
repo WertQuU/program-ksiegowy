@@ -53,6 +53,16 @@ public sealed class AppSession
 
     public void Navigate(PelnaKsiegowosc.Application.Assistant.AppArea area, string? action = null) => NavigationRequested?.Invoke(area, action);
 
+    /// <summary>Zmiana motywu (Jasny/Ciemny/Systemowy) — obsługuje aplikacja okienkowa.</summary>
+    public event Action<string>? ThemeChanged;
+
+    public void SetTheme(string theme)
+    {
+        Config.Theme = theme;
+        SaveConfig();
+        ThemeChanged?.Invoke(theme);
+    }
+
     public DatabaseProfile Profile => Config.ActiveDatabase;
     public string DatabaseDescription => Profile.SafeDescription + (Profile.IsEmergencyWorkingCopy ? " — KOPIA ROBOCZA TRYBU AWARYJNEGO" : "");
 

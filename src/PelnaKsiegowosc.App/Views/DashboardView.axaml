@@ -76,7 +76,7 @@
                           <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
                         </StackPanel>
                         <TextBlock Text="{Binding Details}" TextWrapping="Wrap" Classes="cardnote" IsVisible="{Binding HasDetails}" />
-                        <TextBlock Text="{Binding HowToFix}" TextWrapping="Wrap" FontStyle="Italic" Foreground="#37474F" />
+                        <TextBlock Text="{Binding HowToFix}" TextWrapping="Wrap" FontStyle="Italic" Foreground="{DynamicResource PkText}" />
                       </StackPanel>
                       <Button Grid.Column="1" Content="Przejdź →" Command="{Binding GoCommand}" VerticalAlignment="Center" Margin="10,0,0,0" />
                     </Grid>

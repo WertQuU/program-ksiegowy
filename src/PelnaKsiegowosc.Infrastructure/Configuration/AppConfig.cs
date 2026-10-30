@@ -98,6 +98,8 @@ public sealed class AppConfig
     public KsefSettings Ksef { get; set; } = new();
     public string? AttachmentsDirectory { get; set; }
     public bool SetupCompleted { get; set; }
+    /// <summary>Motyw interfejsu: „Jasny”, „Ciemny” albo „Systemowy”.</summary>
+    public string Theme { get; set; } = "Jasny";
     /// <summary>Wersja zaakceptowanych warunków licencji i chwila akceptacji (zapisywane też w bazie i dzienniku audytu).</summary>
     public string? TermsAcceptedVersion { get; set; }
     public DateTime? TermsAcceptedUtc { get; set; }
