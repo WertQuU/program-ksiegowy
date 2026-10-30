@@ -538,3 +538,31 @@ public class VatFullMonthScenarioTests
         Assert.Equal("920.00", r.Document.Descendants(ns + "PodatekNaliczony").Single().Value);
     }
 }
+
+public class OperatorAccessTests
+{
+    [Fact]
+    public async Task First_operator_is_founder_others_start_without_permissions_until_admin_grants_roles()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new Application.Security.OperatorAccessService(t.Db, t.Clock);
+        var founderId = Guid.NewGuid();
+        var founderRoles = await svc.ResolveAsync(founderId, "anna@biuro", t.Company.Id);
+        Assert.Contains(Domain.Security.Role.Administrator, founderRoles);
+        var founder = new Application.Abstractions.CurrentUser(founderId, "anna@biuro", t.Company.Id, founderRoles);
+
+        var clerkId = Guid.NewGuid();
+        Assert.Empty(await svc.ResolveAsync(clerkId, "jan@laptop", t.Company.Id)); // nowy operator — bez uprawnień
+        var clerk = new Application.Abstractions.CurrentUser(clerkId, "jan@laptop", t.Company.Id, Array.Empty<Domain.Security.Role>());
+        await Assert.ThrowsAnyAsync<Exception>(() => svc.ListAsync(clerk));
+        await Assert.ThrowsAnyAsync<Exception>(() => new DocumentService(t.Db, clerk, t.Clock).CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy,
+            Guid.NewGuid(), new DateOnly(2026, 1, 10), new DateOnly(2026, 1, 10), new[] { new DocumentLineInput("x", 1, 1m, "23") })));
+
+        await svc.SetAsync(founder, clerkId, new[] { Domain.Security.Role.Fakturzysta }, active: true);
+        Assert.Equal(new[] { Domain.Security.Role.Fakturzysta }, await svc.ResolveAsync(clerkId, "jan@laptop", t.Company.Id));
+        await Assert.ThrowsAsync<DomainException>(() => svc.SetAsync(founder, founderId, Array.Empty<Domain.Security.Role>(), true)); // własne uprawnienia
+        await svc.SetAsync(founder, clerkId, Array.Empty<Domain.Security.Role>(), active: false);
+        Assert.Empty(await svc.ResolveAsync(clerkId, "jan@laptop", t.Company.Id));
+        Assert.True(await t.Db.AuditEvents.CountAsync(a => a.Action.StartsWith("OPERATOR_")) >= 4); // założyciel, nowy operator, dwie zmiany ról
+    }
+}

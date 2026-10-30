@@ -138,7 +138,9 @@ public sealed class AppSession
     {
         await using var db = OpenDb();
         Company = await db.Companies.AsNoTracking().OrderBy(c => c.CreatedAtUtc).FirstOrDefaultAsync(ct);
-        User = OperatorIdentity.For(Company?.Id ?? Guid.Empty);
+        User = Company is null
+            ? OperatorIdentity.For(Guid.Empty)
+            : OperatorIdentity.For(Company.Id, await new Application.Security.OperatorAccessService(db, Clock).ResolveAsync(OperatorIdentity.IdFor(OperatorIdentity.Login), OperatorIdentity.Login, Company.Id, ct));
         Years = Company is null
             ? Array.Empty<FiscalYear>()
             : await db.FiscalYears.AsNoTracking().Include(f => f.Periods).Where(f => f.CompanyId == Company.Id).OrderBy(f => f.StartDate).ToListAsync(ct);

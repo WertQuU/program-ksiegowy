@@ -80,6 +80,22 @@
           <c:TableView Table="{Binding Years}" />
         </DockPanel>
       </TabItem>
+      <TabItem Header="Operatorzy i uprawnienia">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="{Binding OperatorsInfo}" Classes="info" TextWrapping="Wrap" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <CheckBox Content="Administrator" IsChecked="{Binding OpAdmin}" />
+            <CheckBox Content="Główny księgowy" IsChecked="{Binding OpChief}" />
+            <CheckBox Content="Księgowy" IsChecked="{Binding OpAccountant}" />
+            <CheckBox Content="Fakturzysta" IsChecked="{Binding OpInvoicing}" />
+            <CheckBox Content="Zarząd / kierownik jednostki" IsChecked="{Binding OpBoard}" />
+            <CheckBox Content="Audytor (tylko odczyt)" IsChecked="{Binding OpAuditor}" />
+            <CheckBox Content="Aktywny" IsChecked="{Binding OpActive}" />
+            <Button Content="Zapisz uprawnienia zaznaczonego" Command="{Binding SaveOperatorCommand}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding Operators}" SelectedRow="{Binding SelectedOperator}" />
+        </DockPanel>
+      </TabItem>
     </TabControl>
   </DockPanel>
 </UserControl>

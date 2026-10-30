@@ -1,3 +1,5 @@
+using PelnaKsiegowosc.Application.Security;
+using PelnaKsiegowosc.Domain.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -37,6 +39,18 @@ public sealed partial class CompanyViewModel : SectionViewModel
 
     [ObservableProperty] private TableData _years = TableData.Empty;
 
+    // operatorzy i uprawnienia (rozdział obowiązków; nadaje administrator)
+    [ObservableProperty] private TableData _operators = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedOperator;
+    [ObservableProperty] private string _operatorsInfo = "";
+    [ObservableProperty] private bool _opAdmin;
+    [ObservableProperty] private bool _opChief;
+    [ObservableProperty] private bool _opAccountant;
+    [ObservableProperty] private bool _opInvoicing;
+    [ObservableProperty] private bool _opBoard;
+    [ObservableProperty] private bool _opAuditor;
+    [ObservableProperty] private bool _opActive = true;
+
     protected override async Task LoadCoreAsync()
     {
         await using var db = Session.OpenDb();
@@ -67,7 +81,48 @@ public sealed partial class CompanyViewModel : SectionViewModel
             new TableColumn("Status"), new TableColumn("Pierwszy rok"), new TableColumn("BO zatwierdzony"));
         foreach (var y in Session.Years) years.Add(y.Id, y.Name, y.StartDate, y.EndDate, y.Status, y.IsFirstYear, y.OpeningBalanceApproved);
         Years = years;
+
+        var me = $"Zalogowany operator: {Session.User.Login} — role: {(Session.User.Roles.Count == 0 ? "brak (poproś administratora o nadanie uprawnień)" : string.Join(", ", Session.User.Roles.Select(RolePermissions.Name)))}.";
+        if (Session.User.Can(Permission.ManageUsers))
+        {
+            var ops = new TableData(new TableColumn("Operator (konto systemu)", Width: 2), new TableColumn("Role", Width: 3), new TableColumn("Aktywny", Width: 0.6),
+                new TableColumn("Ostatnio", ColumnKind.Date));
+            foreach (var o in await new OperatorAccessService(db, Session.Clock).ListAsync(Session.User))
+                ops.Add(o.Id, o.Login, string.Join(", ", o.Roles.Select(RolePermissions.Name)), o.IsActive, o.LastSeenUtc is { } ls ? DateOnly.FromDateTime(ls) : (DateOnly?)null);
+            Operators = ops;
+            OperatorsInfo = me + " Nowy operator (inne konto lub komputer) pojawia się tu po pierwszym uruchomieniu programu i nie ma uprawnień, dopóki administrator ich nie nada.";
+        }
+        else
+        {
+            Operators = TableData.Empty;
+            OperatorsInfo = me + " Uprawnieniami zarządza administrator.";
+        }
     }
+
+    partial void OnSelectedOperatorChanged(TableRow? value)
+    {
+        if (value is null) return;
+        var roles = (value.Cells[1] ?? "").Split(", ", StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        bool H(Role r) => roles.Contains(RolePermissions.Name(r));
+        OpAdmin = H(Role.Administrator); OpChief = H(Role.GlownyKsiegowy); OpAccountant = H(Role.Ksiegowy);
+        OpInvoicing = H(Role.Fakturzysta); OpBoard = H(Role.Zarzad); OpAuditor = H(Role.Audytor);
+        OpActive = value.Cells[2] == "tak";
+    }
+
+    [RelayCommand]
+    private Task SaveOperatorAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedOperator?.Tag is not Guid id) throw new DomainException("Zaznacz operatora.");
+        var roles = new List<Role>();
+        if (OpAdmin) roles.Add(Role.Administrator);
+        if (OpChief) roles.Add(Role.GlownyKsiegowy);
+        if (OpAccountant) roles.Add(Role.Ksiegowy);
+        if (OpInvoicing) roles.Add(Role.Fakturzysta);
+        if (OpBoard) roles.Add(Role.Zarzad);
+        if (OpAuditor) roles.Add(Role.Audytor);
+        await using var db = Session.OpenDb();
+        await new OperatorAccessService(db, Session.Clock).SetAsync(Session.User, id, roles, OpActive);
+    }, "Zapisano uprawnienia operatora (zmiana zapisana w dzienniku zdarzeń).");
 
     [RelayCommand]
     private Task SaveCompanyAsync() => ChangeAsync(async () =>
