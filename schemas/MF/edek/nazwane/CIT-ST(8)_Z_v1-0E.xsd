@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:csta="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/03/22/eD/CITSTA/" xmlns:czst="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/03/22/eD/CITSTZ/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/" xmlns:kgm="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/07/eD/KodyGMIN/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/03/22/eD/CITSTZ/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/01/05/eD/DefinicjeTypy/StrukturyDanych_v10-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/07/eD/KodyGMIN/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/07/eD/KodyGMIN/KodyGmin_v10-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/03/22/eD/CITSTA/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/03/22/eD/CITSTA/CIT-ST_A(5)_Z_v6-0E.xsd"/>
+	<xsd:complexType name="TNaglowek_CIT-ST">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czst:TKodFormularzaST">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="CT-STR (8)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="8"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="OkresOd">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czst:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_4"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="OkresDo">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="czst:TLData">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_5"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularzaST">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="CIT-ST"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TLData">
+		<xsd:annotation>
+			<xsd:documentation>Ograniczenie dla daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="etd:TData">
+			<xsd:minInclusive value="2021-01-01"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_CIT-ST">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA PODATNIKA DO USTALENIA NALEŻNYCH JEDNOSTKOM SAMORZĄDU TERYTORIALNEGO DOCHODÓW Z TYTUŁU UDZIAŁU WE WPŁYWACH Z PODATKU DOCHODOWEGO OD OSÓB PRAWNYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="czst:TNaglowek_CIT-ST"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Informacja o liczbie zatrudnionych w zakładach (oddziałach)</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_9">
+								<xsd:annotation>
+									<xsd:documentation>Sposób składania: 2 - z zeznaniem</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="xsd:byte">
+										<xsd:enumeration value="2"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_20">
+								<xsd:annotation>
+									<xsd:documentation>Liczba zatrudnionych przez podatnika - ogółem</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TNaturalny">
+										<xsd:minInclusive value="0"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+							<xsd:element name="P_D" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Liczba zatrudnionych w zakładach (oddziałach)</xsd:documentation>
+								</xsd:annotation>
+								<!--Należy podać liczbę osób zatrudnionych na podstawie umowy o pracę według stanu na ostatni dzień miesiąca lub kwartału kończącego okres, za który składana jest informacja, albo na dzień poprzedzający dzień wpłaty podatku płaconego w formie ryczałtu, lub na ostatni dzień roku podatkowego, za który składane jest zeznanie.-->
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:annotation>
+											<xsd:documentation/>
+										</xsd:annotation>
+										<xsd:element name="P_A" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa województwa</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_B" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa powiatu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C" type="etd:TJednAdmin">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa gminy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_D1" type="kgm:TKodGminy">
+											<xsd:annotation>
+												<xsd:documentation>Kod gminy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_E" type="etd:TZnakowy">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa zakładu (oddziału)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F1" type="etd:TNrREGON" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Numer REGON</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F2" type="etd:TNrNIP" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Identyfikator podatkowy numer NIP</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_G">
+											<xsd:annotation>
+												<xsd:documentation>Liczba zatrudnionych w zakładzie (oddziale)</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="etd:TNaturalny">
+													<xsd:minInclusive value="0"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:element name="P_143">
+								<xsd:annotation>
+									<xsd:documentation>Data wypełnienia informacji</xsd:documentation>
+								</xsd:annotation>
+								<xsd:simpleType>
+									<xsd:restriction base="etd:TData">
+										<xsd:minInclusive value="2021-01-01"/>
+									</xsd:restriction>
+								</xsd:simpleType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:element ref="csta:Zalacznik_CIT-ST_A"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

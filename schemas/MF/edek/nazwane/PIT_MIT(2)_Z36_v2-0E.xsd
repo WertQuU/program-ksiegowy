@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:zmt36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITMIT36/" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITMIT36/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/StrukturyDanych_v7-0E.xsd"/>
+	<!--Załącznik do zeznania PIT-36-->
+	<xsd:complexType name="TNaglowek_PIT_MIT">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="zmt36:TKodFormularza_PIT_MIT">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PITMIT (2)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="2-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="2"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_PIT_MIT">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT/MIT"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_PIT_MIT">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O ŚRODKACH TRWAŁYCH ORAZ PODSTAWIE OPODATKOWANIA SKŁADANA PRZEZ PODATNIKA OBOWIĄZANEGO DO ZAPŁATY PODATKU, O KTÓRYM MOWA W ART. 30G USTAWY</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="zmt36:TNaglowek_PIT_MIT"/>
+				<xsd:element name="Podmiot1" type="etd:TIdentyfikatorOsobyFizycznej1"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące środków trwałych, podstawa opodatkowania</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_B" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące środków trwałych</xsd:documentation>
+								</xsd:annotation>
+								<!--W sytuacji gdy podatnik uzyskuje przychody z więcej niż jednego środka trwałego o tym samym symbolu Klasyfikacji Środków Trwałych, może je wykazać w jednym wierszu.-->
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:annotation>
+											<xsd:documentation>Określenie środka trwałego / środków trwałych</xsd:documentation>
+										</xsd:annotation>
+										<xsd:element name="P_B9" type="etd:TZnakowy">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa środka trwałego / środków trwałych</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_B10">
+											<xsd:annotation>
+												<xsd:documentation>Liczba</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="etd:TKwota2Nieujemna">
+													<xsd:minExclusive value="0"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Podstawa opodatkowania</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_11" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_12" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_13" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc III</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_14" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_15" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_16" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc VI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_17" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_18" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_19" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc IX</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_20" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_21" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_22" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa opodatkowania za miesiąc XII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

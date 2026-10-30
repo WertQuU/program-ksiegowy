@@ -1,0 +1,1909 @@
+<?xml version="1.0" encoding="UTF-8"?><xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" xmlns:kk="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/KodyKrajow/" xmlns:kusex="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyUrzedowSkarbowychExWUS/" xmlns:kw="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/" xmlns:tns="http://crd.gov.pl/wzor/2023/02/06/12109/" xmlns:zd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PITD/" xmlns:zo28="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITO28/" xmlns:zwzr="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITWZR/" xmlns:zzu="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/ORDZU/" xmlns:z2k="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PIT2K/" xmlns:z28b="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PIT28B/" targetNamespace="http://crd.gov.pl/wzor/2023/02/06/12109/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITO28/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITO28/PIT_O(27)_Z28_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PITD/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PITD/PIT_D(30)_Z_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PIT2K/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/10/27/eD/PIT2K/PIT-2K(9)_Z_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PIT28B/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PIT28B/PIT-28_B(19)_Z_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITWZR/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PITWZR/PIT_WZR(2)_v2-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/ORDZU/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/ORDZU/ORD-ZU(3)_v10-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyUrzedowSkarbowychExWUS/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyUrzedowSkarbowychExWUS/KodyUrzedowSkarbowychExWUS_v8-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/KodyKrajow/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/KodyKrajow/KodyKrajow_v12-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/12/23/eD/KodyWalut/KodyWalut_v1-0E.xsd"/>
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd"/>
+	<!--Formularz przeznaczony jest dla osób fizycznych, osiągających przychody objęte ryczałtem od przychodów ewidencjonowanych, zwanym dalej „ryczałtem”.-->
+	<!-- -->
+	<!--Przez urząd, do którego jest adresowane zeznanie, rozumie się urząd skarbowy, przy pomocy którego właściwy dla podatnika naczelnik urzędu skarbowego wykonuje swoje zadania.-->
+	<xsd:complexType name="TNaglowek">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="tns:TKodFormularza">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT-28 (25)"/>
+							<xsd:attribute name="kodPodatku" type="xsd:string" use="required" fixed="PPE"/>
+							<xsd:attribute name="rodzajZobowiazania" type="xsd:token" use="required" fixed="Z"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="2-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="25"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="CelZlozenia">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="etd:TCelZlozenia">
+							<xsd:attribute name="poz" type="xsd:string" use="required" fixed="P_6"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="Rok">
+				<xsd:simpleType>
+					<xsd:restriction base="etd:TRok">
+						<xsd:minInclusive value="2022"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodUrzedu" type="kusex:TKodUS1"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-28"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TNrIBAN">
+		<xsd:annotation>
+			<xsd:documentation>Numer IBAN</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Z]{2}[0-9]{2}[0-9A-Z]{10,30}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="SWIFT_Type">
+		<xsd:annotation>
+			<xsd:documentation>Kod SWIFT</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="[A-Z]{6}[A-Z0-9]{2}([A-Z0-9]{3}){0,1}"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:complexType name="TAdres1">
+		<xsd:annotation>
+			<xsd:documentation>Dane określające adres - bez elementu Poczta w adresie polskim</xsd:documentation>
+		</xsd:annotation>
+		<xsd:choice>
+			<xsd:sequence>
+				<xsd:element name="AdresPol" type="tns:TAdresPolski1"/>
+			</xsd:sequence>
+			<xsd:sequence>
+				<xsd:element name="AdresZagr" type="tns:TAdresZagraniczny"/>
+			</xsd:sequence>
+		</xsd:choice>
+	</xsd:complexType>
+	<xsd:complexType name="TAdresPolski1">
+		<xsd:annotation>
+			<xsd:documentation>Informacje opisujące adres polski - bez elementu Poczta</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodKraju" type="kk:TKodKraju" fixed="PL">
+				<xsd:annotation>
+					<xsd:documentation>Kraj</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Wojewodztwo" type="etd:TJednAdmin">
+				<xsd:annotation>
+					<xsd:documentation>Województwo</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Powiat" type="etd:TJednAdmin">
+				<xsd:annotation>
+					<xsd:documentation>Powiat</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Gmina" type="etd:TJednAdmin">
+				<xsd:annotation>
+					<xsd:documentation>Gmina</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa ulicy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrDomu" type="etd:TNrBudynku">
+				<xsd:annotation>
+					<xsd:documentation>Numer budynku</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Numer lokalu</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa miejscowości</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="KodPocztowy" type="etd:TKodPocztowy">
+				<xsd:annotation>
+					<xsd:documentation>Kod pocztowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TAdresZagraniczny">
+		<xsd:annotation>
+			<xsd:documentation>Informacje opisujące adres zagraniczny</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodKraju">
+				<xsd:annotation>
+					<xsd:documentation>Kod Kraju [Country Code]</xsd:documentation>
+				</xsd:annotation>
+				<xsd:simpleType>
+					<xsd:restriction base="kk:TKodKraju">
+						<xsd:pattern value="P[A-KM-Z]"/>
+						<xsd:pattern value="[A-OQ-Z][A-Z]"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+			<xsd:element name="KodPocztowy" type="etd:TKodPocztowy" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Kod pocztowy [Postal code]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Miejscowosc" type="etd:TMiejscowosc">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa miejscowości [City]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="Ulica" type="etd:TUlica" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Nazwa ulicy [Street]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrDomu" type="etd:TNrBudynku" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Numer budynku [Building number]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+			<xsd:element name="NrLokalu" type="etd:TNrLokalu" minOccurs="0">
+				<xsd:annotation>
+					<xsd:documentation>Numer lokalu [Flat number]</xsd:documentation>
+				</xsd:annotation>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="TOsobaFizyczna3">
+		<xsd:annotation>
+			<xsd:documentation>Podstawowy zestaw danych o osobie fizycznej z identyfikatorem NIP albo PESEL</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="OsobaFizyczna" type="etd:TIdentyfikatorOsobyFizycznej1"/>
+			<xsd:element name="AdresZamieszkania">
+				<xsd:complexType>
+					<xsd:complexContent>
+						<xsd:extension base="tns:TAdres1">
+							<xsd:attribute name="rodzajAdresu" type="xsd:string" use="required" fixed="RAD"/>
+						</xsd:extension>
+					</xsd:complexContent>
+				</xsd:complexType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodKrajuWydania">
+		<xsd:annotation>
+			<xsd:documentation>Kod kraju wydania numeru identyfikacyjnego</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="kk:TKodKraju">
+			<xsd:pattern value="P[A-KM-Z]"/>
+			<xsd:pattern value="[A-OQ-Z][A-Z]"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Deklaracja">
+		<xsd:annotation>
+			<xsd:documentation>ZEZNANIE O WYSOKOŚCI UZYSKANEGO PRZYCHODU, WYSOKOŚCI DOKONANYCH ODLICZEŃ I NALEŻNEGO RYCZAŁTU OD PRZYCHODÓW EWIDENCJONOWANYCH</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="tns:TNaglowek">
+					<xsd:annotation>
+						<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+					</xsd:annotation>
+				</xsd:element>
+				<xsd:element name="Podmiot1">
+					<xsd:complexType>
+						<xsd:complexContent>
+							<xsd:extension base="tns:TOsobaFizyczna3">
+								<xsd:attribute name="rola" type="xsd:string" use="required" fixed="Podatnik"/>
+							</xsd:extension>
+						</xsd:complexContent>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Przychody z pozarolniczej działalności gospodarczej zwolnione od podatku na podstawie art. 21 ust. 1 pkt 152, 153 i 154 ustawy o podatku dochodowym, przychody podatnika objęte ryczałtem, odliczenia od przychodów, obliczenie przysługujących odliczeń od przychodów, przychody po odliczeniach, zmniejszenia i zwiększenia przychodów o wartość wierzytelności i zobowiązań wynikających z transakcji handlowych, przychody po zwiększeniach i zmniejszeniach, nieodliczone w latach poprzednich wierzytelności i zobowiązania zmniejszające przychody , podstawa obliczenia ryczałtu, obliczenie ryczałtu po odliczeniach od przychodów, odliczenia od ryczałtu, obliczenie należnego ryczałtu, informacje o zwolnieniu, o którym mowa w art. 21 ust. 6_13 ustawy, ryczałt do zapłaty / nadpłata, ryczałt obliczony i wykazany w ewidencji przychodów w poszczególnych miesiącach (kwartałach), a także obliczony przez podatnika, o którym mowa w art. 15 ust. 3 ustawy, przychody osiągnięte w okresie zawieszenia wykonywania działalności gospodarczej, wniosek o przekazanie 1,5% podatku należnego na rzecz Organizacji Pożytku Publicznego (OPP), informacje uzupełniające, informacje o załącznikach, KDR, informacje dodatkowe, rachunek osobisty właściwy do zwrotu nadpłaty</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_6A" type="etd:TWybor1_2" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Rodzaj korekty. Wartość: 1 - korekta zeznania, o której mowa w art. 81 Ordynacji podatkowej, 2 - korekta zeznania, o której mowa w art. 81b § 1a Ordynacji podatkowej</xsd:documentation>
+								</xsd:annotation>
+								<!--Ilekroć jest mowa o Ordynacji podatkowej, oznacza to ustawę z dnia 29 sierpnia 1997 r. - Ordynacja podatkowa (Dz. U. z 2021 r. poz. 1540, z późn. zm.).-->
+								<!-- -->
+								<!--W przypadku wyboru w P_6A wartości 2 korektę składa się wraz z uzasadnieniem przyczyn złożenia korekty.-->
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>C. Przychody z pozarolniczej działalności gospodarczej zwolnione od podatku na podstawie art. 21 ust. 1 pkt 152, 153 i 154 ustawy o podatku dochodowym</xsd:documentation>
+								</xsd:annotation>
+								<!--Należy zaznaczyć właściwe kwadraty oraz wykazać przychody objęte zwolnieniami. Suma przychodów zwolnionych od podatku na podstawie art. 21 ust. 1 pkt 148, 152, 153 i 154 ustawy o podatku dochodowym nie może w roku podatkowym przekroczyć kwoty 85 528 zł. Limit obejmuje również przychody objęte zwolnieniami na podstawie wskazanych przepisów, które nie są wykazywane w tym zeznaniu. W przypadku zaznaczenia kwadratu w poz. 21 należy do zeznania dołączyć PIT/O z wypełnioną częścią E zawierającą dane co najmniej czworga dzieci uprawniających do ulgi dla rodzin 4+.-->
+								<!-- -->
+								<!--Ilekroć jest mowa o ustawie o podatku dochodowym, oznacza to ustawę z dnia 26 lipca 1991r. o podatku dochodowym od osób fizycznych (Dz. U. z 2021 r. poz. 1128, z późn. zm.).-->
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj zwolnienia. Ulga na powrót, o której mowa w art. 21 ust. 1 pkt 152 ustawy o podatku dochodowym</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_19" type="etd:TWybor1">
+										<xsd:annotation>
+											<xsd:documentation>Korzystam z w ulgi: Wartość 1 - tak</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_20">
+										<xsd:annotation>
+											<xsd:documentation>Przychody objęte zwolnieniem</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TKwota2Nieujemna">
+												<xsd:minExclusive value="0"/>
+												<xsd:maxInclusive value="85528"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj zwolnienia. Ulga dla rodzin 4+, o której mowa w art. 21 ust. 1 pkt 153 ustawy o podatku dochodowym</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_21" type="etd:TWybor1">
+										<xsd:annotation>
+											<xsd:documentation>Korzystam z w ulgi: Wartość 1 - tak</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_22">
+										<xsd:annotation>
+											<xsd:documentation>Przychody objęte zwolnieniem</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TKwota2Nieujemna">
+												<xsd:minExclusive value="0"/>
+												<xsd:maxInclusive value="85528"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaj zwolnienia. Ulga dla pracujących seniorów, o której mowa w art. 21 ust. 1 pkt 154 ustawy o podatku dochodowym</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_23" type="etd:TWybor1">
+										<xsd:annotation>
+											<xsd:documentation>Korzystam z w ulgi: Wartość 1 - tak</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_24">
+										<xsd:annotation>
+											<xsd:documentation>Przychody objęte zwolnieniem</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="etd:TKwota2Nieujemna">
+												<xsd:minExclusive value="0"/>
+												<xsd:maxInclusive value="85528"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<!--D. PRZYCHODY PODATNIKA OBJĘTE RYCZAŁTEM-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>1. Przychody z działalności prowadzonej na własne nazwisko</xsd:documentation>
+								</xsd:annotation>
+								<!--Przychody opodatkowane według stawki określonej na podstawie art. 17 ustawy należy wpisać w odpowiedniej pozycji wiersza 6.-->
+								<xsd:element name="P_25" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_26" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_27" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_28" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_29" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_30" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_31" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_32" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_33" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>2. Przychody z działalności prowadzonej w formie spółki(ek)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_37" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_38" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_39" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_40" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_41" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_42" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_43" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_44" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>3. Z najmu, podnajmu, dzierżawy, poddzierżawy lub innych umów o podobnym charakterze (tzw. najem prywatny)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_45" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_46" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_47" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>4. Przychody ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_48" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 2%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_49" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>5. RAZEM</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 2%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_51" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_52" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_53" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5% (dot. najmu, podnajmu, dzierżawy, poddzierżawy lub innych umów o podobnym charakterze)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_54" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_55" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_56" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_57" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5% (dot. najmu, podnajmu, dzierżawy, poddzierżawy lub innych umów o podobnym charakterze)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_58" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_59" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_60" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_61" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_62" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>6. Przychody określone przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_63" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 2%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_64" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_65" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_66" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_67" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_68" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_69" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_70" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_71" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_72" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_73" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Ogółem przychody</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>7. Udział procentowy kwot z poz. od 50 do 61 w sumie kwot z poz. 62 i 73</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_74" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 2%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_75" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_76" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_77" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5% (dot. najmu, podnajmu, dzierżawy, poddzierżawy lub innych umów o podobnym charakterze)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_78" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_79" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_80" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_81" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5% (dot. najmu, podnajmu, dzierżawy, poddzierżawy lub innych umów o podobnym charakterze)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_82" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_83" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_84" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_85" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>8. Udział procentowy kwot z poz. od 63 do 72 w sumie kwot z poz. 62 i 73</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_86" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 2%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_87" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_88" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_89" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_90" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_91" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_92" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_93" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_94" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_95" type="etd:TProcentowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>E. Odliczenia od przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:sequence>
+									<xsd:annotation>
+										<xsd:documentation>E.1. Odliczenia od przychodów na podstawie art. 11 ust. 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Wydatki podlegają odliczeniu od przychodu, jeżeli nie zostały odliczone od dochodu na podstawie przepisów ustawy o podatku dochodowym.-->
+									<!-- -->
+									<!--Suma odliczeń nie może przekroczyć sumy przychodów z poz. 62 i 73.-->
+									<xsd:element name="P_96" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Straty z lat ubiegłych</xsd:documentation>
+										</xsd:annotation>
+										<!--Strata obliczona zgodnie z art. 9 ust. 3 i 3a ustawy o podatku dochodowym.-->
+									</xsd:element>
+									<xsd:element name="P_97" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Składki na ubezpieczenia społeczne</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_98" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Odliczenia - wykazane w części B załącznika PIT/O</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_99" type="etd:TKwota2Nieujemna">
+										<xsd:annotation>
+											<xsd:documentation>Przychód po odliczeniach</xsd:documentation>
+										</xsd:annotation>
+										<!--Od sumy kwot z poz. 62 i 73 należy odjąć sumę kwot z poz. 96, 97 i 98.-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>E.2. Odliczenia od przychodów wydatków mieszkaniowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_100" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Ulga odsetkowa - wykazana w części B.1. załącznika PIT/D</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota odliczanych odsetek nie może być większa niż kwota z poz. 99.-->
+									</xsd:element>
+									<xsd:element name="P_101" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Przychód po odliczeniu odsetek</xsd:documentation>
+										</xsd:annotation>
+										<!--Od kwoty z poz. 99 należy odjąć kwotę z poz. 100.-->
+									</xsd:element>
+									<xsd:element name="P_102" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Odliczenia mieszkaniowe - wykazane w części B.3. załącznika PIT/D</xsd:documentation>
+										</xsd:annotation>
+										<!--Odliczenia nie mogą przekroczyć kwoty z poz. 101. Nadwyżka odliczeń ponad kwotę z poz. 101 podlega odliczeniu w następnych latach.-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_103" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>E.3. Odliczenia z części E.1. i E.2.</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 96, 97, 98, 100 i 102.-->
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>E.4. Odliczenia na podstawie art. 11 ust. 1a i 3a ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Odliczeń dokonuje się wyłącznie od przychodów z pozarolniczej działalności gospodarczej.-->
+									<xsd:element name="P_104" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Składki na ubezpieczenie zdrowotne, o których mowa w art. 11 ust. 1a ustawy</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_105" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wydatki na nabycie terminala płatniczego oraz wydatki związane z obsługą transakcji płatniczych przy użyciu terminala płatniczego, o których mowa w art. 11 ust. 3a ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--Wydatki podlegają odliczeniu od przychodu, jeżeli nie zostały odliczone od dochodu na podstawie przepisów ustawy o podatku dochodowym.-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_106" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>E.5. Odliczenia z części E.4.</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 104 i 105.-->
+								</xsd:element>
+							</xsd:sequence>
+							<!--F. OBLICZENIE PRZYSŁUGUJĄCYCH ODLICZEŃ OD PRZYCHODÓW. Kwoty przysługujących odliczeń od przychodów obliczone zgodnie z art. 11 ust. 3 ustawy.-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.1. Obliczenie przysługujących odliczeń z poz. 103</xsd:documentation>
+								</xsd:annotation>
+								<!--Kwoty przysługujących odliczeń od przychodów obliczone zgodnie z art. 11 ust. 3 ustawy.-->
+								<xsd:element name="P_107" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 2%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 74. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 50.-->
+								</xsd:element>
+								<xsd:element name="P_108" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 75. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 51.-->
+								</xsd:element>
+								<xsd:element name="P_109" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 76. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 52.-->
+								</xsd:element>
+								<xsd:element name="P_110" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 77. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 53.-->
+								</xsd:element>
+								<xsd:element name="P_111" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 78. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 54.-->
+								</xsd:element>
+								<xsd:element name="P_112" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 79. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 55.-->
+								</xsd:element>
+								<xsd:element name="P_113" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 80. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 56.-->
+								</xsd:element>
+								<xsd:element name="P_114" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 81. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 57.-->
+								</xsd:element>
+								<xsd:element name="P_115" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 82. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 58.-->
+								</xsd:element>
+								<xsd:element name="P_116" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 83. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 59.-->
+								</xsd:element>
+								<xsd:element name="P_117" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 84. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 60.-->
+								</xsd:element>
+								<xsd:element name="P_118" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 103 pomnożona przez udział z poz. 85. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 61.-->
+								</xsd:element>
+								<xsd:element name="P_119" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--W celu obliczenia kwoty wydatków podlegającej odliczeniu od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy i opodatkowanych różnymi stawkami należy w pierwszej kolejności kwotę z poz. 103 pomnożyć przez właściwe dla poszczególnych przychodów udziały z poz. od 86 do 95, a następnie obliczone w ten sposób wielkości zsumować. Kwoty wydatków podlegające odliczeniu od przychodów opodatkowanych według poszczególnych stawek nie mogą przekroczyć kwot przychodów z odpowiednich poz. od 63 do 72.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>F.2. Obliczenie przysługujących odliczeń z poz. 106</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_120" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 3% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 51 pomniejszonej o kwotę z poz. 108.-->
+								</xsd:element>
+								<xsd:element name="P_121" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 5,5% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 52 pomniejszonej o kwotę z poz. 109.-->
+								</xsd:element>
+								<xsd:element name="P_122" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 8,5% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 54 pomniejszonej o kwotę z poz. 111.-->
+								</xsd:element>
+								<xsd:element name="P_123" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 10% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 55 pomniejszonej o kwotę z poz. 112.-->
+								</xsd:element>
+								<xsd:element name="P_124" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 12% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 56 pomniejszonej o kwotę z poz. 113.-->
+								</xsd:element>
+								<xsd:element name="P_125" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 12,5% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 58 pomniejszonej o kwotę z poz. 115.-->
+								</xsd:element>
+								<xsd:element name="P_126" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 14% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 59 pomniejszonej o kwotę z poz. 116.-->
+								</xsd:element>
+								<xsd:element name="P_127" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 15% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 60 pomniejszonej o kwotę z poz. 117.-->
+								</xsd:element>
+								<xsd:element name="P_128" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów opodatkowanych stawką ryczałtu 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 106 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego 17% stawką ryczałtu w ogólnej kwocie przychodu z pozarolniczej działalności gospodarczej. Kwota wydatków podlegająca odliczeniu nie może przekroczyć kwoty przychodu z poz. 61 pomniejszonej o kwotę z poz. 118.-->
+								</xsd:element>
+								<xsd:element name="P_129" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wydatki podlegające odliczeniu od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę wydatków przypadających na przychody z pozarolniczej działalności gospodarczej określone przez organ podatkowy na podstawie art. 17 ustawy. Kwota ta stanowi sumę wydatków przypadających na przychody określone na podstawie art. 17 ustawy, według poszczególnych stawek ryczałtu. Kwoty wydatków podlegających odliczeniu od przychodów opodatkowanych według poszczególnych stawek nie mogą przekroczyć kwot przychodów z odpowiednich poz. od 64 do 72 pomniejszonych o kwoty wydatków przypadających na te przychody uwzględnione w poz. 119.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>G. Przychody po odliczeniach</xsd:documentation>
+								</xsd:annotation>
+								<!--Od kwot przychodów uzyskanych według poszczególnych stawek należy odjąć kwoty przysługujących odliczeń według poszczególnych stawek ryczałtu z części F.-->
+								<xsd:element name="P_130" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 2%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 50 minus kwota z poz. 107.-->
+								</xsd:element>
+								<xsd:element name="P_131" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 51 minus suma kwot z poz. 108 i 120.-->
+								</xsd:element>
+								<xsd:element name="P_132" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 52 minus suma kwot z poz. 109 i 121.-->
+								</xsd:element>
+								<xsd:element name="P_133" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 53 minus kwota z poz. 110.-->
+								</xsd:element>
+								<xsd:element name="P_134" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 54 minus suma kwot z poz. 111 i 122.-->
+								</xsd:element>
+								<xsd:element name="P_135" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 55 minus suma kwot z poz. 112 i 123.-->
+								</xsd:element>
+								<xsd:element name="P_136" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 56 minus suma kwot z poz. 113 i 124.-->
+								</xsd:element>
+								<xsd:element name="P_137" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 57 minus kwota z poz. 114.-->
+								</xsd:element>
+								<xsd:element name="P_138" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 58 minus kwota z poz. 115 i 125.-->
+								</xsd:element>
+								<xsd:element name="P_139" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 59 minus suma kwot z poz. 116 i 126.-->
+								</xsd:element>
+								<xsd:element name="P_140" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 60 minus suma kwot z poz. 117 i 127.-->
+								</xsd:element>
+								<xsd:element name="P_141" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody po odliczeniach opodatkowane stawką ryczałtu 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 61 minus suma kwot z poz. 118 i 128.-->
+								</xsd:element>
+								<xsd:element name="P_142" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody określone przez organ podatkowy na podstawie art. 17 ustawy - po odliczeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--W celu obliczenia kwoty przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy i opodatkowanych różnymi stawkami - po odliczeniach, należy w pierwszej kolejności kwoty przychodów wykazanych w poz. od 63 do 72 pomniejszyć o kwoty przysługujących od tych przychodów odliczeń, a następnie obliczone w ten sposób wielkości zsumować.-->
+								</xsd:element>
+								<xsd:element name="P_143" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Łączne przychody po odliczeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. od 130 do 142.-->
+								</xsd:element>
+							</xsd:sequence>
+							<!--H. ZWIĘKSZENIA I ZMNIEJSZENIA PRZYCHODÓW O WARTOŚĆ WIERZYTELNOŚCI I ZOBOWIĄZAŃ WYNIKAJĄCYCH Z TRANSAKCJI HANDLOWYCH-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>H.1. Zwiększenia przychodów (jeżeli do dnia złożenia zeznania podatkowego zobowiązanie nie zostało uregulowane)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_144" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań i wierzytelności zwiększających przychody, o których mowa odpowiednio w art. 11 ust. 4 pkt 2 i ust. 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać sumę kwot z poz. 18 i 42 załącznika PIT/WZR. Jeżeli po roku podatkowym, za który dokonano zmniejszenia na podstawie art. 11 ust. 4 pkt 1 i ust. 5 ustawy, wierzytelność zostanie uregulowana lub zbyta, podatnik obowiązany jest do zwiększenia przychodów w zeznaniu podatkowym składanym za rok podatkowy, w którym wierzytelność została uregulowana lub zbyta, odpowiednio o wartość kwot uprzednio odliczonych (należy dodać sumę kwot z poz. 24 i 48 załącznika PIT/WZR).-->
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość zobowiązań i wierzytelności zwiększających przychody według poszczególnych stawek</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_145" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 2%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych opodatkowanego według 2% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_146" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 3%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 3% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_147" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 5,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 5,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_148" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 8,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 8,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_149" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 10%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 10% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_150" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 12%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_151" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 12,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_152" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 14%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 14% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_153" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 15%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 15% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_154" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zwiększających przychody według stawki 17%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 144 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 17% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_155" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zwiększających przychody określone przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--Należy wpisać kwotę zobowiązań i wierzytelności zwiększających przychody z pozarolniczej działalności gospodarczej i ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych, określone przez organ podatkowy na podstawie art. 17 ustawy. Kwota ta stanowi sumę kwot zwiększających przychody określone przez organ podatkowy na podstawie art. 17 ustawy, według poszczególnych stawek ryczałtu.-->
+									</xsd:element>
+									<xsd:element name="P_156" type="etd:TKwota2Nieujemna">
+										<xsd:annotation>
+											<xsd:documentation>Łączna wartość wierzytelności i zobowiązań</xsd:documentation>
+										</xsd:annotation>
+										<!--Suma kwot z poz. 145 do 155.-->
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>H.2. Zmniejszenia przychodów (jeżeli do dnia złożenia zeznania podatkowego wierzytelność nie została uregulowana lub zbyta)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_157" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności i zobowiązań zmniejszających przychody, o których mowa odpowiednio w art. 11 ust. 4 pkt 1 i ust. 9 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać sumę kwot z poz. 12 i 36 załącznika PIT/WZR. Jeżeli po roku podatkowym, za który dokonano zwiększenia na podstawie art. 11 ust. 4 pkt 2 ustawy, zobowiązanie zostanie uregulowane, podatnik zmniejsza przychody w zeznaniu podatkowym składanym za rok podatkowy, w którym zobowiązanie zostało uregulowane (należy dodać sumę kwot z poz. 30 i 54 załącznika PIT/WZR). Poz. 157 wypełnia się, jeżeli suma kwot z poz. 143 i 144 pomniejszona o sumę kwot z poz. 133 i 137 jest większa od 0 (kwota zmniejszenia nie może przekroczyć sumy kwot z poz. 143 i 144 pomniejszonej o sumę kwot z poz. 133 i 137).-->
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość wierzytelności i zobowiązań zmniejszających przychody według poszczególnych stawek</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_158" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 2%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych opodatkowanego według 2% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_159" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 3%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 3% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_160" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 5,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 5,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_161" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 8,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 8,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_162" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 10%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 10% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_163" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 12%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_164" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 12,5%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_165" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 14%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 14% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_166" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 15%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 15% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_167" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość zobowiązań i wierzytelności zmniejszających przychody według stawki 17%</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 157 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 17% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+									</xsd:element>
+									<xsd:element name="P_168" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Wartość wierzytelności i zobowiązań zmniejszających przychody określone przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--Należy wpisać kwotę wierzytelności i zobowiązań zmniejszających przychody z pozarolniczej działalności gospodarczej i ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych, określone przez organ podatkowy na podstawie art. 17 ustawy. Kwota ta stanowi sumę kwot zmniejszających przychody określone przez organ podatkowy na podstawie art. 17 ustawy, według poszczególnych stawek ryczałtu.-->
+									</xsd:element>
+									<xsd:element name="P_169" type="etd:TKwota2Nieujemna">
+										<xsd:annotation>
+											<xsd:documentation>Łączna wartość wierzytelności i zobowiązań</xsd:documentation>
+										</xsd:annotation>
+										<!--Suma kwot z poz. 158 do 168.-->
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:element name="P_170" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wartość nierozliczonych wierzytelności i zobowiązań zmniejszających przychody, do odliczenia w kolejnych latach podatkowych, na podstawie art. 11 ust. 5 i ust. 9 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<!--W poz. 170 wpisuje się nadwyżkę sumy kwot z poz. 12, 30, 36 i 54 załącznika PIT/WZR nad kwotą z poz. 169.-->
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>I. Przychody po zwiększeniach i zmniejszeniach</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_171" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 2% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 130 należy dodać kwotę z poz. 145 i odjąć kwotę z poz. 158.-->
+								</xsd:element>
+								<xsd:element name="P_172" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 3% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 131 należy dodać kwotę z poz. 146 i odjąć kwotę z poz. 159.-->
+								</xsd:element>
+								<xsd:element name="P_173" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 5,5% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 132 należy dodać kwotę z poz. 147 i odjąć kwotę z poz. 160.-->
+								</xsd:element>
+								<xsd:element name="P_174" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 8,5% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 134 należy dodać kwotę z poz. 148 i odjąć kwotę z poz. 161.-->
+								</xsd:element>
+								<xsd:element name="P_175" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 10% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 135 należy dodać kwotę z poz. 149 i odjąć kwotę z poz. 162.-->
+								</xsd:element>
+								<xsd:element name="P_176" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 12% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 136 należy dodać kwotę z poz. 150 i odjąć kwotę z poz. 163.-->
+								</xsd:element>
+								<xsd:element name="P_177" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 12,5% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 138 należy dodać kwotę z poz. 151 i odjąć kwotę z poz. 164.-->
+								</xsd:element>
+								<xsd:element name="P_178" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 14% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 139 należy dodać kwotę z poz. 152 i odjąć kwotę z poz. 165.-->
+								</xsd:element>
+								<xsd:element name="P_179" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 15% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 140 należy dodać kwotę z poz. 153 i odjąć kwotę z poz. 166.-->
+								</xsd:element>
+								<xsd:element name="P_180" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody opodatkowane stawką 17% po zwiększeniach/zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Do kwoty z poz. 141 należy dodać kwotę z poz. 154 i odjąć kwotę z poz. 167.-->
+								</xsd:element>
+								<xsd:element name="P_181" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody określone przez organ podatkowy na podstawie art. 17 ustawy po zwiększeniach i zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--W celu obliczenia kwoty przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy po zwiększeniach i zmniejszeniach i opodatkowanych różnymi stawkami należy kwoty przychodów wykazanych w poz. od 63 do 72 pomniejszyć o kwoty przysługujących od tych przychodów odliczeń, zwiększyć o kwoty zwiększeń i pomniejszyć o kwoty zmniejszeń przypadających na te przychody, a następnie obliczone w ten sposób wielkości zsumować.-->
+								</xsd:element>
+							</xsd:sequence>
+							<!--J. NIEODLICZONE W LATACH POPRZEDNICH WIERZYTELNOŚCI I ZOBOWIĄZANIA ZMNIEJSZAJĄCE PRZYCHODY-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>J.1. Wierzytelności i zobowiązania nieodliczone w latach poprzednich</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_182" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Łączne przychody po zwiększeniach i zmniejszeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 171 do 181.-->
+								</xsd:element>
+								<xsd:element name="P_183" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wartość nieodliczonych w poprzednich latach wierzytelności i zobowiązań zmniejszających przychody</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota odliczenia nie może przekroczyć kwoty z poz. 182.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>J.2. Obliczenie przysługujących odliczeń nieodliczonych w latach poprzednich</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_184" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 2%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych opodatkowanego według 2% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_185" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 3% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_186" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 5,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_187" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 8,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_188" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 10% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_189" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_190" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 12,5% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_191" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 14% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_192" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 15% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_193" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przysługujące odliczenie nieodliczone w latach poprzednich od przychodów opodatkowanych stawką ryczałtu 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 183 pomnożona przez udział kwoty przychodu z pozarolniczej działalności gospodarczej opodatkowanego według 17% stawki ryczałtu w ogólnej kwocie przychodu ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych i pozarolniczej działalności gospodarczej.-->
+								</xsd:element>
+								<xsd:element name="P_194" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Odliczenia od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy wpisać kwotę odliczeń przypadającą na przychody z pozarolniczej działalności gospodarczej i ze sprzedaży przetworzonych produktów roślinnych i zwierzęcych, określone przez organ podatkowy na podstawie art. 17 ustawy. Kwota ta stanowi sumę kwot odliczeń przypadających na przychody określone przez organ podatkowy na podstawie art. 17 ustawy, według poszczególnych stawek ryczałtu.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>K. Podstawa obliczenia ryczałtu (po zaokrągleniu do pełnych złotych)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_195" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 2%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 171 należy odjąć kwotę z poz. 184.-->
+								</xsd:element>
+								<xsd:element name="P_196" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 172 należy odjąć kwotę z poz. 185.-->
+								</xsd:element>
+								<xsd:element name="P_197" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 173 należy odjąć kwotę z poz. 186.-->
+								</xsd:element>
+								<xsd:element name="P_198" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 133, po zaokrągleniu do pełnych złotych.-->
+								</xsd:element>
+								<xsd:element name="P_199" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 174 należy odjąć kwotę z poz. 187.-->
+								</xsd:element>
+								<xsd:element name="P_200" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 175 należy odjąć kwotę z poz. 188.-->
+								</xsd:element>
+								<xsd:element name="P_201" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 176 należy odjąć kwotę z poz. 189.-->
+								</xsd:element>
+								<xsd:element name="P_202" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 137, po zaokrągleniu do pełnych złotych.-->
+								</xsd:element>
+								<xsd:element name="P_203" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 177 należy odjąć kwotę z poz. 190.-->
+								</xsd:element>
+								<xsd:element name="P_204" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 178 należy odjąć kwotę z poz. 191.-->
+								</xsd:element>
+								<xsd:element name="P_205" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 179 należy odjąć kwotę z poz. 192.-->
+								</xsd:element>
+								<xsd:element name="P_206" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podstawa obliczenia ryczałtu od przychodów opodatkowanych stawką ryczałtu 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 180 należy odjąć kwotę z poz. 193.-->
+								</xsd:element>
+								<xsd:element name="P_207" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody określone przez organ podatkowy na podstawie art. 17 ustawy po odliczeniach</xsd:documentation>
+									</xsd:annotation>
+									<!--W celu obliczenia kwoty przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy po odliczeniach i opodatkowanych różnymi stawkami należy kwoty przychodów wykazanych w poz. od 63 do 72 pomniejszyć o kwoty przysługujących od tych przychodów odliczeń, zwiększyć o kwoty zwiększeń przypadających na te przychody, pomniejszyć o kwoty zmniejszeń przypadających na te przychody, pomniejszyć o kwoty nieodliczonych w poprzednich latach wierzytelności i zobowiązań zmniejszających te przychody i zaokrąglić je do pełnych złotych, a następnie obliczone w ten sposób wielkości zsumować.-->
+								</xsd:element>
+							</xsd:sequence>
+							<!--L. OBLICZENIE RYCZAŁTU PO ODLICZENIACH OD PRZYCHODÓW-->
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_208" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody objęte ryczałtem zgodnie z art. 12 ust. 1 pkt 4 lit. a ustawy osiągnięte za granicą, o które zwiększona jest podstawa obliczenia ryczałtu do ustalenia stopy procentowej (przeliczone na złote)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_209" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Przychody objęte ryczałtem zgodnie z art. 12 ust. 1 pkt 4 lit. b-g ustawy osiągnięte za granicą, o które zwiększona jest podstawa obliczenia ryczałtu do ustalenia stopy procentowej (przeliczone na złote)</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Obliczenie ryczałtu po odliczeniach od przychodów</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_210" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>2% kwoty z poz. 195</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_211" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>3% kwoty z poz. 196</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_212" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>5,5% kwoty z poz. 197</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_213" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>8,5% z poz. 198</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_214" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>8,5% z poz. 199</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_215" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>10% kwoty z poz. 200</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_216" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>12% kwoty z poz. 201</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_217" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>12,5% kwoty z poz. 202</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_218" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>12,5% kwoty z poz. 203</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_219" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>14% kwoty z poz. 204</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_220" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>15% kwoty z poz. 205</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_221" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>17% kwoty z poz. 206</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_222" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Ryczałt od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy</xsd:documentation>
+								</xsd:annotation>
+								<!--W celu obliczenia kwoty ryczałtu od przychodów określonych przez organ podatkowy na podstawie art. 17 ustawy i opodatkowanych różnymi stawkami należy w pierwszej kolejności kwoty przychodów wykazanych w poz. od 63 do 72 pomniejszyć o kwoty przysługujących odliczeń, zwiększyć o kwoty zwiększeń przypadających na te przychody, pomniejszyć o kwoty zmniejszeń przypadających na te przychody, pomniejszyć o kwoty nieodliczonych w poprzednich latach wierzytelności i zobowiązań zmniejszających te przychody, zaokrąglić je do pełnych złotych i obliczyć - według właściwych stawek - ryczałt od tych przychodów, a następnie obliczone w ten sposób wielkości zsumować.-->
+							</xsd:element>
+							<xsd:element name="P_223" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Ryczałt</xsd:documentation>
+								</xsd:annotation>
+								<!--Suma kwot z poz. od 210 do 222.-->
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_224" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Doliczenia do ryczałtu</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_225" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>w tym doliczenie wynikające z zastosowania art. 27 ust. 8 ustawy o podatku dochodowym w związku z art. 12 ust. 12 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_226" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatek zapłacony za granicą - zgodnie z art. 27 ust. 9 i 9a ustawy o podatku dochodowym w związku z art. 12 ust. 12 ustawy</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_227" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Ryczałt</xsd:documentation>
+								</xsd:annotation>
+								<!--Od sumy kwot z poz. 223 i 224 należy odjąć kwotę z poz. 226. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+							</xsd:element>
+							<!--M. ODLICZENIA OD RYCZAŁTU-->
+							<!-- -->
+							<!--Dokonanie odliczeń od ryczałtu jest możliwe, jeśli z tych samych tytułów podatnik nie dokonywał odliczeń od podatku na podstawie przepisów ustawy o podatku dochodowym.-->
+							<xsd:element name="P_228" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia - wykazane w części C załącznika PIT/O</xsd:documentation>
+								</xsd:annotation>
+								<!--Odliczana kwota nie może przekroczyć kwoty ryczałtu z poz. 227.-->
+							</xsd:element>
+							<xsd:element name="P_229" type="etd:TKwota2Nieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Ryczałt po odliczeniach</xsd:documentation>
+								</xsd:annotation>
+								<!--Od kwoty z poz. 227 należy odjąć kwotę z poz. 228.-->
+							</xsd:element>
+							<xsd:element name="P_230" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Odliczenia mieszkaniowe - wykazane w części C.2. załącznika PIT/D</xsd:documentation>
+								</xsd:annotation>
+								<!--Odliczenia nie mogą przekroczyć kwoty z poz. 229. Nadwyżka odliczeń ponad kwotę z poz. 229 podlega odliczeniu w następnych latach.-->
+							</xsd:element>
+							<!--N. OBLICZENIE NALEŻNEGO RYCZAŁTU-->
+							<xsd:element name="P_231" type="etd:TKwotaCNieujemna">
+								<xsd:annotation>
+									<xsd:documentation>Należny ryczałt (po zaokrągleniu do pełnych złotych)</xsd:documentation>
+								</xsd:annotation>
+								<!--Od kwoty z poz. 229 należy odjąć kwotę z poz. 230.-->
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_232">
+									<xsd:annotation>
+										<xsd:documentation>Rok podatkowy objęty zwolnieniem, o którym mowa w art. 21 ust. 6 - 13 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy podać rok podatkowy, w którym podatnik korzystał ze zwolnienia, o którym mowa w art. 21 ust. 6-13 ustawy.-->
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TRok">
+											<xsd:minInclusive value="2017"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:element name="P_233" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>20% należnego ryczałtu wykazanego w zeznaniu składanym za rok podatkowy objęty zwolnieniem, o którym mowa w art. 21 ust. 6 - 13 ustawy</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<!--O. INFORMACJE O ZWOLNIENIU, O KTÓRYM MOWA W ART. 21 UST. 6-13 USTAWY-->
+							<xsd:element name="P_234" type="etd:TWybor1_3" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Podatnik korzysta ze zwolnienia w roku podatkowym wykazanym w poz. 4: 1 - tak, od całości przychodów, 2 - tak, od części przychodów, 3 - nie</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<!--P. RYCZAŁT DO ZAPŁATY / NADPŁATA-->
+							<!-- -->
+							<!--Jeżeli w poz. 234 podatnik zaznaczył kwadrat nr 1, nie wypełnia części P i Q. Jeżeli w poz. 234 podatnik zaznaczył kwadrat nr 2, w częściach P i Q nie wykazuje ryczałtu w części przypadającej na przychody z pozarolniczej działalności gospodarczej, dla których wybrano zwolnienie, o którym mowa w art. 21 ust. 6-13 ustawy.-->
+							<xsd:element name="P_235" type="etd:TKwotaCNieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Wpłacony ryczałt</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice>
+								<xsd:element name="P_236" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>RYCZAŁT DO ZAPŁATY</xsd:documentation>
+									</xsd:annotation>
+									<!--Od sumy kwot z poz. 231 i 233 należy odjąć kwotę z poz. 235. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+								</xsd:element>
+								<xsd:element name="P_237" type="etd:TKwotaCNieujemna">
+									<xsd:annotation>
+										<xsd:documentation>NADPŁATA</xsd:documentation>
+									</xsd:annotation>
+									<!--Od kwoty z poz. 235 należy odjąć sumę kwot z poz. 231 i 233. Jeżeli różnica jest liczbą ujemną, należy wpisać 0.-->
+								</xsd:element>
+							</xsd:choice>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Q. Ryczałt obliczony i wykazany w ewidencji przychodów w poszczególnych miesiącach (kwartałach), a także obliczony przez podatnika, o którym mowa w art. 15 ust. 3 ustawy (po dokonanych odliczeniach)</xsd:documentation>
+								</xsd:annotation>
+								<!--Jeżeli w poz. 234 podatnik zaznaczył kwadrat nr 1, nie wypełnia części P i Q. Jeżeli w poz. 234 podatnik zaznaczył kwadrat nr 2, w częściach P i Q nie wykazuje ryczałtu w części przypadającej na przychody z pozarolniczej działalności gospodarczej, dla których wybrano zwolnienie, o którym mowa w art. 21 ust. 6-13 ustawy.-->
+								<xsd:element name="P_238" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc I</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_239" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc II</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_240" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc III / I kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_241" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IV</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_242" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc V</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_243" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VI / II kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_244" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_245" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc VIII</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_246" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc IX / III kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_247" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc X</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_248" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XI</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_249" type="etd:TKwotaCNieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Miesiąc XII / IV kwartał</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_250" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>R. Przychody osiągnięte w okresie zawieszenia wykonywania działalności gospodarczej</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<!--W poz. 250 należy wykazać objęte ryczałtem przychody, które zostały ujęte w części D.-->
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>S. Wniosek o przekazanie 1,5% podatku należnego na rzecz Organizacji Pożytku Publicznego (OPP)</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_251" type="etd:TNrKRS">
+									<xsd:annotation>
+										<xsd:documentation>Numer KRS</xsd:documentation>
+									</xsd:annotation>
+									<!--Należy podać numer wpisu do Krajowego Rejestru Sądowego (numer KRS) organizacji wybranej z wykazu prowadzonego na podstawie odrębnych przepisów oraz wysokość kwoty na jej rzecz.-->
+								</xsd:element>
+								<xsd:element name="P_252">
+									<xsd:annotation>
+										<xsd:documentation>Wnioskowana kwota</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota z poz. 252 nie może przekroczyć 1,5% kwoty z poz. 231, po zaokrągleniu do pełnych dziesiątek groszy w dół.-->
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TKwota2Nieujemna">
+											<xsd:fractionDigits value="1"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<!--T. INFORMACJE UZUPEŁNIAJĄCE-->
+								<!-- -->
+								<!--Podatnicy, którzy wypełnili część S, w poz. 253 mogą podać cel szczegółowy 1,5%, a zaznaczając kwadrat w poz. 254, wyrazić zgodę na przekazanie OPP swojego imienia, nazwiska i adresu, wraz z informacją o kwocie z poz. 252. W poz. 255 można podać dodatkowe informacje, np. ułatwiające kontakt z podatnikiem (telefon, e-mail).-->
+								<xsd:element name="P_253" type="etd:TZnakowy" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Cel szczegółowy 1,5%</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_254" type="etd:TWybor1" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Wyrażam zgodę na przekazanie OPP swojego imienia, nazwiska i adresu wraz z informacją o kwocie z poz. 252</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_255" type="etd:TZnakowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacje dodatkowe, np. ułatwiające kontakt z podatnikiem (telefon, e-mail)</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<!--U. INFORMACJE O ZAŁĄCZNIKACH-->
+							<!-- -->
+							<!--W poz. od 256 do 260 należy podać liczbę dołączonych załączników. Poz. 261 i 262 wypełniają podatnicy, którzy załącznik PIT/D dołączyli do innego niż składane zeznanie. Jeśli w poz. 261 zaznaczono kwadrat nr 2, należy również wypełnić poz. 263.-->
+							<xsd:element name="P_256" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacja o załączniku PIT/O</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:choice minOccurs="0">
+								<xsd:sequence>
+									<xsd:element name="P_257" type="etd:TWybor1">
+										<xsd:annotation>
+											<xsd:documentation>Informacja o załączniku PIT/D</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_258" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Informacja o załączniku PIT-2K</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence>
+									<xsd:element name="P_261" type="etd:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Informacja o załączniku - Załącznik PIT/D dołącza do swojego zeznania: 1 - podatnik, 2 - małżonek</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_262" type="etd:TWybor1_3">
+										<xsd:annotation>
+											<xsd:documentation>Informacja o załączniku - Kod formularza, do którego został dołączony załącznik PIT/D: 1 - PIT-28, 2 - PIT-36, 3 - PIT-37</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_263" type="etd:TZnakowy" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Informacja o załączniku - Identyfikator podatkowy, nazwisko i imię małżonka oraz urząd, do którego został złożony załącznik PIT/D</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:choice>
+							<xsd:element name="P_259" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacja o załączniku PIT-28/B</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_260" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacja o załączniku PIT/WZR</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_264" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>V. KARTA DUŻEJ RODZINY (KDR). Podatnik posiada ważną KDR: 1 - tak</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_265" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>W. Informacje dodatkowe. Podatnik wybrał kwartalny sposób opłacania ryczałtu na podstawie art. 21 ust. 1a ustawy: 1 - tak</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_266" type="etd:TWybor1" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>W. Informacje dodatkowe. podatnik wybrał metodę ustalania daty powstania przychodów na podstawie art. 14 ust. 1j ustawy o podatku dochodowym: 1 - tak</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>X. Rachunek osobisty właściwy do zwrotu nadpłaty</xsd:documentation>
+								</xsd:annotation>
+								<!--Jeżeli z zeznania wynika nadpłata, w tej części można wskazać rachunek bankowy lub rachunek w spółdzielczej kasie oszczędnościowo-kredytowej (SKOK), inny niż związany z prowadzoną działalnością gospodarczą, na który ma nastąpić jej zwrot. Podaje się rachunek, którego posiadaczem (współposiadaczem) jest podatnik. Wskazany rachunek aktualizuje poprzednio zgłoszony rachunek służący do zwrotu podatku lub nadpłaty.-->
+								<xsd:element name="P_267">
+									<xsd:annotation>
+										<xsd:documentation>Posiadacz rachunku (należy wskazać imię i nazwisko posiadacza, a w przypadku, gdy jest to rachunek wspólny - imiona i nazwiska wszystkich współposiadaczy)</xsd:documentation>
+									</xsd:annotation>
+									<xsd:simpleType>
+										<xsd:restriction base="etd:TZnakowy">
+											<xsd:maxLength value="70"/>
+										</xsd:restriction>
+									</xsd:simpleType>
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:element name="P_268A" type="tns:TKodKrajuWydania">
+										<xsd:annotation>
+											<xsd:documentation>Kraj siedziby banku (oddziału)</xsd:documentation>
+										</xsd:annotation>
+										<!--uzupełnić wyłącznie, gdy wskazano rachunek zagraniczny-->
+									</xsd:element>
+									<xsd:element name="P_270_2" type="tns:SWIFT_Type">
+										<xsd:annotation>
+											<xsd:documentation>Kod SWIFT</xsd:documentation>
+										</xsd:annotation>
+										<!--w przypadku rachunku zagranicznego należy podać kod SWIFT-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_269" type="kw:TKodWaluty" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Waluta, w której jest prowadzony rachunek</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_270_1" type="tns:TNrIBAN">
+									<xsd:annotation>
+										<xsd:documentation>Pełny numer rachunku - numer IBAN</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Zalaczniki" minOccurs="0">
+					<xsd:complexType>
+						<xsd:sequence minOccurs="0">
+							<xsd:element ref="zo28:Zalacznik_PIT_O" minOccurs="0"/>
+							<xsd:sequence minOccurs="0">
+								<xsd:element ref="zd:Zalacznik_PIT_D"/>
+								<xsd:element ref="z2k:Zalacznik_PIT-2K" minOccurs="0"/>
+							</xsd:sequence>
+							<xsd:element ref="z28b:Zalacznik_PIT-28_B" minOccurs="0"/>
+							<xsd:element ref="zwzr:Zalacznik_PIT_WZR" minOccurs="0"/>
+							<xsd:element ref="zzu:Zalacznik_ORD-ZU" minOccurs="0"/>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+				<xsd:element name="Pouczenia">
+					<xsd:annotation>
+						<xsd:documentation>Wartość 1 oznacza potwierdzenie zapoznania się z treścią i akceptację poniższych pouczeń:
+W przypadku niewpłacenia w obowiązujących terminach należności wynikających z poz. 236 i 238-249 lub wpłacenia ich w niepełnej wysokości niniejsze zeznanie stanowi podstawę do wystawienia tytułu wykonawczego, zgodnie z art. 3a § 1 pkt 1 ustawy z dnia 17 czerwca 1966 r. o postępowaniu egzekucyjnym w administracji (Dz. U. z 2022 r. poz. 479, z późn. zm.).
+Za podanie nieprawdy lub zatajenie prawdy i przez to narażenie podatku na uszczuplenie grozi odpowiedzialność przewidziana w Kodeksie karnym skarbowym.
+								</xsd:documentation>
+					</xsd:annotation>
+					<xsd:simpleType>
+						<xsd:restriction base="etd:TKwota2Nieujemna">
+							<xsd:minExclusive value="0"/>
+							<xsd:maxExclusive value="2"/>
+							<xsd:fractionDigits value="0"/>
+						</xsd:restriction>
+					</xsd:simpleType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:z28b="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PIT28B/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/11/02/eD/PIT28B/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2022/09/13/eD/DefinicjeTypy/StrukturyDanych_v12-0E.xsd"/>
+	<!--Formularz może być składany tylko jako załącznik do zeznania PIT-28 i PIT-28S. Formularz PIT-28/B składa również przedsiębiorstwo w spadku w związku z działalnością prowadzoną w formie spółki cywilnej.-->
+	<xsd:complexType name="TNaglowek_PIT-28_B">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="z28b:TKodFormularza_PIT-28_B">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PIT28B (19)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="1-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="19"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_PIT-28_B">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT-28/B"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TUdzial">
+		<xsd:restriction base="xsd:decimal">
+			<xsd:totalDigits value="5"/>
+			<xsd:fractionDigits value="2"/>
+			<xsd:minInclusive value="0"/>
+			<xsd:maxInclusive value="100"/>
+			<xsd:whiteSpace value="collapse"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_PIT-28_B">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O PRZYCHODACH PODATNIKA Z DZIAŁALNOŚCI PROWADZONEJ W FORMIE SPÓŁKI (SPÓŁEK)</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="z28b:TNaglowek_PIT-28_B"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Dane dotyczące działalności prowadzonej w formie spółki (spółek), razem przychody z działalności prowadzonej w formie spółki (spółek) opodatkowane według poszczególnych stawek, informacja o okresie zawieszenia działalności gospodarczej prowadzonej w formie spółki (spółek) w roku podatkowym</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:element name="P_6" type="etd:TWybor1">
+								<xsd:annotation>
+									<xsd:documentation>Ogólna liczba składanych załączników PIT-28/B</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_C" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Dane dotyczące spółki i dane dotyczące przychodów spółki</xsd:documentation>
+								</xsd:annotation>
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:element name="P_C7" type="etd:TZnakowy">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa pełna spółki</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C8" type="etd:TNrNIP">
+											<xsd:annotation>
+												<xsd:documentation>Identyfikator podatkowy NIP spółki</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C9">
+											<xsd:annotation>
+												<xsd:documentation>Udział podatnika w przychodach spółki</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="z28b:TUdzial">
+													<xsd:minExclusive value="0"/>
+													<xsd:maxExclusive value="100"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+										<xsd:element name="P_C10" type="etd:TKwota2Nieujemna">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<!--Przychody opodatkowane według stawki określonej na podstawie art. 17 ustawy z dnia 20 listopada 1998 r. o zryczałtowanym podatku dochodowym od niektórych przychodów osiąganych przez osoby fizyczne (Dz. U. z 2021 r. poz. 1993, z późn. zm.) należy wpisać w odpowiedniej pozycji wiersza 2.-->
+										<xsd:element name="P_C11" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 3%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C12" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 5,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C13" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 8,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C14" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 10%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C15" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 12%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C16" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 12,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C17" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 14%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C18" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 15%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C19" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód spółki w tym opodatkowany według stawki 17%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C20" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (3%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C21" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (5,5%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C22" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (8,5%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C23" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (10%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C24" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (12%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C25" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (12,5%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C26" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (14%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C27" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (15%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C28" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód opodatkowany według stawki określonej na podstawie art. 17 ustawy (17%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C29" type="etd:TKwota2Nieujemna">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C30" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 3%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C31" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 5,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C32" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 8,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C33" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 10%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C34" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 12%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C35" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 12,5%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C36" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 14%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C37" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 15%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C38" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika w tym opodatkowany według stawki 17%</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<!--Przychody opodatkowane według stawki określonej na podstawie art. 17 ustawy z dnia 20 listopada 1998 r. o zryczałtowanym podatku dochodowym od niektórych przychodów osiąganych przez osoby fizyczne (Dz. U. z 2021 r. poz. 1993, z późn. zm.) należy wpisać w odpowiedniej pozycji wiersza 2.-->
+										<xsd:element name="P_C39" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (3%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C40" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (5,5%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C41" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (8,5 %)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C42" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (10%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C43" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (12%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C44" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (12,5%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C45" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (14%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C46" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (15%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_C47" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Przychód przypadający na podatnika opodatkowany według stawki określonej na podstawie art. 17 ustawy (17%)</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Razem przychody z działalności prowadzonej w formie spółki (spółek) opodatkowane według poszczególnych stawek</xsd:documentation>
+								</xsd:annotation>
+								<!--Kwoty wynikające z części D należy przenieść odpowiednio do części D zeznania PIT-28 albo do części C zeznania PIT-28S.-->
+								<!-- -->
+								<!--Jeżeli podatnik składa więcej niż jeden załącznik PIT-28/B, część D wypełnia na jednym załączniku, z tym że w części D sumuje odpowiednie kwoty ze wszystkich załączników.-->
+								<xsd:element name="P_48" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 3%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 30.-->
+								</xsd:element>
+								<xsd:element name="P_49" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 5,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 31.-->
+								</xsd:element>
+								<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 8,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 32.-->
+								</xsd:element>
+								<xsd:element name="P_51" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 10%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 33.-->
+								</xsd:element>
+								<xsd:element name="P_52" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 34.-->
+								</xsd:element>
+								<xsd:element name="P_53" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 12,5%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 35.-->
+								</xsd:element>
+								<xsd:element name="P_54" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 14%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 36.-->
+								</xsd:element>
+								<xsd:element name="P_55" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 15%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 37.-->
+								</xsd:element>
+								<xsd:element name="P_56" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki 17%</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 38.-->
+								</xsd:element>
+								<!--Przychody opodatkowane według stawki określonej na podstawie art. 17 ustawy z dnia 20 listopada 1998 r. o zryczałtowanym podatku dochodowym od niektórych przychodów osiąganych przez osoby fizyczne (Dz. U. z 2021 r. poz. 1993, z późn. zm.) należy wpisać w odpowiedniej pozycji wiersza 2.-->
+								<xsd:element name="P_57" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (3%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 39.-->
+								</xsd:element>
+								<xsd:element name="P_58" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (5,5%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 40.-->
+								</xsd:element>
+								<xsd:element name="P_59" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (8,5%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 41.-->
+								</xsd:element>
+								<xsd:element name="P_60" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (10%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 42.-->
+								</xsd:element>
+								<xsd:element name="P_61" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (12%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 43.-->
+								</xsd:element>
+								<xsd:element name="P_62" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (12,5%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 44.-->
+								</xsd:element>
+								<xsd:element name="P_63" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (14%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 45.-->
+								</xsd:element>
+								<xsd:element name="P_64" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (15%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 46.-->
+								</xsd:element>
+								<xsd:element name="P_65" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>według stawki określonej na podstawie art. 17 ustawy (17%)</xsd:documentation>
+									</xsd:annotation>
+									<!--Suma kwot z poz. 47.-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_66" type="etd:TTekstowy" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Informacja o okresie zawieszenia działalności gospodarczej prowadzonej w formie spółki (spółek) w roku podatkowym</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełnia wspólnik spółki jawnej, jeżeli spółka zawiesiła wykonywanie działalności gospodarczej (należy wskazać pełną nazwę spółki, identyfikator podatkowy NIP spółki oraz okresy zawieszenia wykonywania działalności gospodarczej w roku podatkowym)-->
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>

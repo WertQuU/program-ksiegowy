@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:kdspr="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/KodyDSPR/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2011/06/21/eD/KodyDSPR/" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" xml:lang="pl">
+	<xsd:annotation>
+		<xsd:documentation>Słownik działów specjalnych produkcji rolnej</xsd:documentation>
+	</xsd:annotation>
+	<xsd:simpleType name="TNrDzialu">
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="01">
+				<xsd:annotation>
+					<xsd:documentation>Szklarnie ogrzewane, Rośliny ozdobne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="02">
+				<xsd:annotation>
+					<xsd:documentation>Szklarnie ogrzewane, Rośliny pozostałe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="03">
+				<xsd:annotation>
+					<xsd:documentation>Szklarnie nieogrzewane</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="04">
+				<xsd:annotation>
+					<xsd:documentation>Tunele foliowe ogrzewane, Rośliny ozdobne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="05">
+				<xsd:annotation>
+					<xsd:documentation>Tunele foliowe ogrzewane, Rośliny pozostałe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="06">
+				<xsd:annotation>
+					<xsd:documentation>Uprawa grzybów i ich grzybni (powierzchnia uprawowa)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="07">
+				<xsd:annotation>
+					<xsd:documentation>Uprawy roślin in vitro (powierzchnia półek)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="08">
+				<xsd:annotation>
+					<xsd:documentation>Hodowla entomofagów (powierzchnia upraw żywicielskich)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="21">
+				<xsd:annotation>
+					<xsd:documentation>Krowy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="22">
+				<xsd:annotation>
+					<xsd:documentation>Cielęta</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="23">
+				<xsd:annotation>
+					<xsd:documentation>Pozostałe bydło rzeźne, z wyjątkiem opasów</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="31">
+				<xsd:annotation>
+					<xsd:documentation>Owce - chów i hodowla</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="32">
+				<xsd:annotation>
+					<xsd:documentation>Owce - tucz</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="33">
+				<xsd:annotation>
+					<xsd:documentation>Konie rzeźne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="34">
+				<xsd:annotation>
+					<xsd:documentation>Konie hodowlane</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="41">
+				<xsd:annotation>
+					<xsd:documentation>Tuczniki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="42">
+				<xsd:annotation>
+					<xsd:documentation>Prosięta i warchlaki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="51">
+				<xsd:annotation>
+					<xsd:documentation>Drób rzeźny, Kurczęta</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="52">
+				<xsd:annotation>
+					<xsd:documentation>Drób rzeźny, Gęsi</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="53">
+				<xsd:annotation>
+					<xsd:documentation>Drób rzeźny, Kaczki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="54">
+				<xsd:annotation>
+					<xsd:documentation>Drób rzeźny, Indyki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="55">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny (stado reprodukcyjne), Kury nieśne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="56">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny (stado reprodukcyjne), Kury mięsne</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="57">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny (stado reprodukcyjne), Gęsi</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="58">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny (stado reprodukcyjne), Kaczki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="59">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny (stado reprodukcyjne), Indyki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="60">
+				<xsd:annotation>
+					<xsd:documentation>Drób nieśny - kury (produkcja jaj konsumpcyjnych)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="61">
+				<xsd:annotation>
+					<xsd:documentation>Wylęgarnie drobiu, Kurczęta</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="62">
+				<xsd:annotation>
+					<xsd:documentation>Wylęgarnie drobiu, Gęsi</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="63">
+				<xsd:annotation>
+					<xsd:documentation>Wylęgarnie drobiu, Kaczki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="64">
+				<xsd:annotation>
+					<xsd:documentation>Wylęgarnie drobiu, Indyki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="71">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Lisy</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="72">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Jenoty</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="73">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Norki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="74">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Tchórze</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="75">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Szynszyle</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="76">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Nutrie</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="77">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta futerkowe, Króliki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="78">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta laboratoryjne, Szczury białe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="79">
+				<xsd:annotation>
+					<xsd:documentation>Zwierzęta laboratoryjne, Myszy białe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="80">
+				<xsd:annotation>
+					<xsd:documentation>Jedwabniki (produkcja kokonów)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="81">
+				<xsd:annotation>
+					<xsd:documentation>Pasieki</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="82">
+				<xsd:annotation>
+					<xsd:documentation>Hodowla dżdżownic (powierzchnia łoża hodowlanego)</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="83">
+				<xsd:annotation>
+					<xsd:documentation>Pozostała hodowla poza gospodarstwem rolnym, Ryby akwariowe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="84">
+				<xsd:annotation>
+					<xsd:documentation>Pozostała hodowla poza gospodarstwem rolnym, Psy rasowe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+			<xsd:enumeration value="85">
+				<xsd:annotation>
+					<xsd:documentation>Pozostała hodowla poza gospodarstwem rolnym, Koty rasowe</xsd:documentation>
+				</xsd:annotation>
+			</xsd:enumeration>
+		</xsd:restriction>
+	</xsd:simpleType>
+</xsd:schema>

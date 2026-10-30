@@ -1,0 +1,495 @@
+<?xml version="1.0" encoding="utf-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:etd="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" xmlns:zbr36="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITBR36/" targetNamespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2021/01/20/eD/PITBR36/" elementFormDefault="qualified" attributeFormDefault="unqualified" xml:lang="pl">
+	<xsd:import namespace="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/" schemaLocation="http://crd.gov.pl/xml/schematy/dziedzinowe/mf/2020/07/06/eD/DefinicjeTypy/StrukturyDanych_v7-0E.xsd"/>
+	<!--Załącznik do zeznania PIT-36.-->
+	<!-- -->
+	<!--Wypełniają podatnicy uzyskujący przychody z działalności gospodarczej, korzystający z odliczenia od podstawy obliczenia podatku kosztów uzyskania przychodów poniesionych na działalność badawczo-rozwojową, zwanych „kosztami kwalifikowanymi”, na zasadach określonych w art. 26e ustawy oraz podatnicy, którym przysługuje kwota do zwrotu na podstawie art. 26ea ustawy. Małżonkowie, bez względu na sposób rozliczenia rocznego (indywidualnie czy wspólnie z małżonkiem), składają odrębny załącznik PIT/BR.-->
+	<!-- -->
+	<!--W przypadku gdy uzyskanie lub utrata statusu centrum badawczo-rozwojowego nastąpiła w ciągu roku podatkowego, którego dotyczy zeznanie, należy wskazać koszty kwalifikowane podlegające odliczeniu w podziale na koszty poniesione w okresie posiadania statusu centrum badawczo-rozwojowego oraz w pozostałym okresie.-->
+	<xsd:complexType name="TNaglowek_PIT_BR">
+		<xsd:annotation>
+			<xsd:documentation>Nagłówek deklaracji</xsd:documentation>
+		</xsd:annotation>
+		<xsd:sequence>
+			<xsd:element name="KodFormularza">
+				<xsd:complexType>
+					<xsd:simpleContent>
+						<xsd:extension base="zbr36:TKodFormularza_PIT_BR">
+							<xsd:attribute name="kodSystemowy" type="xsd:string" use="required" fixed="PITBR (4)"/>
+							<xsd:attribute name="wersjaSchemy" type="xsd:string" use="required" fixed="2-0E"/>
+						</xsd:extension>
+					</xsd:simpleContent>
+				</xsd:complexType>
+			</xsd:element>
+			<xsd:element name="WariantFormularza">
+				<xsd:simpleType>
+					<xsd:restriction base="xsd:byte">
+						<xsd:enumeration value="4"/>
+					</xsd:restriction>
+				</xsd:simpleType>
+			</xsd:element>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:simpleType name="TKodFormularza_PIT_BR">
+		<xsd:annotation>
+			<xsd:documentation>Symbol wzoru formularza</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:string">
+			<xsd:enumeration value="PIT/BR"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:simpleType name="TData" id="TData">
+		<xsd:annotation>
+			<xsd:documentation>Typ daty</xsd:documentation>
+		</xsd:annotation>
+		<xsd:restriction base="xsd:date">
+			<xsd:minInclusive value="2020-01-01"/>
+			<xsd:maxInclusive value="2030-12-31"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<xsd:element name="Zalacznik_PIT_BR">
+		<xsd:annotation>
+			<xsd:documentation>INFORMACJA O ODLICZENIU OD PODSTAWY OBLICZENIA PODATKU KOSZTÓW UZYSKANIA PRZYCHODÓW PONIESIONYCH NA DZIAŁALNOŚĆ BADAWCZO-ROZWOJOWĄ W ROKU PODATKOWYM</xsd:documentation>
+		</xsd:annotation>
+		<xsd:complexType>
+			<xsd:sequence>
+				<xsd:element name="Naglowek" type="zbr36:TNaglowek_PIT_BR"/>
+				<xsd:element name="Podmiot1" type="etd:TIdentyfikatorOsobyFizycznej2"/>
+				<xsd:element name="PozycjeSzczegolowe">
+					<xsd:annotation>
+						<xsd:documentation>Odliczenie od podstawy obliczenia podatku kosztów kwalifikowanych oraz obliczenie kwoty przysługującej podatnikowi, o której mowa w art. 26ea ustawy, rodzaje działalności badawczo-rozwojowej, w ramach których są ponoszone koszty kwalifikowane przysługujące podatnikowi, posiadającemu status centrum badawczo-rozwojowego, o którym mowa w art. 26e ust. 3a ustawy, dane spółki niebędącej osobą prawną (posiadającej status centrum badawczo-rozwojowego), której podatnik jest wspólnikiem oraz kwota odliczeń według prowadzonych badań naukowych, prac rozwojowych lub poniesionych wydatków, o których mowa w art. 26e ust. 2 pkt 5, rodzaje działalności badawczo-rozwojowej, w ramach których są ponoszone koszty kwalifikowane, dane jednostki naukowej</xsd:documentation>
+					</xsd:annotation>
+					<xsd:complexType>
+						<xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:element name="P_9" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik posiadał w roku podatkowym status centrum badawczo-rozwojowego w rozumieniu art. 17 ustawy z dnia 30 maja 2008 r. o niektórych formach wspierania działalności innowacyjnej (Dz. U. z 2019 r. poz. 1402): 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:element name="P_10" type="zbr36:TData">
+										<xsd:annotation>
+											<xsd:documentation>Podatnik w roku podatkowym posiadał status centrum badawczo-rozwojowego w okresie od (wypełniają podatnicy, którzy wybrali wartość 1 w poz. 9)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_11" type="zbr36:TData">
+										<xsd:annotation>
+											<xsd:documentation>Podatnik w roku podatkowym posiadał status centrum badawczo-rozwojowego w okresie do (wypełniają podatnicy, którzy wybrali wartość 1 w poz. 9)</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_12" type="etd:TWybor1_2" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Podatnik był w roku podatkowym mikroprzedsiębiorcą, małym lub średnim przedsiębiorcą w rozumieniu odrębnych przepisów (wypełniają podatnicy, którzy wybrali wartość 1 w poz. 9): 1 - tak, 2 - nie </xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:element name="P_13" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące należności i składek, o których mowa w art. 26e ust. 2 pkt 1 i 1a ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_14" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące należności i składek, o których mowa w art. 26e ust. 2 pkt 1 i 1a ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_15" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia materiałów i surowców, o których mowa w art. 26e ust. 2 pkt 2 ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_16" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia materiałów i surowców, o których mowa w art. 26e ust. 2 pkt 2 ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_17" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia niebędącego środkami trwałymi sprzętu specjalistycznego, o którym mowa w art. 26e ust. 2 pkt 2a ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_18" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia niebędącego środkami trwałymi sprzętu specjalistycznego, o którym mowa w art. 26e ust. 2 pkt 2a ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_19" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące m.in. ekspertyz, opinii, usług doradczych, o których mowa w art. 26e ust. 2 pkt 3 ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_20" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące m.in. ekspertyz, opinii, usług doradczych, o których mowa w art. 26e ust. 2 pkt 3 ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_21" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpłatnego korzystania z aparatury naukowo-badawczej, o których mowa w art. 26e ust. 2 pkt 4 ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_22" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpłatnego korzystania z aparatury naukowo-badawczej, o których mowa w art. 26e ust. 2 pkt 4 ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_23" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia usługi wykorzystania aparatury naukowo-badawczej, o których mowa w art. 26e ust. 2 pkt 4a ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_24" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące nabycia usługi wykorzystania aparatury naukowo-badawczej, o których mowa w art. 26e ust. 2 pkt 4a ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_25" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące uzyskania i utrzymania patentu, prawa ochronnego na wzór użytkowy, prawa z rejestracji wzoru przemysłowego, o których mowa w art. 26e ust. 2 pkt 5 ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_26" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące uzyskania i utrzymania patentu, prawa ochronnego na wzór użytkowy, prawa z rejestracji wzoru przemysłowego, o których mowa w art. 26e ust. 2 pkt 5 ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_27" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpisów amortyzacyjnych od kosztów prac rozwojowych, o których mowa w art. 26e ust. 2a ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_28" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpisów amortyzacyjnych od kosztów prac rozwojowych, o których mowa w art. 26e ust. 2a ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_29" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpisów amortyzacyjnych, o których mowa w art. 26e ust. 3 ustawy - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_30" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Koszty kwalifikowane dotyczące odpisów amortyzacyjnych, o których mowa w art. 26e ust. 3 ustawy - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_31" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Razem koszty kwalifikowane - przypadające na podatnika nieposiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:element name="P_32" type="etd:TKwota2Nieujemna" minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Razem koszty kwalifikowane - przypadające na podatnika posiadającego statusu centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+							</xsd:element>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dodatkowe odliczenia przysługujące podatnikowi, posiadającemu status centrum badawczo-rozwojowego, o którym mowa w art. 26e ust. 3a ustawy lub podatnikowi, który jest wspólnikiem spółki niebędącej osobą prawną, posiadającej status centrum badawczo-rozwojowego</xsd:documentation>
+								</xsd:annotation>
+								<!--wypełniają podatnicy, którzy zaznaczyli kwadrat nr 1 w poz. 9 lub wypełnili część D-->
+								<xsd:element name="P_33" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowa kwota podlegająca odliczeniu, na podstawie art. 26e ust. 7 pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota odliczenia nie może przekroczyć 50% kwoty wykazanej w poz. 32.-->
+								</xsd:element>
+								<xsd:element name="P_34" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowa kwota podlegająca odliczeniu, na podstawie art. 26e ust. 7 pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota odliczenia nie może przekroczyć 50% sumy kosztów z poz. 14, 16, 18, 20, 22, 24, 28 i 30.-->
+								</xsd:element>
+								<xsd:element name="P_35" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowe koszty kwalifikowane w zakresie odpisów amortyzacyjnych od budowli, budynków i lokali na podstawie art. 26e ust. 3a pkt 1 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--W związku z art. 26e ust. 3g pkt 1 ustawy, w przypadku podatników, którzy wybrali wartość 1 w poz. 9 i wartość 2 w poz. 12, w odniesieniu do kosztów wpisanych w pozycji 48 kwota odliczenia nie może przekroczyć 131% poniesionych kosztów, o których mowa w art. 26e ust. 3a pkt 1  ustawy. 
+Wysokość dodatkowych kosztów kwalifikowanych, o których mowa w art. 26e ust. 3a ustawy przysługujących podatnikowi posiadającemu status centrum badawczo-rozwojowego, nie może przekroczyć 10% przychodów (osiągniętych w roku podatkowym).-->
+								</xsd:element>
+								<xsd:element name="P_36" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Dodatkowe koszty kwalifikowane dotyczące m.in. ekspertyz, opinii, usług doradczych i usług równorzędnych, badań wykonywanych na podstawie umowy, wiedzy technicznej i patentów lub licencji na chroniony wynalazek, uzyskanych od podmiotów innych niż jednostki naukowe na podstawie art. 26e ust. 3a pkt 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Kwota odliczenia nie może przekroczyć 150% poniesionych kosztów, o których mowa w art. 26e ust. 3a pkt 2 ustawy. Wysokość dodatkowych kosztów kwalifikowanych, o których mowa w art. 26e ust. 3a ustawy przysługujących podatnikowi posiadającemu status centrum badawczo-rozwojowego, nie może przekroczyć 10% przychodów (osiągniętych w roku podatkowym).
+W związku z art. 26e ust. 3g pkt 1 ustawy, w przypadku podatników, którzy wybrali wartość 1 w poz. 9 i wartość 2 w poz. 12, w odniesieniu do kosztów wpisanych w pozycji 48 kwota odliczenia nie może przekroczyć 131% poniesionych kosztów, o których mowa w art. 26e ust. 3a pkt 2  ustawy.-->
+								</xsd:element>
+								<xsd:element name="P_37" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Razem dodatkowe odliczenia</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:sequence>
+									<xsd:element name="P_38" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Łączna kwota podlegająca odliczeniu, na podstawie art. 26e ust. 7 pkt 3 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--Kwota z poz. 31.-->
+									</xsd:element>
+									<xsd:element name="P_39" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Łączna kwota podlegająca odliczeniu, na podstawie art. 26e ust. 7 pkt 1 i 2 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--Suma kwot z poz. 32 i 37.-->
+									</xsd:element>
+									<xsd:element name="P_40" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Koszty kwalifikowane nieodliczone w poprzednich latach podlegające odliczeniu w roku podatkowym na podstawie art. 26e ust. 8 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--(obejmuje rodzaje kosztów wykazane w poz. 13-30)-->
+									</xsd:element>
+									<xsd:element name="P_41" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Koszty kwalifikowane nieodliczone w poprzednich latach podlegające odliczeniu w roku podatkowym na podstawie art. 26e ust. 8 ustawy</xsd:documentation>
+										</xsd:annotation>
+										<!--(obejmuje rodzaje kosztów wykazane w poz.33-36)-->
+									</xsd:element>
+									<xsd:element name="P_42" type="etd:TKwota2Nieujemna">
+										<xsd:annotation>
+											<xsd:documentation>Łączna kwota podlegająca odliczeniu</xsd:documentation>
+										</xsd:annotation>
+										<!--Suma kwot z poz. 38-41-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_43" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota kosztów kwalifikowanych do odliczenia w roku podatkowym</xsd:documentation>
+									</xsd:annotation>
+									<!--Jeżeli kwota z poz. 42 jest większa od kwoty wykazanej w poz. 32 załącznika PIT/B należy wpisać kwotę wykazaną w poz. 32 załącznika PIT/B; w przeciwnym wypadku należy wpisać kwotę z poz. 42. Kwotę z poz. 43 należy przenieść do odpowiedniej pozycji zeznania PIT-36 lub PIT-36S lub PIT-36L lub PIT-36LS.-->
+								</xsd:element>
+								<xsd:element name="P_44" type="etd:TKwota2Nieujemna">
+									<xsd:annotation>
+										<xsd:documentation>Kwota przysługująca podatnikowi na podstawie art. 26ea ust. 1 i 2 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Jeżeli koszty kwalifikowane zostały podatnikowi zwrócone w jakiejkolwiek formie lub zostały odliczone od podstawy opodatkowania podatkiem dochodowym, podatnik jest obowiązany w zeznaniu składanym za rok podatkowy, w którym wystąpiły te okoliczności, do zwiększenia podstawy opodatkowania o kwotę dokonanych odliczeń, które zostały mu zwrócone, a w razie poniesienia straty - do jej zmniejszenia o tę kwotę.-->
+								</xsd:element>
+								<xsd:element name="P_45" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota podlegająca zwrotowi do urzędu skarbowego na podstawie art. 26ea ust. 5a ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--Podatnik jest obowiązany do zwrotu wykazanej w zeznaniu kwoty przysługującej mu na podstawie art. 26ea ust. 1 lub 2 ustawy, jeżeli przed upływem trzech lat podatkowych, licząc od końca roku podatkowego, za który złożył to zeznanie, zlikwiduje działalność gospodarczą lub zostanie postawiony w stan upadłości albo spółka niebędąca osobą prawną, której jest wspólnikiem, z której działalnością związany był zwrot, zostanie postawiona w stan likwidacji lub upadłości. Podatnik jest obowiązany w zeznaniu składanym za rok podatkowy, w którym wystąpiły te okoliczności, do zwiększenia podatku o kwotę zwrotu, a w razie wystąpienia nadpłaty - do jej zmniejszenia o tę kwotę.-->
+								</xsd:element>
+								<xsd:element name="P_46" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota kosztów kwalifikowanych pozostająca do odliczenia w latach następnych na podstawie art. 26e ust. 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--(obejmuje rodzaje kosztów wykazane w poz. 13-30)-->
+								</xsd:element>
+								<xsd:element name="P_47" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota kosztów kwalifikowanych pozostająca do odliczenia w latach następnych na podstawie art. 26e ust. 8 ustawy</xsd:documentation>
+									</xsd:annotation>
+									<!--(obejmuje rodzaje kosztów wykazane w poz. 33-36)-->
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Kwota odliczeń według prowadzonych badań naukowych, prac rozwojowych lub poniesionych wydatków, o których mowa  w art. 26e ust. 2  pkt 5</xsd:documentation>
+								</xsd:annotation>
+								<!--wypełniają podatnicy, którzy wybrali wartość 1 w poz. 9-->
+								<!-- -->
+								<!--kwota odliczeń wykazanych w poz. 48-51 nie może przekroczyć sumy kwot z poz. 37 i 41 pomniejszonej o kwotę z poz. 47-->
+								<xsd:element name="P_48" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota odliczeń z tytułu prac rozwojowych</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota odliczeń z tytułu badań naukowych</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_49" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Badania podstawowe</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_50" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Badania aplikacyjne</xsd:documentation>
+										</xsd:annotation>
+										<!--Należy wypełnić również w przypadku prowadzonych badań stosowanych lub badań przemysłowych, które funkcjonowały do dnia 30 września 2018 r.-->
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:element name="P_51" type="etd:TKwota2Nieujemna" minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota odliczeń z tytułu uzyskania i utrzymania patentu, prawa ochronnego na wzór użytkowy, prawa z rejestracji wzoru przemysłowego</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+							</xsd:sequence>
+							<xsd:sequence minOccurs="0">
+								<xsd:annotation>
+									<xsd:documentation>Dane spółki niebędącej osobą prawną (posiadającej status centrum badawczo-rozwojowego), której podatnik jest wspólnikiem oraz kwota odliczeń według prowadzonych badań naukowych, prac rozwojowych  lub poniesionych wydatków, o których mowa w art. 26e ust. 2 pkt 5</xsd:documentation>
+								</xsd:annotation>
+								<!--Wypełnia podatnik, który jest wspólnikiem spółki niebędącej osobą prawną posiadającej status centrum badawczo-rozwojowego, o którym mowa w art. 26e ust. 3a ustawy, która w roku podatkowym poniosła koszty kwalifikowane odliczane w roku podatkowym  przez podatnika.-->
+								<xsd:sequence>
+									<xsd:annotation>
+										<xsd:documentation>Dane spółki</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_52">
+										<xsd:annotation>
+											<xsd:documentation>Nazwa pełna</xsd:documentation>
+										</xsd:annotation>
+										<xsd:simpleType>
+											<xsd:restriction base="xsd:token">
+												<xsd:minLength value="1"/>
+												<xsd:maxLength value="240"/>
+											</xsd:restriction>
+										</xsd:simpleType>
+									</xsd:element>
+									<xsd:element name="P_53" type="etd:TNrNIP">
+										<xsd:annotation>
+											<xsd:documentation>Identyfikator podatkowy NIP</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_54" type="etd:TWybor1_2">
+										<xsd:annotation>
+											<xsd:documentation>Spółka jest mikroprzedsiębiorcą, małym lub średnim przedsiębiorcą w rozumieniu odrębnych przepisów</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Kwota odliczeń według prowadzonych badań naukowych, prac rozwojowych  lub poniesionych wydatków, o których mowa w art. 26e ust. 2 pkt 5</xsd:documentation>
+									</xsd:annotation>
+									<!--(kwota odliczeń wykazanych w poz. 55-58 nie może przekroczyć sumy kwot z poz. 37 i 41 pomniejszonej o kwotę z poz. 47), w przypadku wykazania kwot w poz. 48-51 oraz poz. 55-58 ogólna kwota odliczeń nie może przekroczyć sumy kwot z poz. 37 i 41 pomniejszonej o kwotę z poz. 47.-->
+									<xsd:element name="P_55" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Kwota odliczeń z tytułu prac rozwojowych</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:sequence minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Kwota odliczeń z tytułu badań naukowych</xsd:documentation>
+										</xsd:annotation>
+										<xsd:element name="P_56" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Badania podstawowe</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_57" type="etd:TKwota2Nieujemna" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Badania aplikacyjne</xsd:documentation>
+											</xsd:annotation>
+											<!--Należy wypełnić również w przypadku prowadzonych badań stosowanych lub badań przemysłowych, które funkcjonowały do dnia 30 września 2018 r.-->
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:element name="P_58" type="etd:TKwota2Nieujemna" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Kwota odliczeń z tytułu uzyskania i utrzymania patentu, prawa ochronnego na wzór użytkowy, prawa z rejestracji wzoru przemysłowego</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:sequence>
+								<xsd:annotation>
+									<xsd:documentation>Rodzaje działalności badawczo-rozwojowej, w ramach których są  ponoszone koszty kwalifikowane</xsd:documentation>
+								</xsd:annotation>
+								<xsd:element name="P_59" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Badania naukowe: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:element name="P_60" type="etd:TWybor1_2">
+									<xsd:annotation>
+										<xsd:documentation>Prace rozwojowe: 1 - tak, 2 - nie</xsd:documentation>
+									</xsd:annotation>
+								</xsd:element>
+								<xsd:sequence minOccurs="0">
+									<xsd:annotation>
+										<xsd:documentation>Rodzaje prowadzonych badań naukowych. Wypełniają podatnicy, którzy wybrali wartość 2 w poz. 9 oraz wartość 1 w poz. 59</xsd:documentation>
+									</xsd:annotation>
+									<xsd:element name="P_61" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Rodzaj badań naukowych - badania podstawowe</xsd:documentation>
+										</xsd:annotation>
+									</xsd:element>
+									<xsd:element name="P_62" type="etd:TWybor1" minOccurs="0">
+										<xsd:annotation>
+											<xsd:documentation>Rodzaj badań naukowych - badania aplikacyjne</xsd:documentation>
+										</xsd:annotation>
+										<!--Należy wypełnić również w przypadku prowadzonych badań stosowanych lub badań przemysłowych, które funkcjonowały do dnia 30 września 2018 r.-->
+									</xsd:element>
+								</xsd:sequence>
+							</xsd:sequence>
+							<xsd:element name="P_F" minOccurs="0" maxOccurs="unbounded">
+								<xsd:annotation>
+									<xsd:documentation>Dane jednostki naukowej</xsd:documentation>
+								</xsd:annotation>
+								<!--Jednostka naukowa w rozumieniu ustawy z dnia 30 kwietnia 2010 r. o zasadach finansowania nauki (Dz. U. z 2018 r. poz. 87), w brzmieniu obowiązującym do dnia 30 września 2018 r., z którą podatnik zawarł umowę lub porozumienie, na podstawie której (ego) są prowadzone badania podstawowe. W przypadku gdy część F jest niewystarczająca do podania danych o wszystkich jednostkach naukowych, z którymi podatnik zawarł umowę lub porozumienie, należy wypełnić kolejny(e) załącznik(i) PIT/BR, podając  w nim(nich) tylko identyfikator podatkowy NIP podatnika oraz brakujące dane w części F. Przez jednostkę naukową rozumie się również podmiot, o którym mowa w art. 7 ust. 1 pkt 1, 2 i 4-8 ustawy z dnia 20 lipca 2018 r. - Prawo o szkolnictwie wyższym i nauce (Dz. U. poz. 1668, z póżn. zm.).-->
+								<xsd:complexType>
+									<xsd:sequence>
+										<xsd:annotation>
+											<xsd:documentation>Dane identyfikacyjne i adres siedziby</xsd:documentation>
+										</xsd:annotation>
+										<!--Wypełniają podatnicy, którzy zaznaczyli poz. 61.-->
+										<xsd:element name="P_F63">
+											<xsd:annotation>
+												<xsd:documentation>Nazwa pełna</xsd:documentation>
+											</xsd:annotation>
+											<xsd:simpleType>
+												<xsd:restriction base="xsd:token">
+													<xsd:minLength value="1"/>
+													<xsd:maxLength value="240"/>
+												</xsd:restriction>
+											</xsd:simpleType>
+										</xsd:element>
+										<xsd:element name="P_F64A" type="etd:TKodKraju">
+											<xsd:annotation>
+												<xsd:documentation>Kod kraju</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F65" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Województwo</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F66" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Powiat</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F67" type="etd:TJednAdmin" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Gmina</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F68" type="etd:TUlica" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Ulica</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F69" type="etd:TNrBudynku" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nr domu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F70" type="etd:TNrLokalu" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Nr lokalu</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F71" type="etd:TMiejscowosc">
+											<xsd:annotation>
+												<xsd:documentation>Miejscowość</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+										<xsd:element name="P_F72" type="etd:TKodPocztowy" minOccurs="0">
+											<xsd:annotation>
+												<xsd:documentation>Kod pocztowy</xsd:documentation>
+											</xsd:annotation>
+										</xsd:element>
+									</xsd:sequence>
+									<xsd:attribute name="typ" use="required" fixed="G"/>
+								</xsd:complexType>
+							</xsd:element>
+						</xsd:sequence>
+					</xsd:complexType>
+				</xsd:element>
+			</xsd:sequence>
+		</xsd:complexType>
+	</xsd:element>
+</xsd:schema>
