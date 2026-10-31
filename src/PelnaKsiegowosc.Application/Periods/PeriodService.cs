@@ -254,22 +254,23 @@ public sealed class PeriodService
         var form = await _db.Companies.Where(x => x.Id == fy.CompanyId).Select(x => x.LegalForm).FirstAsync(ct);
         if (LegalForms.IsCitTaxpayer(form)) c.Items.Add(new("CIT", "Wyliczenia CIT za rok", taxAdvanceInfo, CheckSeverity.WymagaPotwierdzenia,
             taxAdvanceInfo ? "OK" : "Brak zapisanych wyliczeń CIT — sprawdź ujęcie podatku dochodowego (konto 870) przed zamknięciem."));
-        // ostateczne zamknięcie ksiąg: po zatwierdzeniu sprawozdania, w ciągu 15 dni (art. 12 ust. 4 UoR). Bez zarejestrowanego
-        // zatwierdzenia — blokada; wyjątek tylko na podstawie odrębnej, udokumentowanej decyzji kierownika jednostki (np. likwidacja,
-        // brak zatwierdzenia w terminie ustawowym) zapisanej w dzienniku zdarzeń przed zamknięciem
+        // Standardowe ostateczne zamknięcie ksiąg kontynuującej działalność jednostki: po zatwierdzeniu SF
+        // (art. 12 ust. 4 UoR). Samo niezachowanie terminu zatwierdzenia ani oświadczenie operatora
+        // nie stanowi podstawy obejścia wymogu. Zdarzenia z art. 12 ust. 2 (np. likwidacja) wymagają
+        // odrębnego procesu zamykania na właściwy dzień, nie tej ścieżki tworzącej następny rok.
         var settings = new SettingsService(_db, _clock);
         var approval = await settings.GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct);
         var exception = await settings.GetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), () => null, ct);
-        c.Items.Add(new("SF_ZATWIERDZONE", "Sprawozdanie finansowe zatwierdzone (ostateczne zamknięcie ksiąg — art. 12 ust. 4 UoR)", approval is not null || exception is not null, CheckSeverity.Blokujace,
+        c.Items.Add(new("SF_ZATWIERDZONE", "Sprawozdanie finansowe zatwierdzone (ostateczne zamknięcie ksiąg — art. 12 ust. 4 UoR)", approval is not null, CheckSeverity.Blokujace,
             approval is { } a
                 ? $"Zatwierdzone {a.ApprovedOn.ToPl()} ({a.Body}, {a.Reference}); termin ostatecznego zamknięcia: {a.ApprovedOn.AddDays(15).ToPl()}" + (_clock.Today > a.ApprovedOn.AddDays(15) ? " — PRZEKROCZONY" : "")
                 : exception is { } x
-                    ? $"TRYB WYJĄTKOWY ({x.Basis}) — decyzja z {x.DecidedOn.ToPl()} ({x.DecidedBy}), dokument: {x.Document}; {x.Reason}. Program nie potwierdza legalności zamknięcia w tym trybie; potwierdzenie zamknięcia wymaga frazy „ZAMKNIJ {fy.Name} TRYB WYJĄTKOWY”."
-                    : "Brak zapisu zatwierdzenia sprawozdania. Sprawozdanie sporządza się po zamknięciu ksiąg na dzień bilansowy (zamknięte okresy); ostateczne zamknięcie następuje po zatwierdzeniu. Zarejestruj uchwałę (Raporty) albo — w sytuacji wyjątkowej — udokumentowaną decyzję o zamknięciu bez zatwierdzenia."));
+                    ? $"UDOKUMENTOWANO ZDARZENIE SZCZEGÓLNE ({x.Basis}) — {x.DecidedOn.ToPl()} ({x.DecidedBy}), dokument: {x.Document}; {x.Reason}. To NIE zastępuje zatwierdzenia SF i NIE odblokowuje standardowego, nieodwracalnego zamknięcia roku. Dla likwidacji lub innego zdarzenia z art. 12 ust. 2 UoR należy zastosować odrębny tryb."
+                    : "Brak zapisu zatwierdzenia sprawozdania. Sprawozdanie sporządza się na podstawie ksiąg na dzień bilansowy; ostateczne zamknięcie ksiąg jednostki kontynuującej działalność następuje po zatwierdzeniu SF (art. 12 ust. 4 UoR). Zarejestruj uchwałę w Raportach. Nie można obejść blokady przez samo niezatwierdzenie SF w terminie."));
         return new YearClosePreview(c, resultCredit, lines);
     }
 
-    /// <summary>Podstawa trybu wyjątkowego ostatecznego zamknięcia ksiąg bez zarejestrowanego zatwierdzenia sprawozdania.</summary>
+    /// <summary>Dokumentacja okoliczności szczególnych — NIE odblokowuje standardowego zamknięcia ksiąg.</summary>
     public enum FinalCloseExceptionBasis
     {
         /// <summary>Zakończenie działalności, likwidacja, upadłość, połączenie / przekształcenie (zamknięcie ksiąg w związku z tymi zdarzeniami — art. 12 ust. 2 UoR).</summary>
@@ -282,8 +283,9 @@ public sealed class PeriodService
     public static string FinalCloseExceptionKey(string year) => $"rok.zamkniecie.bezZatwierdzenia.{year}";
 
     /// <summary>
-    /// Udokumentowana decyzja o ostatecznym zamknięciu ksiąg bez zarejestrowanego zatwierdzenia sprawozdania (sytuacje wyjątkowe,
-    /// np. likwidacja, niezatwierdzenie sprawozdania w terminie). Wymaga uprawnienia do zamknięcia roku i uzasadnienia; zapis w dzienniku.
+    /// Rejestruje okoliczności szczególne (np. likwidacja, brak zatwierdzenia w terminie) do audytu.
+    /// To wyłącznie dokumentacja; nie uprawnia do zamknięcia roku w standardowej ścieżce
+    /// jednostki kontynuującej działalność i nie stanowi samodzielnej podstawy prawnej.
     /// </summary>
     public async Task RecordFinalCloseExceptionAsync(Guid fiscalYearId, FinalCloseExceptionBasis basis, string document, string reason, CancellationToken ct = default)
     {
@@ -307,9 +309,9 @@ public sealed class PeriodService
     {
         _user.Require(Permission.CloseYear);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
-        var exceptionMode = await new SettingsService(_db, _clock).GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct) is null
-                            && await new SettingsService(_db, _clock).GetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), () => null, ct) is not null;
-        var expected = exceptionMode ? $"ZAMKNIJ {fy.Name} TRYB WYJĄTKOWY" : $"ZAMKNIJ {fy.Name}";
+        // Ta ścieżka zawsze kontynuuje działalność i otwiera kolejny rok.
+        // Brak zatwierdzenia SF nie daje prawa do ostatecznego zamknięcia art. 12 ust. 4 UoR.
+        var expected = $"ZAMKNIJ {fy.Name}";
         if (confirmation != expected) throw new DomainException($"Aby potwierdzić nieodwracalne zamknięcie roku, wpisz: {expected}");
         var preview = await PreviewYearCloseAsync(fiscalYearId, ct);
         if (preview.Checklist.HasBlocking)
