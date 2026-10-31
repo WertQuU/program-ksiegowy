@@ -151,6 +151,32 @@ public abstract partial class DocumentListBase : SectionViewModel
         }, "Zapisano harmonogram rat.");
     }
 
+    /// <summary>Ręczna kwalifikacja wyjątku od KSeF dla JPK_V7(3), z dowodem.</summary>
+    [RelayCommand]
+    private Task SetJpkClassificationAsync() => ChangeAsync(async () =>
+    {
+        var id = SelectedId;
+        var value = await Dialogs.PromptAsync("Oznaczenie faktury w JPK",
+            "Wpisz BFK, OFF albo DI po sprawdzeniu przesłanek. " +
+            "Brak numeru KSeF nie oznacza automatycznie BFK; numer KSeF wpisuje się osobno.", "");
+        if (string.IsNullOrWhiteSpace(value)) return;
+        var normalized = value.Trim().ToUpperInvariant();
+        var marker = normalized switch
+        {
+            "BFK" => JpkKsefMarker.BFK,
+            "OFF" => JpkKsefMarker.OFF,
+            "DI" => JpkKsefMarker.DI,
+            _ => throw new DomainException("Dozwolone ręczne oznaczenia: BFK, OFF, DI. Numer KSeF wprowadź osobną funkcją.")
+        };
+        var evidence = await Dialogs.PromptAsync("Podstawa kwalifikacji KSeF",
+            "Wpisz odnośnik do dokumentu lub uzasadnienia (5–160 znaków). " +
+            "Jeżeli JPK za ten okres już złożono, należy ocenić obowiązek jego korekty.", "");
+        if (string.IsNullOrWhiteSpace(evidence)) return;
+        await using var db = Session.OpenDb();
+        await new DocumentService(db, Session.User, Session.Clock)
+            .SetJpkClassificationAsync(id, marker, evidence);
+    }, "Ustalono oznaczenie KSeF w dokumentach i rejestrze VAT.");
+
     [RelayCommand]
     private Task ApproveAsync() => ChangeAsync(async () =>
     {
