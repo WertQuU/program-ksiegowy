@@ -1,4 +1,6 @@
+using System.Buffers.Binary;
 using System.Security.Cryptography;
+using System.Text.Json.Nodes;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -112,6 +114,52 @@ public class BackupTests
         Assert.False((await svc.VerifyAsync(truncated, Pass)).Ok);
         await Assert.ThrowsAnyAsync<Exception>(() => svc.RestoreToSqliteAsync(tampered, Pass, Path.Combine(t.Directory, "x"), SqliteEncryption.NewKey(), AttKey));
         Assert.False(File.Exists(Path.Combine(t.Directory, "x", "ksiegi.db")));
+    }
+
+    [Fact]
+    public async Task Malformed_archive_header_cannot_control_kdf_workload_or_chunk_allocation()
+    {
+        var key = new BackupKey.RawKey(RandomNumberGenerator.GetBytes(32));
+        using var encrypted = new MemoryStream();
+        await ArchiveCrypto.EncryptAsync(new MemoryStream("test"u8.ToArray()), encrypted, key, Guid.NewGuid(), DateTime.UtcNow);
+        var source = encrypted.ToArray();
+
+        static byte[] RewriteHeader(byte[] bytes, Action<JsonObject> modify)
+        {
+            var oldLength = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(8, 4));
+            var json = JsonNode.Parse(Encoding.UTF8.GetString(bytes.AsSpan(12, oldLength)))!.AsObject();
+            modify(json);
+            var replacement = Encoding.UTF8.GetBytes(json.ToJsonString());
+            var result = new byte[12 + replacement.Length + bytes.Length - 12 - oldLength];
+            bytes.AsSpan(0, 8).CopyTo(result);
+            BinaryPrimitives.WriteInt32LittleEndian(result.AsSpan(8, 4), replacement.Length);
+            replacement.CopyTo(result.AsSpan(12));
+            bytes.AsSpan(12 + oldLength).CopyTo(result.AsSpan(12 + replacement.Length));
+            return result;
+        }
+
+        // Reject absurd workload and allocation sizes BEFORE any unauthenticated values are used.
+        foreach (var altered in new[]
+        {
+            RewriteHeader(source, h => h["Iterations"] = int.MaxValue),
+            RewriteHeader(source, h => h["ChunkSize"] = int.MaxValue),
+            RewriteHeader(source, h => h["Version"] = 2),
+            RewriteHeader(source, h => h["NoncePrefix"] = "***not-base64***"),
+            RewriteHeader(source, h => h["KeyMode"] = "passphrase-pbkdf2-sha256")
+        })
+        {
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                ArchiveCrypto.DecryptAsync(new MemoryStream(altered), new MemoryStream(), key));
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                ArchiveCrypto.ReadHeaderAsync(new MemoryStream(altered)));
+        }
+
+        // An incomplete length field or a shortened JSON header must fail closed.
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ArchiveCrypto.DecryptAsync(new MemoryStream(source[..9]), new MemoryStream(), key));
+        var cut = source[..(12 + BinaryPrimitives.ReadInt32LittleEndian(source.AsSpan(8, 4)) - 1)];
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            ArchiveCrypto.DecryptAsync(new MemoryStream(cut), new MemoryStream(), key));
     }
 
     [Fact]
