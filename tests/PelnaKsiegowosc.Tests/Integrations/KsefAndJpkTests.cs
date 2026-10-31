@@ -316,6 +316,28 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_cit_lists_only_counterparties_with_tax_id()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var company = await t.AddCounterpartyAsync("K-FIRMA", "Firma sp. z o.o.", "7740001454");
+        var person = await t.AddCounterpartyAsync("K-OSOBA", "Jan Kowalski (konsument)");
+        var d = new DateOnly(2026, 2, 10);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "S/1", new("130-01", 300m, 0, company.Id), new("700-01", 0, 300m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "S/2", new("130-01", 200m, 0, person.Id), new("700-01", 0, 200m)));
+        await t.Db.SaveChangesAsync();
+        t.Company.Voivodeship = "mazowieckie"; t.Company.County = "Warszawa"; t.Company.Commune = "Warszawa"; t.Company.TaxOfficeCode = "1471";
+        var rec = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, t.Year, rec.Rpd, false, t.Clock.UtcNow, Validator());
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(10)));
+        var ns = JpkKrPdBuilder.Ns;
+        var codes = r.Document.Descendants(ns + "Kontrahent").Select(k => k.Element(ns + "T_1")!.Value).ToList();
+        Assert.Contains("K-FIRMA", codes);
+        Assert.DoesNotContain("K-OSOBA", codes);
+        var refs = r.Document.Descendants(ns + "Dziennik").Select(x => x.Element(ns + "D_3")?.Value).Where(v => v is not null).ToList();
+        Assert.All(refs, v => Assert.Contains(v, codes));                                    // każde D_3 wskazuje kontrahenta z węzła
+    }
+
+    [Fact]
     public async Task Jpk_cit_is_valid_against_official_jpk_kr_pd_schema()
     {
         await using var t = await PelnaKsiegowosc.Tests.Integration.FullYearScenarioTests.BuildFullYearAsync(closeYear: true);

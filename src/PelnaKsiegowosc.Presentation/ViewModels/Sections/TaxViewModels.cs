@@ -337,6 +337,22 @@ public sealed partial class CitViewModel : SectionViewModel
         await new CitService(db, Session.User, Session.Clock).RecordPaymentAllocationAsync(Session.CurrentYear.Id, date, amount, period, t == "R", source);
     }, "Zapisano zarachowanie wpłaty.");
 
+    /// <summary>Korekta zarachowania wpłaty CIT — anulowanie zapisu z przyczyną (historia zachowana).</summary>
+    [RelayCommand]
+    private Task CancelCitPaymentAllocationAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        var cit = new CitService(db, Session.User, Session.Clock);
+        var active = await cit.PaymentAllocationsAsync(Session.CurrentYear.Name);
+        if (active.Count == 0) throw new DomainException("Brak zapisów zarachowania w tym roku.");
+        var listing = string.Join(Environment.NewLine, active.Select((a, i) => $"{i + 1}. {a.PaymentDate.ToPl()} {Money.Format(a.Amount)} zł → {(a.AdvancePeriod is { } p ? $"zaliczka {p}" : a.AnnualTax ? "podatek roczny" : "inne")} ({a.Source}; {a.RecordedBy})"));
+        var no = Parse.Int(await Dialogs.PromptAsync("Korekta zarachowania", listing + Environment.NewLine + Environment.NewLine + "Numer zapisu do anulowania:", ""), "Numer");
+        if (no < 1 || no > active.Count) throw new DomainException("Nieprawidłowy numer.");
+        var reason = await Dialogs.PromptAsync("Korekta zarachowania", "Przyczyna korekty:", "");
+        if (string.IsNullOrWhiteSpace(reason)) return;
+        await cit.CancelPaymentAllocationAsync(Session.CurrentYear.Id, active[no - 1].Id, reason);
+    }, "Anulowano zapis zarachowania (historia zachowana).");
+
     [ObservableProperty] private TableData _debtExcess = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedDebtExcess;
     [ObservableProperty] private string _debtHeadroom = "";

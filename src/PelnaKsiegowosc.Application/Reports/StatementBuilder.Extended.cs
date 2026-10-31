@@ -186,7 +186,7 @@ public sealed partial class StatementBuilder
         var ops = new List<(string, string, decimal)>
         {
             ("A.II.1", "Amortyzacja", depreciation),
-            ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", 0m),
+            ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", 0m), // uzupełniane niżej z wyceny środków pieniężnych i pozycji inwestycyjnych/finansowych
             ("A.II.3", "Odsetki i udziały w zyskach (dywidendy)", interest - dividends),
             ("A.II.4", "Zysk (strata) z działalności inwestycyjnej", -disposalResult),
             ("A.II.5", "Zmiana stanu rezerw", D("P.B.I")),
@@ -197,6 +197,11 @@ public sealed partial class StatementBuilder
         };
         // działalność inwestycyjna i finansowa — wpływy i wydatki brutto z rzeczywistych operacji pieniężnych (zał. nr 1 do UoR)
         var g = await CashFlowGrossAsync(fiscalYearId, asOf, ct);
+        // różnice kursowe niezrealizowane od pozycji inwestycyjnych i finansowych (wycena kredytów, pożyczek, aktywów finansowych)
+        // są w wyniku, ale nie są przepływem — wyłączane w A.II.2 (zysk −, strata +). Wycena środków pieniężnych pozostaje
+        // w działalności operacyjnej (struktura MF: G = F ± D) i jest wykazywana informacyjnie w E.1.
+        var fxIndex = ops.FindIndex(x => x.Item1 == "A.II.2");
+        ops[fxIndex] = ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", -g.NonOperatingFx);
         var invNet = g.InvestingIn - g.InvestingOut;
         var finNet = g.FinancingIn - g.FinancingOut;
         // inne korekty (A.II.10) — wyłącznie udokumentowane przez użytkownika; różnica uzgodnienia nie jest „dopisywana” automatycznie
@@ -257,7 +262,8 @@ public sealed partial class StatementBuilder
         var cashOpen = o.Get("B.III.1.c");
         var cashClose = c.Get("B.III.1.c");
         cf.Lines.Add(new CashFlowLine("D", "Przepływy pieniężne netto razem (A.III ± B.III ± C.III)", total, 0, true));
-        cf.Lines.Add(new CashFlowLine("E", "Bilansowa zmiana stanu środków pieniężnych", cashClose - cashOpen, 0));
+        cf.Lines.Add(new CashFlowLine("E", "Bilansowa zmiana stanu środków pieniężnych, w tym:", cashClose - cashOpen, 0));
+        cf.Lines.Add(new CashFlowLine("E.1", "– zmiana stanu środków pieniężnych z tytułu różnic kursowych", g.CashFx, 1));
         cf.Lines.Add(new CashFlowLine("F", "Środki pieniężne na początek okresu", cashOpen, 0));
         cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D)", cashOpen + total, 0, true));
         cf.Unreconciled = cashClose - cashOpen - total;

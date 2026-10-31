@@ -806,27 +806,65 @@ public sealed class CitService
         return use;
     }
 
-    /// <summary>Zarachowanie wpłaty potwierdzone w e-Urzędzie Skarbowym (art. 62 Ordynacji podatkowej): na zaliczkę za okres, podatek roczny albo inne zobowiązanie.</summary>
-    public sealed record CitPaymentAllocation(DateOnly PaymentDate, decimal Amount, int? AdvancePeriod, bool AnnualTax, string Source, DateOnly RecordedOn, string RecordedBy);
+    /// <summary>
+    /// Zarachowanie wpłaty wprowadzone przez operatora na podstawie danych urzędowych (e-Urząd Skarbowy, postanowienie o zaliczeniu
+    /// wpłaty — art. 62 Ordynacji podatkowej): na zaliczkę za okres, podatek roczny albo inne zobowiązanie. Program nie pobiera tych
+    /// danych z systemów urzędowych — jest to oświadczenie operatora z opcjonalnym dokumentem. Zapisy nie są usuwane: korekta
+    /// anuluje zapis z podaniem przyczyny (historia zachowana).
+    /// </summary>
+    public sealed record CitPaymentAllocation(DateOnly PaymentDate, decimal Amount, int? AdvancePeriod, bool AnnualTax, string Source, DateOnly RecordedOn, string RecordedBy,
+        Guid Id = default, Guid? EvidenceId = null, bool Cancelled = false, string? CancelReason = null, DateOnly? CancelledOn = null, string? CancelledBy = null);
     public static string PaymentAllocationsKey(string year) => $"cit.wplaty.zarachowanie.{year}";
 
-    public async Task<List<CitPaymentAllocation>> PaymentAllocationsAsync(string year, CancellationToken ct = default) =>
+    /// <summary>Wszystkie zapisy zarachowania (także anulowane — historia).</summary>
+    public async Task<List<CitPaymentAllocation>> PaymentAllocationHistoryAsync(string year, CancellationToken ct = default) =>
         await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PaymentAllocationsKey(year), () => new List<CitPaymentAllocation>(), ct);
 
-    /// <summary>Rejestracja zarachowania wpłaty według stanu w e-Urzędzie Skarbowym (zastępuje szacunek według kolejności terminów).</summary>
-    public async Task RecordPaymentAllocationAsync(Guid fiscalYearId, DateOnly paymentDate, decimal amount, int? advancePeriod, bool annualTax, string source, CancellationToken ct = default)
+    /// <summary>Obowiązujące zapisy zarachowania (bez anulowanych).</summary>
+    public async Task<List<CitPaymentAllocation>> PaymentAllocationsAsync(string year, CancellationToken ct = default) =>
+        (await PaymentAllocationHistoryAsync(year, ct)).Where(a => !a.Cancelled).ToList();
+
+    public async Task<CitPaymentAllocation> RecordPaymentAllocationAsync(Guid fiscalYearId, DateOnly paymentDate, decimal amount, int? advancePeriod, bool annualTax, string source,
+        CancellationToken ct = default, Guid? evidenceId = null)
     {
         _user.Require(Permission.ManageCit);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        amount = Money.Round(amount);
         if (amount <= 0) throw new DomainException("Kwota wpłaty musi być dodatnia.");
         if (string.IsNullOrWhiteSpace(source)) throw new DomainException("Wskaż źródło potwierdzenia (np. e-Urząd Skarbowy — karta rozliczeń, postanowienie o zaliczeniu wpłaty).");
         if (advancePeriod is { } n && (n < 1 || n > fy.Periods.Count)) throw new DomainException("Nieprawidłowy okres zaliczki.");
         if (advancePeriod is not null && annualTax) throw new DomainException("Wpłatę zarachowuje się na zaliczkę albo na podatek roczny.");
-        var list = await PaymentAllocationsAsync(fy.Name, ct);
-        list.Add(new CitPaymentAllocation(paymentDate, Money.Round(amount), advancePeriod, annualTax, source.Trim(), _clock.Today, _user.Login));
-        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey(fy.Name), list, ct);
+        await EnsureEvidenceAsync(evidenceId, ct);
+        // kontrola podwójnego zarachowania: łączna kwota zarachowana z wpłat z danego dnia nie może przekroczyć wpłat wg ksiąg (220-01)
+        var booked = (await (from l in _db.JournalLines.AsNoTracking()
+                             join e in _db.JournalEntries.AsNoTracking() on l.EntryId equals e.Id
+                             where e.CompanyId == _user.CompanyId && e.Status == EntryStatus.Zaksiegowany && e.OperationDate == paymentDate && l.AccountNumber == "220-01" && l.Debit != 0
+                             select l.Debit).ToListAsync(ct)).Sum();
+        var history = await PaymentAllocationHistoryAsync(fy.Name, ct);
+        var already = history.Where(a => !a.Cancelled && a.PaymentDate == paymentDate).Sum(a => a.Amount);
+        if (already + amount > booked)
+            throw new DomainException($"Zarachowanie {Money.Format(already + amount)} zł z wpłat z dnia {paymentDate.ToPl()} przekracza wpłaty wg ksiąg ({Money.Format(booked)} zł) — możliwe podwójne zarachowanie albo brak zaksięgowanej wpłaty.");
+        var record = new CitPaymentAllocation(paymentDate, amount, advancePeriod, annualTax, source.Trim(), _clock.Today, _user.Login, Guid.CreateVersion7(), evidenceId);
+        history.Add(record);
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey(fy.Name), history, ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_WPLATA_ZARACHOWANA", "FiscalYear", fy.Id.ToString(),
-            $"{paymentDate.ToPl()} {Money.Xml(amount)} → {(advancePeriod is { } p ? $"zaliczka za okres {p}" : annualTax ? "podatek roczny" : "inne zobowiązanie")}; źródło: {source.Trim()}", ct);
+            $"{paymentDate.ToPl()} {Money.Xml(amount)} → {(advancePeriod is { } p ? $"zaliczka za okres {p}" : annualTax ? "podatek roczny" : "inne zobowiązanie")}; oświadczenie operatora, źródło: {source.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+        return record;
+    }
+
+    /// <summary>Korekta: anulowanie zapisu zarachowania z podaniem przyczyny (zapis pozostaje w historii).</summary>
+    public async Task CancelPaymentAllocationAsync(Guid fiscalYearId, Guid allocationId, string reason, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Podaj przyczynę korekty zarachowania.");
+        var fy = await _db.FiscalYears.FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        var history = await PaymentAllocationHistoryAsync(fy.Name, ct);
+        var i = history.FindIndex(a => a.Id == allocationId && !a.Cancelled);
+        if (i < 0) throw new DomainException("Nie znaleziono obowiązującego zapisu zarachowania.");
+        history[i] = history[i] with { Cancelled = true, CancelReason = reason.Trim(), CancelledOn = _clock.Today, CancelledBy = _user.Login };
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey(fy.Name), history, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_WPLATA_ZARACHOWANIE_KOREKTA", "FiscalYear", fy.Id.ToString(), $"anulowano {history[i].PaymentDate.ToPl()} {Money.Xml(history[i].Amount)}: {reason.Trim()}", ct);
         await _db.SaveChangesAsync(ct);
     }
 

@@ -405,6 +405,16 @@ public class CashFlowGrossTests
         Assert.Equal(0m, cf.Unreconciled);
         Assert.Equal(cf.Get("E"), cf.Get("D"));
 
+        // różnice kursowe: wycena środków pieniężnych (+700, informacyjnie w E.1) i wycena kredytu walutowego (strata 500 — A.II.2)
+        await Post("PK/FX1", new("130-01", 700m, 0), new("750-02", 0, 700m));
+        await Post("PK/FX2", new("751-02", 500m, 0), new("134", 0, 500m));
+        var fx = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Equal(700m, fx.Get("E.1"));
+        Assert.Equal(500m, fx.Get("A.II.2"));
+        Assert.Equal(0m, fx.Unreconciled);
+        Assert.Equal(fx.Get("E"), fx.Get("D"));
+        Assert.Equal(30000m, fx.Get("C.I.2"));                                                   // wycena kredytu nie jest wpływem
+
         // wpływ zaksięgowany na konto bez pozycji sprawozdania — różnica uzgodnienia jest jawna, nie „dopisywana” automatycznie
         await chart.AddAccountAsync(t.Chart.Id, "249", "Rozliczenia do wyjaśnienia", Domain.Accounts.AccountType.AktywnoPasywne);
         await Post("WB/8", new("130-01", 700m, 0), new("249", 0, 700m));

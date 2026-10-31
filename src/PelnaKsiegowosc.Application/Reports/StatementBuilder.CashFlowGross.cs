@@ -28,6 +28,10 @@ public sealed class CashFlowGross
     public decimal Operating { get; internal set; }
     /// <summary>Przeniesienia między własnymi rachunkami i kasą (wyłączone z RPP).</summary>
     public decimal InternalTransfers { get; internal set; }
+    /// <summary>Różnice kursowe z wyceny środków pieniężnych (zysk +, strata −) — zmiana stanu środków bez przepływu.</summary>
+    public decimal CashFx { get; internal set; }
+    /// <summary>Niezrealizowane różnice kursowe od pozycji inwestycyjnych i finansowych (zysk +, strata −) — bez przepływu.</summary>
+    public decimal NonOperatingFx { get; internal set; }
 }
 
 public sealed partial class StatementBuilder
@@ -111,7 +115,21 @@ public sealed partial class StatementBuilder
             .Where(e => e.SourceDocumentId != null && docIds.Contains(e.SourceDocumentId.Value) && e.Status == EntryStatus.Zaksiegowany).ToListAsync(ct);
         var itemDoc = items.Where(i => i.DocumentId != null).ToDictionary(i => i.Id, i => i.DocumentId!.Value);
 
+        var posting = await new Setup.SettingsService(_db, new SystemClock()).GetAsync(accounts.FirstOrDefault()?.CompanyId ?? Guid.Empty,
+            Templates.PostingSettings.SettingKey, () => new Templates.PostingSettings(), ct);
+        var fxAccounts = accounts.Where(a => a.Number == posting.FxGains || a.Number == posting.FxLosses
+                                             || a.Number.StartsWith(posting.FxGains + "-") || a.Number.StartsWith(posting.FxLosses + "-")).Select(a => a.Id).ToHashSet();
         var g = new CashFlowGross();
+        // niezrealizowane różnice kursowe od pozycji inwestycyjnych i finansowych (zapisy bez środków pieniężnych: wyłącznie konta
+        // różnic kursowych i konta o kategorii innej niż operacyjna) — korekta A.II.2
+        foreach (var e in entries.Where(e => !e.Lines.Any(l => Cash(l.AccountId))))
+        {
+            var fx = e.Lines.Where(l => fxAccounts.Contains(l.AccountId)).ToList();
+            if (fx.Count == 0) continue;
+            var others = e.Lines.Where(l => !fxAccounts.Contains(l.AccountId) && byId.ContainsKey(l.AccountId)).ToList();
+            if (others.Count > 0 && others.All(l => CategoryOf(byId[l.AccountId]) != CashFlowCategory.Operacyjna))
+                g.NonOperatingFx += fx.Sum(l => l.Credit - l.Debit);
+        }
         void Allocate(JournalLine counter, decimal amount, bool inflow)
         {
             var a = byId[counter.AccountId];
@@ -141,6 +159,15 @@ public sealed partial class StatementBuilder
         }
         foreach (var e in cashEntries)
         {
+            // wycena środków pieniężnych w walutach (konta pieniężne i wyłącznie konta różnic kursowych) — bez przepływu
+            var nonCashLines = e.Lines.Where(l => !Cash(l.AccountId) && byId.ContainsKey(l.AccountId)).ToList();
+            if (nonCashLines.Count > 0 && nonCashLines.All(l => fxAccounts.Contains(l.AccountId)))
+            {
+                var fx = e.Lines.Where(l => Cash(l.AccountId)).Sum(l => l.Debit - l.Credit);
+                g.CashFx += fx;
+                g.Operating += fx;
+                continue;
+            }
             var inflow = e.Lines.Where(l => Cash(l.AccountId)).Sum(l => l.Debit);
             var outflow = e.Lines.Where(l => Cash(l.AccountId)).Sum(l => l.Credit);
             var counterCredits = e.Lines.Where(l => !Cash(l.AccountId) && byId.ContainsKey(l.AccountId) && l.Credit != 0).ToList();

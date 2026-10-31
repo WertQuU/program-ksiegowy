@@ -131,10 +131,13 @@ public static class JpkKrPdBuilder
                 string.IsNullOrWhiteSpace(company.ApartmentNumber) ? null : D("NrLokalu", company.ApartmentNumber!.Trim()),
                 D("Miejscowosc", company.City.Trim()), D("KodPocztowy", company.PostalCode.Trim()))));
 
-        var kontrahenci = counterparties.Values.OrderBy(c => c.Code).Select(c => new XElement(ns + "Kontrahent",
+        // węzeł Kontrahent — wyłącznie kontrahenci z nadanym numerem identyfikacji podatkowej (wyjaśnienia MF do JPK_KR_PD);
+        // zapisy z osobami bez NIP (np. konsumenci) nie zawierają odwołania D_3
+        var withTaxId = counterparties.Values.Where(c => !string.IsNullOrWhiteSpace(c.Nip)).ToDictionary(c => c.Id);
+        var kontrahenci = withTaxId.Values.OrderBy(c => c.Code).Select(c => new XElement(ns + "Kontrahent",
             E("T_1", Text(c.Code)),
-            string.IsNullOrWhiteSpace(c.Nip) ? null : E("T_2", string.IsNullOrWhiteSpace(c.CountryCode) ? "PL" : c.CountryCode.ToUpperInvariant()),
-            string.IsNullOrWhiteSpace(c.Nip) ? null : E("T_3", c.CountryCode is null or "PL" ? Identifiers.NormalizeNip(c.Nip) : c.Nip!.Trim()))).ToList();
+            E("T_2", string.IsNullOrWhiteSpace(c.CountryCode) ? "PL" : c.CountryCode.ToUpperInvariant()),
+            E("T_3", c.CountryCode is null or "PL" ? Identifiers.NormalizeNip(c.Nip) : c.Nip!.Trim()))).ToList();
 
         // Zestawienie obrotów i sald (ZOiS7, jednostki pozostałe): wszystkie konta — syntetyczne, pośrednie i analityczne — na
         // których w roku wystąpiły obroty lub salda (wyjaśnienia MF do JPK_KR_PD). S_3 — konto nadrzędne; dla konta syntetycznego
@@ -197,7 +200,7 @@ public static class JpkKrPdBuilder
         {
             var amount = e.TotalDebit;
             dzSum += amount;
-            var cpLine = e.Lines.FirstOrDefault(l => l.CounterpartyId is { } id && counterparties.ContainsKey(id));
+            var cpLine = e.Lines.FirstOrDefault(l => l.CounterpartyId is { } id && withTaxId.ContainsKey(id));
             var d = new XElement(ns + "Dziennik",
                 E("D_1", e.JournalNumber ?? e.SequenceNumber?.ToString(Inv) ?? e.DocumentNumber),
                 E("D_2", Text(e.JournalCode)),

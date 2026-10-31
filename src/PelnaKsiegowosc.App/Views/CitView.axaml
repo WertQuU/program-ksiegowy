@@ -15,6 +15,7 @@
       <Button Content="Zatwierdź zaznaczoną zaliczkę" Command="{Binding ApproveAdvanceCommand}" IsEnabled="{Binding IsApplicable}" />
       <Button Content="JPK CIT (księgi ze znacznikami)…" Command="{Binding JpkCitCommand}" IsEnabled="{Binding IsApplicable}" />
       <Button Content="Zarachowanie wpłaty (e-US)…" Command="{Binding RecordCitPaymentAllocationCommand}" IsEnabled="{Binding IsApplicable}" />
+      <Button Content="Korekta zarachowania…" Command="{Binding CancelCitPaymentAllocationCommand}" IsEnabled="{Binding IsApplicable}" />
       <Button Content="Podatek odroczony…" Command="{Binding DeferredTaxCommand}" IsEnabled="{Binding IsApplicable}" />
     </WrapPanel>
     <Expander DockPanel.Dock="Top" Header="Warunki stawki 9% (limit 2 mln euro, wyłączenia)" Margin="0,0,0,4">

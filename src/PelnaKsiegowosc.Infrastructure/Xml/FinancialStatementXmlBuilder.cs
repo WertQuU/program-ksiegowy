@@ -275,7 +275,7 @@ public static partial class FinancialStatementXmlBuilder
                     P("C_II_6", "C.II.6"), P("C_II_7", "C.II.7"), P("C_II_8", "C.II.8"), P("C_II_9", "C.II.9")),
                 J("C_III", G(cf, "C.III"), G(prev, "C.III"))),
             J("D", G(cf, "D"), G(prev, "D")),
-            J("E", G(cf, "E"), G(prev, "E")),
+            J("E", G(cf, "E"), G(prev, "E"), P("E_1", "E.1")),
             J("F", G(cf, "F"), G(prev, "F")),
             J("G", G(cf, "G"), G(prev, "G"))));
     }

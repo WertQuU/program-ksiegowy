@@ -84,7 +84,7 @@ public sealed partial class ReportService
         decimal remainingPaid;
         if (confirmed.Count > 0)
         {
-            r.AddRow(new ReportRow("G.7", "Zarachowanie wpłat — POTWIERDZONE w e-Urzędzie Skarbowym", confirmed.Sum(c => c.Amount)) { IsHeader = true });
+            r.AddRow(new ReportRow("G.7", "Zarachowanie wpłat — WPROWADZONE PRZEZ OPERATORA na podstawie danych urzędowych (program nie weryfikuje ich automatycznie)", confirmed.Sum(c => c.Amount)) { IsHeader = true });
             foreach (var a in advances.Where(a => a.AdvanceDue > 0).OrderBy(a => a.PaymentDeadline))
             {
                 var allocated = confirmed.Where(c => c.AdvancePeriod == a.PeriodNumber).ToList();

@@ -128,3 +128,15 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | PK-05 korekta uzgadniająca | Poprawione: brak automatycznej korekty; A.II.10 tylko z udokumentowanych korekt; nieuzgodniona różnica blokuje wersję „gotową do podpisu”. |
 | PK-06 wpłaty CIT | Poprawione: rejestr zarachowania wpłat potwierdzonego w e-US (zastępuje szacunek); szacunek wyraźnie oznaczony. |
 | PK-07 tryb wyjątkowy zamknięcia | Poprawione: wymagane wskazanie podstawy (zakończenie działalności / brak zatwierdzenia w terminie), dokumentu i uzasadnienia, osobna fraza potwierdzenia; program nie potwierdza legalności trybu. |
+
+
+## Audyt 31.10.2026 (commit 80e5024) — rozstrzygnięcia
+
+| Ustalenie | Stan |
+|---|---|
+| PK-01 zlecenie z własnym pracownikiem | Poprawione: art. 8 ust. 2a ustawy o sus — składki jak od stosunku pracy (chorobowa obowiązkowa), bez zwolnienia studenta do 26 lat. |
+| PK-02 dzieło z własnym pracownikiem / na rzecz pracodawcy | Poprawione: oskładkowanie jak od stosunku pracy; umowa z osobą trzecią wykonywana na rzecz pracodawcy — oznaczenie na umowie. |
+| PK-03 limity narastające | Poprawione: 30-krotność i limit ulgi dla młodych — dla osoby (PESEL) ze wszystkich umów u płatnika, także w tej samej liście; próg skali i dni chorobowe — ze stosunku pracy; zaliczka od zlecenia, dzieła i powołania 12% bez progu (art. 41 ust. 1 ustawy o PIT). |
+| PK-04 JPK_KR_PD — kontrahenci bez NIP | Poprawione: w węźle Kontrahent tylko podmioty z numerem identyfikacji podatkowej; D_3 tylko dla nich. |
+| PK-05 RPP — różnice kursowe | Poprawione: A.II.2 wyłącza niezrealizowane różnice od pozycji inwestycyjnych i finansowych; wycena środków pieniężnych wykazywana w E.1 (struktura MF: G = F ± D). |
+| PK-06 zarachowanie wpłat CIT | Poprawione: wyraźne oznaczenie „wprowadzone przez operatora”, opcjonalny dokument, blokada podwójnego zarachowania (kontrola z wpłatami wg ksiąg), korekta przez anulowanie z przyczyną i pełną historią. |
