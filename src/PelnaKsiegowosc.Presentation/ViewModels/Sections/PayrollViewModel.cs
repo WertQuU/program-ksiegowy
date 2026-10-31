@@ -98,6 +98,17 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private bool _voluntarySickness;
     [ObservableProperty] private bool _exemptFromFp;
     [ObservableProperty] private bool _ppk;
+    // Art. 92 KP: wybór musi być świadomy, bez automatycznego założenia 80% / braku dni u poprzednich pracodawców.
+    public List<Choice<SickWageCause>> SickWageCauses { get; } = new()
+    {
+        new(SickWageCause.Ordinary80, "Zwykła niezdolność — 80%"),
+        new(SickWageCause.Pregnancy100, "W ciąży — 100%"),
+        new(SickWageCause.CommuteAccident100, "Wypadek w drodze do/z pracy — 100%"),
+        new(SickWageCause.OrganOrTissueDonation100, "Badania/zabieg dawstwa — 100%")
+    };
+    [ObservableProperty] private Choice<SickWageCause>? _sickWageCause;
+    [ObservableProperty] private string _previousEmployerSickDays = "";
+    [ObservableProperty] private string _sickEvidenceReference = "";
     [ObservableProperty] private string _sickDays = "";
     [ObservableProperty] private string _unpaidDays = "";
 
@@ -241,6 +252,25 @@ public sealed partial class PayrollViewModel : SectionViewModel
             Days(SickDays, "Dni choroby"), Days(UnpaidDays, "Dni nieobecności nieodpłatnej"));
         NewGross = SickDays = UnpaidDays = "";
     }, "Przeliczono pozycję listy płac.");
+
+    [RelayCommand]
+    private Task ConfirmSickWageAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
+            throw new DomainException("Wybierz listę płac i jej pozycję z dniami choroby.");
+        if (SickWageCause is null)
+            throw new DomainException("Wybierz stawkę i podstawę prawną 80% / 100% przed zatwierdzeniem chorobowego.");
+        await using var db = Session.OpenDb();
+        var list = await db.PayrollLists.AsNoTracking().Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == Session.CompanyId);
+        var item = list.Items.Single(i => i.Id == itemId);
+        if (item.ContractType != ContractType.UmowaOPrace || item.SickDays <= 0)
+            throw new DomainException("Zaznacz pozycję pracownika na umowie o pracę z dniami choroby.");
+        var svc = new PayrollService(db, Session.User, Session.Clock);
+        await svc.RecordSickWageAssessmentAsync(item.EmployeeId, list.Month,
+            Parse.Int(PreviousEmployerSickDays, "Dni chorobowego u innych pracodawców w roku"),
+            SickWageCause.Value, SickEvidenceReference);
+        await svc.RecalculateAsync(listId);
+    }, "Zatwierdzono udokumentowaną stawkę i dni chorobowego; lista została przeliczona.");
 
     [RelayCommand]
     private Task RecalculateListAsync() => ChangeAsync(async () =>
