@@ -43,6 +43,50 @@ public sealed class PayrollService
         await _db.SaveChangesAsync(ct);
     }
 
+    private static string SickAssessmentKey(Guid employeeId, DateOnly month) =>
+        $"place.chorobowe.weryfikacja.{employeeId:N}.{month:yyyyMM}";
+
+    private Task<SickWageAssessment?> SickAssessmentAsync(Guid employeeId, DateOnly month, CancellationToken ct) =>
+        new SettingsService(_db, _clock).GetAsync<SickWageAssessment?>(_user.CompanyId, SickAssessmentKey(employeeId, month), () => null, ct);
+
+    /// <summary>
+    /// Zatwierdzenie danych art. 92 KP dla wszystkich dni choroby w danym miesiącu.
+    /// Różne przyczyny choroby w jednym miesiącu wymagają oddzielnego rozliczenia.
+    /// Zachowujemy wyłącznie odnośnik do dowodu, nie medyczną treść dokumentu.
+    /// </summary>
+    public async Task RecordSickWageAssessmentAsync(Guid employeeId, DateOnly month, int previousEmployerDays,
+        SickWageCause cause, string evidenceReference, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        month = new DateOnly(month.Year, month.Month, 1);
+        if (!Enum.IsDefined(cause)) throw new DomainException("Nieprawidłowy rodzaj wynagrodzenia chorobowego.");
+        if (string.IsNullOrWhiteSpace(evidenceReference) || evidenceReference.Trim().Length > 120)
+            throw new DomainException("Podaj odnośnik do dowodu (1–120 znaków, bez danych medycznych).");
+        var employee = await _db.Employees.AsNoTracking().FirstAsync(e => e.Id == employeeId && e.CompanyId == _user.CompanyId, ct);
+        if (employee.ContractType != ContractType.UmowaOPrace)
+            throw new DomainException("Wynagrodzenie chorobowe art. 92 KP dotyczy umowy o pracę.");
+        var birth = employee.BirthDate ?? Identifiers.BirthDateFromPesel(employee.Pesel);
+        if (birth is null)
+            throw new DomainException("Uzupełnij potwierdzoną datę urodzenia przed ustaleniem limitu 33/14 dni.");
+        var limit = PayrollRules.EmployerSickDaysLimit(birth, month.Year);
+        if (previousEmployerDays < 0 || previousEmployerDays > limit)
+            throw new DomainException($"Dni chorobowego u innych pracodawców muszą wynosić 0–{limit} w roku {month.Year}.");
+        var nextYear = new DateOnly(month.Year + 1, 1, 1);
+        var booked = await (from i in _db.PayrollItems.AsNoTracking()
+                            join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                            where i.EmployeeId == employeeId && l.CompanyId == _user.CompanyId &&
+                                  l.Status == PayrollStatus.Zaksiegowana && l.Month >= month && l.Month < nextYear &&
+                                  i.SickDays > 0
+                            select i.Id).AnyAsync(ct);
+        if (booked)
+            throw new DomainException("Zaksięgowano już dni choroby w tym lub późniejszym miesiącu. Zmiana deklaracji wymaga korekty list.");
+        var assessment = new SickWageAssessment(previousEmployerDays, cause, evidenceReference.Trim(), _clock.UtcNow, _user.UserId);
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, SickAssessmentKey(employeeId, month), assessment, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CHOROBOWE_ZATWIERDZONE", "Employee", employeeId.ToString(),
+            $"{month:yyyy-MM}; zapisano odnośnik do dokumentacji (bez danych medycznych)", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     private static void Validate(Employee e)
     {
         var r = new ValidationResult();
@@ -207,6 +251,7 @@ public sealed class PayrollService
         var payMonthEnd = payMonthStart.AddMonths(1).AddDays(-1);
         var result = new Dictionary<Guid, PayrollItem>();
         var sickBases = new Dictionary<Guid, decimal?>();
+        var sickAssessments = new Dictionary<Guid, SickWageAssessment?>();
         foreach (var group in inputs.GroupBy(i => PersonKey(employees[i.EmployeeId])))
         {
             int Rank(Employee e) => e.ContractType switch { ContractType.UmowaOPrace => 0, ContractType.Powolanie => 1, _ => 2 };
@@ -241,8 +286,14 @@ public sealed class PayrollService
                 {
                     var e = employees[input.EmployeeId];
                     decimal? sickBasis = null;
+                    SickWageAssessment? sicknessAssessment = null;
                     if (e.ContractType == ContractType.UmowaOPrace && input.SickDays > 0)
                     {
+                        if (!sickAssessments.TryGetValue(e.Id, out sicknessAssessment))
+                        {
+                            sicknessAssessment = await SickAssessmentAsync(e.Id, list.Month, ct);
+                            sickAssessments[e.Id] = sicknessAssessment;
+                        }
                         if (!sickBases.TryGetValue(e.Id, out sickBasis))
                         {
                             (sickBasis, _) = await VerifiedSickBasisAsync(e, list, ct);
@@ -254,10 +305,12 @@ public sealed class PayrollService
                             // Bez potwierdzonej historii 0 oznacza WYŁĄCZNIE wstępne
                             // przeliczenie składników; PostAsync nadal blokuje taki zapis.
                             // Nie podstawiamy bieżącej pensji jako rzekomej podstawy chorobowego.
-                            SickBasis: input.SickDays > 0 ? sickBasis ?? 0m : null,
+                            SickBasis: input.SickDays > 0 ? (sicknessAssessment is null ? 0m : sickBasis ?? 0m) : null,
+                            SickRatePercent: sicknessAssessment?.RatePercent ?? 80m,
                             CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month), SickYear: list.Month.Year) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
-                        TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
+                        TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author,
+                        EmployerSickDays = baseYtd.EmployerSickDays + (sicknessAssessment?.PreviousEmployerDays ?? 0) };
                     var others = pass == 0 ? 0m : bases.Where(b => b.Key != input.ItemId).Sum(b => b.Value);
                     var own = IsOwnEmployee(e, sameMonth);
                     bool? civil = null;
@@ -269,6 +322,14 @@ public sealed class PayrollService
                     fresh.BaseGross = input.Gross;
                     if (input.SickDays > 0 && sickBasis is null)
                         fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest NIEUSTALONA — kwota świadczenia = 0 WYŁĄCZNIE W ROBOCZEJ LIŚCIE WSTĘPNA; księgowanie tej listy zablokowane";
+                    if (e.ContractType == ContractType.UmowaOPrace && input.SickDays > 0)
+                    {
+                        if (sicknessAssessment is null)
+                            fresh.Notes = (fresh.Notes ?? "") + "; WSTĘPNA: BRAK potwierdzenia art. 92 KP (dni u innych pracodawców, stawka 80/100%). Kwota świadczenia = 0, księgowanie zablokowane";
+                        else
+                            fresh.Notes = (fresh.Notes ?? "") + $"; art. 92 KP potwierdzone: stawka {sicknessAssessment.RatePercent}%, " +
+                                $"dni u innych pracodawców {sicknessAssessment.PreviousEmployerDays}; dowód: {sicknessAssessment.EvidenceReference}";
+                    }
                     if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
                     reductionLeft -= fresh.TaxReduction;
                     bases[input.ItemId] = fresh.SocialBasis;
@@ -381,7 +442,7 @@ public sealed class PayrollService
     private static string Fingerprint(PayrollItem i) => string.Join("|", i.Gross, i.SocialBasis, i.PensionEmployee, i.DisabilityEmployee, i.SicknessEmployee,
         i.HealthBase, i.Health, i.CostsOfIncome, i.AuthorCosts, i.ExemptRevenue, i.TaxBase, i.TaxReduction, i.TaxAdvance, i.FlatRateTax, i.Net,
         i.PpkEmployee, i.PpkEmployer, i.PpkEmployerTaxed, i.PensionEmployer, i.DisabilityEmployer, i.Accident, i.LaborFund, i.Fgsp, i.SickPay,
-        i.SickDaysEmployer, i.InsuranceUndetermined, i.ContractType);
+        i.SickDaysEmployer, i.InsuranceUndetermined, i.ContractType, i.Notes);
 
     public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)
     {
@@ -451,6 +512,9 @@ public sealed class PayrollService
             if ((employee.BirthDate ?? Identifiers.BirthDateFromPesel(employee.Pesel)) is null)
                 throw new DomainException($"Nie można zaksięgować chorobowego dla {item.EmployeeName}: brak potwierdzonej daty urodzenia. " +
                     "Bez wieku nie da się ustalić limitu 33/14 dni pracodawcy z art. 92 KP. Uzupełnij datę urodzenia lub PESEL i przelicz listę.");
+            if (await SickAssessmentAsync(employee.Id, list.Month, ct) is null)
+                throw new DomainException($"Nie można zaksięgować chorobowego dla {item.EmployeeName}: brak potwierdzenia art. 92 KP " +
+                    "(dni u innych pracodawców, 80/100% i źródło dokumentacji). Zatwierdź chorobowe, a następnie przelicz listę.");
             var (basis, problem) = await VerifiedSickBasisAsync(employee, list, ct);
             if (basis is null)
                 throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
