@@ -1,49 +1,63 @@
-# Model bezpieczeństwa programu
+# Bezpieczeństwo i ograniczenia produkcyjne — Pełna Księgowość 1.0.0
 
-Zgłaszanie podatności: [../SECURITY.md](../SECURITY.md).
+> **Stan: przedprodukcyjny.** Samo przejście CI, posiadanie szyfrowania i triggerów nie dowodzi zgodności z prawem, odporności na włamanie ani możliwości bezpiecznego prowadzenia ksiąg bez dalszych kontroli. Zgłaszanie podatności: [../SECURITY.md](../SECURITY.md). Rejestr ustaleń: [AUDYT_MAIN_2026-10-31_V1.0.0.md](AUDYT_MAIN_2026-10-31_V1.0.0.md).
 
-## Dostęp i tożsamość
+## 1. Model tożsamości i uprawnień
 
-- Program nie ma własnego logowania. Dostęp do ksiąg chroni **konto systemu operacyjnego** (pliki danych w profilu
-  użytkownika) oraz — w trybie serwerowym — **konto PostgreSQL** z szyfrowanym połączeniem TLS (domyślnie VerifyFull).
-- Operatorem zapisywanym w dzienniku zdarzeń jest `użytkownik@komputer`; identyfikator jest stały dla nazwy konta.
-- Zalecenia: osobne konto systemowe dla każdej osoby, szyfrowanie dysku (BitLocker / LUKS), blokada ekranu,
-  na serwerze — osobni użytkownicy PostgreSQL z minimalnymi uprawnieniami i dostęp sieciowy ograniczony do stanowisk.
+- Aktywna aplikacja wymaga PostgreSQL. Tożsamością operatora jest osobny, indywidualny login serwera (identyfikator `db:login`). Hasło PostgreSQL znajduje się w lokalnym magazynie sekretów. Blokada sesyjna nie pozwala na jednoczesną pracę dwóch instancji programu na tym samym loginie.
+- Aplikacja wymaga braku przywilejów superuser, CREATEROLE, CREATEDB, REPLICATION, BYPASSRLS, własności bazy/tabel oraz CREATE na schemacie public / w bazie. **Nie wolno używać właściciela bazy jako zwykłego operatora.** Administracja i migracje korzystają z oddzielnej roli.
+- Jedna baza = jedna jednostka księgowa. Obecne role aplikacyjne i filtry EF nie zapewniają bezpiecznej obsługi wielu jednostek w jednej bazie; aplikacja blokuje taki scenariusz.
+- **Otwarte ryzyko P0:** operator, któremu przyznano bezpośrednie `INSERT/UPDATE/DELETE` do tabel biznesowych, może użyć zewnętrznego klienta SQL i ominąć uprawnienia aplikacji. Nie można usunąć tej luki samymi filtrami EF, TLS, triggerami ani hasłami użytkowników. Do pełnej izolacji operacji potrzebny jest zaufany backend/API wykonujący operacje na serwerze, a dla stacji roboczych tylko uprawnienia klienta API. RLS opierające się na dowolnej wartości ustawianej przez klienta nie jest wystarczające.
+- Użytkownicy z dostępem do produkcyjnej bazy muszą mieć uprawnienia przyznawane i odbierane imiennie, a operacje administracyjne powinny być rejestrowane niezależnie od klienta desktopowego.
 
-## Sekrety
+### Minimalna kontrola konfiguracji DBA
 
-| Sekret | Gdzie |
-|---|---|
-| Hasło PostgreSQL, klucze Object Storage, token KSeF, klucz kopii | Windows: Menedżer poświadczeń; Linux: pęk kluczy (Secret Service przez `secret-tool`), a gdy niedostępny — plik zaszyfrowany AES-GCM kluczem z osobnego pliku, oba z uprawnieniami 0600 |
-| Konfiguracja (`konfiguracja.json`) | bez sekretów — tylko nazwy wpisów w magazynie |
+Wykonuj poniższe zapytania **pod kontem operatora**, nie administratora:
 
-Sekrety nie trafiają do logów, dziennika zdarzeń, kopii zapasowych ani repozytorium. Tokeny KSeF są przekazywane
-do API wyłącznie w postaci zaszyfrowanej kluczem publicznym MF. `secret-tool` otrzymuje sekret przez standardowe
-wejście, nigdy w argumentach. Magazyn plikowy na Linuksie chroni sekrety tylko uprawnieniami konta — zalecany pęk kluczy.
+```sql
+SELECT session_user, current_database();
+SELECT rolname, rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls
+FROM pg_roles WHERE rolname = session_user;
+SELECT has_database_privilege(current_database(), 'CREATE') AS can_create_in_database;
+SELECT has_schema_privilege('public', 'CREATE') AS can_create_in_public_schema;
+SELECT n.nspname, c.relname, pg_has_role(session_user::regrole, c.relowner, 'MEMBER') AS owns_table
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public' AND c.relkind IN ('r','p')
+ORDER BY c.relname;
+```
 
-## Integralność ksiąg
+Wynik administracyjnego uprawnienia lub własności tabel powinien blokować normalną sesję. Nie kopiuj przykładowego przydziału szerokich uprawnień DML do środowiska produkcyjnego jako „gotowego zabezpieczenia”. Przed produkcją udokumentuj oddzielną, zaufaną ścieżkę autoryzacji zapisów.
 
-- Zapisy zaksięgowane i dziennik zdarzeń są chronione przed zmianą wyzwalaczami bazy i logiką programu.
-- Łańcuchy skrótów SHA-256 (zapisy w roku, dziennik zdarzeń) wykrywają zmianę lub usunięcie wpisu, także wykonane
-  bezpośrednio w bazie; kontrola integralności jest dostępna w programie i w `pk-cli integralnosc`.
-- Załączniki przechowywane pod losowymi nazwami (ochrona przed path traversal), szyfrowane w spoczynku AES-256-GCM (porcje 1 MiB, uwierzytelnione — modyfikacja pliku jest wykrywana) kluczem z magazynu sekretów systemu (wyprowadzonym z klucza bazy lub losowym; nie trafia do plików konfiguracji ani kopii), z sumą SHA-256 treści sprawdzaną przy odczycie; katalog załączników z uprawnieniami tylko dla właściciela (0700). Na drugim stanowisku klucz załączników przenosi się razem z kluczem bazy (Ustawienia → klucz bazy); kopia zapasowa zawiera załączniki odszyfrowane wewnątrz archiwum szyfrowanego kluczem kopii;
-  dozwolone typy i rozmiar są weryfikowane (sygnatura pliku).
+## 2. Szyfrowanie i sekrety
 
-## Kopie zapasowe
+- **PostgreSQL:** na zdalnych połączeniach wymagany jest TLS `VerifyFull`, obejmujący certyfikat CA i nazwę hosta. Szyfrowanie dysków, magazynu danych, zrzutów narzędziowych i serwerowych kluczy ustala i kontroluje administrator infrastruktury.
+- **SQLite:** SQLCipher szyfruje testowe, migracyjne i odtwarzane pliki. Migracja jawnej bazy weryfikuje kopię przed zamianą pliku; sama zamiana nie gwarantuje fizycznego usunięcia historycznych bloków SSD. Stosuj BitLocker lub LUKS.
+- **Załączniki:** AES-256-GCM i sumy SHA-256; lokalne pliki nie stają się automatycznie dostępne na innych stanowiskach. Klucze muszą być odtwarzalne i przenoszone bezpiecznym kanałem.
+- **Kopie:** AES-256-GCM (uwierzytelniane fragmenty), hasło przetwarzane PBKDF2 albo losowy klucz odzyskiwania. Archiwum wymaga osobnego zabezpieczenia przed skasowaniem i przed ransomware.
+- **Windows:** Credential Manager. **Linux:** Secret Service lub awaryjny lokalny magazyn z osobnym plikiem klucza i szyfrogramem pod tym samym kontem. Kompromitacja tego konta może ujawnić oba pliki; preferuj systemowy magazyn kluczy.
 
-AES-256-GCM w porcjach z uwierzytelnionym nagłówkiem, numerem i znacznikiem ostatniej porcji (wykrywa podmianę,
-przestawienie i obcięcie). Klucz losowy 256-bitowy z kluczem odzyskiwania albo hasło (PBKDF2-SHA256, 600 000 iteracji).
-Weryfikacja po zapisie; odtwarzanie wyłącznie do nowego katalogu. Kopie w Object Storage są szyfrowane po stronie
-klienta przed wysłaniem (opcjonalnie dodatkowo SSE po stronie serwera).
+## 3. Integralność i księgowość
 
-## Brak telemetrii
+- Zaksięgowane zapisy mają ograniczenia zmian, storno, unikatową numerację oraz łańcuchy SHA-256. SHA-256 nie jest podpisem cyfrowym ani dowodem odporności na administratora bazy, który może przeobliczyć historię.
+- Kontrole rachunkowe muszą obejmować ślad dokument–zapis–korekta, otwieranie i zamykanie okresów, politykę rachunkowości jednostki, ewidencję dowodów i niezależną weryfikację wyliczeń podatkowych.
+- W module P.S.A. dokumentacja dopuszczalności wypłaty i prognozy sześciomiesięcznej jest wymagana, ale program **nie przeprowadza automatycznie pełnego testu prawnego limitów wypłaty**. Konieczna jest niezależna ocena art. 300¹⁵ KSH na podstawie sprawozdania, uchwał, kapitału i prognozy płynności.
 
-Program nie wysyła danych księgowych ani statystyk użycia. Połączenia sieciowe nawiązuje wyłącznie z usługami
-skonfigurowanymi przez użytkownika (serwer PostgreSQL, KSeF, Object Storage). Statystyki kompilacji pakietu
-Avalonia.BuildServices są wyłączone w procesie budowania.
+## 4. Backup i odtwarzanie
 
-## Zależności
+- PostgreSQL: tabele, sumy i metadane załączników są eksportowane w jednym snapshotcie `REPEATABLE READ`; załączniki kontrolowane są sumą treści. Odrzucany jest niekompletny zestaw dokumentów.
+- Przywracanie bazy serwerowej wymaga pustej bazy oraz pustego magazynu załączników. Załączniki są kopiowane przed importem bazy, a liczności tabel i sumy księgowe sprawdzane są **w transakcji przed commit**. Awaria po rozpoczęciu przywracania może zostawić pliki w tymczasowym katalogu docelowym, które wymagają usunięcia przed kolejną próbą; nie udostępniaj celu do pracy, dopóki nie potwierdzisz pełnej poprawności.
+- Przywracanie SQLite przygotowuje zaszyfrowany wynik i załączniki w katalogu przejściowym na docelowym woluminie. Dopiero po weryfikacji przenosi katalog do wskazanego miejsca; nie nadpisuje istniejących plików.
+- Szyfrowane archiwa wymagają uwierzytelnienia, sprawdzenia struktury, manifestu, kompletności tabel, rozmiarów i sum; duplikaty ścieżek ZIP są odrzucane.
+- **P1 otwarte:** nie ma udokumentowanego testu awaryjnego odtworzenia produkcyjnego PostgreSQL i wszystkich załączników na niezależnym serwerze. Należy zdefiniować RPO/RTO, kopiowanie 3-2-1, odseparowaną kopię/retencję WORM oraz regularne próby odtworzenia.
 
-Wersje bibliotek przypięte centralnie (`Directory.Packages.props`, także zależności przechodnie); biblioteki o
-licencjach niezgodnych z dystrybucją programu (np. PDFsharp 6.5 — AGPL) są przypięte do wersji na licencji MIT.
-Wykaz: [../THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md).
+## 5. KSeF, RODO i aktualizacje
+
+- Operacja wysyłki faktury do KSeF nie jest automatycznie ponawiana po niejednoznacznej odpowiedzi. Stan rozpoczętej próby zapisywany jest przed POST. Konieczne jest sprawdzenie wyniku w KSeF i odtworzenie statusu przed kolejną próbą.
+- Okresy retencji, umowy powierzenia, upoważnienia i procedura reagowania na incydenty są wymaganiami organizacyjnymi. Art. 32 RODO wymaga również okresowych prób przywrócenia dostępu i testów zabezpieczeń.
+- Import XSD ogranicza HTTPS, wielkość archiwum i plików oraz zabrania DTD; zmiany pobranych schematów powinny być ręcznie porównane z aktualnymi wymaganiami MF.
+- GitHub CI wykonuje kompilację i testy, ale **ochrona gałęzi main musi zostać skonfigurowana w ustawieniach repozytorium** (wymagane testy, przegląd zmian, ochrona przed bezpośrednimi pushami). Ta konfiguracja nie jest zastępowana kodem workflow.
+
+## 6. Warunek dopuszczenia produkcyjnego
+
+Brak otwartych blokad P0, pełna izolacja SQL przez zaufaną warstwę autoryzacji, zielone testy dokładnego commita na obu systemach, test awaryjnego odzyskania ksiąg i dokumentów, podpisana dokumentacja rachunkowa jednostki, potwierdzenie wyników księgowych i podatkowych z niezależnymi przykładami oraz zakończony przegląd RODO. Dopóki nie ma takich dowodów, projekt pozostaje przedprodukcyjny.
