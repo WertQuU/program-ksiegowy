@@ -57,6 +57,12 @@ public sealed class AppSession
         _operatorSession = await ExclusivePostgresSession.AcquireAsync(Profile, Connector.ConnectionString(Profile), ct);
     }
 
+    /// <summary>Wyłączna blokada na czas administracyjnej aktualizacji schematu (brak innych aktywnych klientów).</summary>
+    public Task EnterMaintenanceAsync(CancellationToken ct = default) =>
+        _operatorSession is { IsHealthy: true } active
+            ? active.EnterMaintenanceAsync(ct)
+            : throw new DomainException("Najpierw uwierzytelnij się do centralnego PostgreSQL.");
+
     public void ReleaseOperatorSession()
     {
         _operatorSession?.Dispose();
