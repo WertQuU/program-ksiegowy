@@ -269,7 +269,51 @@ public sealed partial class CitViewModel : SectionViewModel
             losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used,
                 until is { } u ? u.ToPl() + (projected ? " (prognoza — przeliczana po utworzeniu kolejnych lat)" : "") : "do potwierdzenia");
         Losses = losses;
+        var excess = new TableData(new TableColumn("Rok nadwyżki"), new TableColumn("Źródło", Width: 1.2), new TableColumn("Nadwyżka", ColumnKind.Money),
+            new TableColumn("Zaliczono", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money), new TableColumn("Rozliczenie do"));
+        foreach (var (c, used, until) in await svc.DebtFinancingCarryforwardsAsync())
+            excess.Add(c.Id, c.YearLabel, c.CapitalGains ? "zyski kapitałowe" : "inne źródła", c.Amount, used, c.Amount - used, until?.ToPl() ?? "do potwierdzenia");
+        DebtExcess = excess;
+        var full = await svc.ReconcileAsync(year.Id, year.Periods.Count);
+        DebtHeadroom = $"Art. 15c ust. 3: wolny limit kosztów finansowania w roku {year.Name}: {Money.Format(full.DebtFinancingHeadroom)} zł; nadwyżka roku: {Money.Format(full.DebtFinancingExcessOperating + full.DebtFinancingExcessCapital)} zł.";
     }
+
+    [ObservableProperty] private TableData _debtExcess = TableData.Empty;
+    [ObservableProperty] private TableRow? _selectedDebtExcess;
+    [ObservableProperty] private string _debtHeadroom = "";
+    [ObservableProperty] private string _debtExcessYear = "";
+    [ObservableProperty] private string _debtExcessYearEnd = "";
+    [ObservableProperty] private bool _debtExcessCapital;
+    [ObservableProperty] private string _debtExcessAmount = "";
+    [ObservableProperty] private string _debtExcessUntil = "";
+    [ObservableProperty] private string _debtExcessUse = "";
+
+    /// <summary>Nadwyżka kosztów finansowania dłużnego z lat sprzed prowadzenia ksiąg w programie (z CIT-8).</summary>
+    [RelayCommand]
+    private Task AddDebtExcessAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).AddDebtFinancingCarryforwardAsync(DebtExcessYear, Parse.Date(DebtExcessYearEnd, "Koniec roku nadwyżki"), DebtExcessCapital,
+            Parse.Amount(DebtExcessAmount, "Nadwyżka"), "wprowadzona ręcznie (zeznanie CIT-8)", Parse.OptionalDate(DebtExcessUntil, "Rozliczenie do"));
+        DebtExcessYear = DebtExcessYearEnd = DebtExcessAmount = DebtExcessUntil = "";
+    }, "Zarejestrowano nadwyżkę kosztów finansowania dłużnego.");
+
+    [RelayCommand]
+    private Task RegisterPreviousYearDebtExcessAsync() => ChangeAsync(async () =>
+    {
+        var prev = Session.Years.LastOrDefault(y => y.EndDate < Session.CurrentYear.StartDate) ?? throw new DomainException("Brak poprzedniego roku obrotowego w programie — wprowadź nadwyżkę ręcznie.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).RegisterDebtFinancingExcessFromYearAsync(prev.Id);
+    }, "Zarejestrowano nadwyżkę z poprzedniego roku.");
+
+    [RelayCommand]
+    private Task UseDebtExcessAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedDebtExcess?.Tag is not Guid id) throw new DomainException("Zaznacz nadwyżkę na liście.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).UseDebtFinancingCarryforwardAsync(id, Session.CurrentYear.Id, Parse.Amount(DebtExcessUse, "Kwota"));
+        DebtExcessUse = "";
+    }, "Zaliczono nadwyżkę do kosztów bieżącego roku (rozliczenie roczne).");
 
     [RelayCommand]
     private Task ConfirmPreviousSalesAsync() => ChangeAsync(async () =>

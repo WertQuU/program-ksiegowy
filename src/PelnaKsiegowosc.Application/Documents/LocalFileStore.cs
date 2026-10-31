@@ -14,9 +14,13 @@ namespace PelnaKsiegowosc.Application.Documents;
 public sealed class LocalFileStore : IFileStore
 {
     private readonly byte[]? _key;
+    private readonly bool _keyRequired;
 
-    public LocalFileStore(string rootPath, byte[]? key = null)
+    /// <param name="keyRequired">Magazyn programu: bez klucza (np. klucz nie pasuje do plików w katalogu) zapis jest blokowany,
+    /// aby nie powstały pliki jawne ani zaszyfrowane innym kluczem.</param>
+    public LocalFileStore(string rootPath, byte[]? key = null, bool keyRequired = false)
     {
+        _keyRequired = keyRequired;
         RootPath = Path.GetFullPath(rootPath);
         if (OperatingSystem.IsWindows()) Directory.CreateDirectory(RootPath);
         else Directory.CreateDirectory(RootPath, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
@@ -39,6 +43,8 @@ public sealed class LocalFileStore : IFileStore
     public async Task<(string sha256, long size)> SaveAtAsync(string storagePath, Stream content, CancellationToken ct = default)
     {
         var full = Resolve(storagePath);
+        if (_key is null && _keyRequired)
+            throw new DomainException("Na tym stanowisku brak klucza załączników pasującego do plików w katalogu załączników — zaimportuj klucz (Ustawienia → klucz załączników).");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         var plain = new MemoryStream();
         await content.CopyToAsync(plain, ct);
@@ -82,6 +88,21 @@ public sealed class LocalFileStore : IFileStore
             n++;
         }
         return n;
+    }
+
+    /// <summary>Czy klucz otwiera załączniki już zaszyfrowane w katalogu (sprawdzenie pierwszego zaszyfrowanego pliku); pusty katalog — tak.</summary>
+    public static bool KeyMatches(string rootPath, byte[] key)
+    {
+        if (!Directory.Exists(rootPath)) return true;
+        var head = new byte[4];
+        foreach (var f in Directory.EnumerateFiles(rootPath, "*.bin", SearchOption.AllDirectories))
+        {
+            using (var fs = File.OpenRead(f))
+                if (fs.Read(head) < 4 || !AttachmentCrypto.IsEncrypted(head)) continue;
+            try { AttachmentCrypto.Decrypt(File.ReadAllBytes(f), key); return true; }
+            catch (Exception e) when (e is CryptographicException or DomainException) { return false; }
+        }
+        return true;
     }
 
     private string Resolve(string rel)

@@ -100,6 +100,34 @@ public class TaxLossDeduction : CompanyEntity
     public DateTime CreatedAtUtc { get; set; }
 }
 
+/// <summary>
+/// Nadwyżka kosztów finansowania dłużnego niezaliczona do KUP (art. 15c ust. 1) — do zaliczenia w następnych kolejnych pięciu
+/// latach podatkowych w ramach limitu tych lat (art. 15c ust. 3), odrębnie dla źródła „inne” i „zyski kapitałowe”.
+/// </summary>
+public class DebtFinancingCarryforward : CompanyEntity
+{
+    public string YearLabel { get; set; } = "";
+    /// <summary>Ostatni dzień roku podatkowego, w którym powstała nadwyżka.</summary>
+    public DateOnly YearEnd { get; set; }
+    public bool CapitalGains { get; set; }
+    public decimal Amount { get; set; }
+    public string? Note { get; set; }
+    /// <summary>Ostatni dzień 5. roku podatkowego po roku nadwyżki — wymagany, gdy tych lat nie ma w programie.</summary>
+    public DateOnly? DeductibleUntil { get; set; }
+    public Guid UserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
+/// <summary>Zaliczenie nadwyżki z lat ubiegłych do KUP w roku podatkowym (w rozliczeniu rocznym).</summary>
+public class DebtFinancingCarryforwardUse : CompanyEntity
+{
+    public Guid CarryforwardId { get; set; }
+    public Guid FiscalYearId { get; set; }
+    public decimal Amount { get; set; }
+    public Guid UserId { get; set; }
+    public DateTime CreatedAtUtc { get; set; }
+}
+
 /// <summary>Zasady odliczania strat (art. 7 ust. 5 ustawy o CIT).</summary>
 public static class TaxLossRules
 {

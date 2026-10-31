@@ -734,3 +734,93 @@ public class AdditionalComplianceTests
         Assert.Equal(2_250_000m, rec.Operating.TaxCosts);
     }
 }
+
+public class DebtFinancingTests
+{
+    private static async Task<Domain.Accounts.Account> AccountAsync(TestBooks t, string number, CitClassification cit, DebtFinancingKind? kind)
+    {
+        var a = await t.Db.Accounts.FirstAsync(x => x.Number == number);
+        a.CitClassification = cit;
+        a.DebtFinancing = kind;
+        await t.Db.SaveChangesAsync();
+        return a;
+    }
+
+    [Fact]
+    public async Task Qualification_of_financing_costs_covers_leasing_fees_fx_and_excludes_capitalized_and_nkup()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var chart = new Application.Ledger.ChartService(t.Db, t.User, t.Clock);
+        var leasing = await chart.AddAccountAsync(t.Chart.Id, "751-06", "Część odsetkowa rat leasingu", AccountType.WynikoweKosztowe, profitLossLine: "R.H.IV", cit: CitClassification.KosztPodatkowy);
+        await chart.SetDebtFinancingAsync(leasing.Id, DebtFinancingKind.Koszt);
+        await AccountAsync(t, "751-01", CitClassification.KosztPodatkowy, null);                      // odsetki — R.H.I, bez oznaczenia
+        await AccountAsync(t, "751-02", CitClassification.KosztPodatkowy, DebtFinancingKind.Koszt);   // różnice kursowe od kredytu
+        await AccountAsync(t, "751-03", CitClassification.KosztPodatkowy, DebtFinancingKind.NieDotyczy); // opłaty niezwiązane z finansowaniem
+        await AccountAsync(t, "750-01", CitClassification.PrzychodPodatkowy, null);                   // przychody odsetkowe — R.G.II
+        var d = new DateOnly(2026, 3, 31);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 2_000_000m, 0), new("130-01", 0, 2_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/3", new("751-06", 600_000m, 0), new("130-01", 0, 600_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/4", new("751-02", 400_000m, 0), new("130-01", 0, 400_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/5", new("751-03", 500_000m, 0), new("130-01", 0, 500_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/6", new("751-04", 5_000_000m, 0), new("130-01", 0, 5_000_000m)));  // odsetki budżetowe NKUP
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/7", new("080", 3_000_000m, 0), new("130-01", 0, 3_000_000m)));     // odsetki skapitalizowane w ŚT w budowie
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/8", new("130-01", 200_000m, 0), new("750-01", 0, 200_000m)));
+        await t.Db.SaveChangesAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        // koszty finansowania 2 + 0,6 + 0,4 = 3,0 mln − przychody odsetkowe 0,2 mln = 2,8 mln ≤ limit 3 mln (NKUP, opłaty „nie dotyczy”
+        // i odsetki skapitalizowane w wartości środka trwałego — poza limitem w roku poniesienia)
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.DoesNotContain(rec.Adjustments, a => a.Basis.Contains("art. 15c"));
+        Assert.Equal(200_000m, rec.DebtFinancingHeadroom);
+        // opłaty jednak związane z kredytem (art. 15c ust. 12) → 3,3 mln; EBITDA 10 mln → limit 3 mln → nadwyżka 0,3 mln
+        await chart.SetDebtFinancingAsync((await t.Db.Accounts.FirstAsync(a => a.Number == "751-03")).Id, DebtFinancingKind.Koszt);
+        rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c ust. 1") && a.Amount == 300_000m);
+        Assert.Equal(300_000m, rec.DebtFinancingExcessOperating);
+        Assert.Equal(0m, rec.DebtFinancingHeadroom);
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+    }
+
+    [Fact]
+    public async Task Excess_from_prior_years_is_deductible_within_five_years_and_this_years_headroom()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        await AccountAsync(t, "751-01", CitClassification.KosztPodatkowy, null);
+        var d = new DateOnly(2026, 3, 31);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 1_000_000m, 0), new("130-01", 0, 1_000_000m)));
+        await t.Db.SaveChangesAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        var before = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(2_000_000m, before.DebtFinancingHeadroom);                      // limit 3 mln − 1 mln
+
+        // lata sprzed programu: koniec okresu rozliczenia trzeba wskazać (nie szacuje się długości lat)
+        var noWindow = await cit.AddDebtFinancingCarryforwardAsync("2023", new DateOnly(2023, 12, 31), false, 100_000m, "CIT-8 za 2023");
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(noWindow.Id, t.Year.Id, 10_000m));
+        var expired = await cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 100_000m, "CIT-8 za 2019", new DateOnly(2024, 12, 31));
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(expired.Id, t.Year.Id, 10_000m)); // po 5 latach
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 1m, null)); // duplikat
+
+        var c2025 = await cit.AddDebtFinancingCarryforwardAsync("2025", new DateOnly(2025, 12, 31), false, 800_000m, "CIT-8 za 2025", new DateOnly(2030, 12, 31));
+        var c2024 = await cit.AddDebtFinancingCarryforwardAsync("2024", new DateOnly(2024, 12, 31), false, 1_500_000m, "CIT-8 za 2024", new DateOnly(2029, 12, 31));
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 900_000m)); // ponad pozostałą kwotę
+        await cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 800_000m);
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_300_000m)); // wolny limit 1,2 mln
+        await cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_200_000m);
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1m));        // drugi raz w tym roku
+
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(before.TaxCosts + 2_000_000m, rec.TaxCosts);
+        Assert.Contains(rec.Adjustments, a => a.Item.Contains("z roku 2025") && a.Amount == -800_000m && a.Basis.Contains("art. 15c ust. 3"));
+        Assert.Equal(before.Rpd.K6 + 2_000_000m, rec.Rpd.K6);                              // koszty ujęte w księgach lat ubiegłych
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+        // zaliczki (okresy przed rocznym rozliczeniem) — bez nadwyżek z lat ubiegłych
+        Assert.DoesNotContain((await cit.ReconcileAsync(t.Year.Id, 6)).Adjustments, a => a.Basis.Contains("art. 15c ust. 3"));
+
+        var register = await cit.DebtFinancingCarryforwardsAsync();
+        Assert.Equal(300_000m, register.Single(r => r.Item.Id == c2024.Id) is var x ? x.Item.Amount - x.Used : -1);
+        // nadwyżkę z bieżącego wyliczenia rejestruje się dopiero po zamknięciu roku
+        await Assert.ThrowsAsync<DomainException>(() => cit.RegisterDebtFinancingExcessFromYearAsync(t.Year.Id));
+    }
+}

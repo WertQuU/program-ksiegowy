@@ -857,6 +857,86 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.ToTable("CitLiabilityAdjustments");
                 });
 
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.DebtFinancingCarryforward", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool>("CapitalGains")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DeductibleUntil")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("YearEnd")
+                        .HasColumnType("date");
+
+                    b.Property<string>("YearLabel")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CompanyId", "YearEnd", "CapitalGains")
+                        .IsUnique();
+
+                    b.ToTable("DebtFinancingCarryforwards");
+                });
+
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.DebtFinancingCarryforwardUse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid>("CarryforwardId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FiscalYearId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CarryforwardId");
+
+                    b.HasIndex("CarryforwardId", "FiscalYearId")
+                        .IsUnique();
+
+                    b.ToTable("DebtFinancingCarryforwardUses");
+                });
+
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Cit.TaxLoss", b =>
                 {
                     b.Property<Guid>("Id")

@@ -49,6 +49,28 @@ public sealed partial class SettingsViewModel : SectionViewModel
         await Dialogs.ShowTextAsync("Klucz bazy (SQLCipher, AES-256)", key);
     });
 
+    /// <summary>Klucz załączników — przeniesienie na stanowisko korzystające ze wspólnego katalogu załączników (tylko administrator).</summary>
+    [RelayCommand]
+    private Task ShowAttachmentsKeyAsync() => RunAsync(async () =>
+    {
+        Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
+        var key = Session.ExportAttachmentsKey() ?? throw new DomainException("Na tym stanowisku nie ma klucza załączników.");
+        if (!await Dialogs.ConfirmAsync("Klucz załączników", "Klucz otwiera zaszyfrowane dokumenty źródłowe. Wyświetlić? Przekaż go wyłącznie bezpiecznym kanałem.")) return;
+        await Session.AuditAsync("KLUCZ_ZALACZNIKOW_WYSWIETLONY", "Attachments", null, null);
+        await Dialogs.ShowTextAsync("Klucz załączników (AES-256)", key);
+    });
+
+    [RelayCommand]
+    private Task ImportAttachmentsKeyAsync() => RunAsync(async () =>
+    {
+        Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
+        var key = await Dialogs.PromptAsync("Klucz załączników", "Wklej klucz załączników ze stanowiska, które zaszyfrowało pliki we wspólnym katalogu:", "");
+        if (string.IsNullOrWhiteSpace(key)) return;
+        Session.ImportAttachmentsKey(key);
+        await Session.AuditAsync("KLUCZ_ZALACZNIKOW_ZAIMPORTOWANY", "Attachments", null, null);
+        StatusMessage = "Zaimportowano klucz załączników.";
+    });
+
     [RelayCommand]
     private Task DownloadSchemasAsync() => RunAsync(async () =>
     {

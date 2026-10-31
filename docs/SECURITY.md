@@ -26,7 +26,7 @@ wejście, nigdy w argumentach. Magazyn plikowy na Linuksie chroni sekrety tylko 
 - Zapisy zaksięgowane i dziennik zdarzeń są chronione przed zmianą wyzwalaczami bazy i logiką programu.
 - Łańcuchy skrótów SHA-256 (zapisy w roku, dziennik zdarzeń) wykrywają zmianę lub usunięcie wpisu, także wykonane
   bezpośrednio w bazie; kontrola integralności jest dostępna w programie i w `pk-cli integralnosc`.
-- Załączniki przechowywane pod losowymi nazwami (ochrona przed path traversal), z sumą SHA-256 sprawdzaną przy odczycie;
+- Załączniki przechowywane pod losowymi nazwami (ochrona przed path traversal), szyfrowane w spoczynku AES-256-GCM (porcje 1 MiB, uwierzytelnione — modyfikacja pliku jest wykrywana) kluczem z magazynu sekretów systemu (wyprowadzonym z klucza bazy lub losowym; nie trafia do plików konfiguracji ani kopii), z sumą SHA-256 treści sprawdzaną przy odczycie; katalog załączników z uprawnieniami tylko dla właściciela (0700). Na drugim stanowisku klucz załączników przenosi się razem z kluczem bazy (Ustawienia → klucz bazy); kopia zapasowa zawiera załączniki odszyfrowane wewnątrz archiwum szyfrowanego kluczem kopii;
   dozwolone typy i rozmiar są weryfikowane (sygnatura pliku).
 
 ## Kopie zapasowe

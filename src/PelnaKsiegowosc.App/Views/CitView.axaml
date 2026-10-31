@@ -101,6 +101,27 @@
           <c:TableView Table="{Binding Losses}" SelectedRow="{Binding SelectedLoss}" />
         </DockPanel>
       </TabItem>
+      <TabItem Header="Art. 15c — nadwyżki">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="info" TextWrapping="Wrap"
+                     Text="Art. 15c ust. 3 ustawy o CIT: nadwyżkę kosztów finansowania dłużnego niezaliczoną do KUP zalicza się do kosztów w następnych kolejnych pięciu latach podatkowych, w ramach limitu danego roku (rozliczenie roczne, RPD K_6), odrębnie dla źródeł przychodów." />
+          <TextBlock DockPanel.Dock="Top" Text="{Binding DebtHeadroom}" TextWrapping="Wrap" />
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding DebtExcessYear}" Watermark="rok nadwyżki (np. 2025)" MinWidth="140" />
+            <TextBox Text="{Binding DebtExcessYearEnd}" Watermark="koniec roku dd.mm.rrrr" MinWidth="140" />
+            <CheckBox Content="zyski kapitałowe" IsChecked="{Binding DebtExcessCapital}" />
+            <TextBox Text="{Binding DebtExcessAmount}" Watermark="kwota nadwyżki" />
+            <TextBox Text="{Binding DebtExcessUntil}" Watermark="rozliczenie do (koniec 5. roku podatk.)" MinWidth="210" ToolTip.Tip="Wymagane, gdy lat podatkowych po roku nadwyżki nie ma w programie" />
+            <Button Content="Zarejestruj nadwyżkę" Command="{Binding AddDebtExcessCommand}" IsEnabled="{Binding IsApplicable}" />
+            <Button Content="Przenieś nadwyżkę z poprzedniego roku (z programu)" Command="{Binding RegisterPreviousYearDebtExcessCommand}" IsEnabled="{Binding IsApplicable}" />
+          </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBox Text="{Binding DebtExcessUse}" Watermark="kwota do zaliczenia w bieżącym roku" MinWidth="220" />
+            <Button Content="Zalicz zaznaczoną nadwyżkę" Command="{Binding UseDebtExcessCommand}" IsEnabled="{Binding IsApplicable}" />
+          </WrapPanel>
+          <c:TableView Table="{Binding DebtExcess}" SelectedRow="{Binding SelectedDebtExcess}" />
+        </DockPanel>
+      </TabItem>
     </TabControl>
   </DockPanel>
 </UserControl>

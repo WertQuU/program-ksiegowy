@@ -70,23 +70,45 @@ public sealed class AppSession
     public KsiegiDbContext OpenDb() => Connector.CreateContext(Profile);
 
     public string AttachmentsRoot => Config.AttachmentsDirectory ?? Paths.AttachmentsDirectory;
-    public LocalFileStore Attachments => new(AttachmentsRoot, AttachmentsKeyFor(AttachmentsRoot));
+    public LocalFileStore Attachments => new(AttachmentsRoot, TryAttachmentsKey(AttachmentsRoot), keyRequired: true);
+
+    private static string AttachmentsSecretName(string attachmentsRoot) => "PelnaKsiegowosc/zalaczniki/" + Path.GetFullPath(attachmentsRoot).ToLowerInvariant();
 
     /// <summary>
     /// Klucz szyfrowania załączników dla katalogu magazynu (magazyn sekretów systemu). Przy bazie SQLite wyprowadzany z klucza bazy
-    /// (HKDF-SHA256) — przeniesienie klucza bazy na inne stanowisko daje dostęp także do załączników; przy PostgreSQL — losowy.
+    /// (HKDF-SHA256) — przeniesienie klucza bazy na inne stanowisko daje dostęp także do załączników; przy PostgreSQL — losowy
+    /// (na kolejnym stanowisku ze wspólnym katalogiem — import klucza w Ustawieniach). Klucz niepasujący do plików już
+    /// zaszyfrowanych w katalogu nie jest zapisywany ani używany (brak plików zaszyfrowanych różnymi kluczami).
     /// </summary>
-    public byte[] AttachmentsKeyFor(string attachmentsRoot, DatabaseProfile? profile = null)
+    public byte[] AttachmentsKeyFor(string attachmentsRoot, DatabaseProfile? profile = null) =>
+        TryAttachmentsKey(attachmentsRoot, profile)
+        ?? throw new DomainException("Załączniki w katalogu zaszyfrowano innym kluczem — zaimportuj klucz załączników (Ustawienia).");
+
+    public byte[]? TryAttachmentsKey(string attachmentsRoot, DatabaseProfile? profile = null)
     {
-        var name = "PelnaKsiegowosc/zalaczniki/" + Path.GetFullPath(attachmentsRoot).ToLowerInvariant();
+        var name = AttachmentsSecretName(attachmentsRoot);
         if (Secrets.Get(name) is { Length: > 0 } stored) return Convert.FromBase64String(stored);
         var dbKey = Connector.ExportSqliteKey(profile ?? Profile);
         var key = dbKey is { Length: 64 }
             ? System.Security.Cryptography.HKDF.DeriveKey(System.Security.Cryptography.HashAlgorithmName.SHA256, Convert.FromHexString(dbKey), 32,
                 info: System.Text.Encoding.UTF8.GetBytes("PelnaKsiegowosc/zalaczniki"))
             : System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
+        if (!LocalFileStore.KeyMatches(attachmentsRoot, key)) return null;
         Secrets.Set(name, Convert.ToBase64String(key));
         return key;
+    }
+
+    /// <summary>Klucz załączników do przeniesienia na inne stanowisko (Base64).</summary>
+    public string? ExportAttachmentsKey() => Secrets.Get(AttachmentsSecretName(AttachmentsRoot));
+
+    /// <summary>Import klucza załączników — tylko gdy otwiera pliki już zaszyfrowane w katalogu.</summary>
+    public void ImportAttachmentsKey(string base64)
+    {
+        byte[] key;
+        try { key = Convert.FromBase64String(base64.Trim()); } catch (FormatException) { throw new DomainException("Nieprawidłowy format klucza załączników."); }
+        if (key.Length != 32) throw new DomainException("Klucz załączników musi mieć 256 bitów.");
+        if (!LocalFileStore.KeyMatches(AttachmentsRoot, key)) throw new DomainException("Klucz nie otwiera załączników w katalogu tego stanowiska.");
+        Secrets.Set(AttachmentsSecretName(AttachmentsRoot), Convert.ToBase64String(key));
     }
     /// <summary>Poświadczenia KSeF wg ustawień stanowiska: certyfikat .pfx (hasło z magazynu sekretów) albo token.</summary>
     public Infrastructure.Ksef.KsefCredentials KsefCredentials()
