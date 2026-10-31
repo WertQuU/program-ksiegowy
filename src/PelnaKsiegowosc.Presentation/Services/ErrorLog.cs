@@ -16,7 +16,7 @@ public static class ErrorLog
             var root = Path.GetFullPath(Directory);
             System.IO.Directory.CreateDirectory(root);
             if (!OperatingSystem.IsWindows())
-                System.IO.Directory.SetUnixFileMode(root,
+                File.SetUnixFileMode(root,
                     UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
             var file = Path.Combine(root, $"bledy-{DateTime.UtcNow:yyyy-MM}.log");
             using var stream = new FileStream(file, FileMode.Append, FileAccess.Write, FileShare.Read);
