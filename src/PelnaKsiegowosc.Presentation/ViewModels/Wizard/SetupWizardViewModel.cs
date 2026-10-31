@@ -8,6 +8,7 @@ using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Application.Setup;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Periods;
@@ -17,7 +18,7 @@ namespace PelnaKsiegowosc.Presentation.ViewModels.Wizard;
 
 public enum WizardStep
 {
-    Warunki, Baza, Jednostka, RokObrotowy, PlanKont, Polityka, OsobaOdpowiedzialna, KopieZapasowe, Podsumowanie
+    Warunki, Baza, Jednostka, RokObrotowy, PlanKont, Polityka, OsobaOdpowiedzialna, KopieZapasowe, Ksef, Podsumowanie
 }
 
 /// <summary>
@@ -47,7 +48,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     public event EventHandler? Completed;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(StepTitle), nameof(StepNumber), nameof(CanGoBack), nameof(IsLastStep))]
-    [NotifyPropertyChangedFor(nameof(IsTerms), nameof(IsDatabase), nameof(IsCompany), nameof(IsYear), nameof(IsChart), nameof(IsPolicy), nameof(IsPerson), nameof(IsBackup), nameof(IsSummary))]
+    [NotifyPropertyChangedFor(nameof(IsTerms), nameof(IsDatabase), nameof(IsCompany), nameof(IsYear), nameof(IsChart), nameof(IsPolicy), nameof(IsPerson), nameof(IsBackup), nameof(IsKsef), nameof(IsSummary))]
     private WizardStep _step = WizardStep.Warunki;
 
     public bool IsTerms => Step == WizardStep.Warunki;
@@ -58,6 +59,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     public bool IsPolicy => Step == WizardStep.Polityka;
     public bool IsPerson => Step == WizardStep.OsobaOdpowiedzialna;
     public bool IsBackup => Step == WizardStep.KopieZapasowe;
+    public bool IsKsef => Step == WizardStep.Ksef;
     public bool IsSummary => Step == WizardStep.Podsumowanie;
 
     public string StepNumber => $"Krok {(int)Step + 1} z {Enum.GetValues<WizardStep>().Length}";
@@ -71,6 +73,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         WizardStep.Polityka => "Polityka rachunkowości",
         WizardStep.OsobaOdpowiedzialna => "Kierownik jednostki",
         WizardStep.KopieZapasowe => "Kopie zapasowe",
+        WizardStep.Ksef => "KSeF — poświadczenia tego stanowiska",
         _ => "Utworzenie ksiąg"
     };
     public bool CanGoBack => Step > WizardStep.Warunki && !Finished;
@@ -100,6 +103,12 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private string _recoveryKey = "";
     [ObservableProperty] private bool _recoveryKeySaved;
     [ObservableProperty] private bool _skipBackupKey;
+
+    // Sekret KSeF podaje operator stanowiska; trafia WYŁĄCZNIE do lokalnego magazynu sekretów.
+    [ObservableProperty] private bool _configureKsef;
+    [ObservableProperty] private string _ksefToken = "";
+    [ObservableProperty] private Choice<KsefEnvironment> _ksefEnvironment = Choices.Of<KsefEnvironment>().First(x => x.Value == KsefEnvironment.Produkcja);
+    public List<Choice<KsefEnvironment>> KsefEnvironments { get; } = Choices.Of<KsefEnvironment>();
 
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private TableData _readiness = TableData.Empty;
@@ -161,6 +170,10 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 if (!SkipBackupKey && string.IsNullOrEmpty(RecoveryKey) && Session.StoredBackupKey() is null)
                     throw new DomainException("Wygeneruj klucz kopii zapasowych albo zaznacz, że skonfigurujesz kopie później.");
                 if (!string.IsNullOrEmpty(RecoveryKey) && !RecoveryKeySaved) throw new DomainException("Potwierdź, że zapisałeś klucz odzyskiwania poza komputerem.");
+                break;
+            case WizardStep.Ksef:
+                if (ConfigureKsef && string.IsNullOrWhiteSpace(KsefToken))
+                    throw new DomainException("Wpisz token KSeF tego stanowiska lub odznacz konfigurację i uzupełnij go później w Integracjach.");
                 Summary = BuildSummary();
                 break;
             case WizardStep.Podsumowanie:
@@ -172,14 +185,16 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private static string HelpVersion() => Sections.HelpViewModel.Version;
 
     private string BuildSummary() => ConnectToExisting
-        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile().SafeDescription}."
+        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile().SafeDescription}.{Environment.NewLine}" +
+          $"KSeF na stanowisku: {(ConfigureKsef ? $"token zapisany lokalnie ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}. Kopie zapasowe: {(Session.StoredBackupKey() is null ? "do konfiguracji" : "klucz skonfigurowany")}."
         : $"Baza: {Database.ToProfile().SafeDescription}{Environment.NewLine}" +
           $"Jednostka: {Company.FullName} ({LegalForms.Name(Company.LegalForm.Value)}), NIP {Company.Nip}{Environment.NewLine}" +
           $"Rok obrotowy: {YearStart} – {YearEnd}{(IsFirstYear ? " (pierwszy rok działalności)" : "")}{Environment.NewLine}" +
           $"Plan kont: {ChartTemplate.Name}{(ApproveChart ? ", zatwierdzony" : ", do zatwierdzenia")}{Environment.NewLine}" +
           $"Polityka rachunkowości: {(ApprovePolicy ? $"zatwierdzona przez {PolicyApprovedBy}" : "do uzupełnienia i zatwierdzenia")}{Environment.NewLine}" +
           $"Kierownik jednostki: {ManagerFirstName} {ManagerLastName}{Environment.NewLine}" +
-          $"Kopie zapasowe: {(Session.StoredBackupKey() is null ? "nieskonfigurowane" : "klucz zapisany, po utworzeniu ksiąg zostanie wykonana i zweryfikowana pierwsza kopia")}";
+          $"Kopie zapasowe: {(Session.StoredBackupKey() is null ? "nieskonfigurowane" : "klucz zapisany, po utworzeniu ksiąg zostanie wykonana i zweryfikowana pierwsza kopia")}{Environment.NewLine}" +
+          $"KSeF: {(ConfigureKsef ? $"token na tym stanowisku ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}";
 
     private async Task CheckDatabaseAsync()
     {
@@ -249,6 +264,14 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
             await db.SaveChangesAsync();
+        }
+        // Poświadczenia KSeF są ustawieniem KOMPUTERA, a nie wspólnej bazy; nigdy nie trafiają do audytu, ksiąg ani JSON.
+        if (ConfigureKsef)
+        {
+            Session.Config.Ksef.Environment = KsefEnvironment.Value;
+            Session.Secrets.Set(Session.Config.Ksef.TokenSecretName, KsefToken.Trim());
+            Session.Config.Ksef.Enabled = true;
+            KsefToken = "";
         }
         Session.Config.TermsAcceptedVersion = Terms.Version;
         Session.Config.TermsAcceptedUtc = Session.Clock.UtcNow;
