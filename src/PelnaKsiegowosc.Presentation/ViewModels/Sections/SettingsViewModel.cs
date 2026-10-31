@@ -4,6 +4,8 @@ using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Infrastructure.Migration;
+using PelnaKsiegowosc.Infrastructure.Updates;
+using System.Diagnostics;
 using PelnaKsiegowosc.Presentation.Services;
 
 namespace PelnaKsiegowosc.Presentation.ViewModels.Sections;
@@ -17,6 +19,12 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [ObservableProperty] private string _activeInfo = "";
     [ObservableProperty] private string _attachmentsDirectory = "";
     [ObservableProperty] private string _pathsInfo = "";
+    [ObservableProperty] private string _updateStatus = "Nie sprawdzono dostępności aktualizacji.";
+    [ObservableProperty] private bool _hasAvailableUpdate;
+    private GitHubReleaseUpdater.UpdateInfo? _availableUpdate;
+    private readonly GitHubReleaseUpdater _updater = new();
+    public string InstalledVersion => "Wersja programu: " +
+        (typeof(SettingsViewModel).Assembly.GetName().Version?.ToString(3) ?? "1.0.0");
     [ObservableProperty] private List<Choice<int>> _otherProfiles = new();
     [ObservableProperty] private Choice<int>? _otherProfile;
     public List<string> Themes { get; } = new() { "Jasny", "Ciemny", "Systemowy" };
@@ -27,6 +35,76 @@ public sealed partial class SettingsViewModel : SectionViewModel
     {
         if (!_loadingTheme && value != Session.Config.Theme) Session.SetTheme(value);
     }
+
+    /// <summary>Aktualizacje wyłącznie z opublikowanych, stabilnych wydań Github Releases.</summary>
+    [RelayCommand]
+    private Task CheckForUpdatesAsync() => RunAsync(async () =>
+    {
+        _availableUpdate = null;
+        HasAvailableUpdate = false;
+        UpdateStatus = "Sprawdzanie oficjalnych wydań GitHub...";
+        var installed = typeof(SettingsViewModel).Assembly.GetName().Version ?? new Version(1, 0, 0);
+        var update = await _updater.CheckAsync(installed);
+        if (update is null)
+        {
+            UpdateStatus = "Brak nowszego opublikowanego wydania. Repozytorium może nie mieć jeszcze żadnego wydania.";
+            return;
+        }
+        _availableUpdate = update;
+        HasAvailableUpdate = true;
+        UpdateStatus = $"Dostępna wersja {update.Version} ({update.AssetName}, {update.Size / 1024 / 1024} MiB). " +
+            "Po pobraniu instalator jest sprawdzany sumą SHA-256; uruchomienie wymaga Twojej zgody.";
+    });
+
+    [RelayCommand]
+    private Task InstallUpdateAsync() => RunAsync(async () =>
+    {
+        if (_availableUpdate is not { } update)
+            throw new DomainException("Najpierw sprawdź dostępność aktualizacji.");
+        var platform = OperatingSystem.IsWindows() ? "Instalator MSI może poprosić o uprawnienia administratora. " :
+            "Pakiet DEB zostanie otwarty w menedżerze pakietów systemu, jeśli jest dostępny. ";
+        if (!await Dialogs.ConfirmAsync("Aktualizacja programu",
+                $"Pobrać oficjalne wydanie {update.Tag} i uruchomić instalator?{Environment.NewLine}" +
+                platform + "Przed instalacją zamknij program po zapisaniu pracy i wykonaj kopię ksiąg. " +
+                "Instalator nie zmienia automatycznie schematu bazy danych."))
+            return;
+        UpdateStatus = "Pobieranie instalatora i weryfikacja SHA-256...";
+        // Każda próba otrzymuje nowy katalog; nie nadpisujemy plików programu
+        // ani kopii ksiąg w trakcie pobierania.
+        var file = await _updater.DownloadVerifiedAsync(update, Session.Paths.TempDirectory);
+        UpdateStatus = "Pobrano i zweryfikowano: " + file;
+        var start = new ProcessStartInfo
+        {
+            FileName = OperatingSystem.IsWindows() ? "msiexec.exe" : "xdg-open",
+            UseShellExecute = OperatingSystem.IsWindows(),
+            CreateNoWindow = !OperatingSystem.IsWindows()
+        };
+        if (OperatingSystem.IsWindows())
+        {
+            start.Verb = "runas";
+            start.ArgumentList.Add("/i");
+        }
+        start.ArgumentList.Add(file);
+        try
+        {
+            using var installer = Process.Start(start);
+            if (installer is null)
+                throw new DomainException("Nie udało się uruchomić instalatora systemowego.");
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            UpdateStatus = "Instalator został pobrany i sprawdzony. Otwórz go ręcznie: " + file;
+            throw new DomainException("Nie można uruchomić instalatora (np. anulowano UAC lub brak menedżera pakietów). " +
+                "Pobrany, zweryfikowany plik: " + file);
+        }
+        HasAvailableUpdate = false;
+        UpdateStatus = "Uruchomiono instalator. Zapisz pracę i zamknij program przed wymianą plików. " +
+            "Po instalacji uruchom program ponownie.";
+        await Dialogs.InfoAsync("Aktualizacja programu", UpdateStatus);
+    });
+
+    [RelayCommand]
+    private void OpenReleasesPage() => Dialogs.OpenInSystem(GitHubReleaseUpdater.ReleasesUrl);
 
     /// <summary>Stan oficjalnych schematów XSD (dostępny / brak) — do walidacji JPK, e-Faktur i e-Sprawozdań.</summary>
     [ObservableProperty] private List<SchemaItem> _schemas = new();
