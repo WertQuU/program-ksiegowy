@@ -78,6 +78,21 @@ public static class SqliteEncryption
             if (File.Exists(path + side)) File.Delete(path + side);
     }
 
+    /// <summary>Zapis jawnej bazy roboczej bezpośrednio jako zaszyfrowanego pliku docelowego (bez jawnej kopii w miejscu docelowym).</summary>
+    public static void ExportEncrypted(string plainSource, string encryptedTarget, string hexKey)
+    {
+        if (File.Exists(encryptedTarget)) throw new InvalidOperationException("Plik docelowy już istnieje.");
+        using (var src = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = plainSource, Pooling = false }.ToString()))
+        {
+            src.Open();
+            using var cmd = src.CreateCommand();
+            cmd.CommandText = $"ATTACH DATABASE {Quote(encryptedTarget)} AS zaszyfrowana KEY \"x'{hexKey}'\"; SELECT sqlcipher_export('zaszyfrowana'); DETACH DATABASE zaszyfrowana;";
+            cmd.ExecuteNonQuery();
+        }
+        SqliteConnection.ClearAllPools();
+        if (!IsEncrypted(encryptedTarget)) throw new InvalidOperationException("Zapis zaszyfrowanej bazy nie powiódł się.");
+    }
+
     /// <summary>Eksport bieżącej bazy (zaszyfrowanej lub jawnej) do jawnego pliku — wyłącznie do archiwum kopii szyfrowanego kluczem kopii.</summary>
     public static void ExportPlaintext(DbConnection openSource, string destinationPath)
     {

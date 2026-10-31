@@ -110,6 +110,7 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private string _lossYearEnd = "";
     [ObservableProperty] private bool _lossCapital;
     [ObservableProperty] private string _lossAmount = "";
+    [ObservableProperty] private string _lossUntil = "";
     [ObservableProperty] private string _lossDeduction = "";
     [ObservableProperty] private string _lossFromPeriod = "1";
     [ObservableProperty] private bool _lossOneTime;
@@ -227,9 +228,9 @@ public sealed partial class CitViewModel : SectionViewModel
         Advances = adv;
 
         var losses = new TableData(new TableColumn("Rok straty"), new TableColumn("Źródło", Width: 1.2), new TableColumn("Strata", ColumnKind.Money),
-            new TableColumn("Odliczono", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money), new TableColumn("Odliczenie do", ColumnKind.Date));
+            new TableColumn("Odliczono", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money), new TableColumn("Odliczenie do"));
         foreach (var (l, used, until) in await svc.LossesAsync())
-            losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used, until);
+            losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used, until is { } u ? u.ToPl() : "do potwierdzenia");
         Losses = losses;
     }
 
@@ -286,7 +287,8 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task AddLossAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
-        await new CitService(db, Session.User, Session.Clock).AddLossAsync(LossYear, Parse.Date(LossYearEnd, "Koniec roku straty"), LossCapital, Parse.Amount(LossAmount, "Strata"), "wprowadzona ręcznie (zeznanie CIT-8)");
+        await new CitService(db, Session.User, Session.Clock).AddLossAsync(LossYear, Parse.Date(LossYearEnd, "Koniec roku straty"), LossCapital, Parse.Amount(LossAmount, "Strata"), "wprowadzona ręcznie (zeznanie CIT-8)",
+            deductibleUntil: Parse.OptionalDate(LossUntil, "Koniec okresu odliczenia"));
         LossYear = LossYearEnd = LossAmount = "";
     }, "Zarejestrowano stratę podatkową.");
 
@@ -297,6 +299,27 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).RegisterLossesFromYearAsync(prev.Id);
     }, "Zarejestrowano stratę z poprzedniego roku.");
+
+    /// <summary>Udokumentowana ocena możliwości wykorzystania straty — warunek ujęcia aktywa z tytułu odroczonego podatku (art. 37 ust. 4 UoR).</summary>
+    [RelayCommand]
+    private Task AssessLossAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedLoss?.Tag is not Guid id) throw new DomainException("Zaznacz stratę na liście.");
+        var justification = await Dialogs.PromptAsync("Ocena wykorzystania straty", "Podstawa oceny, że strata zostanie odliczona (prognoza dochodów, umowy, plan). Pozostaw puste, aby przerwać:");
+        if (string.IsNullOrWhiteSpace(justification)) return;
+        var amountText = await Dialogs.PromptAsync("Ocena wykorzystania straty", "Kwota straty możliwa do wykorzystania (puste — cała pozostała; 0 — wykorzystanie niepewne):");
+        await using var db = Session.OpenDb();
+        var amount = Parse.OptionalAmount(amountText, "Kwota");
+        await new DeferredTaxService(db, Session.User, Session.Clock).AssessLossAsync(id, amount is not 0m, amount, justification);
+    }, "Zapisano ocenę wykorzystania straty.");
+
+    [RelayCommand]
+    private Task ConfirmLossWindowAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedLoss?.Tag is not Guid id) throw new DomainException("Zaznacz stratę na liście.");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).ConfirmLossWindowAsync(id, Parse.Date(LossUntil, "Koniec okresu odliczenia"));
+    }, "Zapisano koniec okresu odliczenia straty.");
 
     [RelayCommand]
     private Task DeductLossAsync() => ChangeAsync(async () =>

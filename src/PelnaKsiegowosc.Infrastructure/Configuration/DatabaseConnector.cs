@@ -34,6 +34,16 @@ public sealed class DatabaseConnector
     public bool SqliteKeyMissing(DatabaseProfile p) =>
         p.Engine == DatabaseEngine.Sqlite && !string.IsNullOrWhiteSpace(p.SqlitePath) && SqliteEncryption.IsEncrypted(Path.GetFullPath(p.SqlitePath)) && SqliteKey(p) is null;
 
+    /// <summary>Klucz dla nowego pliku bazy (np. odtwarzanej z kopii) — istniejący albo nowy, zapisany w magazynie sekretów.</summary>
+    public string SqliteKeyForNewFile(DatabaseProfile p)
+    {
+        var key = SqliteKey(p);
+        if (key is not null) return key;
+        key = SqliteEncryption.NewKey();
+        _secrets.Set(p.PasswordSecretKey, key);
+        return key;
+    }
+
     /// <summary>Klucz bazy do przeniesienia na inne stanowisko (wyświetla wyłącznie administrator).</summary>
     public string? ExportSqliteKey(DatabaseProfile p) => p.Engine == DatabaseEngine.Sqlite ? SqliteKey(p) : null;
 

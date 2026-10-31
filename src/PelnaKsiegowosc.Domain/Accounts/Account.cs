@@ -37,6 +37,17 @@ public enum AccountGroup
 }
 
 /// <summary>Domyślna klasyfikacja podatkowa (CIT) obrotów konta.</summary>
+/// <summary>Kwalifikacja do limitu kosztów finansowania dłużnego (art. 15c ust. 12 ustawy o CIT).</summary>
+public enum DebtFinancingKind
+{
+    /// <summary>Nie dotyczy (wyłączenie z art. 15c — np. odsetki budżetowe, koszt niebędący finansowaniem dłużnym).</summary>
+    NieDotyczy,
+    /// <summary>Koszt finansowania dłużnego: odsetki, prowizje, opłaty, premie, część odsetkowa raty leasingu, różnice kursowe od finansowania itp.</summary>
+    Koszt,
+    /// <summary>Przychód o charakterze odsetkowym (pomniejsza koszty przy ustalaniu nadwyżki).</summary>
+    PrzychodOdsetkowy
+}
+
 public enum CitClassification
 {
     NieDotyczy,
@@ -92,6 +103,8 @@ public class Account : CompanyEntity
     public string? ProfitLossLine { get; set; }
 
     public CitClassification CitClassification { get; set; } = CitClassification.NieDotyczy;
+    /// <summary>Art. 15c ustawy o CIT: null — automatycznie wg pozycji RZiS (R.H.I odsetki → koszt, R.G.II → przychód odsetkowy).</summary>
+    public DebtFinancingKind? DebtFinancing { get; set; }
 
     public bool IsActive { get; set; } = true;
     public bool IsBlocked { get; set; }

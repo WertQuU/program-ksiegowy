@@ -120,6 +120,14 @@ public sealed class KsefService
     public Task<KsefImportResult> ImportPurchasesAsync(KsefClient client, string ksefToken, DateTimeOffset from, DateTimeOffset to, IFileStore attachments, CancellationToken ct = default) =>
         ImportPurchasesAsync(client, KsefCredentials.FromToken(ksefToken), from, to, attachments, ct);
 
+    /// <summary>
+    /// Data otrzymania faktury ustrukturyzowanej = dzień przydzielenia numeru KSeF (art. 106na ust. 3 ustawy o VAT) — decyduje
+    /// o terminie odliczenia VAT (art. 86 ust. 10b pkt 1). Czas KSeF (UTC) przeliczany na czas polski — faktura z 23:30 UTC
+    /// 31 stycznia jest otrzymana 1 lutego.
+    /// </summary>
+    public static DateOnly ReceiptDate(KsefDto.InvoiceMetadata m) =>
+        DateOnly.FromDateTime(SystemClock.ToWarsaw((m.AcquisitionDate ?? m.InvoicingDate).UtcDateTime));
+
     public async Task<KsefImportResult> ImportPurchasesAsync(KsefClient client, KsefCredentials credentials, DateTimeOffset from, DateTimeOffset to, IFileStore attachments, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageIntegrations);
@@ -139,7 +147,7 @@ public sealed class KsefService
                 var seller = await FindOrCreateSupplierAsync(parsed.SellerNip, parsed.SellerName, ct);
                 var input = new InvoiceInput(DocumentKind.FakturaZakupu, seller.Id, parsed.IssueDate, parsed.OperationDate ?? parsed.IssueDate,
                     parsed.Lines.Select(l => new DocumentLineInput(l.Name, l.Quantity, l.UnitNetPrice, l.RateCode, l.Unit)).ToList(),
-                    $"Import z KSeF {m.KsefNumber}", parsed.DueDate, parsed.Currency, 1m, ExternalNumber: parsed.Number, ReceiptDate: DateOnly.FromDateTime(m.InvoicingDate.UtcDateTime));
+                    $"Import z KSeF {m.KsefNumber}", parsed.DueDate, parsed.Currency, 1m, ExternalNumber: parsed.Number, ReceiptDate: ReceiptDate(m));
                 if (parsed.Currency != "PLN") { errors.Add($"{m.KsefNumber}: faktura w walucie {parsed.Currency} — wprowadź kurs ręcznie."); input = input with { ExchangeRate = 1m }; }
                 var doc = await docs.CreateInvoiceAsync(input, ct);
                 doc.KsefNumber = m.KsefNumber;

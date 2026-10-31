@@ -314,12 +314,14 @@ public class DatabaseEncryptionTests
         string archive;
         await using (var db = connector.CreateContext(profile))
             archive = (await backup.CreateAsync(db, profile, store, null, new BackupOptions(new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "kopie")))).FilePath;
-        var restored = await backup.RestoreToSqliteAsync(archive, new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "odtworzona"));
+        var restoredProfile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(t.Directory, "odtworzona", "ksiegi.db") };
+        var restored = await backup.RestoreToSqliteAsync(archive, new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "odtworzona"),
+            databaseKey: connector.SqliteKeyForNewFile(restoredProfile));
         Assert.Empty(restored.Problems);
-        var restoredProfile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = restored.DatabasePath };
-        await using (var db = connector.CreateContext(restoredProfile))                 // odtworzona baza też zostaje zaszyfrowana
+        Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));                 // zaszyfrowana od razu po odtworzeniu
+        Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(t.Directory, "tmp")));   // brak jawnych plików roboczych
+        await using (var db = connector.CreateContext(restoredProfile))
             Assert.Equal(1, await db.JournalEntries.CountAsync());
-        Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));
     }
 
     [Fact]

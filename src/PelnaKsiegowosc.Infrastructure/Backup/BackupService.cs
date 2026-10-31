@@ -223,6 +223,23 @@ public sealed class BackupService
         else Directory.CreateDirectory(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
     }
 
+    /// <summary>
+    /// RODO: wygaszenie lokalnych kopii starszych niż wskazana (np. po anonimizacji danych osoby) — usuwa archiwa sprzed
+    /// <paramref name="keepFrom"/>; kopia wskazana i nowsze pozostają. Kopie w Object Storage usuwa się zgodnie z ich retencją.
+    /// </summary>
+    public static int PurgeLocalBackupsOlderThan(string directory, string keepFrom)
+    {
+        if (!Directory.Exists(directory)) return 0;
+        var cutoff = File.GetLastWriteTimeUtc(keepFrom);
+        var n = 0;
+        foreach (var f in Directory.EnumerateFiles(directory, "*" + Extension).Where(f => !string.Equals(Path.GetFullPath(f), Path.GetFullPath(keepFrom), StringComparison.Ordinal)
+                                                                                         && File.GetLastWriteTimeUtc(f) < cutoff))
+        {
+            try { File.Delete(f); n++; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        return n;
+    }
+
     /// <summary>Usuwa pozostałości katalogów roboczych po przerwanej operacji (np. awaria zasilania) — wywoływane przy starcie.</summary>
     public static int CleanupStaleTemporaryData(string tempRoot)
     {
@@ -325,11 +342,13 @@ public sealed class BackupService
     /// Odtworzenie kopii do NOWEGO katalogu (baza SQLite + załączniki). Jeżeli katalog zawiera bazę, operacja jest odrzucana.
     /// Po odtworzeniu: migracje schematu, porównanie liczności tabel i sum kontrolnych ksiąg z manifestem.
     /// </summary>
-    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, CancellationToken ct = default)
+    /// <param name="databaseKey">Klucz SQLCipher dla odtworzonej bazy (64 znaki szesnastkowe). Podany — baza trafia do katalogu
+    /// docelowego wyłącznie w postaci zaszyfrowanej (jawna kopia robocza powstaje tylko w prywatnym katalogu tymczasowym i jest usuwana).</param>
+    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, CancellationToken ct = default, string? databaseKey = null)
     {
         var dbPath = Path.Combine(targetDirectory, "ksiegi.db");
         if (File.Exists(dbPath)) throw new DomainException($"W katalogu {targetDirectory} istnieje już baza — odtwarzanie nie nadpisuje danych. Wskaż pusty katalog.");
-        Directory.CreateDirectory(targetDirectory);
+        CreatePrivateDirectory(targetDirectory);
         var dir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
         try
         {
@@ -341,9 +360,11 @@ public sealed class BackupService
             if (Directory.Exists(Path.Combine(content, "zalaczniki"))) CopyDirectory(Path.Combine(content, "zalaczniki"), attTarget);
             else Directory.CreateDirectory(attTarget);
 
-            var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = dbPath };
+            // praca na jawnej kopii w prywatnym katalogu roboczym: migracja schematu, import, kontrola kompletności
+            var work = Path.Combine(dir, "odtwarzana.db");
+            var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = work };
             if (manifest.IncludesDatabaseFile)
-                File.Copy(Path.Combine(content, "baza", "ksiegi.db"), dbPath);
+                File.Copy(Path.Combine(content, "baza", "ksiegi.db"), work);
             await using (var db = DbContextFactory.Create(DatabaseEngine.Sqlite, profile.BuildConnectionString(null)))
             {
                 await db.Database.MigrateAsync(ct);
@@ -351,6 +372,8 @@ public sealed class BackupService
                 problems.AddRange(await CompareAsync(db, manifest, ct));
             }
             SqliteConnection.ClearAllPools();
+            if (databaseKey is not null) SqliteEncryption.ExportEncrypted(work, dbPath, databaseKey);
+            else File.Copy(work, dbPath);
             return new RestoreResult(dbPath, attTarget, manifest, problems);
         }
         finally

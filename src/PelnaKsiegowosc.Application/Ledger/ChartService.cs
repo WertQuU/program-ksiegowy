@@ -135,6 +135,17 @@ public sealed class ChartService
         return acc;
     }
 
+    /// <summary>Kwalifikacja konta do limitu kosztów finansowania dłużnego (art. 15c); null — automatycznie wg pozycji RZiS.</summary>
+    public async Task SetDebtFinancingAsync(Guid accountId, DebtFinancingKind? kind, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageChartOfAccounts);
+        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId && a.CompanyId == _user.CompanyId, ct);
+        if (acc.DebtFinancing == kind) return;
+        await new Audit.AuditService(_db, _clock).AddAsync(_user, "KONTO_ART15C", "Account", acc.Id.ToString(), $"{acc.Number}: {acc.DebtFinancing?.ToString() ?? "auto"} → {kind?.ToString() ?? "auto"}", ct);
+        acc.DebtFinancing = kind;
+        await _db.SaveChangesAsync(ct);
+    }
+
     public async Task UpdateAccountAsync(Guid accountId, string name, string? balanceDebitLine, string? balanceCreditLine, string? profitLossLine,
         CitClassification cit, bool isActive, CancellationToken ct = default)
     {

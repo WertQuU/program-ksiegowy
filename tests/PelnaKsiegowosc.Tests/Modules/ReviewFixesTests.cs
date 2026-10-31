@@ -585,7 +585,7 @@ public class TaxLossTests
         var cit = new CitService(t.Db, t.User, t.Clock);
         var loss = await cit.AddLossAsync("2025", new DateOnly(2025, 12, 31), false, 10000m, "CIT-8 za 2025");
         var old = await cit.AddLossAsync("2019", new DateOnly(2019, 12, 31), false, 4000m, "CIT-8 za 2019");
-        var capital = await cit.AddLossAsync("2024", new DateOnly(2024, 12, 31), true, 3000m, null);
+        var capital = await cit.AddLossAsync("2024", new DateOnly(2024, 12, 31), true, 3000m, null, deductibleUntil: new DateOnly(2029, 12, 31)); // rok 2025 poza programem — okres potwierdzony
 
         await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(loss.Id, t.Year.Id, 1, 6000m, oneTime: false)); // > 50%
         await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(old.Id, t.Year.Id, 1, 1000m, oneTime: false));  // po 5 latach
@@ -601,14 +601,22 @@ public class TaxLossTests
         var (_, used, until) = (await cit.LossesAsync()).Single(x => x.Loss.Id == loss.Id);
         Assert.Equal(5000m, used);
         Assert.Equal(new DateOnly(2030, 12, 31), until);
-        Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), 1, 5_000_001m, oneTime: true));
+        Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), 1, new DateOnly(2026, 12, 31), 5_000_001m, oneTime: true));
         // lata podatkowe, nie kalendarzowe: strata za rok kończący się 30.06.2024; lata 1.07.2024–31.12.2025 (18 mies.), 2026, 2027, 2028, 2029
         var years = new List<(DateOnly, DateOnly)> { (new(2024, 7, 1), new(2025, 12, 31)), (new(2026, 1, 1), new(2026, 12, 31)), (new(2027, 1, 1), new(2027, 12, 31)),
             (new(2028, 1, 1), new(2028, 12, 31)), (new(2029, 1, 1), new(2029, 12, 31)), (new(2030, 1, 1), new(2030, 12, 31)) };
         Assert.Equal(5, TaxLossRules.TaxYearNumber(new DateOnly(2024, 6, 30), years, new DateOnly(2029, 1, 1)));   // kalendarzowo minęłoby 4,5 roku
         Assert.Equal(6, TaxLossRules.TaxYearNumber(new DateOnly(2024, 6, 30), years, new DateOnly(2030, 1, 1)));   // poza okresem, choć przed 30.06.2029+5 lat
-        // rok straty spoza programu: luka liczona latami 12-miesięcznymi
-        Assert.Equal(3, TaxLossRules.TaxYearNumber(new DateOnly(2023, 12, 31), years.Skip(1).ToList(), new DateOnly(2026, 1, 1)));
+        // lata między stratą a programem nieznane — bez szacowania: wymagane potwierdzenie końca okresu odliczenia
+        Assert.Null(TaxLossRules.TaxYearNumber(new DateOnly(2023, 12, 31), years.Skip(1).ToList(), new DateOnly(2026, 1, 1)));
+        var gapLoss = new TaxLoss { YearLabel = "2023", YearEnd = new DateOnly(2023, 12, 31), Amount = 100m };
+        Assert.Null(TaxLossRules.WindowEnd(gapLoss, years.Skip(1).ToList()));
+        Assert.Throws<DomainException>(() => TaxLossRules.Validate(gapLoss, new List<TaxLossDeduction>(), null, new DateOnly(2026, 12, 31), 10m, false));
+        gapLoss.DeductibleUntil = new DateOnly(2028, 12, 31);                                   // potwierdzone przez użytkownika
+        TaxLossRules.Validate(gapLoss, new List<TaxLossDeduction>(), null, new DateOnly(2026, 12, 31), 10m, false);
+        Assert.Throws<DomainException>(() => TaxLossRules.Validate(gapLoss, new List<TaxLossDeduction>(), null, new DateOnly(2029, 12, 31), 10m, false));
+        // łańcuch lat podatkowych z rokiem 18-miesięcznym: koniec okresu = koniec 5. roku podatkowego
+        Assert.Equal(new DateOnly(2029, 12, 31), TaxLossRules.WindowEnd(new TaxLoss { YearEnd = new DateOnly(2024, 6, 30), Amount = 1m }, years));
     }
 
     [Fact]
@@ -622,8 +630,84 @@ public class TaxLossTests
         var rec = await new CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
         // EBITDA podatkowa 10 mln → limit max(3 mln; 30% × 10 mln) = 3 mln → nadwyżka 2 mln wyłączona z KUP
         Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c") && a.Amount == 2_000_000m);
+        // limit kwotowy proporcjonalny dla roku ≠ 12 miesięcy: 250 000 zł za każdy rozpoczęty miesiąc
+        Assert.Equal(3_000_000m, CitCalculator.DebtFinancingAmountLimit(new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31)));
+        Assert.Equal(750_000m, CitCalculator.DebtFinancingAmountLimit(new DateOnly(2026, 10, 1), new DateOnly(2026, 12, 31)));
+        Assert.Equal(750_000m, CitCalculator.DebtFinancingAmountLimit(new DateOnly(2026, 10, 15), new DateOnly(2026, 12, 31)));   // rozpoczęte miesiące
+        Assert.Equal(4_500_000m, CitCalculator.DebtFinancingAmountLimit(new DateOnly(2025, 7, 1), new DateOnly(2026, 12, 31)));   // 18 miesięcy
         Assert.Equal(3_000_000m, rec.TaxCosts);
         Assert.Equal(2_000_000m, rec.Rpd.K5);
         Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+    }
+
+    [Fact]
+    public async Task Financing_costs_marked_on_accounts_count_toward_article_15c()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var d = new DateOnly(2026, 3, 31);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 2_000_000m, 0), new("130-01", 0, 2_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/3", new("751-03", 1_500_000m, 0), new("130-01", 0, 1_500_000m))); // prowizja od kredytu
+        await t.Db.SaveChangesAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        Assert.DoesNotContain((await cit.ReconcileAsync(t.Year.Id, 12)).Adjustments, a => a.Basis.Contains("art. 15c")); // same odsetki 2 mln < 3 mln
+        var fee = await t.Db.Accounts.FirstAsync(a => a.Number == "751-03");
+        await new Application.Ledger.ChartService(t.Db, t.User, t.Clock).SetDebtFinancingAsync(fee.Id, DebtFinancingKind.Koszt);
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        // koszty finansowania 3,5 mln; EBITDA = 10 mln → limit max(3 mln; 3 mln) → nadwyżka 0,5 mln
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c") && a.Amount == 500_000m);
+    }
+}
+
+public class AdditionalComplianceTests
+{
+    [Fact]
+    public void Ksef_receipt_date_is_number_assignment_day_in_polish_time()
+    {
+        var m = new PelnaKsiegowosc.Infrastructure.Ksef.KsefDto.InvoiceMetadata("5260250274-20260131-0123456789AB-CD", "FV/1", new DateOnly(2026, 1, 31),
+            new DateTimeOffset(2026, 1, 31, 22, 0, 0, TimeSpan.Zero), null, 100m, 123m, 23m, "PLN", "VAT",
+            AcquisitionDate: new DateTimeOffset(2026, 1, 31, 23, 30, 0, TimeSpan.Zero));
+        Assert.Equal(new DateOnly(2026, 2, 1), PelnaKsiegowosc.Infrastructure.Ksef.KsefService.ReceiptDate(m)); // 00:30 czasu polskiego 1 lutego
+    }
+
+    [Fact]
+    public async Task Vat_deduction_window_is_two_following_quarters_for_quarterly_payers()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        t.Company.VatPeriod = VatSettlementPeriod.Kwartalny;
+        await t.Db.SaveChangesAsync();
+        var cp = await t.AddCounterpartyAsync("D001", "Dostawca", "7740001454");
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 2, 10);
+        var doc = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp.Id, d, d,
+            new[] { new DocumentLineInput("Usługa", 1, 100m, "23") }, DueDate: d.AddDays(14), ExternalNumber: "FZ/K", ReceiptDate: d));
+        // otrzymana w I kwartale → odliczenie do końca III kwartału (wrzesień), nie później
+        await docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (100m, false) }, new DateOnly(2026, 9, 1));
+        await Assert.ThrowsAsync<DomainException>(() => docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (100m, false) }, new DateOnly(2026, 10, 1)));
+        await Assert.ThrowsAsync<DomainException>(() => docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (100m, false) }, new DateOnly(2026, 1, 1)));
+    }
+
+    [Fact]
+    public void Older_local_backups_can_be_purged_after_anonymization()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "pk-purge-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            string F(string n, int minutesAgo)
+            {
+                var p = Path.Combine(dir, n);
+                File.WriteAllText(p, n);
+                File.SetLastWriteTimeUtc(p, DateTime.UtcNow.AddMinutes(-minutesAgo));
+                return p;
+            }
+            F("a.pkbak", 30); F("b.pkbak", 20);
+            var fresh = F("c.pkbak", 0);
+            F("inny.txt", 60);
+            Assert.Equal(2, PelnaKsiegowosc.Infrastructure.Backup.BackupService.PurgeLocalBackupsOlderThan(dir, fresh));
+            Assert.True(File.Exists(fresh));
+            Assert.True(File.Exists(Path.Combine(dir, "inny.txt")));
+        }
+        finally { Directory.Delete(dir, true); }
     }
 }

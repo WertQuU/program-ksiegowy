@@ -78,6 +78,11 @@ public class TaxLoss : CompanyEntity
     public bool CapitalGains { get; set; }
     public decimal Amount { get; set; }
     public string? Note { get; set; }
+    /// <summary>
+    /// Koniec okresu odliczenia potwierdzony przez użytkownika (ostatni dzień 5. roku podatkowego po stracie) — wymagany,
+    /// gdy lat podatkowych po stracie nie ma w programie (nie szacuje się ich długości).
+    /// </summary>
+    public DateOnly? DeductibleUntil { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -100,30 +105,56 @@ public static class TaxLossRules
 {
     public const decimal OneTimeLimit = 5_000_000m;
 
-    /// <summary>
-    /// Numer roku podatkowego po roku straty: lata podatkowe z ksiąg (także dłuższe lub krótsze niż 12 miesięcy); okres między
-    /// rokiem straty a pierwszym rokiem w programie — liczony jako lata 12-miesięczne (zaokrąglenie w górę).
-    /// </summary>
-    public static int TaxYearNumber(DateOnly lossYearEnd, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears, DateOnly deductionYearStart)
+    /// <summary>Ciągły łańcuch lat podatkowych od dnia po roku straty (bez luk); lata spoza programu przerywają łańcuch.</summary>
+    public static List<(DateOnly Start, DateOnly End)> Chain(DateOnly lossYearEnd, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears)
     {
-        var after = taxYears.Where(y => y.Start > lossYearEnd && y.Start <= deductionYearStart).OrderBy(y => y.Start).ToList();
-        if (after.Count == 0) return 0;
-        var gapStart = lossYearEnd.AddDays(1);
-        var months = (after[0].Start.Year - gapStart.Year) * 12 + after[0].Start.Month - gapStart.Month;
-        var gapYears = months <= 0 ? 0 : (months + 11) / 12;
-        return gapYears + after.Count;
+        var chain = new List<(DateOnly, DateOnly)>();
+        var next = lossYearEnd.AddDays(1);
+        while (taxYears.FirstOrDefault(y => y.Start == next) is { End: var end } y && end >= next)
+        {
+            chain.Add(y);
+            next = end.AddDays(1);
+        }
+        return chain;
+    }
+
+    /// <summary>Numer roku podatkowego po roku straty (1 = pierwszy); null — lat między stratą a tym rokiem nie ma w programie.</summary>
+    public static int? TaxYearNumber(DateOnly lossYearEnd, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears, DateOnly deductionYearStart)
+    {
+        var i = Chain(lossYearEnd, taxYears).FindIndex(y => y.Start == deductionYearStart);
+        return i < 0 ? null : i + 1;
     }
 
     /// <summary>
-    /// Sprawdzenie odliczenia: w najbliższych kolejno po sobie następujących pięciu latach podatkowych (art. 7 ust. 5) —
-    /// <paramref name="taxYearNumber"/> to numer roku podatkowego po roku straty (1 = pierwszy rok po stracie), liczony
-    /// z lat podatkowych, a nie lat kalendarzowych; jednorazowo do 5 mln zł (raz) albo do 50% straty w roku; łącznie nie więcej niż strata.
+    /// Ostatni dzień okresu odliczenia (koniec 5. roku podatkowego po stracie): potwierdzony przez użytkownika albo wyliczony
+    /// z lat podatkowych w programie; lata przyszłe — jako 12-miesięczne (do aktualizacji po ich utworzeniu).
+    /// Null — lata podatkowe po stracie nie są znane (strata sprzed prowadzenia ksiąg w programie bez potwierdzenia okresu).
     /// </summary>
-    public static void Validate(TaxLoss loss, IReadOnlyCollection<TaxLossDeduction> previous, int taxYearNumber, decimal amount, bool oneTime)
+    public static DateOnly? WindowEnd(TaxLoss loss, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears)
+    {
+        if (loss.DeductibleUntil is { } confirmed) return confirmed;
+        var chain = Chain(loss.YearEnd, taxYears);
+        if (chain.Count == 0) return taxYears.Any(y => y.Start > loss.YearEnd) ? null : loss.YearEnd.AddYears(5);
+        return chain.Count >= 5 ? chain[4].End : chain[^1].End.AddYears(5 - chain.Count);
+    }
+
+    /// <summary>
+    /// Sprawdzenie odliczenia: w pięciu kolejnych latach podatkowych po roku straty (art. 7 ust. 5) — numer roku z łańcucha lat
+    /// podatkowych albo potwierdzony koniec okresu; jednorazowo do 5 mln zł (raz) albo do 50% straty w roku; łącznie nie więcej niż strata.
+    /// </summary>
+    public static void Validate(TaxLoss loss, IReadOnlyCollection<TaxLossDeduction> previous, int? taxYearNumber, DateOnly deductionYearEnd, decimal amount, bool oneTime)
     {
         if (amount <= 0) throw new DomainException("Kwota odliczenia musi być dodatnia.");
-        if (taxYearNumber < 1) throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
-        if (taxYearNumber > 5) throw new DomainException($"Stratę z roku {loss.YearLabel} można odliczać w pięciu kolejnych latach podatkowych — to {taxYearNumber}. rok podatkowy po stracie.");
+        if (loss.DeductibleUntil is { } until)
+        {
+            if (deductionYearEnd > until) throw new DomainException($"Okres odliczenia straty z roku {loss.YearLabel} upłynął {until.ToPl()} (koniec 5. roku podatkowego po stracie).");
+        }
+        else if (taxYearNumber is null)
+            throw new DomainException($"Lat podatkowych po roku straty {loss.YearLabel} nie ma w programie — potwierdź koniec okresu odliczenia (ostatni dzień 5. roku podatkowego po stracie) przy stracie.");
+        else if (taxYearNumber > 5)
+            throw new DomainException($"Stratę z roku {loss.YearLabel} można odliczać w pięciu kolejnych latach podatkowych — to {taxYearNumber}. rok podatkowy po stracie.");
+        else if (taxYearNumber < 1)
+            throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
         var used = previous.Sum(d => d.Amount);
         if (used + amount > loss.Amount) throw new DomainException($"Odliczenia przekroczyłyby stratę ({Money.Format(loss.Amount)} zł; odliczono już {Money.Format(used)} zł).");
         if (oneTime)
@@ -252,6 +283,14 @@ public static class CitCalculator
         }
         var last = new DateOnly(previousTaxYearEnd.Year, 10, 1);
         return last <= previousTaxYearEnd ? last : last.AddYears(-1);
+    }
+
+    /// <summary>Limit kwotowy art. 15c: 3 000 000 zł; rok podatkowy krótszy lub dłuższy niż 12 miesięcy — 250 000 zł za każdy rozpoczęty miesiąc (art. 15c ust. 1a).</summary>
+    public static decimal DebtFinancingAmountLimit(DateOnly start, DateOnly end)
+    {
+        var started = (end.Year - start.Year) * 12 + end.Month - start.Month + 1;
+        var isTwelve = start.Day == 1 && end == start.AddMonths(12).AddDays(-1);
+        return isTwelve ? 3_000_000m : 250_000m * started;
     }
 
     private static decimal RoundToThousand(decimal v) => Math.Round(v / 1000m, 0, MidpointRounding.AwayFromZero) * 1000m;

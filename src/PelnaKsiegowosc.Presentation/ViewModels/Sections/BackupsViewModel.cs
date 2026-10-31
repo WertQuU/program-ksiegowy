@@ -113,7 +113,8 @@ public sealed partial class BackupsViewModel : SectionViewModel
         var dir = await Dialogs.PickFolderAsync("Katalog docelowy odtworzenia (pusty lub nowy)");
         if (dir is null) return;
         var target = Path.Combine(dir, "odtworzona-" + Session.Clock.UtcNow.ToString("yyyyMMdd-HHmmss"));
-        var r = await new BackupService(Session.Clock, Session.Paths.TempDirectory).RestoreToSqliteAsync(file, key, target);
+        var r = await new BackupService(Session.Clock, Session.Paths.TempDirectory).RestoreToSqliteAsync(file, key, target,
+            databaseKey: Session.Connector.SqliteKeyForNewFile(new Data.DatabaseProfile { Engine = Data.DatabaseEngine.Sqlite, SqlitePath = Path.Combine(target, "ksiegi.db") }));
         if (!r.Ok) { await Dialogs.ShowTextAsync("Odtwarzanie", "Odtwarzanie zakończone z błędami:" + Environment.NewLine + string.Join(Environment.NewLine, r.Problems)); return; }
         await Session.AuditAsync("KOPIA_ODTWORZONA", "Backup", r.Manifest.ArchiveId.ToString(), $"{Path.GetFileName(file)} → {target}");
         if (await Dialogs.ConfirmAsync("Odtwarzanie", $"Kopię odtworzono do:{Environment.NewLine}{r.DatabasePath}{Environment.NewLine}{Environment.NewLine}" +

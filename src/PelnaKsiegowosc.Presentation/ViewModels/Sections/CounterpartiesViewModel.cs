@@ -101,9 +101,21 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
             var file = Path.Combine(Session.Attachments.RootPath, path.Replace('/', Path.DirectorySeparatorChar));
             try { if (File.Exists(file)) File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
-        await Dialogs.InfoAsync("RODO", r.CanErase
-            ? $"Dane osobowe zanonimizowano, usunięto załączniki: {svc.PendingAttachmentRemovals.Count}. Dane w kopiach zapasowych znikną wraz z rotacją kopii (ustawienie liczby przechowywanych kopii); kopie zdalne usuń zgodnie z ich retencją. Zdarzenie zapisano w dzienniku."
-            : $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis} Przekaż osobie odpowiedź z tą podstawą.");
+        if (!r.CanErase)
+        {
+            await Dialogs.InfoAsync("RODO", $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis} Przekaż osobie odpowiedź z tą podstawą.");
+            return;
+        }
+        var info = $"Dane osobowe zanonimizowano, usunięto załączniki: {svc.PendingAttachmentRemovals.Count}.";
+        if (await Dialogs.ConfirmAsync("RODO — kopie zapasowe", info + Environment.NewLine + Environment.NewLine +
+                "Starsze kopie zapasowe nadal zawierają dane tej osoby. Wykonać teraz nową kopię (bez tych danych) i usunąć starsze kopie lokalne? Księgi pozostają w nowej kopii."))
+        {
+            var backup = await Session.BackupAsync("po anonimizacji danych osobowych (RODO)", upload: false);
+            var purged = PelnaKsiegowosc.Infrastructure.Backup.BackupService.PurgeLocalBackupsOlderThan(Session.BackupDirectory, backup.FilePath);
+            await Session.AuditAsync("RODO_KOPIE_WYGASZONE", "Backup", null, $"nowa kopia {Path.GetFileName(backup.FilePath)}; usunięto starszych kopii lokalnych: {purged}");
+            info += $" Wykonano nową kopię i usunięto {purged} starszych kopii lokalnych.";
+        }
+        await Dialogs.InfoAsync("RODO", info + " Kopie w zdalnym magazynie (Object Storage) usuń zgodnie z ich retencją. Zdarzenie zapisano w dzienniku.");
     }, "Obsłużono żądanie RODO.");
 
     /// <summary>Wstrzymanie usuwania danych (kontrola, spór, zawieszenie/przerwanie biegu przedawnienia).</summary>

@@ -132,7 +132,8 @@ public partial class App : Avalonia.Application
         if (!await dialogs.ConfirmAsync("Tryb awaryjny", $"Utworzyć OSOBNĄ kopię roboczą z kopii {latest.Name} ({latest.LastWriteTimeUtc.ToPlDateTime()})?{Environment.NewLine}" +
                 "Zmiany w kopii roboczej nie trafią automatycznie na serwer — wymagają późniejszego uzgodnienia (ponownego wprowadzenia dokumentów).")) return false;
         var profile = DatabaseConnector.EmergencyProfile(session.Paths, session.Clock.UtcNow);
-        var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(latest.FullName, key, Path.GetDirectoryName(profile.SqlitePath!)!);
+        var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(latest.FullName, key, Path.GetDirectoryName(profile.SqlitePath!)!,
+            databaseKey: session.Connector.SqliteKeyForNewFile(profile));
         if (!r.Ok)
         {
             await dialogs.ShowTextAsync("Tryb awaryjny", "Odtworzenie kopii nie powiodło się:" + Environment.NewLine + string.Join(Environment.NewLine, r.Problems));

@@ -48,7 +48,7 @@ public static class KsefDto
     public sealed record QueryFilters(string SubjectType, DateRange DateRange);
     public sealed record Party(string? Nip, string? Name);
     public sealed record InvoiceMetadata(string KsefNumber, string InvoiceNumber, DateOnly IssueDate, DateTimeOffset InvoicingDate, Party? Seller,
-        decimal NetAmount, decimal GrossAmount, decimal VatAmount, string Currency, string? InvoiceType);
+        decimal NetAmount, decimal GrossAmount, decimal VatAmount, string Currency, string? InvoiceType, DateTimeOffset? AcquisitionDate = null);
     public sealed record QueryResponse(bool HasMore, bool IsTruncated, List<InvoiceMetadata> Invoices);
 }
 

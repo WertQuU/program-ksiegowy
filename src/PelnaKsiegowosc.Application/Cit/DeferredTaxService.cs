@@ -62,6 +62,26 @@ public sealed class DeferredTaxService
         await _db.SaveChangesAsync(ct);
     }
 
+    public static string LossAssessmentKey(Guid lossId) => $"cit.aktywoStrata.{lossId}";
+    public sealed record LossAssessment(bool Recoverable, decimal? RecoverableAmount, string Justification, DateOnly AssessedOn);
+
+    /// <summary>
+    /// Udokumentowana ocena możliwości wykorzystania straty (art. 37 ust. 4 UoR, zasada ostrożności): aktywo ze straty ujmuje się
+    /// tylko w kwocie, co do której prawdopodobne jest osiągnięcie dochodu do jej odliczenia (np. prognoza wyników, kontrakty).
+    /// </summary>
+    public async Task AssessLossAsync(Guid lossId, bool recoverable, decimal? recoverableAmount, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Opisz podstawę oceny (prognoza dochodów, zawarte umowy, plan finansowy).");
+        if (recoverableAmount is < 0) throw new DomainException("Kwota nie może być ujemna.");
+        await _db.TaxLosses.FirstAsync(l => l.Id == lossId && l.CompanyId == _user.CompanyId, ct);
+        await new Setup.SettingsService(_db, _clock).SetAsync<LossAssessment?>(_user.CompanyId, LossAssessmentKey(lossId),
+            new LossAssessment(recoverable, recoverableAmount, justification.Trim(), _clock.Today), ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "POD_ODROCZONY_OCENA_STRATY", "TaxLoss", lossId.ToString(),
+            $"{(recoverable ? "do wykorzystania" : "niepewna")}{(recoverableAmount is { } a ? $" do {Money.Xml(a)}" : "")}: {justification.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public DeferredTaxService(KsiegiDbContext db, ICurrentUser user, IClock clock)
     {
         _db = db;
@@ -116,7 +136,22 @@ public sealed class DeferredTaxService
             var c = charges.GetValueOrDefault(a.Id);
             var book = a.InitialValueBook - a.OpeningAccumulatedBook - c.Book;
             var tax = a.InitialValueTax - a.OpeningAccumulatedTax - c.Tax;
-            if (book != tax) diffs.Add(new TemporaryDifference($"Środek trwały {a.InventoryNumber} {a.Name}", "wartość bilansowa ≠ podatkowa (amortyzacja)", book, tax, Money.Round(book - tax), nextYear, false, rate));
+            if (book == tax) continue;
+            // harmonogram odwrócenia: różnica wygasa w latach pozostałej amortyzacji (dłuższej z bilansowej i podatkowej),
+            // proporcjonalnie — każda część po stawce prognozowanej na swój rok
+            var bookYears = a.BookRatePercent > 0 && a.InitialValueBook > 0 ? (int)Math.Ceiling(book / (a.InitialValueBook * a.BookRatePercent / 100m)) : 1;
+            var taxYears = a.TaxRatePercent > 0 && a.InitialValueTax > 0 ? (int)Math.Ceiling(tax / (a.InitialValueTax * a.TaxRatePercent / 100m)) : 1;
+            var span = Math.Clamp(Math.Max(bookYears, taxYears), 1, 40);
+            var total = Money.Round(book - tax);
+            var remaining = total;
+            for (var i = 0; i < span; i++)
+            {
+                var part = i == span - 1 ? remaining : Money.Round(total / span);
+                remaining -= part;
+                if (part == 0) continue;
+                diffs.Add(new TemporaryDifference($"Środek trwały {a.InventoryNumber} {a.Name}{(span > 1 ? $" — część {i + 1}/{span}" : "")}",
+                    "wartość bilansowa ≠ podatkowa (amortyzacja)", i == 0 ? book : 0m, i == 0 ? tax : 0m, part, nextYear + i, false, await RateForAsync(nextYear + i, false)));
+            }
         }
 
         // odpisy aktualizujące należności (NKUP do czasu uprawdopodobnienia nieściągalności)
@@ -131,21 +166,31 @@ public sealed class DeferredTaxService
             if (remaining != 0) diffs.Add(new TemporaryDifference($"Rezerwy: {g.Key}", "art. 16 ust. 1 pkt 27 ustawy o CIT", -remaining, 0m, -remaining, nextYear, false, rate));
         }
 
-        // straty podatkowe z rejestru (art. 7 ust. 5) — pozostała kwota w okresie odliczenia; zyski kapitałowe po 19%
+        // straty podatkowe z rejestru (art. 7 ust. 5): okres odliczenia ze wspólnego mechanizmu lat podatkowych; aktywo tylko
+        // po udokumentowanej ocenie możliwości wykorzystania (art. 37 ust. 4 UoR); zyski kapitałowe po 19%
         var losses = await _db.TaxLosses.AsNoTracking().Where(l => l.CompanyId == fy.CompanyId && l.YearEnd <= asOf).ToListAsync(ct);
         var usedByLoss = (await _db.TaxLossDeductions.AsNoTracking().Where(d => d.CompanyId == fy.CompanyId).ToListAsync(ct))
             .GroupBy(d => d.TaxLossId).ToDictionary(g => g.Key, g => g.Sum(d => d.Amount));
+        var years = (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == fy.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
+            .Select(y => (y.StartDate, y.EndDate)).ToList();
         foreach (var l in losses)
         {
             var left = l.Amount - usedByLoss.GetValueOrDefault(l.Id);
-            if (left <= 0 || l.YearEnd.AddYears(5) < asOf) continue;
-            diffs.Add(new TemporaryDifference($"Strata podatkowa {l.YearLabel}{(l.CapitalGains ? " (zyski kapitałowe)" : "")}", "art. 7 ust. 5 ustawy o CIT", 0m, left, -left,
+            if (left <= 0) continue;
+            var until = TaxLossRules.WindowEnd(l, years);
+            if (until is null) { warnings.Add($"Strata {l.YearLabel}: potwierdź koniec okresu odliczenia — bez tego aktywo nie jest ujmowane."); continue; }
+            if (until < asOf.AddDays(1)) continue;
+            var assessment = await settings.GetAsync<LossAssessment?>(fy.CompanyId, LossAssessmentKey(l.Id), () => null, ct);
+            if (assessment is null) { warnings.Add($"Strata {l.YearLabel} ({Money.Format(left)} zł): brak udokumentowanej oceny możliwości jej wykorzystania — aktywo nie zostało ujęte (art. 37 ust. 4 UoR)."); continue; }
+            if (!assessment.Recoverable) continue;
+            var amount = Math.Min(left, assessment.RecoverableAmount ?? left);
+            if (amount <= 0) continue;
+            diffs.Add(new TemporaryDifference($"Strata podatkowa {l.YearLabel}{(l.CapitalGains ? " (zyski kapitałowe)" : "")}",
+                $"art. 7 ust. 5 ustawy o CIT; ocena z {assessment.AssessedOn.ToPl()}: {assessment.Justification}", 0m, amount, -amount,
                 nextYear, l.CapitalGains, await RateForAsync(nextYear, l.CapitalGains)));
         }
         if (taxLossesToSettle > 0)
             diffs.Add(new TemporaryDifference("Straty podatkowe spoza rejestru", "art. 7 ust. 5 ustawy o CIT", 0m, taxLossesToSettle, -taxLossesToSettle, nextYear, false, rate));
-        if (diffs.Any(d => d.Item.StartsWith("Strata")))
-            warnings.Add("Aktywo ze strat podatkowych ujmuje się tylko, gdy prawdopodobne jest osiągnięcie dochodu do ich odliczenia (art. 37 ust. 4 UoR) — potwierdź w polityce.");
 
         var taxable = diffs.Where(d => d.Difference > 0).Sum(d => d.Difference);
         var deductible = -diffs.Where(d => d.Difference < 0).Sum(d => d.Difference);

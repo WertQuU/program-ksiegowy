@@ -16,12 +16,13 @@ public static class FinancialStatementCompleteness
         if (!yearClosed) missing.Add("Rok obrotowy nie jest zamknięty — sprawozdanie sporządza się na dzień zamknięcia ksiąg (art. 45 ust. 1, art. 52 ust. 1 UoR).");
         if (!xml.Validation.IsValid) missing.Add($"Plik nie przechodzi walidacji schematem XSD ({xml.Validation.Errors.Count} błędów).");
         // podpisy składa się poza programem (aplikacja e-Sprawozdania / e-KRS). Zestawienie zmian w kapitale i rachunek przepływów
-        // są obowiązkowe dla jednostek sporządzających pełne sprawozdanie (zał. nr 1, art. 45 ust. 1 i 3 UoR) oraz badanych
-        // (art. 64 ust. 1); pominąć je mogą wyłącznie jednostki małe i mikro korzystające z uproszczeń (art. 46 ust. 5, art. 48a–48b, 50 ust. 3), niepodlegające badaniu
-        var fullStatement = scope == StatementScope.Inna || auditRequired;
+        // zależą od kategorii jednostki (art. 45 ust. 3, art. 46 ust. 5, art. 48a–48b, art. 50 ust. 3 UoR): obowiązkowe przy pełnym
+        // sprawozdaniu (zał. nr 1); jednostka mała lub mikro sporządzająca sprawozdanie wg zał. nr 5 / nr 4 może je pominąć —
+        // spójnie z generatorem XML, który dla tych zakresów ich nie tworzy. Fakt badania nie zmienia struktury sprawozdania.
+        var fullStatement = scope == StatementScope.Inna;
         missing.AddRange(xml.NotImplemented.Where(n => n.StartsWith("Dodatkowe informacje")
                                                        || (fullStatement && (n.StartsWith("Rachunek przepływów") || n.StartsWith("Zestawienie zmian"))))
-            .Select(n => "Brak elementu: " + n + (fullStatement && !n.StartsWith("Dodatkowe") ? " — obowiązkowy dla tej jednostki" : "")));
+            .Select(n => "Brak elementu: " + n + (fullStatement && !n.StartsWith("Dodatkowe") ? " — obowiązkowy przy pełnym sprawozdaniu (zał. nr 1 UoR)" : "")));
         if (balanceSheet.Unmapped.Count > 0)
             missing.Add($"{balanceSheet.Unmapped.Count} kont z saldem bez pozycji bilansu — salda nie trafiają do sprawozdania.");
         missing.AddRange(balanceSheet.Warnings.Where(w => w.Contains("aktyw", StringComparison.OrdinalIgnoreCase) && w.Contains("pasyw", StringComparison.OrdinalIgnoreCase))

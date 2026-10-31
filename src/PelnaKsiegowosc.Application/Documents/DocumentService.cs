@@ -232,7 +232,12 @@ public sealed class DocumentService
         var earliest = DefaultVatPeriod(doc);
         var period = new DateOnly(vatPeriod.Year, vatPeriod.Month, 1);
         if (period < earliest) throw new DomainException($"Okres odliczenia nie może być wcześniejszy niż {earliest:MM.yyyy} (art. 86 ust. 10b ustawy o VAT).");
-        if (period > earliest.AddMonths(3)) throw new DomainException($"Odliczenie możliwe najpóźniej w jednym z trzech kolejnych okresów (art. 86 ust. 11) — po tym terminie wymagana korekta deklaracji (art. 86 ust. 13).");
+        // art. 86 ust. 11: rozliczający się miesięcznie — w jednym z trzech kolejnych miesięcy; kwartalnie — w jednym z dwóch kolejnych kwartałów
+        var quarterly = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.VatPeriod).FirstAsync(ct) == VatSettlementPeriod.Kwartalny;
+        var latest = quarterly ? new DateOnly(earliest.Year, (earliest.Month - 1) / 3 * 3 + 1, 1).AddMonths(3 * 2 + 2) : earliest.AddMonths(3);
+        if (period > latest) throw new DomainException(quarterly
+            ? $"Odliczenie możliwe najpóźniej w jednym z dwóch kolejnych kwartałów (do {latest:MM.yyyy}, art. 86 ust. 11) — później wymagana korekta deklaracji (art. 86 ust. 13)."
+            : $"Odliczenie możliwe najpóźniej w jednym z trzech kolejnych okresów (do {latest:MM.yyyy}, art. 86 ust. 11) — później wymagana korekta deklaracji (art. 86 ust. 13).");
         foreach (var (rate, (percent, fixedAsset)) in perRate) InvoiceCalculator.SetDeduction(doc, rate, percent, fixedAsset);
         doc.VatPeriod = period;
         doc.VatDeductionConfirmed = true;

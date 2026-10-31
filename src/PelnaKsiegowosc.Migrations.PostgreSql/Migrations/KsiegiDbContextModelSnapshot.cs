@@ -53,6 +53,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<string>("DebtFinancing")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
                     b.Property<string>("Description")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -870,6 +874,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
 
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly?>("DeductibleUntil")
+                        .HasColumnType("date");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)

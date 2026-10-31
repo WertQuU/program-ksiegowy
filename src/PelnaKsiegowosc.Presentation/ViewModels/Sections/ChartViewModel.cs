@@ -32,6 +32,12 @@ public sealed partial class ChartViewModel : SectionViewModel
     [ObservableProperty] private bool _settlement;
     [ObservableProperty] private bool _isActive = true;
     [ObservableProperty] private Choice<CitClassification> _cit = Choices.Of<CitClassification>()[0];
+    public static List<Choice<int>> DebtFinancingChoices { get; } = new()
+    {
+        new(-1, "art. 15c: automatycznie (wg RZiS)"), new(0, "art. 15c: nie dotyczy / wyłączenie"),
+        new(1, "art. 15c: koszt finansowania dłużnego"), new(2, "art. 15c: przychód odsetkowy")
+    };
+    [ObservableProperty] private Choice<int> _debtFinancing = DebtFinancingChoices[0];
     public List<Choice<AccountType>> Types { get; } = Choices.Of<AccountType>();
     public List<Choice<CitClassification>> CitClasses { get; } = Choices.Of<CitClassification>();
 
@@ -96,6 +102,7 @@ public sealed partial class ChartViewModel : SectionViewModel
             Number = a.Number; Name = a.Name; Type = Types.First(x => x.Value == a.Type);
             BalanceDebitLine = a.BalanceDebitLine ?? ""; BalanceCreditLine = a.BalanceCreditLine ?? ""; ProfitLossLine = a.ProfitLossLine ?? "";
             Settlement = a.IsSettlementAccount; IsActive = a.IsActive; Cit = CitClasses.First(x => x.Value == a.CitClassification);
+            DebtFinancing = DebtFinancingChoices.First(x => x.Value == (a.DebtFinancing is { } k ? (int)k : -1));
         });
     }
 
@@ -143,6 +150,7 @@ public sealed partial class ChartViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         await new ChartService(db, Session.User, Session.Clock).UpdateAccountAsync(id, Name, Parse.Trim(BalanceDebitLine), Parse.Trim(BalanceCreditLine),
             Parse.Trim(ProfitLossLine), Cit.Value, IsActive);
+        await new ChartService(db, Session.User, Session.Clock).SetDebtFinancingAsync(id, DebtFinancing.Value < 0 ? null : (DebtFinancingKind)DebtFinancing.Value);
     }, "Zapisano zmiany konta.");
 
     [RelayCommand]

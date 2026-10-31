@@ -141,7 +141,8 @@ public static class Program
 
     private static async Task<int> RestoreAsync(AppSession session, string file, string directory)
     {
-        var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(file, Key(session), Path.GetFullPath(directory));
+        var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(file, Key(session), Path.GetFullPath(directory),
+            databaseKey: session.Connector.SqliteKeyForNewFile(new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(Path.GetFullPath(directory), "ksiegi.db") }));
         if (!r.Ok)
         {
             foreach (var p in r.Problems) Console.Error.WriteLine("  " + p);

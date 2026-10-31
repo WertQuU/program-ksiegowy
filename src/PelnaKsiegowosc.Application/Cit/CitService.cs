@@ -314,25 +314,39 @@ public sealed class CitService
             r.Adjustments.Add(new($"Odliczenie straty z roku {x.YearLabel}{(x.CapitalGains ? " (zyski kapitałowe)" : "")}", -x.Amount, "art. 7 ust. 5 ustawy o CIT"));
         r.Deductions = opDeductions + capDeductions;
 
-        // limit kosztów finansowania dłużnego (art. 15c): koszty finansowania = konta z pozycją RZiS „Odsetki” (R.H.I) uznane za KUP
-        // (także odsetki w racie leasingu ujęte na tych kontach); przychody odsetkowe = R.G.II. Nadwyżka ponad 3 mln zł albo
-        // 30% podatkowej EBITDA nie jest KUP — korekta automatyczna (różnica przejściowa: rozliczenie w 5 kolejnych latach, art. 15c ust. 3).
-        bool Financing(Account a) => a.ProfitLossLine == "R.H.I" && a.CitClassification != CitClassification.KosztNiepodatkowy && !depAccounts.Contains(a.Number);
-        var interestCosts = tb.Where(t => t.IsLeaf && Financing(t.Account)).Sum(t => t.CumulativeDebit - t.CumulativeCredit);
-        var interestIncome = tb.Where(t => t.IsLeaf && t.Account.ProfitLossLine == "R.G.II" && t.Account.CitClassification != CitClassification.PrzychodNiepodatkowy)
-            .Sum(t => t.CumulativeCredit - t.CumulativeDebit);
-        var netFinancing = interestCosts - interestIncome;
-        if (netFinancing > 3_000_000m)
+        // limit kosztów finansowania dłużnego (art. 15c): koszty finansowania wg kwalifikacji konta (art. 15c ust. 12 — odsetki,
+        // prowizje, opłaty, premie, część odsetkowa leasingu, różnice kursowe od finansowania); bez kwalifikacji — konta z pozycją
+        // RZiS „Odsetki” (R.H.I) będące KUP; przychody odsetkowe — R.G.II. Limit: wyższa z kwot 3 mln zł (rok ≠ 12 mies.: 250 000 zł
+        // za każdy rozpoczęty miesiąc, art. 15c ust. 1a) albo 30% podatkowej EBITDA (przychody ze wszystkich źródeł bez odsetkowych
+        // minus KUP bez amortyzacji i kosztów finansowania). Nadwyżka nie jest KUP — korekta automatyczna (różnica przejściowa,
+        // rozliczenie w 5 kolejnych latach, art. 15c ust. 3).
+        bool FinancingCost(Account a) => a.DebtFinancing switch
         {
-            var ebitda = (taxRev - interestIncome) - (taxCost - interestCosts - taxDep);
-            var limit = Math.Max(3_000_000m, Money.Round(0.3m * ebitda));
+            DebtFinancingKind.Koszt => true,
+            null => a.ProfitLossLine == "R.H.I" && a.CitClassification != CitClassification.KosztNiepodatkowy && !depAccounts.Contains(a.Number),
+            _ => false
+        };
+        bool FinancingRevenue(Account a) => a.DebtFinancing switch
+        {
+            DebtFinancingKind.PrzychodOdsetkowy => true,
+            null => a.ProfitLossLine == "R.G.II" && a.CitClassification != CitClassification.PrzychodNiepodatkowy,
+            _ => false
+        };
+        var interestCosts = tb.Where(t => t.IsLeaf && t.Account.Type == AccountType.WynikoweKosztowe && FinancingCost(t.Account)).Sum(t => t.CumulativeDebit - t.CumulativeCredit);
+        var interestIncome = tb.Where(t => t.IsLeaf && t.Account.Type == AccountType.WynikowePrzychodowe && FinancingRevenue(t.Account)).Sum(t => t.CumulativeCredit - t.CumulativeDebit);
+        var netFinancing = interestCosts - interestIncome;
+        var amountLimit = CitCalculator.DebtFinancingAmountLimit(fy.StartDate, fy.EndDate);
+        if (netFinancing > amountLimit)
+        {
+            var ebitda = (taxRev + capRev - interestIncome) - (taxCost + capCost - interestCosts - taxDep);
+            var limit = Math.Max(amountLimit, Money.Round(0.3m * ebitda));
             if (netFinancing > limit)
             {
                 var excess = Money.Round(netFinancing - limit);
                 taxCost -= excess;
                 k5 += excess;
-                r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego ponad limit {Money.Format(limit)} zł", excess, "art. 15c ust. 1 ustawy o CIT"));
-                r.Warnings.Add($"Art. 15c: wyłączono z KUP nadwyżkę kosztów finansowania dłużnego {Money.Format(excess)} zł. Nadwyżkę można zaliczyć do KUP w 5 kolejnych latach w ramach limitu (korekta „dodatkowy KUP” z oznaczeniem lat ubiegłych). Sprawdź wyłączenia (art. 15c ust. 6–8, 14) i koszty finansowania spoza odsetek (np. prowizje, opłaty, różnice kursowe od finansowania).");
+                r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego ponad limit {Money.Format(limit)} zł", excess, "art. 15c ust. 1 i 1a ustawy o CIT"));
+                r.Warnings.Add($"Art. 15c: wyłączono z KUP nadwyżkę kosztów finansowania dłużnego {Money.Format(excess)} zł (limit kwotowy {Money.Format(amountLimit)} zł, 30% EBITDA {Money.Format(Money.Round(0.3m * ebitda))} zł). Nadwyżkę zalicza się do KUP w 5 kolejnych latach w ramach limitu (korekta „dodatkowy KUP” z oznaczeniem lat ubiegłych). Koszty wyłączone z limitu oznacz na koncie (Plan kont → art. 15c: nie dotyczy).");
             }
         }
 
@@ -600,8 +614,10 @@ public sealed class CitService
 
     // ---- straty podatkowe (art. 7 ust. 5) ----
 
-    public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default)
+    public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default, DateOnly? deductibleUntil = null)
     {
+        if (deductibleUntil is { } du && (du <= yearEnd || du > yearEnd.AddMonths(5 * 24)))
+            throw new DomainException("Koniec okresu odliczenia: ostatni dzień 5. roku podatkowego po roku straty.");
         _user.Require(Permission.ManageCit);
         if (amount <= 0) throw new DomainException("Kwota straty musi być dodatnia.");
         if (string.IsNullOrWhiteSpace(yearLabel)) throw new DomainException("Podaj rok podatkowy straty.");
@@ -610,7 +626,7 @@ public sealed class CitService
         var loss = new TaxLoss
         {
             CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
-            Note = note, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            Note = note, DeductibleUntil = deductibleUntil, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         _db.TaxLosses.Add(loss);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ZAREJESTROWANA", "TaxLoss", loss.Id.ToString(), $"{yearLabel} {(capitalGains ? "zyski kapitałowe" : "inne źródła")}: {Money.Xml(amount)}", ct);
@@ -644,7 +660,8 @@ public sealed class CitService
         var previous = await _db.TaxLossDeductions.Where(d => d.TaxLossId == lossId).ToListAsync(ct);
         if (previous.Any(d => d.FiscalYearId == fiscalYearId)) throw new DomainException("Odliczenie tej straty w tym roku jest już wprowadzone.");
         var years = await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct);
-        TaxLossRules.Validate(loss, previous, TaxLossRules.TaxYearNumber(loss.YearEnd, years.Select(y => (y.StartDate, y.EndDate)).ToList(), fy.StartDate), Money.Round(amount), oneTime);
+        if (fy.StartDate <= loss.YearEnd) throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
+        TaxLossRules.Validate(loss, previous, TaxLossRules.TaxYearNumber(loss.YearEnd, years.Select(y => (y.StartDate, y.EndDate)).ToList(), fy.StartDate), fy.EndDate, Money.Round(amount), oneTime);
         var d = new TaxLossDeduction
         {
             CompanyId = _user.CompanyId, TaxLossId = lossId, FiscalYearId = fiscalYearId, PeriodNumber = fromPeriod, Amount = Money.Round(amount), OneTime = oneTime,
@@ -656,23 +673,26 @@ public sealed class CitService
         return d;
     }
 
-    /// <summary>Straty z kwotą odliczoną i końcem okresu odliczenia — koniec 5. roku podatkowego po stracie (z lat w programie; dalsze lata szacunkowo jako 12-miesięczne).</summary>
-    public async Task<List<(TaxLoss Loss, decimal Used, DateOnly DeductibleUntil)>> LossesAsync(CancellationToken ct = default)
+    /// <summary>Straty z kwotą odliczoną i końcem okresu odliczenia (wspólny mechanizm <see cref="TaxLossRules.WindowEnd"/>; null — do potwierdzenia).</summary>
+    public async Task<List<(TaxLoss Loss, decimal Used, DateOnly? DeductibleUntil)>> LossesAsync(CancellationToken ct = default)
     {
         var losses = await _db.TaxLosses.AsNoTracking().Where(l => l.CompanyId == _user.CompanyId).OrderBy(l => l.YearEnd).ToListAsync(ct);
         var used = (await _db.TaxLossDeductions.AsNoTracking().Where(d => d.CompanyId == _user.CompanyId).ToListAsync(ct)).GroupBy(d => d.TaxLossId).ToDictionary(g => g.Key, g => g.Sum(d => d.Amount));
         var years = (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
             .Select(y => (y.StartDate, y.EndDate)).OrderBy(y => y.StartDate).ToList();
-        DateOnly Until(TaxLoss l)
-        {
-            var after = years.Where(y => y.StartDate > l.YearEnd).ToList();
-            var known = after.Where(y => TaxLossRules.TaxYearNumber(l.YearEnd, years, y.StartDate) <= 5).ToList();
-            if (known.Count == 0) return l.YearEnd.AddYears(5);
-            var last = known[^1];
-            var n = TaxLossRules.TaxYearNumber(l.YearEnd, years, last.StartDate);
-            return last.EndDate.AddYears(5 - n);
-        }
-        return losses.Select(l => (l, used.GetValueOrDefault(l.Id), Until(l))).ToList();
+        return losses.Select(l => (l, used.GetValueOrDefault(l.Id), TaxLossRules.WindowEnd(l, years))).ToList();
+    }
+
+    /// <summary>Potwierdzenie końca okresu odliczenia straty (gdy lat podatkowych po stracie nie ma w programie).</summary>
+    public async Task ConfirmLossWindowAsync(Guid lossId, DateOnly deductibleUntil, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        var loss = await _db.TaxLosses.FirstAsync(l => l.Id == lossId && l.CompanyId == _user.CompanyId, ct);
+        if (deductibleUntil <= loss.YearEnd || deductibleUntil > loss.YearEnd.AddMonths(5 * 24))
+            throw new DomainException("Koniec okresu odliczenia: ostatni dzień 5. roku podatkowego po roku straty.");
+        loss.DeductibleUntil = deductibleUntil;
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_OKRES", "TaxLoss", loss.Id.ToString(), $"{loss.YearLabel}: odliczenie do {deductibleUntil.ToPl()}", ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Jednostki transparentne podatkowo (spółka jawna, partnerska, cywilna, osoba fizyczna) nie są podatnikami CIT.</summary>

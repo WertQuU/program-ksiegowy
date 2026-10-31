@@ -72,6 +72,7 @@
             <TextBox Text="{Binding LossYearEnd}" Watermark="koniec roku dd.mm.rrrr" MinWidth="140" />
             <CheckBox Content="zyski kapitałowe" IsChecked="{Binding LossCapital}" />
             <TextBox Text="{Binding LossAmount}" Watermark="kwota straty" />
+            <TextBox Text="{Binding LossUntil}" Watermark="odliczenie do (koniec 5. roku podatk.)" MinWidth="210" ToolTip.Tip="Wymagane, gdy lat podatkowych po stracie nie ma w programie — ostatni dzień 5. roku podatkowego po roku straty" />
             <Button Content="Zarejestruj stratę" Command="{Binding AddLossCommand}" IsEnabled="{Binding IsApplicable}" />
             <Button Content="Przenieś stratę z poprzedniego roku (z programu)" Command="{Binding RegisterPreviousYearLossCommand}" IsEnabled="{Binding IsApplicable}" />
           </WrapPanel>
@@ -80,6 +81,8 @@
             <TextBox Text="{Binding LossFromPeriod}" Watermark="od okresu nr" MinWidth="90" />
             <CheckBox Content="jednorazowo (do 5 mln zł)" IsChecked="{Binding LossOneTime}" />
             <Button Content="Odlicz zaznaczoną stratę" Command="{Binding DeductLossCommand}" IsEnabled="{Binding IsApplicable}" />
+            <Button Content="Potwierdź okres odliczenia zaznaczonej" Command="{Binding ConfirmLossWindowCommand}" IsEnabled="{Binding IsApplicable}" />
+            <Button Content="Oceń wykorzystanie (podatek odroczony)…" Command="{Binding AssessLossCommand}" IsEnabled="{Binding IsApplicable}" />
           </WrapPanel>
           <c:TableView Table="{Binding Losses}" SelectedRow="{Binding SelectedLoss}" />
         </DockPanel>

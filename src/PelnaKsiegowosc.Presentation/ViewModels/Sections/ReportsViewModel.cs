@@ -245,6 +245,8 @@ public sealed partial class ReportsViewModel : SectionViewModel
         var missing = FinancialStatementCompleteness.Check(bs, r, notesTexts.Values, notesTexts["kontynuacja"], notesTexts["zasady"],
             y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany, AuditRequired, scope);
         var draft = missing.Count > 0;
+        if (AuditRequired && scope != StatementScope.Inna)
+            await Dialogs.InfoAsync("Sprawozdanie podlega badaniu", "Jednostka mała/mikro podlegająca badaniu: struktura sprawozdania wynika z kategorii jednostki i polityki rachunkowości (zał. nr 4/5 UoR). Potwierdź z biegłym rewidentem zakres sprawozdania (zestawienie zmian w kapitale, rachunek przepływów) przed podpisaniem.");
         if (draft && !await Dialogs.ConfirmAsync("Sprawozdanie niekompletne",
                 "Sprawozdania nie można oznaczyć jako gotowego do podpisu i złożenia:" + Environment.NewLine + string.Join(Environment.NewLine, missing.Select(m => "• " + m)) +
                 Environment.NewLine + Environment.NewLine + "Zapisać WERSJĘ ROBOCZĄ (tylko do przeglądu, nie do podpisu ani KRS)?"))
