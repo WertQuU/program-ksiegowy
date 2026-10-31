@@ -132,9 +132,17 @@ public class CapitalEvent : CompanyEntity
             form == Companies.LegalForm.ProstaSpolkaAkcyjna && Type == CapitalEventType.UchwalenieDywidendy;
         if (needsPayoutCheck && !SolvencyTestConfirmed)
             missing.Add("potwierdzenie dopuszczalności wypłaty: " + Companies.LegalForms.PayoutRule(form));
-        if (needsPayoutCheck && form == Companies.LegalForm.ProstaSpolkaAkcyjna &&
-            (string.IsNullOrWhiteSpace(SolvencyTestNotes) || SolvencyTestNotes.Trim().Length < 20))
-            missing.Add("P.S.A.: udokumentowane wyliczenie dopuszczalnej kwoty podziału, wymaganego kapitału i prognozy płynności na 6 miesięcy (odnośnik do wyliczenia w polu oceny wypłacalności, min. 20 znaków)");
+        if (needsPayoutCheck && form == Companies.LegalForm.ProstaSpolkaAkcyjna)
+        {
+            // Długa adnotacja tekstowa nie potwierdza arytmetycznego limitu
+            // podziału ani minimalnej ochrony kapitału. Od wersji 1.0.0
+            // wymagamy obliczalnego, udokumentowanego zestawu danych.
+            if (!PsaPayoutAssessment.TryParse(SolvencyTestNotes, out var assessment))
+                missing.Add("P.S.A.: brak ustrukturyzowanej oceny liczbowej (JSON) z zatwierdzonego sprawozdania, uchwały i prognozy płynności na 6 miesięcy");
+            else
+                foreach (var problem in assessment!.Problems(this))
+                    missing.Add("P.S.A.: " + problem);
+        }
         if (TotalAmount <= 0 && ShareCapitalAmount <= 0) missing.Add("kwota zdarzenia");
         return missing;
     }
