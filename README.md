@@ -1,12 +1,43 @@
 # Pełna Księgowość
 
-Program do prowadzenia **pełnej księgowości (ksiąg rachunkowych)** zgodnie z polską ustawą o rachunkowości —
-dla spółek kapitałowych (sp. z o.o., P.S.A., S.A.), spółek osobowych, fundacji, stowarzyszeń, spółdzielni
-i działalności gospodarczej prowadzącej księgi rachunkowe. Działa na **Windows i Linux**, lokalnie bez Internetu
-(SQLite) albo na wielu stanowiskach z serwerem PostgreSQL. Moduły VAT/JPK, KSeF, CIT, środki trwałe, kapitały,
-zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Object Storage).
+[![CI](https://github.com/WertQuU/program-ksiegowy/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/WertQuU/program-ksiegowy/actions/workflows/ci.yml)
+![Wersja](https://img.shields.io/badge/wersja-1.0.0-informational)
+![Etap](https://img.shields.io/badge/etap-w%20rozwoju-orange)
+
+Aplikacja desktopowa na **Windows i Linux** do prowadzenia ksiąg rachunkowych, ewidencji,
+rozliczeń podatkowych, obsługi dokumentów i przygotowywania raportów. Projekt jest w trakcie
+wdrażania i weryfikacji; **nie posiada obecnie zatwierdzonego wydania produkcyjnego ani
+potwierdzenia pełnej zgodności prawno-podatkowej**.
+
+> **Ważne:** nie wykorzystuj niezweryfikowanych obliczeń programu jako wyłącznej podstawy
+> rzeczywistych deklaracji, list płac ani księgowań. Przed wdrożeniem potrzebne są testy
+> integracyjne i merytoryczna kontrola wyników. Testy na `main` po PR #2
+> [zakończyły się niepowodzeniem](https://github.com/WertQuU/program-ksiegowy/actions/runs/41225853083)
+> (15 testów na Windows i Linux). Poprawki są rozwijane osobno i wymagają ponownej weryfikacji.
+
+**Aktualna architektura pracy:** jedna **centralna baza PostgreSQL**. Każdy operator
+używa osobnego loginu PostgreSQL nadanego przez administratora; identyfikator w programie
+ma postać `db:login`. Ten sam login może być użyty na kilku urządzeniach, ale **tylko jedna
+aktywna instancja programu na login jednocześnie** (sesyjna blokada serwera). Techniczne
+połączenia SQL w obrębie tej samej instancji nie są w ten sposób limitowane. SQLite jest
+wykorzystywana w odizolowanych autotestach i wybranych operacjach odzyskiwania, **nie jako
+standardowa baza robocza**.
 
 ![Pulpit](docs/zrzuty/pulpit.png)
+
+## Status funkcji i bezpieczeństwa
+
+| Obszar | Stan |
+|---|---|
+| Wspólna baza ksiąg | PostgreSQL; wymaga indywidualnych kont SQL i administracji serwerem |
+| Operatorzy i role | Loginy `db:login`, role w aplikacji, blokada jednej aktywnej sesji na login |
+| Uprawnienia PostgreSQL | **Wymagają utwardzenia po stronie serwera**; sama rola aplikacyjna nie zabezpiecza bezpośredniego SQL |
+| Równoległa praca | Wymagane dalsze testy numeracji, transakcji i konfliktów zapisów |
+| Załączniki | Mogą pozostawać na lokalnym dysku; **nie są automatycznie współdzielone między stanowiskami** |
+| Archiwum PDF | Osobny statyczny PDF dla dowodu i indeks SHA-256; nie zastępuje elektronicznych oryginałów i załączników |
+| KSeF, JPK, VAT, PIT/CIT, ZUS | Implementacja wymaga niezależnej weryfikacji merytorycznej i prawnej |
+| Kopie i odtwarzanie | Dostępne narzędzia; pełna procedura odtworzenia produkcyjnego PostgreSQL wymaga sprawdzenia |
+
 
 ## Najważniejsze cechy
 
@@ -61,9 +92,10 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   eksport do **PDF, XLSX i CSV**; sprawozdanie finansowe w XML.
 - **Kopie zapasowe** szyfrowane AES-256-GCM, weryfikowane po zapisie, odtwarzanie do nowej lokalizacji,
   kopie automatyczne i przy zamknięciu programu, opcjonalnie w OVHcloud Object Storage (S3).
-- **Bez osobnego logowania**: dostęp chroni konto systemu operacyjnego (i konto serwera PostgreSQL);
-  operator jest zapisywany w dzienniku zdarzeń. Hasła i klucze w magazynie systemu (Windows: Menedżer
-  poświadczeń, Linux: pęk kluczy) — nigdy w plikach konfiguracji.
+- **Logowanie operatora przez PostgreSQL**: każdy operator ma odrębny login serwera;
+  administrator rejestruje odpowiedni identyfikator `db:login` i nadaje role w aplikacji.
+  Dostęp wymaga również właściwych uprawnień i konfiguracji TLS po stronie PostgreSQL.
+  Hasła oraz klucze trafiają do magazynu sekretów systemu operacyjnego, a nie do pliku JSON.
 
 | Wydatek z kategorią | Rozlicz miesiąc |
 |---|---|
@@ -75,10 +107,12 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
 
 ## Pobranie i instalacja
 
-Trwają prace rozwojowe i przeglądy. Stare wydania zostały wycofane; obecnie nie ma oficjalnego wydania.
-Wersja programu: **1.0.0** (bez nowych wydań). Aktualny kod znajduje się na gałęzi **main**.
-Pakiety testowe są budowane w GitHub Actions jako artefakty; publikacja w **Releases** wymaga osobnego,
-świadomego uruchomienia workflow z numerem wydania.
+Trwają prace rozwojowe i audyty. Stare wydania zostały wycofane; **nie ma oficjalnego wydania produkcyjnego**.
+Wersja pozostaje **1.0.0**. Stabilny punkt odniesienia kodu znajduje się na gałęzi **main**, a prace
+naprawcze są przygotowywane w osobnych Pull Requestach.
+
+Archiwa instalacyjne są tworzone w GitHub Actions **wyłącznie po przejściu odpowiednich etapów CI**;
+publikacja w **Releases** wymaga osobnego uruchomienia workflow przez uprawnioną osobę.
 
 Docelowe formaty pakietów (bez potrzeby instalowania .NET):
 
@@ -107,6 +141,31 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 | [SECURITY.md](SECURITY.md) / [CONTRIBUTING.md](CONTRIBUTING.md) | Zgłaszanie podatności, zasady współtworzenia |
 | [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) / [schemas/README.md](schemas/README.md) | Licencje bibliotek, oficjalne schematy XSD |
 
+## Konfiguracja centralnej bazy i operatorów
+
+1. Administrator przygotowuje serwer PostgreSQL, bazę, połączenie z weryfikacją TLS
+   i osobne konto SQL dla każdej osoby. **Nie należy udostępniać operatorom konta superuser,
+   właściciela schematu ani konta do migracji.**
+2. Administrator rejestruje w programie operatora jako `db:login` i przydziela role.
+   Konto SQL i konto aplikacyjne to **dwie oddzielne czynności**.
+3. Użytkownik wpisuje na swoim stanowisku adres serwera, nazwę bazy, swój login
+   i hasło. Ponowne otwarcie programu na drugim urządzeniu z tym samym loginem jest
+   możliwe po zakończeniu aktywnej sesji na pierwszym.
+4. Administrator ustala wspólną, kontrolowaną i szyfrowaną lokalizację załączników
+   oraz strategię spójnych kopii bazy i plików. **Obecne przechowywanie załączników
+   lokalnie nie zapewnia współdzielenia ich przez wiele komputerów.**
+5. Migracje schematu są zadaniem administracyjnym. Polecenie
+   `pk-cli aktualizuj-schemat --potwierdzam` wymaga aktywnego administratora,
+   zamknięcia pozostałych sesji i zweryfikowanej kopii bezpieczeństwa.
+   Przed użyciem na rzeczywistych danych przetestuj odtwarzanie.
+
+**Archiwizacja papierowa:** w sekcji *Dokumenty* znajduje się opcja
+*Archiwizuj wszystkie dowody do PDF*. Eksport tworzy statyczne wydruki dokumentów
+i indeks z sumami SHA-256. PDF można technicznie zmodyfikować; hash służy do
+wykrywania niezgodności, ale nie zastępuje podpisu ani niezależnego,
+chronionego indeksu. **Eksport nie obejmuje automatycznej konwersji wszystkich
+załączników i nie zastępuje oryginalnych faktur KSeF/XML.**
+
 ## Znane ograniczenia
 
 - Oficjalne schematy XSD MF (JPK_V7M/V7K, JPK_KR_PD, e-Sprawozdanie SFJINZ(2), FA(3)) są dołączone do programu
@@ -127,6 +186,10 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
   ręcznie w pozycji faktury.
 - Mapowania podatkowe i księgowe wymagają weryfikacji przez księgowego lub doradcę podatkowego
   ([docs/COMPLIANCE_MATRIX.md](docs/COMPLIANCE_MATRIX.md)).
+- Kluczowe otwarte zadania dotyczą m.in. szczególnych zasad ustalania podstawy chorobowego,
+  godzinowego rozliczania urlopów, pełnej zgodności JPK/KSeF, uprawnień SQL,
+  współbieżności księgowań i weryfikacji odtwarzania PostgreSQL.
+- **Przejście testów CI nie jest równoznaczne z prawną certyfikacją programu.**
 
 ## Licencja
 
