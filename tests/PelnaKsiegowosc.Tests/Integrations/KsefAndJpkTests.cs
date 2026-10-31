@@ -309,6 +309,11 @@ public class KsefAndJpkTests
         Assert.Equal("BPAI", Marker("801"));
         Assert.Equal("BAAII1c_W", Marker("010-03"));
         Assert.Equal("BAAII1c_U", Marker("070-03"));
+        // ZOiS: konta ostatecznego zapisu (S_1, XSD TZOiS) z kontem syntetycznym jako nadrzędnym w S_3 — syntetyka nie jest
+        // dublowana jako odrębny wiersz (wyjaśnienia MF: konto ostatecznego zapisu — syntetyczne lub analityczne)
+        Assert.Equal("700", zois.Single(z => z.Element(ns + "S_1")!.Value == "700-01").Element(ns + "S_3")!.Value);
+        Assert.DoesNotContain(zois, z => z.Element(ns + "S_1")!.Value == "700");
+        Assert.Equal("801", zois.Single(z => z.Element(ns + "S_1")!.Value == "801").Element(ns + "S_3")!.Value); // konto bez analityki
         var ctrl = r.Document.Descendants(ns + "Ctrl").Single();
         Assert.Equal(ctrl.Element(ns + "C_4")!.Value, ctrl.Element(ns + "C_5")!.Value);
         Assert.True(r.Document.Descendants(ns + "Dziennik").Count() > 5);

@@ -82,3 +82,25 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | JPK_CIT — zakres i termin | harmonogram w asystencie: od lat podatkowych 2025 — PGK i podatnicy > 50 mln euro (oznaczenie w sekcji CIT), od 2026 — podatnicy z JPK_V7M, od 2027 — z JPK_V7K i pozostali; termin do końca 7. miesiąca po roku | potwierdzać zmiany terminów w komunikatach MF |
 | KSeF — terminy obowiązku, sankcje | do potwierdzenia (reguły w rejestrze przepisów) | — |
 | RODO | dane osobowe tylko w bazie lokalnej / własnym serwerze, szyfrowane kopie, brak telemetrii, dziennik zdarzeń | rejestr czynności przetwarzania prowadzi spółka |
+
+
+## Audyt 31.10.2026 (commit 580b021) — rozstrzygnięcia
+
+| Ustalenie | Stan |
+|---|---|
+| PK-01 JPK_KR_PD bez kont syntetycznych | Bez zmian algorytmu: XSD (TZOiS, S_1) i wyjaśnienia MF wymagają kont ostatecznego zapisu; konto syntetyczne w S_3. Test potwierdzający. |
+| PK-02 Fundusz Pracy | Poprawione: próg = pełne minimalne wynagrodzenie, w przeliczeniu na miesiąc, łącznie z innymi tytułami u płatnika. |
+| PK-03 KSeF waluta | Poprawione: dokument walutowy bez kursu, tabeli i daty kursu nie może być zatwierdzony ani zaksięgowany. |
+| PK-04 przynależność do jednostki | Poprawione: globalny filtr jednostki i blokada zapisu rekordów innej jednostki w sesji; jawne warunki w usługach. |
+| PK-05 zamknięcie roku | Sprawozdanie po zamknięciu okresów (na dzień bilansowy); ostateczne zamknięcie wymaga potwierdzenia bez zapisu zatwierdzenia SF (art. 12 ust. 4). |
+| PK-06 RPP | Ograniczenie: metoda uproszczona; wersja „gotowa do podpisu” pełnego sprawozdania wymaga udokumentowanej weryfikacji RPP. Rozdzielenie wpływów/wydatków brutto — do wykonania. |
+| PK-07 klucz kosztów | Poprawione: wymagane zatwierdzenie z metodologią; bez niego RZiS kalkulacyjny nie przechodzi kontroli. |
+| PK-08 informacja dodatkowa | Poprawione: potwierdzenie treści per rok (zmiana tekstu unieważnia). |
+| PK-09 nadwyżka VAT | Poprawione: rejestr złożonych deklaracji i korekt (UPO); P_39 z ostatniej. |
+| PK-10 JPK bez XSD | Poprawione: plik oznaczony jako roboczy, okres nieoznaczany jako przygotowany. |
+| PK-11/PK-12 | Ostrzeżenia i zatwierdzenia istniejące; wymagają oceny doradcy. |
+| PK-13 CIT-8 „nadpłata” | Poprawione: zaliczki należne vs wpłaty wg ksiąg i saldo rozrachunku. |
+| PK-14 JPK_ST_KR | Ograniczenie: brak generatora (schemat nieopublikowany w repozytorium; zwolnienie 2026–2028 w projekcie rozporządzenia). |
+| PK-15 rozliczenia wielowalutowe | Ograniczenie: ręcznie (program blokuje automatyczne rozliczenie). |
+| PK-16 integralność załączników | Poprawione: pełna kontrola obecności, odszyfrowania, rozmiaru i SHA-256. |
+| PK-17 limity archiwum | Poprawione: limity liczby plików i rozmiaru po dekompresji, sprzątanie plików tymczasowych. |
