@@ -117,7 +117,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     // Sekret KSeF podaje operator stanowiska; trafia WYŁĄCZNIE do lokalnego magazynu sekretów.
     [ObservableProperty] private bool _configureKsef;
     [ObservableProperty] private string _ksefToken = "";
-    [ObservableProperty] private Choice<KsefEnvironment> _ksefEnvironment = Choices.Of<KsefEnvironment>().First(x => x.Value == KsefEnvironment.Produkcja);
+    [ObservableProperty] private Choice<KsefEnvironment> _ksefEnvironment = Choices.Of<KsefEnvironment>().First(x => x.Value == global::PelnaKsiegowosc.Infrastructure.Configuration.KsefEnvironment.Produkcja);
     public List<Choice<KsefEnvironment>> KsefEnvironments { get; } = Choices.Of<KsefEnvironment>();
 
     [ObservableProperty] private string _summary = "";
@@ -221,8 +221,8 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private async Task CheckDatabaseAsync()
     {
         var p = Database.ToProfile();
-        if (p.Engine == DatabaseEngine.PostgreSql && !string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
-        if (p.Engine == DatabaseEngine.Sqlite) Directory.CreateDirectory(Path.GetDirectoryName(p.SqlitePath!)!);
+        if (p.Engine != DatabaseEngine.PostgreSql) throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
+        if (!string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
         if (Session.Connector.SqliteKeyMissing(p))
         {
             var key = await Dialogs.PromptAsync("Klucz bazy", "Plik bazy jest zaszyfrowany (RODO). Wpisz klucz bazy — administrator wyświetli go na stanowisku, " +
@@ -273,9 +273,20 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     {
         if (Finished) { Completed?.Invoke(this, EventArgs.Empty); return; }
         var profile = Session.Config.ActiveDatabase;
+        await Session.AcquireOperatorSessionAsync();
         await using (var db = Session.OpenDb())
         {
-            await db.Database.MigrateAsync();
+            if (!ConnectToExisting)
+                await db.Database.MigrateAsync();
+            else
+            {
+                var id = await db.Companies.Select(c => c.Id).FirstOrDefaultAsync();
+                if (id == Guid.Empty)
+                    throw new DomainException("W bazie brakuje ksiąg. Sprawdź konfigurację serwera.");
+                var login = OperatorIdentity.LoginFor(profile);
+                await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+                    OperatorIdentity.IdFor(login), login, id);
+            }
             if (!ConnectToExisting)
             {
                 if (await db.Companies.AnyAsync()) throw new DomainException("Baza zawiera już księgi — wróć do kroku wyboru bazy.");
