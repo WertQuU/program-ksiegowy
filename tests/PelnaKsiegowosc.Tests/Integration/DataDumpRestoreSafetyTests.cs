@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Infrastructure.Backup;
+using PelnaKsiegowosc.Tests.Infrastructure;
 
 namespace PelnaKsiegowosc.Tests.Integration;
 
@@ -39,4 +40,24 @@ public sealed class DataDumpRestoreSafetyTests
             if (Directory.Exists(root)) Directory.Delete(root, true);
         }
     }
+    [Fact]
+    public async Task Validation_before_commit_rolls_back_all_imported_books()
+    {
+        await using var source = await TestBooks.CreateAsync();
+        var dump = Path.Combine(source.Directory, "export-for-rollback");
+        await DataDump.ExportAsync(source.Db, dump);
+        await using var target = TestBooks.Open(Path.Combine(source.Directory, "fresh-target.db"));
+        await target.Database.MigrateAsync();
+
+        var before = await DataDump.CountsAsync(target);
+        var error = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            DataDump.ImportAsync(target, dump, CancellationToken.None,
+                (_, _) => Task.FromException(new InvalidDataException("Celowo odrzucone sumy kontrolne"))));
+        Assert.Contains("Celowo odrzucone", error.Message);
+        var after = await DataDump.CountsAsync(target);
+        Assert.Equal(before.OrderBy(x => x.Key), after.OrderBy(x => x.Key));
+        Assert.Null(target.Database.CurrentTransaction);
+        Assert.Empty(target.ChangeTracker.Entries());
+    }
+
 }
