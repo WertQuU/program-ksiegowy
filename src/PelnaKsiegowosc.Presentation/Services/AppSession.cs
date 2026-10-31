@@ -23,15 +23,19 @@ public sealed record OpenResult(bool Success, string? Error, string? PreMigratio
 /// </summary>
 public sealed class AppSession
 {
-    public AppSession(AppPaths paths, AppConfig config, ISecretStore secrets, IClock clock)
+    public AppSession(AppPaths paths, AppConfig config, ISecretStore secrets, IClock clock, bool isolatedSelfTest = false)
     {
         Paths = paths;
+        IsIsolatedSelfTest = isolatedSelfTest;
         Config = config;
         Secrets = secrets;
         Clock = clock;
         Connector = new DatabaseConnector(secrets);
         User = OperatorIdentity.For(Guid.Empty);
     }
+
+    /// <summary>Wyłącznie hermetyczny scenariusz autotestu w katalogu tymczasowym — nie jest opcją użytkownika.</summary>
+    internal bool IsIsolatedSelfTest { get; }
 
     public AppPaths Paths { get; }
     public AppConfig Config { get; }
@@ -44,6 +48,8 @@ public sealed class AppSession
     /// <summary>Jedna aktywna instancja programu na login bazy (kilka połączeń SQL w tej instancji jest dozwolonych).</summary>
     public async Task AcquireOperatorSessionAsync(CancellationToken ct = default)
     {
+        if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+            return;
         if (Profile.Engine != DatabaseEngine.PostgreSql)
             throw new DomainException("Aktywne księgi wymagają centralnej bazy PostgreSQL. Lokalny SQLite pozostaje narzędziem migracji i odzyskiwania.");
         if (_operatorSession is { } current)
@@ -99,8 +105,9 @@ public sealed class AppSession
     /// <summary>Kontekst bazy ograniczony do jednostki sesji (gdy wybrana) — dane innych jednostek są niewidoczne i niezmienialne.</summary>
     public KsiegiDbContext OpenDb()
     {
-        if (Profile.Engine != DatabaseEngine.PostgreSql || _operatorSession is not { IsHealthy: true } active ||
-            active.Identity != ExclusivePostgresSession.ProfileIdentity(Profile))
+        if (!(IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite) &&
+            (Profile.Engine != DatabaseEngine.PostgreSql || _operatorSession is not { IsHealthy: true } active ||
+             active.Identity != ExclusivePostgresSession.ProfileIdentity(Profile)))
             throw new DomainException("Brak aktywnej, wyłącznej sesji PostgreSQL. Operacje księgowe są zablokowane.");
         var db = Connector.CreateContext(Profile);
         if (Company is { } c) db.CompanyScope = c.Id;
@@ -192,7 +199,15 @@ public sealed class AppSession
         // Wiele stanowisk nie może równocześnie wykonywać migracji schematu.
         // Uaktualnienia wymagają osobnej operacji administratora przy zatrzymanych klientach.
         if (test.PendingMigrations > 0)
-            return new OpenResult(false, "Serwer ma nieaktualny schemat PostgreSQL. Administrator musi wykonać aktualizację z kopią bezpieczeństwa po zatrzymaniu innych stanowisk.", null);
+        {
+            if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+            {
+                await using var isolated = OpenDb();
+                await isolated.Database.MigrateAsync(ct);
+            }
+            else
+                return new OpenResult(false, "Serwer ma nieaktualny schemat PostgreSQL. Administrator musi wykonać aktualizację z kopią bezpieczeństwa po zatrzymaniu innych stanowisk.", null);
+        }
         SaveConfig();
         await RefreshAsync(ct);
         await Attachments.EncryptLegacyFilesAsync(ct); // załączniki zapisane wcześniej jawnie — szyfrowane przy otwarciu
