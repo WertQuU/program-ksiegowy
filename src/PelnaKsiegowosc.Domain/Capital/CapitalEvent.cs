@@ -128,8 +128,13 @@ public class CapitalEvent : CompanyEntity
                 if (ShareholderId is null) missing.Add(Companies.LegalForms.OwnerName(form));
                 break;
         }
-        if (IsPayoutToShareholders(Type) && !SolvencyTestConfirmed)
+        var needsPayoutCheck = IsPayoutToShareholders(Type) ||
+            form == Companies.LegalForm.ProstaSpolkaAkcyjna && Type == CapitalEventType.UchwalenieDywidendy;
+        if (needsPayoutCheck && !SolvencyTestConfirmed)
             missing.Add("potwierdzenie dopuszczalności wypłaty: " + Companies.LegalForms.PayoutRule(form));
+        if (needsPayoutCheck && form == Companies.LegalForm.ProstaSpolkaAkcyjna &&
+            (string.IsNullOrWhiteSpace(SolvencyTestNotes) || SolvencyTestNotes.Trim().Length < 20))
+            missing.Add("P.S.A.: udokumentowane wyliczenie dopuszczalnej kwoty podziału, wymaganego kapitału i prognozy płynności na 6 miesięcy (odnośnik do wyliczenia w polu oceny wypłacalności, min. 20 znaków)");
         if (TotalAmount <= 0 && ShareCapitalAmount <= 0) missing.Add("kwota zdarzenia");
         return missing;
     }
