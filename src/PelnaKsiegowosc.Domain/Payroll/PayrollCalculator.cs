@@ -49,7 +49,7 @@ public sealed record PayrollRules(
 /// do dni roboczych miesiąca.
 /// </summary>
 public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m,
-    int? CalendarDaysInMonth = null);
+    int? CalendarDaysInMonth = null, int? SickYear = null);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
 /// <param name="AuthorCosts">Koszty 50% (art. 22 ust. 9 pkt 1–3 ustawy o PIT) uwzględnione od początku roku — limit roczny.</param>
@@ -100,7 +100,9 @@ public static class PayrollCalculator
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
             var sickBasis = (a.SickBasis ?? gross) * (1 - 0.1371m);
             // art. 92 KP: wynagrodzenie chorobowe płaci pracodawca do 33 dni w roku (14 dni — pracownik po 50. roku życia); dalej zasiłek ZUS
-            var limit = PayrollRules.EmployerSickDaysLimit(e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel), rules.Year);
+            // Art. 92 KP: limit dotyczy roku wystąpienia niezdolności, nie roku wypłaty
+            // (np. choroba w grudniu wypłacona w styczniu).
+            var limit = PayrollRules.EmployerSickDaysLimit(e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel), a.SickYear ?? rules.Year);
             var employerDays = Math.Clamp(limit - ytd.EmployerSickDays, 0, a.SickDays);
             it.SickPay = R2(sickBasis * a.SickRatePercent / 100m / 30m * employerDays);
             it.SickDays = a.SickDays;
