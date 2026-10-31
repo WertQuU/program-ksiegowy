@@ -1,8 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Infrastructure.Backup;
 using PelnaKsiegowosc.Infrastructure.Configuration;
+using PelnaKsiegowosc.Tests.Infrastructure;
 
 namespace PelnaKsiegowosc.Tests.Integration;
 
@@ -54,4 +56,28 @@ public class BackupCompletenessAuditTests
         books.Db.ChangeTracker.Clear();
         Assert.Equal("BŁĄD", (await books.Db.BackupRecords.SingleAsync()).Status);
     }
+    [Fact]
+    public async Task Server_restore_refuses_nonempty_attachment_store_without_overwriting_existing_files()
+    {
+        var (source, files) = await BackupTests.BooksWithAttachmentAsync();
+        await using var _ = source;
+        var service = new BackupService(source.Clock, Path.Combine(source.Directory, "staging"));
+        var sourceProfile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = source.DbPath };
+        var backup = await service.CreateAsync(source.Db, sourceProfile, files, null,
+            new BackupOptions(Key, Path.Combine(source.Directory, "copies")));
+
+        await using var target = TestBooks.Open(Path.Combine(source.Directory, "new-empty.db"));
+        await target.Database.MigrateAsync();
+        var root = Path.Combine(source.Directory, "target-attachments");
+        var targetFiles = new LocalFileStore(root, System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
+        var protectedFile = Path.Combine(root, "existing-evidence.bin");
+        await File.WriteAllTextAsync(protectedFile, "wazny istniejący dokument");
+
+        var ex = await Assert.ThrowsAsync<DomainException>(() =>
+            service.RestoreToDatabaseAsync(backup.FilePath, Key, target, targetFiles));
+        Assert.Contains("pustego magazynu", ex.Message);
+        Assert.Equal("wazny istniejący dokument", await File.ReadAllTextAsync(protectedFile));
+        Assert.Equal(0, await target.Companies.CountAsync());
+    }
+
 }
