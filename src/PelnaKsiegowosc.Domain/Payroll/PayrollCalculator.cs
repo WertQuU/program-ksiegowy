@@ -81,6 +81,17 @@ public static class PayrollCalculator
     {
         if (ppkEmployerTaxable < 0) throw new Common.DomainException("Kwota wpłat PPK do opodatkowania nie może być ujemna.");
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
+        // Kontrola wejścia musi nastąpić PRZED warunkiem obecności nieobecności.
+        // Dotychczas przy SickDays < 0 i UnpaidWorkingDays == 0 pomijano
+        // cały blok walidacji, co pozwalało zachować nieprawidłowe dane.
+        if (absence is { } given &&
+            (given.SickDays < 0 || given.SickDays > 31 ||
+             given.UnpaidWorkingDays < 0 || given.WorkingDaysInMonth <= 0 ||
+             given.UnpaidWorkingDays > given.WorkingDaysInMonth ||
+             (given.CalendarDaysInMonth is { } monthDays &&
+              (monthDays is < 28 or > 31 || given.SickDays > monthDays)) ||
+             (given.SickDays > 0 && given.SickRatePercent is not (80m or 100m))))
+            throw new Common.DomainException("Nieprawidłowa liczba dni nieobecności lub stawka wynagrodzenia chorobowego.");
         var fullMonthGross = gross;
         var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType, BaseGross = gross };
         var notes = new List<string>();
