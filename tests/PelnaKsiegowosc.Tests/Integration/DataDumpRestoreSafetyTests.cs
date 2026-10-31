@@ -30,6 +30,7 @@ public sealed class DataDumpRestoreSafetyTests
             Assert.True(db.ChangeTracker.AutoDetectChangesEnabled);
             await Assert.ThrowsAnyAsync<Exception>(() => DataDump.ImportAsync(db, dump));
             Assert.True(db.ChangeTracker.AutoDetectChangesEnabled);
+            Assert.Empty(db.ChangeTracker.Entries());
             Assert.Null(db.Database.CurrentTransaction);
         }
         finally
