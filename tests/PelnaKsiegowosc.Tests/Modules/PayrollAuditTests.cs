@@ -14,6 +14,26 @@ public class PayrollAuditTests
     private const string Pesel = "90010112349";
     private static readonly DateOnly Start = new(2026, 1, 1);
 
+    [Fact]
+    public void Youth_relief_applies_through_26th_birthday_but_not_the_day_after()
+    {
+        var employee = new Employee
+        {
+            FirstName = "Ala", LastName = "Test",
+            ContractType = ContractType.UmowaOPrace,
+            BirthDate = new DateOnly(2000, 10, 31),
+            YouthRelief = true
+        };
+        var onBirthday = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            paymentDate: new DateOnly(2026, 10, 31));
+        var dayAfter = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            paymentDate: new DateOnly(2026, 11, 1));
+        Assert.True(onBirthday.ExemptRevenue > 0m);
+        Assert.Equal(0m, dayAfter.ExemptRevenue);
+        Assert.True(dayAfter.TaxAdvance > onBirthday.TaxAdvance);
+        Assert.Contains("Ulga dla młodych wyłączona", dayAfter.Notes);
+    }
+
     // ---------- PK-01: łączny limit 120 000 zł (art. 22 ust. 9aa) ----------
     [Fact]
     public void Author_costs_and_youth_exempt_revenue_share_120000_limit_not_85528()
