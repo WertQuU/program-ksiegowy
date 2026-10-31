@@ -86,7 +86,15 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                                AND c.relkind IN ('r','p','v','m','f')
                                AND pg_has_role(r.oid, c.relowner, 'MEMBER')
                            ),
-                           has_database_privilege(r.oid, d.oid, 'CREATE')
+                           has_database_privilege(r.oid, d.oid, 'CREATE'),
+                           EXISTS (
+                             SELECT 1 FROM pg_class c
+                             JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public'
+                               AND c.relkind IN ('r','p')
+                               AND (has_table_privilege(r.oid, c.oid, 'TRUNCATE')
+                                    OR has_table_privilege(r.oid, c.oid, 'TRIGGER'))
+                           )
                     FROM pg_roles r
                     JOIN pg_database d ON d.datname = current_database()
                     WHERE r.rolname = session_user
@@ -94,7 +102,7 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 await using var roles = await roleCheck.ExecuteReaderAsync(ct);
                 if (!await roles.ReadAsync(ct))
                     throw new DomainException("Nie można zweryfikować uprawnień operatora PostgreSQL.");
-                var privileged = Enumerable.Range(0, 9).Any(i => roles.GetBoolean(i));
+                var privileged = Enumerable.Range(0, 10).Any(i => roles.GetBoolean(i));
                 await roles.CloseAsync();
                 if (privileged)
                     throw new DomainException(
