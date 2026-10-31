@@ -121,6 +121,12 @@ public class KsefAndJpkTests
         var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, cp.Id, d, d,
             new[] { new DocumentLineInput("Usługa doradcza", 2, 1500m, "23", "usł."), new DocumentLineInput("Książka", 1, 100m, "5") }, DueDate: d.AddDays(14)));
         await docs.ApproveAsync(inv.Id);
+        // Test jawnie kwalifikuje transakcję poza KSeF; program nie zgaduje BFK.
+        if (d >= new DateOnly(2026, 2, 1))
+        {
+            inv.JpkMarker = JpkKsefMarker.BFK;
+            await t.Db.SaveChangesAsync();
+        }
         return inv;
     }
 
