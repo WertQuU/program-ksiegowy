@@ -159,6 +159,7 @@ public sealed partial class CapitalViewModel : SectionViewModel
     [ObservableProperty] private string _agreement = "";
     [ObservableProperty] private string _krsEntry = "";
     [ObservableProperty] private bool _payoutConfirmed;
+    [ObservableProperty] private string _payoutNotes = "";
     [ObservableProperty] private string _payoutRule = "";
 
     public static string EventName(CapitalEventType t, LegalForm f)
@@ -243,7 +244,8 @@ public sealed partial class CapitalViewModel : SectionViewModel
             },
             Description = Description.Trim(), DebitAccountNumber = Parse.Trim(DebitAccount), CreditAccountNumber = Parse.Trim(CreditAccount),
             ResolutionReference = Parse.Trim(Resolution), ResolutionDate = Parse.OptionalDate(ResolutionDate, "Data uchwały"), AgreementReference = Parse.Trim(Agreement),
-            KrsEntryReference = Parse.Trim(KrsEntry), SolvencyTestConfirmed = PayoutConfirmed
+            KrsEntryReference = Parse.Trim(KrsEntry), SolvencyTestConfirmed = PayoutConfirmed,
+             SolvencyTestNotes = Parse.Trim(PayoutNotes)
         };
         await using var db = Session.OpenDb();
         await new CapitalService(db, Session.User, Session.Clock).CreateEventAsync(ev);
