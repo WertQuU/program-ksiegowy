@@ -25,6 +25,8 @@
       <Button Content="Cofnij zatwierdzenie…" Command="{Binding UnapproveCommand}" />
       <Button Content="Proponuj dekretację" Command="{Binding ProposePostingCommand}" />
       <Button Content="Zaksięguj" Command="{Binding PostCommand}" />
+       <Button Content="Kwalifikacja KSeF/JPK…" Command="{Binding SetJpkClassificationCommand}"
+               ToolTip.Tip="Jawnie wybierz BFK, OFF lub DI i wskaż dowód. Nieustalonego statusu program nie zamienia na BFK." />
       <Button Content="Anuluj dokument…" Command="{Binding CancelDocumentCommand}" />
       <Button Content="Dodaj załącznik…" Command="{Binding AddAttachmentCommand}" />
       <Button Content="Zapisz załącznik…" Command="{Binding SaveAttachmentCommand}" />
