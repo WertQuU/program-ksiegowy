@@ -275,6 +275,11 @@ public sealed class PayrollService
     /// </summary>
     private async Task<Dictionary<Guid, PayrollItem>> ComputeItemsAsync(PayrollList list, IReadOnlyList<ItemInput> inputs, CancellationToken ct)
     {
+        // W przypadku wartości ujemnej nie utworzono by PayrollAbsence, ponieważ
+        // warunek tworzenia sprawdzał wyłącznie > 0. Walidujemy więc surowe
+        // wejście również tutaj, zanim wystąpi warunkowa konstrukcja modelu.
+        if (inputs.Any(i => i.SickDays < 0 || i.UnpaidDays < 0))
+            throw new DomainException("Liczba dni choroby i nieobecności nieodpłatnej nie może być ujemna.");
         var employees = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, ct);
         var monthEnd = list.Month.AddMonths(1).AddDays(-1);
         var sameMonth = employees.Values.Where(x => x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToList();
