@@ -244,6 +244,25 @@ public class PayrollAuditTests
         Assert.Equal(PayrollStatus.Zaksiegowana, list.Status);
     }
 
+    // ---------- P0: zaksięgowanie wsteczne nie może zmieniać limitów już zaksięgowanych wypłat ----------
+    [Fact]
+    public async Task Earlier_payment_is_blocked_after_later_payroll_for_same_person()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        await svc.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "Chronologia", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start
+        });
+        var later = await svc.CreateListAsync(new DateOnly(2026, 4, 1), new DateOnly(2026, 4, 10));
+        await svc.PostAsync(later.Id);
+        var earlier = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        var error = await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(earlier.Id));
+        Assert.Contains("późniejsza zaksięgowana wypłata", error.Message);
+        Assert.Equal(PayrollStatus.Robocza, earlier.Status);
+    }
+
     // ---------- PK-06: zmiana kwoty nie kasuje nieobecności ----------
     [Fact]
     public async Task Changing_gross_keeps_absence_days()
