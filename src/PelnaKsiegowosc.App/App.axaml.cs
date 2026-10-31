@@ -47,6 +47,7 @@ public partial class App : Avalonia.Application
             ErrorLog.Directory = paths.LogsDirectory;
             var config = AppConfig.LoadOrCreate(paths);
             var session = new AppSession(paths, config, SecretStoreFactory.Create(paths), new SystemClock());
+            desktop.Exit += (_, _) => session.ReleaseOperatorSession();
             ApplyTheme(config.Theme);
             session.ThemeChanged += ApplyTheme;
 
@@ -77,9 +78,9 @@ public partial class App : Avalonia.Application
                             $"ZAPISZ go w bezpiecznym miejscu (bez niego kopii nie da się odtworzyć):{Environment.NewLine}{Environment.NewLine}{rk}");
                     break;
                 }
-                var choice = await StartupErrorWindow.ShowAsync(current!, opened.Error ?? "Nie udało się otworzyć bazy.", session.Profile.Engine == Data.DatabaseEngine.PostgreSql);
+                var choice = await StartupErrorWindow.ShowAsync(current!, opened.Error ?? "Nie udało się otworzyć bazy.", false);
                 if (choice == StartupChoice.Exit) { desktop.Shutdown(1); return; }
-                if (choice == StartupChoice.Emergency && !await StartEmergencyAsync(session, dialogs)) continue;
+                // Bez lokalnej kopii roboczej: wszystkie stanowiska pracują na centralnym PostgreSQL.
             }
 
             var mainVm = new MainViewModel(session, dialogs);
