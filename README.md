@@ -11,7 +11,7 @@ potwierdzenia pełnej zgodności prawno-podatkowej**.
 
 > **Ważne:** program wymaga weryfikacji przed użyciem w realnej księgowości. Wyniki obliczeń podatkowych, list płac i raportów należy porównać z niezależnymi przykładami i aktualnymi przepisami. Testy CI nie stanowią certyfikacji prawnej.
 
-**Aktualna architektura pracy:** jedna **centralna baza PostgreSQL**. Każdy operator
+**Aktualna architektura pracy:** jedna **centralna baza PostgreSQL na jednostkę**. Program odrzuca bazę zawierającą wiele jednostek, ponieważ role operatorów nie mają jeszcze udowodnionej izolacji per jednostka. Bezpośredni dostęp SQL wymaga osobnego ograniczenia uprawnień po stronie serwera. Każdy operator
 używa osobnego loginu PostgreSQL nadanego przez administratora; identyfikator w programie
 ma postać `db:login`. Ten sam login może być użyty na kilku urządzeniach, ale **tylko jedna
 aktywna instancja programu na login jednocześnie** (sesyjna blokada serwera). Techniczne
