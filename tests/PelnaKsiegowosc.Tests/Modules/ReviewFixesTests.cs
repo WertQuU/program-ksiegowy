@@ -904,3 +904,58 @@ public class DebtFinancingControlCalculationTests
         Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
     }
 }
+
+public class ForeignCurrencyDocumentTests
+{
+    [Fact]
+    public async Task Foreign_currency_purchase_without_confirmed_rate_cannot_be_approved_or_posted()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("D010", "Supplier GmbH");
+        var docs = new DocumentService(t.Db, t.User, t.Clock);
+        var d = new DateOnly(2026, 3, 10);
+        // jak przy imporcie z KSeF: 1000 EUR z kursem tymczasowym 1,00 bez tabeli i daty
+        var input = new InvoiceInput(DocumentKind.FakturaZakupu, cp.Id, d, d, new[] { new DocumentLineInput("Usługa", 1, 1000m, "zw") },
+            DueDate: d.AddDays(14), Currency: "EUR", ExchangeRate: 1m, ExternalNumber: "INV-1", ReceiptDate: d);
+        var doc = await docs.CreateInvoiceAsync(input);
+        var v = await docs.ValidateAsync(await docs.GetAsync(doc.Id));
+        Assert.Contains(v.Errors, e => e.Contains("brak potwierdzonego kursu"));
+        await Assert.ThrowsAsync<DomainException>(() => docs.ApproveAsync(doc.Id));
+        await Assert.ThrowsAsync<DomainException>(() => docs.PostAsync(doc.Id));
+        // po wpisaniu kursu NBP z dnia poprzedzającego — 1000 EUR × 4,2512 = 4251,20 zł
+        await docs.UpdateInvoiceAsync(doc.Id, input with { ExchangeRate = 4.2512m, ExchangeRateTable = "047/A/NBP/2026", ExchangeRateDate = new DateOnly(2026, 3, 9) });
+        Assert.DoesNotContain((await docs.ValidateAsync(await docs.GetAsync(doc.Id))).Errors, e => e.Contains("kursu"));
+        Assert.Equal(4251.20m, (await docs.GetAsync(doc.Id)).NetAmountPln);
+    }
+}
+
+public class CompanyIsolationTests
+{
+    [Fact]
+    public async Task Operator_of_one_unit_cannot_read_post_reverse_or_change_entries_of_another_unit()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var entry = await t.Ledger().CreateDraftAsync(TestBooks.Entry(new DateOnly(2026, 1, 10), "PK/OBCY", new("130-01", 100m, 0), new("801", 0, 100m)));
+        var posted = await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 1, 11), "PK/OBCY2", new("130-01", 50m, 0), new("801", 0, 50m)));
+        await t.Db.SaveChangesAsync();
+        // zapisy „innej jednostki” w tej samej bazie
+        var other = Guid.NewGuid();
+        await t.Db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"JournalEntries\" SET \"CompanyId\" = {other} WHERE \"Id\" = {entry.Id}");
+        t.Db.ChangeTracker.Clear();
+        var ledger = t.Ledger();
+        await Assert.ThrowsAsync<DomainException>(() => ledger.PostAsync(entry.Id));
+        await Assert.ThrowsAsync<DomainException>(() => ledger.DeleteDraftAsync(entry.Id));
+
+        // kontekst sesji operatora: dane innej jednostki niewidoczne, a próba zapisu cudzego rekordu odrzucana
+        t.Db.CompanyScope = t.Company.Id;
+        Assert.False(await t.Db.JournalEntries.AnyAsync(e => e.Id == entry.Id));
+        Assert.True(await t.Db.JournalEntries.AnyAsync(e => e.Id == posted.Id));
+        t.Db.CompanyScope = null;
+        var foreign = await t.Db.JournalEntries.FirstAsync(e => e.Id == entry.Id);
+        t.Db.CompanyScope = t.Company.Id;
+        foreign.Description = "zmiana";
+        Assert.Throws<InvalidOperationException>(() => t.Db.SaveChanges());
+        t.Db.ChangeTracker.Clear();
+        t.Db.CompanyScope = null;
+    }
+}

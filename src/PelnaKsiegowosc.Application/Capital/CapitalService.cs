@@ -334,7 +334,7 @@ public sealed class CapitalService
         if (legacy.Paid != 0)
             throw new DomainException($"Wkład został już częściowo wpłacony ({Money.Format(legacy.Paid)} zł) — storno całego zapisu zaburzyłoby rozliczenie wpłat. " +
                 "Postępuj wg podręcznika („Kapitał P.S.A. — korekta wcześniejszych zapisów objęcia”): PK storno części niewpłaconej (Wn kapitał akcyjny/zapasowy, Ma należne wkłady).");
-        var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId, ct);
+        var ev = await _db.CapitalEvents.FirstAsync(e => e.Id == eventId && e.CompanyId == _user.CompanyId, ct);
         var reversal = await new LedgerService(_db, _user, _clock).ReverseAsync(ev.JournalEntryId!.Value,
             string.IsNullOrWhiteSpace(reason) ? "P.S.A.: kapitał akcyjny tworzą wniesione wkłady (art. 300^3 KSH) — objęcie przeniesione do ewidencji wkładów do wniesienia" : reason, null, ct);
         await _audit.AddAsync(_user, "KAPITAL_PSA_KOREKTA_OBJECIA", "CapitalEvent", ev.Id.ToString(), $"storno {legacy.JournalNumber} → {reversal.JournalNumber}", ct);

@@ -67,7 +67,13 @@ public sealed class AppSession
     public DatabaseProfile Profile => Config.ActiveDatabase;
     public string DatabaseDescription => Profile.SafeDescription + (Profile.IsEmergencyWorkingCopy ? " — KOPIA ROBOCZA TRYBU AWARYJNEGO" : "");
 
-    public KsiegiDbContext OpenDb() => Connector.CreateContext(Profile);
+    /// <summary>Kontekst bazy ograniczony do jednostki sesji (gdy wybrana) — dane innych jednostek są niewidoczne i niezmienialne.</summary>
+    public KsiegiDbContext OpenDb()
+    {
+        var db = Connector.CreateContext(Profile);
+        if (Company is { } c) db.CompanyScope = c.Id;
+        return db;
+    }
 
     public string AttachmentsRoot => Config.AttachmentsDirectory ?? Paths.AttachmentsDirectory;
     public LocalFileStore Attachments => new(AttachmentsRoot, TryAttachmentsKey(AttachmentsRoot), keyRequired: true);

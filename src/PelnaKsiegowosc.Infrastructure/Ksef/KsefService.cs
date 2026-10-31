@@ -148,7 +148,7 @@ public sealed class KsefService
                 var input = new InvoiceInput(DocumentKind.FakturaZakupu, seller.Id, parsed.IssueDate, parsed.OperationDate ?? parsed.IssueDate,
                     parsed.Lines.Select(l => new DocumentLineInput(l.Name, l.Quantity, l.UnitNetPrice, l.RateCode, l.Unit)).ToList(),
                     $"Import z KSeF {m.KsefNumber}", parsed.DueDate, parsed.Currency, 1m, ExternalNumber: parsed.Number, ReceiptDate: ReceiptDate(m));
-                if (parsed.Currency != "PLN") { errors.Add($"{m.KsefNumber}: faktura w walucie {parsed.Currency} — wprowadź kurs ręcznie."); input = input with { ExchangeRate = 1m }; }
+                if (parsed.Currency != "PLN") { errors.Add($"{m.KsefNumber}: faktura w walucie {parsed.Currency} — zapisana jako robocza z kursem tymczasowym; zatwierdzenie i księgowanie są zablokowane do czasu wpisania kursu, tabeli i daty kursu."); input = input with { ExchangeRate = 1m, ExchangeRateTable = null, ExchangeRateDate = null }; }
                 var doc = await docs.CreateInvoiceAsync(input, ct);
                 doc.KsefNumber = m.KsefNumber;
                 doc.KsefStatus = KsefStatus.Pobrana;

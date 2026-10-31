@@ -125,6 +125,7 @@ public sealed class PayrollService
         var accident = await AccidentRateAsync(ct);
         var hr = new HrService(_db, _user, _clock);
         var workingDays = Domain.Cit.PolishHolidays.WorkingDays(m.Year, m.Month);
+        var inputs = new Dictionary<PayrollItem, (Employee Employee, PayrollAbsence? Absence)>();
         foreach (var e in employees)
         {
             // nieobecności z ewidencji kadrowej (choroba, urlop bezpłatny) — tylko umowa o pracę
@@ -137,7 +138,19 @@ public sealed class PayrollService
             var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident, absence);
             it.PayrollListId = list.Id;
             list.Items.Add(it);
+            inputs[it] = (e, absence);
         }
+        // Fundusz Pracy: osoba z kilkoma tytułami u płatnika (ten sam PESEL) — próg od łącznej podstawy
+        foreach (var group in inputs.Where(x => !string.IsNullOrWhiteSpace(x.Value.Employee.Pesel)).GroupBy(x => x.Value.Employee.Pesel!.Trim()).Where(g => g.Count() > 1))
+            foreach (var (item, (emp, abs)) in group.ToList())
+            {
+                var others = group.Where(x => x.Key != item).Sum(x => x.Key.SocialBasis);
+                var fresh = PayrollCalculator.Compute(emp, emp.Gross, await YearToDateAsync(emp.Id, paymentDate, null, ct), rules, accident, abs, others);
+                fresh.Id = item.Id;
+                fresh.PayrollListId = list.Id;
+                var i = list.Items.IndexOf(item);
+                list.Items[i] = fresh;
+            }
         _db.PayrollLists.Add(list);
         await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_UTWORZONA", "PayrollList", list.Id.ToString(), $"{list.Number}; {list.Items.Count} os.", ct);
         await _db.SaveChangesAsync(ct);
@@ -157,7 +170,11 @@ public sealed class PayrollService
         var absence = sickDays > 0 || unpaidWorkingDays > 0
             ? new PayrollAbsence(sickDays, unpaidWorkingDays, Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month))
             : null;
-        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence);
+        var others = string.IsNullOrWhiteSpace(e.Pesel) ? 0m : (await (from x in _db.PayrollItems
+                                                                      join p in _db.Employees on x.EmployeeId equals p.Id
+                                                                      where x.PayrollListId == list.Id && x.Id != it.Id && p.Pesel == e.Pesel
+                                                                      select x.SocialBasis).ToListAsync(ct)).Sum();
+        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence, others);
         fresh.Id = it.Id;
         fresh.PayrollListId = list.Id;
         _db.Entry(it).CurrentValues.SetValues(fresh);

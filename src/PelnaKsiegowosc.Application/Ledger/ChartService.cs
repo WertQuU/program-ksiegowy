@@ -101,7 +101,7 @@ public sealed class ChartService
         if (string.IsNullOrWhiteSpace(name)) throw new DomainException("Nazwa konta jest wymagana.");
         if (await _db.Accounts.AnyAsync(a => a.ChartId == chartId && a.Number == number, ct)) throw new DomainException($"Konto {number} już istnieje.");
         ValidateLines(balanceDebitLine, balanceCreditLine, profitLossLine);
-        var chart = await _db.Charts.FirstAsync(c => c.Id == chartId, ct);
+        var chart = await _db.Charts.FirstAsync(c => c.Id == chartId && c.CompanyId == _user.CompanyId, ct);
         Account? parent = null;
         if (number.Contains('-'))
         {
@@ -150,7 +150,7 @@ public sealed class ChartService
         CitClassification cit, bool isActive, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageChartOfAccounts);
-        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId, ct);
+        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId && a.CompanyId == _user.CompanyId, ct);
         ValidateLines(balanceDebitLine, balanceCreditLine, profitLossLine);
         var before = $"{acc.Name}|{acc.BalanceDebitLine}|{acc.BalanceCreditLine}|{acc.ProfitLossLine}|{acc.CitClassification}|{acc.IsActive}";
         acc.Name = name.Trim();
@@ -167,7 +167,7 @@ public sealed class ChartService
     public async Task DeleteAccountAsync(Guid accountId, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageChartOfAccounts);
-        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId, ct);
+        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId && a.CompanyId == _user.CompanyId, ct);
         if (await _db.JournalLines.AnyAsync(l => l.AccountId == accountId, ct))
             throw new DomainException($"Konto {acc.Number} ma zapisy księgowe — nie może zostać usunięte. Możesz je oznaczyć jako nieaktywne.");
         if (await _db.Accounts.AnyAsync(a => a.ParentId == accountId, ct))
@@ -244,7 +244,7 @@ public sealed class ChartService
     public async Task<ChartOfAccounts> CopyChartToYearAsync(Guid sourceChartId, Guid targetFiscalYearId, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageChartOfAccounts);
-        var src = await _db.Charts.FirstAsync(c => c.Id == sourceChartId, ct);
+        var src = await _db.Charts.FirstAsync(c => c.Id == sourceChartId && c.CompanyId == _user.CompanyId, ct);
         var accounts = await GetAccountsAsync(sourceChartId, ct);
         var template = accounts.Where(a => a.IsActive).Select(a => new AccountTemplate(a.Number, a.Name, a.Type, a.BalanceDebitLine, a.BalanceCreditLine,
             a.ProfitLossLine, a.IsSettlementAccount, a.CitClassification)).ToList();

@@ -99,7 +99,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> UpdateDraftAsync(Guid entryId, EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == entryId, ct);
+        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         if (entry.IsPosted)
             throw new DomainException("Zapis zaksięgowany nie może być modyfikowany. Użyj funkcji „Korekta (storno)” — zapis pierwotny pozostanie w księgach.");
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
@@ -121,7 +121,7 @@ public sealed class LedgerService
     public async Task DeleteDraftAsync(Guid entryId, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == entryId, ct);
+        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         if (entry.IsPosted) throw new DomainException("Zapisu zaksięgowanego nie można usunąć.");
         _db.JournalEntries.Remove(entry);
         await _audit.AddAsync(_user, "ZAPIS_BUFOR_USUNIETY", "JournalEntry", entry.Id.ToString(), entry.DocumentNumber, ct);
@@ -132,7 +132,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> PostAsync(Guid entryId, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == entryId, ct);
+        var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
         try
         {
@@ -298,7 +298,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> ReverseAsync(Guid entryId, string reason, DateOnly? postingDate = null, CancellationToken ct = default)
     {
         _user.Require(Permission.CorrectEntries);
-        var original = await _db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == entryId, ct);
+        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         var reversal = await BuildAndPostReversalAsync(original, reason, postingDate, ct);
         await _db.SaveChangesAsync(ct);
         return reversal;
@@ -329,7 +329,7 @@ public sealed class LedgerService
     public async Task<(JournalEntry reversal, JournalEntry corrected)> CorrectAsync(Guid entryId, string reason, EntryInput corrected, CancellationToken ct = default)
     {
         _user.Require(Permission.CorrectEntries);
-        var original = await _db.JournalEntries.Include(e => e.Lines).FirstAsync(e => e.Id == entryId, ct);
+        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         var reversal = await BuildAndPostReversalAsync(original, reason, corrected.PostingDate, ct);
         var newEntry = await CreateAndPostAsync(corrected with { Kind = EntryKind.Korekta }, ct);
         newEntry.CorrectsEntryId = original.Id;
@@ -356,7 +356,7 @@ public sealed class LedgerService
         if (policy is null) throw new DomainException("Brak polityki rachunkowości — księgowanie zablokowane. Uzupełnij i zatwierdź politykę (Jednostka i polityka → Polityka rachunkowości).");
         var pv = policy.Validate();
         if (!pv.IsValid) throw new DomainException("Księgowanie zablokowane — polityka rachunkowości jest niekompletna:" + Environment.NewLine + string.Join(Environment.NewLine, pv.Errors));
-        var chart = await _db.Charts.FirstAsync(c => c.Id == chartId, ct);
+        var chart = await _db.Charts.FirstAsync(c => c.Id == chartId && c.CompanyId == _user.CompanyId, ct);
         if (!chart.IsApproved) throw new DomainException("Księgowanie zablokowane — plan kont nie został zatwierdzony (Plan kont → Zatwierdź).");
     }
 

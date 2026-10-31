@@ -173,7 +173,7 @@ public sealed class FixedAssetService
 
     public async Task<(decimal gross, decimal accumulatedBook, decimal accumulatedTax, decimal netBook)> ValuesAsOfAsync(Guid assetId, DateOnly asOf, CancellationToken ct = default)
     {
-        var a = await _db.FixedAssets.AsNoTracking().Include(x => x.Operations).FirstAsync(x => x.Id == assetId, ct);
+        var a = await _db.FixedAssets.AsNoTracking().Include(x => x.Operations).FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
         var charges = await _db.DepreciationCharges.AsNoTracking().Where(c => c.FixedAssetId == assetId).ToListAsync(ct);
         var upto = charges.Where(c => new DateOnly(c.Year, c.Month, 1) <= asOf).ToList();
         var gross = a.InitialValueBook + a.Operations.Where(o => o.Date <= asOf && o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.AktualizacjaWyceny or FixedAssetOperationType.CzesciowaLikwidacja).Sum(o => o.BookValueChange);

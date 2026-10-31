@@ -27,6 +27,24 @@ public class KsiegiDbContext : DbContext
 {
     public KsiegiDbContext(DbContextOptions<KsiegiDbContext> options) : base(options) { }
 
+    /// <summary>
+    /// Jednostka sesji operatora. Gdy ustawiona: zapytania o dane firmowe (<see cref="Domain.Common.CompanyEntity"/>) zwracają wyłącznie
+    /// rekordy tej jednostki (globalny filtr), a zapis, zmiana lub usunięcie rekordu innej jednostki jest odrzucane. Bez ustawienia
+    /// (operacje techniczne: migracja, kopia, odtworzenie, kontrola integralności całej bazy) — brak ograniczenia.
+    /// </summary>
+    public Guid? CompanyScope { get; set; }
+
+    internal bool CompanyScopeSet => CompanyScope.HasValue;
+    internal Guid CompanyScopeValue => CompanyScope ?? Guid.Empty;
+
+    private void EnforceCompanyScope()
+    {
+        if (CompanyScope is not { } scope) return;
+        foreach (var e in ChangeTracker.Entries<Domain.Common.CompanyEntity>())
+            if (e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted && e.Entity.CompanyId != scope)
+                throw new InvalidOperationException("Odmowa: operacja dotyczy danych innej jednostki niż jednostka sesji operatora.");
+    }
+
     public DbSet<Company> Companies => Set<Company>();
     public DbSet<ResponsiblePerson> ResponsiblePersons => Set<ResponsiblePerson>();
     public DbSet<AccountingPolicy> AccountingPolicies => Set<AccountingPolicy>();
@@ -98,6 +116,7 @@ public class KsiegiDbContext : DbContext
     /// </summary>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        EnforceCompanyScope();
         var direct = DirectlyPosted();
         if (direct.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         await using var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
@@ -112,6 +131,7 @@ public class KsiegiDbContext : DbContext
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
+        EnforceCompanyScope();
         var direct = DirectlyPosted();
         if (direct.Count == 0) return base.SaveChanges(acceptAllChangesOnSuccess);
         using var own = Database.CurrentTransaction is null ? Database.BeginTransaction() : null;
@@ -133,6 +153,20 @@ public class KsiegiDbContext : DbContext
         // a identyfikatory pozostają identyczne po migracji między silnikami baz danych.
         foreach (var et in m.Model.GetEntityTypes().Where(t => typeof(Domain.Common.Entity).IsAssignableFrom(t.ClrType)))
             m.Entity(et.ClrType).Property(nameof(Domain.Common.Entity.Id)).ValueGeneratedNever();
+
+        // izolacja jednostek: rekordy firmowe widoczne tylko w sesji ich jednostki (gdy CompanyScope ustawione)
+        foreach (var et in m.Model.GetEntityTypes().Where(t => t.BaseType is null && typeof(Domain.Common.CompanyEntity).IsAssignableFrom(t.ClrType)).ToList())
+        {
+            var p = System.Linq.Expressions.Expression.Parameter(et.ClrType, "e");
+            var ctx = System.Linq.Expressions.Expression.Constant(this);
+            // porównanie z kolumną typu Guid (parametr otrzymuje mapowanie typu kolumny — ten sam zapis identyfikatora w obu silnikach)
+            var body = System.Linq.Expressions.Expression.OrElse(
+                System.Linq.Expressions.Expression.Not(System.Linq.Expressions.Expression.Property(ctx, nameof(CompanyScopeSet))),
+                System.Linq.Expressions.Expression.Equal(
+                    System.Linq.Expressions.Expression.Property(p, nameof(Domain.Common.CompanyEntity.CompanyId)),
+                    System.Linq.Expressions.Expression.Property(ctx, nameof(CompanyScopeValue))));
+            m.Entity(et.ClrType).HasQueryFilter(System.Linq.Expressions.Expression.Lambda(body, p));
+        }
 
         m.Entity<Company>(e =>
         {

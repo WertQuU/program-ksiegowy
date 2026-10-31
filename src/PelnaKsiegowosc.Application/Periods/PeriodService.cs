@@ -60,7 +60,7 @@ public sealed class PeriodService
 
     public async Task<CloseChecklist> BuildChecklistAsync(Guid periodId, CancellationToken ct = default)
     {
-        var period = await _db.Periods.FirstAsync(p => p.Id == periodId, ct);
+        var period = await _db.Periods.FirstAsync(p => p.Id == periodId && p.CompanyId == _user.CompanyId, ct);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == period.FiscalYearId, ct);
         var c = new CloseChecklist();
         var cid = period.CompanyId;
@@ -158,7 +158,7 @@ public sealed class PeriodService
     public async Task<CloseChecklist> ClosePeriodAsync(Guid periodId, string? acknowledgementReason, CancellationToken ct = default)
     {
         _user.Require(Permission.ClosePeriods);
-        var period = await _db.Periods.FirstAsync(p => p.Id == periodId, ct);
+        var period = await _db.Periods.FirstAsync(p => p.Id == periodId && p.CompanyId == _user.CompanyId, ct);
         if (period.Status == PeriodStatus.Zamkniety) throw new DomainException($"Okres {period.Name} jest już zamknięty.");
         var checklist = await BuildChecklistAsync(periodId, ct);
         if (checklist.HasBlocking)
@@ -191,7 +191,7 @@ public sealed class PeriodService
     {
         _user.Require(Permission.ReopenPeriods);
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < 10) throw new DomainException("Podaj uzasadnienie ponownego otwarcia (min. 10 znaków).");
-        var period = await _db.Periods.FirstAsync(p => p.Id == periodId, ct);
+        var period = await _db.Periods.FirstAsync(p => p.Id == periodId && p.CompanyId == _user.CompanyId, ct);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == period.FiscalYearId, ct);
         if (fy.Status != FiscalYearStatus.Otwarty) throw new DomainException("Rok obrotowy jest zamknięty — ponowne otwarcie okresu jest niedozwolone (art. 12 UoR: po zamknięciu ksiąg nie dokonuje się w nich zapisów).");
         if (period.Status != PeriodStatus.Zamkniety) throw new DomainException("Okres nie jest zamknięty.");
@@ -216,7 +216,7 @@ public sealed class PeriodService
     /// <summary>Podgląd zamknięcia roku: lista kontrolna, wynik finansowy i zapisy przeksięgowania kont wynikowych na 860.</summary>
     public async Task<YearClosePreview> PreviewYearCloseAsync(Guid fiscalYearId, CancellationToken ct = default)
     {
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         var c = new CloseChecklist();
         var open = fy.Periods.Where(p => p.Status == PeriodStatus.Otwarty).Select(p => p.Name).ToList();
         c.Items.Add(new("OKRESY", "Wszystkie okresy zamknięte", open.Count == 0, CheckSeverity.Blokujace,
@@ -264,7 +264,7 @@ public sealed class PeriodService
     public async Task<FiscalYear> CloseYearAsync(Guid fiscalYearId, string confirmation, string? acknowledgementReason, CancellationToken ct = default)
     {
         _user.Require(Permission.CloseYear);
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         if (confirmation != $"ZAMKNIJ {fy.Name}") throw new DomainException($"Aby potwierdzić nieodwracalne zamknięcie roku, wpisz: ZAMKNIJ {fy.Name}");
         var preview = await PreviewYearCloseAsync(fiscalYearId, ct);
         if (preview.Checklist.HasBlocking)

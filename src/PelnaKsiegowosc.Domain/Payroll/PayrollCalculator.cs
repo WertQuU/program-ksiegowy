@@ -64,9 +64,13 @@ public static class PayrollCalculator
     private static decimal R0(decimal v) => Math.Round(v, 0, MidpointRounding.AwayFromZero);
     private static decimal Pct(decimal basis, decimal rate) => R2(basis * rate / 100m);
 
-    public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null)
+    /// <param name="otherTitlesFpBasis">Podstawy składek z innych tytułów tej samej osoby u tego płatnika w miesiącu (np. umowa o pracę
+    /// i umowa zlecenia) — obowiązek opłacania Funduszu Pracy ustala się od łącznej podstawy.</param>
+    public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null,
+        decimal otherTitlesFpBasis = 0m)
     {
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
+        var fullMonthGross = gross;
         var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType };
         var notes = new List<string>();
         var t = e.ContractType;
@@ -154,8 +158,14 @@ public static class PayrollCalculator
         it.PensionEmployer = Pct(cappedBasis, rules.PensionEmployer);
         it.DisabilityEmployer = Pct(cappedBasis, rules.DisabilityEmployer);
         it.Accident = Pct(basis, accidentRate);
-        var fpDue = social && !e.ExemptFromFp && (basis >= rules.MinimumWage * (t == ContractType.UmowaOPrace ? e.WorkTimeFraction : 1m));
+        // Fundusz Pracy: podstawa wymiaru (łącznie z innymi tytułami u płatnika) w przeliczeniu na okres miesiąca co najmniej równa
+        // PEŁNEMU minimalnemu wynagrodzeniu — próg nie jest proporcjonalny do wymiaru etatu; przy nieobecności (choroba, urlop
+        // bezpłatny) porównuje się wynagrodzenie za pełny miesiąc
+        var fpComparison = (t == ContractType.UmowaOPrace && absence is { } ab && (ab.SickDays > 0 || ab.UnpaidWorkingDays > 0) ? fullMonthGross : basis) + otherTitlesFpBasis;
+        var fpDue = social && !e.ExemptFromFp && fpComparison >= rules.MinimumWage;
         it.LaborFund = fpDue ? Pct(basis, rules.LaborFund) : 0;
+        if (social && !e.ExemptFromFp && !fpDue)
+            notes.Add($"bez Funduszu Pracy — podstawa {fpComparison:N2} zł (z innymi tytułami, w przeliczeniu na miesiąc) poniżej minimalnego wynagrodzenia {rules.MinimumWage:N2} zł");
         it.Fgsp = social && !e.ExemptFromFp ? Pct(basis, rules.Fgsp) : 0;
         if (t == ContractType.UmowaOPrace && absence is null or { SickDays: 0, UnpaidWorkingDays: 0 } && salary < rules.MinimumWage * e.WorkTimeFraction)
             notes.Add($"wynagrodzenie poniżej minimalnego ({rules.MinimumWage:N2} zł × etat) — sprawdź (np. niepełny miesiąc)");

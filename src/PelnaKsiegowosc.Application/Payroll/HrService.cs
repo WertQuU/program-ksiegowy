@@ -91,7 +91,7 @@ public sealed class HrService
 
     public async Task<LeaveBalance> LeaveBalanceAsync(Guid employeeId, int year, CancellationToken ct = default)
     {
-        var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId, ct);
+        var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
         var leaves = await _db.Absences.AsNoTracking()
             .Where(a => a.EmployeeId == employeeId && (a.Kind == AbsenceKind.UrlopWypoczynkowy || a.Kind == AbsenceKind.UrlopNaZadanie)).ToListAsync(ct);
         decimal carried = e.LeaveCarriedOver;

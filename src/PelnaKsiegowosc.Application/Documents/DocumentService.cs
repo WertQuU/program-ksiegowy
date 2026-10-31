@@ -311,7 +311,12 @@ public sealed class DocumentService
             if (doc.IsSales && doc.CounterpartyCountry == "PL" && doc.KsefStatus is KsefStatus.DoWyslania && string.IsNullOrWhiteSpace(doc.KsefNumber))
                 r.Warning("Faktura krajowa B2B nie ma jeszcze numeru KSeF — od 2026 r. faktury wystawia się w KSeF (z wyjątkami); bez numeru KSeF w JPK zostanie oznaczona jako BFK/OFF.");
             if (doc.IsPurchase && doc.ReceiptDate is null) r.Warning("Brak daty wpływu faktury — przyjęto datę wystawienia.");
-            if (doc.Currency != "PLN" && string.IsNullOrWhiteSpace(doc.ExchangeRateTable)) r.Warning("Nie podano numeru tabeli kursów NBP.");
+            // dokument walutowy (np. import z KSeF z kursem tymczasowym 1,00) — bez potwierdzonego kursu nie może zostać zatwierdzony
+            // ani zaksięgowany: kurs, tabela/źródło i data kursu (art. 30 UoR; art. 31a ustawy o VAT; art. 15a ustawy o CIT)
+            if (doc.Currency != "PLN" && (doc.ExchangeRate <= 0 || doc.ExchangeRateDate is null || string.IsNullOrWhiteSpace(doc.ExchangeRateTable)))
+                r.Error($"Dokument w walucie {doc.Currency}: brak potwierdzonego kursu (kurs, numer tabeli lub źródło, data kursu) — ustal kurs, np. średni kurs NBP z ostatniego dnia roboczego poprzedzającego dzień obowiązku podatkowego / poniesienia kosztu.");
+            else if (doc.Currency != "PLN" && doc.ExchangeRateDate >= doc.OperationDate)
+                r.Warning("Data kursu nie poprzedza daty operacji — sprawdź, czy zastosowano kurs z ostatniego dnia roboczego poprzedzającego.");
             if (doc.DueDate < doc.IssueDate) r.Error("Termin płatności poprzedza datę wystawienia.");
         }
         if (doc.IsCorrection && string.IsNullOrWhiteSpace(doc.CorrectionReason)) r.Error("Korekta wymaga podania przyczyny.");
@@ -793,7 +798,7 @@ public sealed class DocumentService
 
     public async Task RefreshPaymentStatusAsync(Guid documentId, CancellationToken ct = default)
     {
-        var doc = await _db.Documents.FirstAsync(d => d.Id == documentId, ct);
+        var doc = await _db.Documents.FirstAsync(d => d.Id == documentId && d.CompanyId == _user.CompanyId, ct);
         var items = await _db.OpenItems.Where(o => o.DocumentId == documentId).ToListAsync(ct);
         var corrections = await _db.Documents.Where(d => d.CorrectedDocumentId == documentId).Select(d => d.Id).ToListAsync(ct);
         var corrItems = await _db.OpenItems.Where(o => o.DocumentId != null && corrections.Contains(o.DocumentId.Value)).ToListAsync(ct);

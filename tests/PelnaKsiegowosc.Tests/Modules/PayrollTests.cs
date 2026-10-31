@@ -34,6 +34,39 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Labor_fund_threshold_is_full_minimum_wage_regardless_of_working_time_and_counts_other_titles()
+    {
+        // 2026: minimalne wynagrodzenie 4806 zł — próg FP nie jest proporcjonalny do etatu
+        foreach (var (fraction, gross, expectedFp) in new[] { (0.25m, 1201.50m, 0m), (0.5m, 2403m, 0m), (0.75m, 3604.50m, 0m), (0.5m, 4806m, 117.75m), (1m, 4806m, 117.75m) })
+        {
+            var e = new Employee { FirstName = "P", LastName = "E", ContractType = ContractType.UmowaOPrace, WorkTimeFraction = fraction };
+            var i = PayrollCalculator.Compute(e, gross, new PayrollYearToDate(), R, 1.67m);
+            Assert.Equal(expectedFp, i.LaborFund);
+            Assert.Equal(R2(gross * 0.001m), i.Fgsp);                                 // FGŚP bez progu
+        }
+        // 1/2 etatu 2403 zł + umowa zlecenia u tego samego płatnika 2403 zł → łącznie 4806 zł — FP od obu tytułów
+        var half = new Employee { FirstName = "P", LastName = "E", ContractType = ContractType.UmowaOPrace, WorkTimeFraction = 0.5m };
+        Assert.Equal(58.87m, PayrollCalculator.Compute(half, 2403m, new PayrollYearToDate(), R, 1.67m, otherTitlesFpBasis: 2403m).LaborFund);
+        // choroba w miesiącu: pełny etat 4806 zł, po potrąceniu za 10 dni podstawa niższa — porównuje się wynagrodzenie za pełny miesiąc
+        var full = new Employee { FirstName = "P", LastName = "E", ContractType = ContractType.UmowaOPrace };
+        var sick = PayrollCalculator.Compute(full, 4806m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        Assert.True(sick.SocialBasis < 4806m);
+        Assert.Equal(R2(sick.SocialBasis * 0.0245m), sick.LaborFund);
+    }
+
+    [Fact]
+    public async Task Payroll_list_sums_titles_of_the_same_person_for_labor_fund()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        var start = new DateOnly(2026, 1, 1);
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Kowal", Pesel = "90010112349", ContractType = ContractType.UmowaOPrace, WorkTimeFraction = 0.5m, Gross = 2403m, StartDate = start });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Kowal", Pesel = "90010112349", ContractType = ContractType.UmowaZlecenie, Gross = 2403m, StartDate = start });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 4, 10));
+        Assert.All(list.Items, i => Assert.Equal(58.87m, i.LaborFund));
+    }
+
+    [Fact]
     public void Thresholds_caps_and_special_cases()
     {
         var e = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace };
