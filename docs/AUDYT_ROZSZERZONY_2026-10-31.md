@@ -20,6 +20,20 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-03 | Nieudane kody TOTP nie blokowały konta | Blokada po pięciu błędnych MFA; test |
 | A-04 | Sprawdzanie ścieżek kopii akceptowało podobny prefiks katalogu | Kontrola prawdziwej granicy katalogu, ochrona przed traversal; test |
 
+## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
+
+| Id | Priorytet | Zmiana lub ryzyko | Dowód / test |
+| --- | --- | --- | --- |
+| A-05 | bezpieczeństwo P1 | Walidacja wersji, liczby iteracji PBKDF2, wielkości fragmentu, soli i nonce przed użyciem niezweryfikowanego nagłówka archiwum PKBAK1 | `Malformed_archive_header_cannot_control_kdf_workload_or_chunk_allocation` |
+| A-06 | PIT P0 | Ulga dla młodych stosowana do dnia 26. urodzin włącznie według daty wypłaty, a nie wyłącznie flagi | `Youth_relief_applies_through_26th_birthday_but_not_the_day_after` |
+| R-10 | ZUS P0 | Zweryfikować wiek i status ucznia/studenta w okresie wykonania zlecenia, szczególnie ukończenie 26 lat w trakcie miesiąca; nie utożsamiać daty wypłaty z okresem podlegania ubezpieczeniom | Wymaga testów płac przełomu 26. urodzin |
+| R-11 | JPK P0 | Osobna struktura `JPK_ST_KR` jest oznaczona w dokumentacji jako poza programem; dla podmiotów objętych obowiązkiem trzeba zapewnić kompletne raportowanie także środków trwałych | Porównanie eksportu z materiałami MF i ustalenie zakresu samodzielności aplikacji |
+| R-12 | ochrona danych P1 | Należy potwierdzić systematyczne wykonywanie i testowe odtwarzanie kopii oraz okresy retencji odpowiednie do rodzaju dokumentów | Art. 10, 13, 71–74 UoR i procedury organizacyjne |
+
+Oficjalne źródła: ulga dla młodych https://podatki.gov.pl/ulgi-i-odliczenia/ulga-dla-mlodych-pit ; JPK_PD https://podatki.gov.pl/podatki-firmowe/jednolity-plik-kontrolny/jpk_pd/jpk_pd ; UoR Dz.U. 2026 poz. 522 https://eli.gov.pl/eli/DU/2026/522/ogl .
+
+**Uwaga:** W razie nieznanej daty urodzenia samo zaznaczenie ulgi w kartotece pozostaje niewystarczającym potwierdzeniem prawa do zwolnienia. Konieczna dalsza walidacja danych osoby przed ostatecznym zatwierdzeniem listy.
+
 ## Otwarte zagadnienia zgodności
 
 ### L-01 — Podstawa świadczenia chorobowego (P0, potwierdzone ryzyko)
