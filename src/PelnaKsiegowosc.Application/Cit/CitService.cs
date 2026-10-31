@@ -961,6 +961,8 @@ public sealed class CitService
     /// <summary>Jednostki transparentne podatkowo (spółka jawna, partnerska, cywilna, osoba fizyczna) nie są podatnikami CIT.</summary>
     public static void EnsureCitTaxpayer(Company company)
     {
+        if (company.LegalForm == LegalForm.SpolkaJawna)
+            throw new DomainException("Spółka jawna może być podatnikiem CIT (art. 1 ust. 3 pkt 1a ustawy o CIT), zależnie od składu wspólników i informacji CIT-15J. Program nie obsługuje jeszcze ustalania/udokumentowania tego statusu — nie wolno automatycznie zakładać PIT ani CIT.");
         if (!LegalForms.IsCitTaxpayer(company.LegalForm))
             throw new DomainException($"Jednostka ({LegalForms.Name(company.LegalForm)}) nie jest podatnikiem CIT — podatek dochodowy od jej dochodu rozliczają wspólnicy/właściciel (PIT). " +
                 "Program nie wylicza zaliczek PIT; uzgodnienie wyniku bilansowego z podatkowym (raport) pozostaje dostępne pomocniczo.");
