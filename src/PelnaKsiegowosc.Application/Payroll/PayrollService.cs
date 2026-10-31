@@ -128,9 +128,9 @@ public sealed class PayrollService
     {
         var firstFullMonth = new DateOnly(e.StartDate.Year, e.StartDate.Month, 1);
         if (e.StartDate.Day > 1) firstFullMonth = firstFullMonth.AddMonths(1);
-        var from = list.Month.AddMonths(-12);
-        if (firstFullMonth > from) from = firstFullMonth;
-        if (from >= list.Month)
+        var startMonth = list.Month.AddMonths(-12);
+        if (firstFullMonth > startMonth) startMonth = firstFullMonth;
+        if (startMonth >= list.Month)
             return (null, "brak pełnego miesiąca ubezpieczenia przed zachorowaniem — potrzebna indywidualna podstawa z art. 37");
 
         // Inna umowa tej samej osoby u pracodawcy może zwiększać podstawę chorobowego.
@@ -142,10 +142,10 @@ public sealed class PayrollService
         var history = await (from i in _db.PayrollItems.AsNoTracking()
                              join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
                              where i.EmployeeId == e.Id && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
-                                   l.Month >= from && l.Month < list.Month
+                                   l.Month >= startMonth && l.Month < list.Month
                              select new { l.Month, i.BaseGross, i.SocialBasis, i.SickDays, i.UnpaidDays, i.ContractType }).ToListAsync(ct);
         var months = new List<decimal>();
-        for (var month = from; month < list.Month; month = month.AddMonths(1))
+        for (var month = startMonth; month < list.Month; month = month.AddMonths(1))
         {
             var entries = history.Where(x => x.Month == month).ToList();
             if (entries.Count != 1)
