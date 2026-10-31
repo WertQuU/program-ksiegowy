@@ -442,7 +442,7 @@ public sealed class BackupService
         if (attachmentsKey is not { Length: 32 })
             throw new DomainException("Odtwarzanie wymaga klucza AES-256 dla załączników.");
 
-        var target = Path.GetFullPath(targetDirectory);
+        var target = Path.TrimEndingDirectorySeparator(Path.GetFullPath(targetDirectory));
         var targetInfo = new DirectoryInfo(target);
         if (targetInfo.Exists && (targetInfo.Attributes.HasFlag(FileAttributes.ReparsePoint) ||
                                   targetInfo.EnumerateFileSystemInfos().Any()))
