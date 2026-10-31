@@ -14,6 +14,7 @@ using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Tests.Infrastructure;
+using PelnaKsiegowosc.Tests.Integration;
 
 namespace PelnaKsiegowosc.Tests.Modules;
 
