@@ -75,7 +75,7 @@ public sealed partial class SettingsViewModel : SectionViewModel
         UpdateStatus = "Pobrano i zweryfikowano: " + file;
         var start = new ProcessStartInfo
         {
-            FileName = OperatingSystem.IsWindows() ? "msiexec.exe" : "xdg-open",
+            FileName = OperatingSystem.IsWindows() ? Path.Combine(Environment.SystemDirectory, "msiexec.exe") : "xdg-open",
             UseShellExecute = OperatingSystem.IsWindows(),
             CreateNoWindow = !OperatingSystem.IsWindows()
         };
