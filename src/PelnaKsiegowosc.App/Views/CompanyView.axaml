@@ -84,6 +84,9 @@
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Text="{Binding OperatorsInfo}" Classes="info" TextWrapping="Wrap" />
           <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <TextBlock Text="Nowy operator:" VerticalAlignment="Center" />
+            <TextBox Width="210" Watermark="użytkownik@komputer" Text="{Binding NewOperatorLogin}" />
+            <Button Content="Dodaj stanowisko" Command="{Binding AddOperatorCommand}" />
             <CheckBox Content="Administrator" IsChecked="{Binding OpAdmin}" />
             <CheckBox Content="Główny księgowy" IsChecked="{Binding OpChief}" />
             <CheckBox Content="Księgowy" IsChecked="{Binding OpAccountant}" />
