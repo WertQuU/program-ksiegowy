@@ -66,7 +66,9 @@ public sealed class LocalFileStore : IFileStore
                 result = _key is null ? await AttachmentCrypto.CopyWithHashAsync(content, fs, ct) : await AttachmentCrypto.EncryptStreamAsync(content, fs, _key, ct);
                 await fs.FlushAsync(ct);
             }
-            File.Move(tmp, full, overwrite: true);
+            // Dowód już zapisany nie może zostać nadpisany przez ponowny import
+            // lub niezamierzone ponowienie operacji. Legalne korekty tworzą nowy dowód.
+            File.Move(tmp, full, overwrite: false);
         }
         catch
         {
