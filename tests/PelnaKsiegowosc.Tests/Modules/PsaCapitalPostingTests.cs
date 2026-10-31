@@ -96,4 +96,31 @@ public sealed class PsaCapitalPostingTests
         Assert.Empty(bad.Problems(ev));
     }
 
+    [Fact]
+    public void Capital_reduction_uses_share_capital_amount_when_total_amount_is_zero()
+    {
+        var ev = new CapitalEvent
+        {
+            Type = CapitalEventType.ObnizenieKapitaluAkcyjnego,
+            ShareCapitalAmount = 1200m, TotalAmount = 0m,
+            KrsEntryReference = "KRS/123", ResolutionReference = "WZA/2026/2",
+            SolvencyTestConfirmed = true
+        };
+        var assessment = new PsaPayoutAssessment
+        {
+            ApprovedFinancialStatementReference = "SF/2025",
+            SixMonthForecastReference = "PL/2026",
+            ShareCapitalBefore = 2000m,
+            LiabilitiesInApprovedStatement = 0m,
+            ShareCapitalApprovedForDistribution = 500m,
+            MinimumProjectedLiquidityAfterPayout = 100m,
+            SixMonthSolvencyConfirmed = true,
+            CapitalReductionRegisteredInKrs = true,
+            CreditorProtectionRequirementsConfirmed = true
+        };
+        var errors = assessment.Problems(ev);
+        Assert.Contains(errors, e => e.Contains("1200.00"));
+        Assert.Contains(errors, e => e.Contains("nie pokrywa całego obniżenia"));
+    }
+
 }
