@@ -55,6 +55,8 @@ public class LegalFormRulesTests
         Assert.Equal(cit, citVm.IsApplicable);
         await citVm.ComputeAdvanceCommand.ExecuteAsync(null);
         if (cit) Assert.Empty(dialogs.Errors);
+        else if (form == LegalForm.SpolkaJawna)
+            Assert.Contains(dialogs.Errors, e => e.Contains("CIT-15J") && e.Contains("nie wolno automatycznie zakładać PIT ani CIT"));
         else Assert.Contains(dialogs.Errors, e => e.Contains("nie jest podatnikiem CIT"));
     }
 
@@ -198,7 +200,12 @@ public class CommandLineTests
         var originalErr = Console.Error;
         Console.SetOut(sw);
         Console.SetError(sw);
-        try { return (await PelnaKsiegowosc.Cli.Program.Main(args), sw.ToString()); }
+        try { return (await PelnaKsiegowosc.Cli.Program.RunAsync(args, () =>
+        {
+            var paths = new PelnaKsiegowosc.Infrastructure.Configuration.AppPaths();
+            return new AppSession(paths, PelnaKsiegowosc.Infrastructure.Configuration.AppConfig.LoadOrCreate(paths),
+                SecretStoreFactory.Create(paths), new PelnaKsiegowosc.Domain.Common.SystemClock(), isolatedSelfTest: true);
+        }), sw.ToString()); }
         finally
         {
             Console.SetOut(original);
@@ -218,7 +225,7 @@ public class CommandLineTests
             await SelfTestScenario.RunWizardAsync(session, dialogs);
 
             var (code, output) = await RunAsync("info");
-            Assert.Equal(0, code);
+            Assert.True(code == 0, output);
             Assert.Contains("NIP 5260250274", output);
 
             (code, output) = await RunAsync("kopia", "--powod", "test CLI");

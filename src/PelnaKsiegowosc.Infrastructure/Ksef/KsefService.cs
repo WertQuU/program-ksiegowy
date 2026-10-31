@@ -65,6 +65,8 @@ public sealed class KsefService
         if (!doc.IsSales) throw new DomainException("Do KSeF wysyła się wyłącznie faktury sprzedaży.");
         if (doc.Status is not (DocumentStatus.Zatwierdzony or DocumentStatus.Zaksiegowany)) throw new DomainException("Wysłać można fakturę zatwierdzoną lub zaksięgowaną.");
         if (!string.IsNullOrEmpty(doc.KsefNumber)) throw new DomainException($"Faktura ma już numer KSeF {doc.KsefNumber}.");
+        if (doc.KsefStatus == KsefStatus.Wyslana || !string.IsNullOrWhiteSpace(doc.KsefReferenceNumber) && doc.KsefStatus != KsefStatus.Odrzucona)
+            throw new DomainException("Faktura ma nierozstrzygniętą wysyłkę KSeF — uzgodnij jej status przed ponownym wysłaniem. Numer referencyjny: " + doc.KsefReferenceNumber);
         var (xml, validation) = await BuildAsync(documentId, ct);
         if (!validation.IsValid)
         {

@@ -78,7 +78,8 @@ public sealed class SchemaLibrary
     private async Task FetchAsync(Uri url, string fileName, List<string> saved, int depth, CancellationToken ct)
     {
         if (depth > 6) return;
-        if (!url.Host.EndsWith("gov.pl", StringComparison.OrdinalIgnoreCase))
+        if ((url.Scheme != Uri.UriSchemeHttps && url.Scheme != Uri.UriSchemeHttp) ||
+            !(url.Host.Equals("gov.pl", StringComparison.OrdinalIgnoreCase) || url.Host.EndsWith(".gov.pl", StringComparison.OrdinalIgnoreCase)))
             throw new InvalidOperationException($"Odmowa pobrania schematu spoza domeny gov.pl: {url}");
         var text = await _http!.GetStringAsync(url, ct);
         var doc = XDocument.Parse(text);

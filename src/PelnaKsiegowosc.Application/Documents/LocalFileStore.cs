@@ -57,11 +57,11 @@ public sealed class LocalFileStore : IFileStore
         if (_key is null && (_keyRequired || EncryptedOnly(RootPath)))
             throw new DomainException("Na tym stanowisku brak klucza załączników pasującego do plików w katalogu załączników — zaimportuj klucz (Ustawienia → klucz załączników).");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        var tmp = full + ".tmp";
+        var tmp = full + "." + Guid.NewGuid().ToString("N") + ".tmp";
         (string, long) result;
         try
         {
-            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+            await using (var fs = new FileStream(tmp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
             {
                 result = _key is null ? await AttachmentCrypto.CopyWithHashAsync(content, fs, ct) : await AttachmentCrypto.EncryptStreamAsync(content, fs, _key, ct);
                 await fs.FlushAsync(ct);
@@ -123,15 +123,13 @@ public sealed class LocalFileStore : IFileStore
     public async Task<int> EncryptLegacyFilesAsync(CancellationToken ct = default)
     {
         if (_key is null || !Directory.Exists(RootPath) || EncryptedOnly(RootPath)) return 0;
-        foreach (var t in Directory.EnumerateFiles(RootPath, "*.bin.tmp", SearchOption.AllDirectories).ToList())
-            File.Delete(t); // niedokończony zapis — oryginał pozostał nienaruszony
         var n = 0;
         foreach (var f in Directory.EnumerateFiles(RootPath, "*.bin", SearchOption.AllDirectories).ToList())
         {
             if (HasEncryptedHeader(f)) continue;
-            var tmp = f + ".tmp";
+            var tmp = f + "." + Guid.NewGuid().ToString("N") + ".tmp";
             await using (var src = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true))
-            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+            await using (var fs = new FileStream(tmp, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
                 await AttachmentCrypto.EncryptStreamAsync(src, fs, _key, ct);
             File.Move(tmp, f, overwrite: true);
             n++;

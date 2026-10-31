@@ -11,4 +11,7 @@
     <ProjectReference Include="..\PelnaKsiegowosc.Presentation\PelnaKsiegowosc.Presentation.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="PelnaKsiegowosc.Tests" />
+  </ItemGroup>
 </Project>

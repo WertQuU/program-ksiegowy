@@ -37,7 +37,9 @@ public static class Program
         lub PK_HASLO_KOPII (hasło kopii). Katalog danych: zmienna PELNAKSIEGOWOSC_HOME (domyślnie katalog użytkownika).
         """;
 
-    public static async Task<int> Main(string[] args)
+    public static Task<int> Main(string[] args) => RunAsync(args);
+
+    internal static async Task<int> RunAsync(string[] args, Func<AppSession>? sessionFactory = null)
     {
         if (args.Length == 0 || args[0] is "pomoc" or "-h" or "--help" or "/?")
         {
@@ -48,7 +50,7 @@ public static class Program
         {
             var paths = new AppPaths();
             ErrorLog.Directory = paths.LogsDirectory;
-            var session = new AppSession(paths, AppConfig.LoadOrCreate(paths), SecretStoreFactory.Create(paths), new SystemClock());
+            var session = sessionFactory?.Invoke() ?? new AppSession(paths, AppConfig.LoadOrCreate(paths), SecretStoreFactory.Create(paths), new SystemClock());
             try
             {
                 return args[0] switch

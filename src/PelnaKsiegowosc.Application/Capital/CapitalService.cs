@@ -121,6 +121,18 @@ public sealed class CapitalService
         var lines = new List<LineInput>();
         var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.LegalForm).FirstAsync(ct);
         var psa = form == LegalForm.ProstaSpolkaAkcyjna;
+        // Art. 300^15 § 5 KSH: sprawdzamy dokumenty także w chwili księgowania,
+        // nie tylko przy wcześniejszym potwierdzeniu, bo dane zdarzenia mogły się zmienić.
+        if (psa)
+        {
+            var missing = ev.MissingDocuments(form);
+            if (missing.Count > 0)
+                throw new DomainException("Brak wymaganych danych/dokumentów P.S.A. przed księgowaniem: " + string.Join("; ", missing));
+            if (ev.WithholdingTaxAmount < 0 || ev.WithholdingTaxAmount > ev.TotalAmount ||
+                ev.TotalAmount < 0 || ev.ShareCapitalAmount < 0 || ev.SupplementaryCapitalAmount < 0)
+                throw new DomainException("Nieprawidłowe kwoty zdarzenia kapitałowego P.S.A. — popraw dane i potwierdź dokumenty.");
+        }
+
 
         if (psa && ev.Type == CapitalEventType.ObjecieAkcjiWkladPieniezny)
         {

@@ -183,6 +183,24 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Ksef_pending_invoice_is_not_submitted_again_after_interrupted_polling()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var inv = await ApprovedSaleAsync(t);
+        inv.KsefStatus = KsefStatus.Wyslana;
+        inv.KsefReferenceNumber = "UNRESOLVED-REF";
+        await t.Db.SaveChangesAsync();
+        var fake = new FakeKsef();
+        using var http = new HttpClient(fake) { BaseAddress = new Uri("https://ksef.test/v2/") };
+        var ex = await Assert.ThrowsAsync<DomainException>(() =>
+            new KsefService(t.Db, t.User, t.Clock, Validator())
+                .SendAsync(inv.Id, new KsefClient(http, pollDelay: TimeSpan.Zero), FakeKsef.Token));
+        Assert.Contains("UNRESOLVED-REF", ex.Message);
+        Assert.Empty(fake.Calls);
+        Assert.Equal(KsefStatus.Wyslana, inv.KsefStatus);
+    }
+
+    [Fact]
     public async Task Ksef_rejection_and_wrong_token_are_reported_without_ksef_number()
     {
         await using var t = await TestBooks.CreateAsync();

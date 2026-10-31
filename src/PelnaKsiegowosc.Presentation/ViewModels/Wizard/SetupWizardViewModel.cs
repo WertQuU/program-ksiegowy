@@ -22,7 +22,7 @@ public enum WizardStep
 }
 
 /// <summary>
-/// Kreator pierwszego uruchomienia. Kroki: akceptacja warunków licencji, wybór bazy (lokalna/serwer), dane jednostki,
+/// Kreator pierwszego uruchomienia. Kroki: akceptacja warunków licencji, centralny PostgreSQL, dane jednostki,
 /// rok obrotowy, plan kont z szablonu, polityka rachunkowości, kierownik jednostki, klucz kopii zapasowych, utworzenie ksiąg.
 /// Gdy wskazana baza zawiera już księgi (np. drugie stanowisko na serwerze), kreator tylko podłącza stanowisko.
 /// </summary>
@@ -34,7 +34,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         TermsText = Terms.Text;
         Database.SqlitePath = session.Paths.DefaultDatabaseFile;
         // Nowa instalacja pracuje na wspólnym serwerze, po jednym koncie DB na operatora.
-        Database.UsePostgres = true;
+        Database.UsePostgres = !session.IsIsolatedSelfTest;
         LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
@@ -207,9 +207,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private static string HelpVersion() => Sections.HelpViewModel.Version;
 
     private string BuildSummary() => ConnectToExisting
-        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile().SafeDescription}.{Environment.NewLine}" +
+        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile(Session.IsIsolatedSelfTest).SafeDescription}.{Environment.NewLine}" +
           $"KSeF na stanowisku: {(ConfigureKsef ? $"token zapisany lokalnie ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}. Kopie zapasowe: {(Session.StoredBackupKey() is null ? "do konfiguracji" : "klucz skonfigurowany")}."
-        : $"Baza: {Database.ToProfile().SafeDescription}{Environment.NewLine}" +
+        : $"Baza: {Database.ToProfile(Session.IsIsolatedSelfTest).SafeDescription}{Environment.NewLine}" +
           $"Jednostka: {Company.FullName} ({LegalForms.Name(Company.LegalForm.Value)}), NIP {Company.Nip}{Environment.NewLine}" +
           $"Rok obrotowy: {YearStart} – {YearEnd}{(IsFirstYear ? " (pierwszy rok działalności)" : "")}{Environment.NewLine}" +
           $"Plan kont: {ChartTemplate.Name}{(ApproveChart ? ", zatwierdzony" : ", do zatwierdzenia")}{Environment.NewLine}" +
@@ -220,9 +220,13 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
 
     private async Task CheckDatabaseAsync()
     {
-        var p = Database.ToProfile();
-        if (p.Engine != DatabaseEngine.PostgreSql) throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
-        if (!string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
+        var p = Database.ToProfile(Session.IsIsolatedSelfTest);
+        if (p.Engine != DatabaseEngine.PostgreSql && !(Session.IsIsolatedSelfTest && p.Engine == DatabaseEngine.Sqlite))
+            throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
+        if (p.Engine == DatabaseEngine.Sqlite)
+            Directory.CreateDirectory(Path.GetDirectoryName(p.SqlitePath!)!);
+        if (p.Engine == DatabaseEngine.PostgreSql && !string.IsNullOrEmpty(Database.Password))
+            Session.Connector.SavePassword(p, Database.Password);
         if (Session.Connector.SqliteKeyMissing(p))
         {
             var key = await Dialogs.PromptAsync("Klucz bazy", "Plik bazy jest zaszyfrowany (RODO). Wpisz klucz bazy — administrator wyświetli go na stanowisku, " +

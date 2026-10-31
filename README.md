@@ -2,8 +2,8 @@
 
 Program do prowadzenia **pełnej księgowości (ksiąg rachunkowych)** zgodnie z polską ustawą o rachunkowości —
 dla spółek kapitałowych (sp. z o.o., P.S.A., S.A.), spółek osobowych, fundacji, stowarzyszeń, spółdzielni
-i działalności gospodarczej prowadzącej księgi rachunkowe. Działa na **Windows i Linux**, lokalnie bez Internetu
-(SQLite) albo na wielu stanowiskach z serwerem PostgreSQL. Moduły VAT/JPK, KSeF, CIT, środki trwałe, kapitały,
+i działalności gospodarczej prowadzącej księgi rachunkowe. Działa na **Windows i Linux** z centralnym serwerem PostgreSQL i osobnym loginem każdego operatora.
+SQLite służy migracji, odzyskiwaniu i izolowanym autotestom; nie jest aktywną bazą ksiąg użytkownika. Moduły VAT/JPK, KSeF, CIT, środki trwałe, kapitały,
 zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Object Storage).
 
 ![Pulpit](docs/zrzuty/pulpit.png)
@@ -107,19 +107,62 @@ Instrukcja: [docs/INSTALL.md](docs/INSTALL.md). Kompilacja ze źródeł: [docs/B
 | [SECURITY.md](SECURITY.md) / [CONTRIBUTING.md](CONTRIBUTING.md) | Zgłaszanie podatności, zasady współtworzenia |
 | [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) / [schemas/README.md](schemas/README.md) | Licencje bibliotek, oficjalne schematy XSD |
 
+## Konfiguracja centralnej bazy i operatorów
+
+1. Administrator przygotowuje serwer PostgreSQL, bazę, połączenie z weryfikacją TLS
+   i osobne konto SQL dla każdej osoby. **Nie należy udostępniać operatorom konta superuser,
+   właściciela schematu ani konta do migracji.**
+2. Administrator rejestruje w programie operatora jako `db:login` i przydziela role.
+   Konto SQL i konto aplikacyjne to **dwie oddzielne czynności**.
+3. Użytkownik wpisuje na swoim stanowisku adres serwera, nazwę bazy, swój login
+   i hasło. Ponowne otwarcie programu na drugim urządzeniu z tym samym loginem jest
+   możliwe po zakończeniu aktywnej sesji na pierwszym.
+4. Administrator ustala wspólną, kontrolowaną i szyfrowaną lokalizację załączników
+   oraz strategię spójnych kopii bazy i plików. Stanowiska mogą wskazywać ten sam katalog współdzielony
+   i muszą używać tego samego klucza załączników. Zapis używa osobnych plików tymczasowych per operacja.
+   Test dwóch instancji magazynu nie zastępuje próby rzeczywistego udziału sieciowego, jego uprawnień i awarii.
+   Oddzielne lokalne katalogi nie współdzielą załączników.
+5. Migracje schematu są zadaniem administracyjnym. Polecenie
+   `pk-cli aktualizuj-schemat --potwierdzam` wymaga aktywnego administratora,
+   zamknięcia pozostałych sesji i zweryfikowanej kopii bezpieczeństwa.
+   Przed użyciem na rzeczywistych danych przetestuj odtwarzanie.
+
+**Archiwizacja papierowa:** w sekcji *Dokumenty* znajduje się opcja
+*Archiwizuj wszystkie dowody do PDF*. Eksport tworzy statyczne wydruki dokumentów
+i indeks z sumami SHA-256. PDF można technicznie zmodyfikować; hash służy do
+wykrywania niezgodności, ale nie zastępuje podpisu ani niezależnego,
+chronionego indeksu. **Eksport nie obejmuje automatycznej konwersji wszystkich
+załączników i nie zastępuje oryginalnych faktur KSeF/XML.**
+
+## Zakres bieżących prac: prosta spółka akcyjna
+
+Prace naprawcze na `main` dotyczą P.S.A., z zachowaniem wersji **1.0.0**.
+Testy wspólnych usług korzystają z jednostki P.S.A. (`TestBooks`). Sprawdzane są m.in. wniesienie wkładów,
+kapitał akcyjny, CIT, VAT/JPK, płace i bezpieczeństwo. Zaksięgowanie zdarzenia kapitałowego P.S.A.
+ponownie sprawdza wymagane dokumenty, potwierdzenie dopuszczalności wypłaty i zakres kwot podatku.
+To zabezpieczenie nie zastępuje ustalenia kwoty do podziału, prognozy wypłacalności ani obowiązku z art. 300^19 KSH.
+Szczegółowy stan i nieusunięte ograniczenia: [raport prac nad P.S.A.](docs/PSA_REPAIR_REPORT_2026-10-31.md).
+
 ## Znane ograniczenia
 
 - Oficjalne schematy XSD MF (JPK_V7M/V7K, JPK_KR_PD, e-Sprawozdanie SFJINZ(2), FA(3)) są dołączone do programu
-  (`schemas/`) i odświeżane automatycznie w GitHub Actions; nowe wersje można też pobrać w *Ustawienia → Schematy XSD*.
+  (`schemas/`). Workflow pobierania uruchamia się ręcznie lub po zmianie narzędzi pobierających; nie monitoruje stale nowych publikacji MF.
+  Pobranie pliku nie potwierdza aktualności wzoru dla danego okresu ani poprawności kwot. Nowe schematy można też pobrać w *Ustawienia → Schematy XSD*.
 - e-Sprawozdanie: struktury SFJINZ/SFJINT(2) (pełna), SFJMAZ/SFJMAT(2) (jednostka mała) i SFJMIZ/SFJMIT(2) (mikro) —
   w złotych lub w tysiącach złotych (zaokrąglenia do tysięcy sprawdź przed podpisaniem).
-- Pliki XML e-Deklaracji: VAT-UE(5), korekta VAT-UEK(5) i PIT-11(29) z adresem zamieszkania (aktualne wzory, walidowane schematem MF). CIT-8(34), PIT-4R(13),
-  PIT-8AR(14), IFT-2R(12), PIT-36/36L oraz ZUS DRA/RCA — MF i ZUS nie publikują aktualnych schematów XSD tych wzorów
-  (MF udostępnia je tylko w e-Urzędzie), więc program wylicza kwoty i drukuje zestawienia;
+- Pliki XML e-Deklaracji: VAT-UE(5), korekta VAT-UEK(5) i PIT-11(29) z adresem zamieszkania (wzory dołączone do programu, walidowane schematem MF; okres obowiązywania wymaga sprawdzenia). CIT-8(34), PIT-4R(13),
+  PIT-8AR(14), IFT-2R(12), PIT-36/36L oraz ZUS DRA/RCA — program udostępnia wyliczenia i zestawienia,
+  ale nie deklaruje zweryfikowanego eksportu elektronicznego tych formularzy. MF publikuje struktury XML/CRWDE
+  ([dokumentacja MF](https://podatki.gov.pl/e-deklaracje-zloz-deklaracje-podatkowa-online/bramka-ubd-i-dokumentacja-it)); brak obsługi w programie nie oznacza braku publicznego XSD;
   wysyłka elektroniczna (e-Deklaracje, e-Urząd Skarbowy, PUE ZUS/Płatnik) odbywa się poza programem.
-- Płace: zasiłki finansowane przez ZUS (od 34. dnia choroby, macierzyński) wypłaca ZUS — program nalicza wynagrodzenie
-  chorobowe pracodawcy; urlop wypoczynkowy przy stałej pensji nie zmienia wynagrodzenia.
-- KSeF: wyłącznie pobieranie faktur zakupu (faktury sprzedaży wystawia się w KSeF poza programem i wpisuje ich numer).
+- Płace: program nalicza wynagrodzenie chorobowe pracodawcy w ograniczonym modelu art. 92 KP (33/14 dni).
+  Nie rozlicza w pełni zasiłków, podstaw historycznych, premii ani zmian etatu. Finansowanie świadczenia nie określa płatnika:
+  przy zgłoszeniu powyżej 20 ubezpieczonych zasiłki co do zasady wypłaca płatnik składek
+  ([ZUS](https://www.zus.pl/en/swiadczenia/zasilki/zasilek-chorobowy/postepowanie-w-sprawie-zasilkow/platnicy-zasilku)).
+  Godzinowe rozliczenie urlopów i grafików zmianowych pozostaje ograniczeniem.
+- KSeF: interfejs użytkownika udostępnia pobieranie faktur zakupu (faktury sprzedaży wystawia się w KSeF poza programem i wpisuje ich numer).
+  Warstwa usług ma także wysyłkę sprzedaży testowaną na atrapie API; brak potwierdzonej próby na serwerze MF.
+  Zapisany numer referencyjny nierozstrzygniętej wysyłki blokuje ponowne wysłanie; uzgodnienie wymaga sprawdzenia statusu poza tym przebiegiem.
   Logowanie tokenem albo certyfikatem (.pfx — podpis kwalifikowany, pieczęć, certyfikat KSeF). Profil Zaufany
   wymaga podpisania pliku na stronie gov.pl — program przyjmuje wtedy certyfikat KSeF.
 - Biała lista VAT i kursy NBP: integracje sprawdzone testami na atrapach API (publiczne API MF i NBP).

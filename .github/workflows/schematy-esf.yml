@@ -26,7 +26,6 @@ jobs:
         timeout-minutes: 10
         run: python3 tools/fetch-esf.py schemas/MF/esf2
       - name: Zapis w repozytorium
-        if: always()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
