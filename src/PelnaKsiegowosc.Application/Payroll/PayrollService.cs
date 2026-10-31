@@ -184,7 +184,7 @@ public sealed class PayrollService
                     if (independentCivil) civil = PayrollCalculator.CivilMandatory(e, civilMandatoryBasis, rules);
                     var ppkTaxable = ppkLeft.Remove(e.Id, out var p) ? p : 0m;
                     var fresh = PayrollCalculator.Compute(e, input.Gross, ytd, rules, accident, absence, others, own, civil,
-                        e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable);
+                        e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable, list.PaymentDate);
                     fresh.BaseGross = input.Gross;
                     if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
                     reductionLeft -= fresh.TaxReduction;
