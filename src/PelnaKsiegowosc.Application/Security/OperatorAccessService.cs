@@ -78,9 +78,16 @@ public sealed class OperatorAccessService
     {
         admin.Require(Permission.ManageUsers);
         login = (login ?? "").Trim();
+        // Połączenie do współdzielonego PostgreSQL: każdy operator ma osobny login DB
+        // reprezentowany przez db:<login>. Dla lokalnego SQLite zachowujemy OS user@host.
+        var serverUser = login.StartsWith("db:", StringComparison.OrdinalIgnoreCase);
         var parts = login.Split('@');
-        if (login.Length > 256 || parts.Length != 2 || parts.Any(string.IsNullOrWhiteSpace) || login.Any(char.IsControl))
-            throw new DomainException("Podaj identyfikator stanowiska użytkownik@komputer (z drugiego stanowiska).");
+        var valid = serverUser
+            ? login.Length > 3 && login[3..].All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.')
+            : parts.Length == 2 && parts.All(p => !string.IsNullOrWhiteSpace(p));
+        if (login.Length > 256 || !valid || login.Any(char.IsControl))
+            throw new DomainException("Podaj login serwera jako db:nazwa_uzytkownika (PostgreSQL) albo użytkownik@komputer (lokalny SQLite).");
+        if (serverUser) login = "db:" + login[3..].ToLowerInvariant();
         var id = IdFor(login);
         if (await _db.Users.AnyAsync(u => u.Id == id || u.Login == login, ct))
             throw new DomainException("Operator już istnieje — zaznacz go i edytuj role.");
