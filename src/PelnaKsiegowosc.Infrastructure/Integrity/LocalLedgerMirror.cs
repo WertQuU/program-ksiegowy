@@ -103,6 +103,13 @@ public sealed class LocalLedgerMirror
         await SqlAsync("CREATE TABLE IF NOT EXISTS ledger_snapshot (entry_id TEXT PRIMARY KEY, fiscal_year_id TEXT NOT NULL, sequence_no INTEGER NOT NULL, digest TEXT NOT NULL)");
         await SqlAsync("CREATE TABLE IF NOT EXISTS metadata (name TEXT PRIMARY KEY, value TEXT NOT NULL)");
 
+        bool baselineInitialized;
+        await using (var flag = local.CreateCommand())
+        {
+            flag.Transaction = (SqliteTransaction)localTx;
+            flag.CommandText = "SELECT COUNT(*) FROM metadata WHERE name='baseline_initialized'";
+            baselineInitialized = Convert.ToInt64(await flag.ExecuteScalarAsync(ct)) != 0;
+        }
         var stored = new Dictionary<string, Snapshot>(StringComparer.Ordinal);
         await using (var read = local.CreateCommand())
         {
@@ -143,10 +150,11 @@ public sealed class LocalLedgerMirror
             await insert.ExecuteNonQueryAsync(ct);
             additions++;
         }
+        await SqlAsync("INSERT OR IGNORE INTO metadata(name,value) VALUES ('baseline_initialized', strftime('%Y-%m-%dT%H:%M:%fZ','now'))");
         await SqlAsync("INSERT INTO metadata(name,value) VALUES ('last_check_utc', strftime('%Y-%m-%dT%H:%M:%fZ','now')) ON CONFLICT(name) DO UPDATE SET value=excluded.value");
         await localTx.CommitAsync(ct);
         await pg.CommitAsync(ct);
-        if (stored.Count == 0)
+        if (!baselineInitialized)
             return new Result(MirrorStatus.BaselineCreated,
                 "Utworzono pierwszy lokalny punkt odniesienia. Nie potwierdza on braku wcześniejszej manipulacji — administrator powinien zweryfikować stan ksiąg i kopie.",
                 0, additions, []);
