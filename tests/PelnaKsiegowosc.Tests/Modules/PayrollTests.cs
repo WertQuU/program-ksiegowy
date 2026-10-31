@@ -162,7 +162,9 @@ public class PayrollTests
         await using var t = await TestBooks.CreateAsync();
         var svc = new PayrollService(t.Db, t.User, t.Clock);
         var start = new DateOnly(2026, 1, 1);
-        const string Pesel = "90010112349";
+        // 01.01.2001: w dniu wypłaty 10.03.2026 osoba ma 25 lat. Stary PESEL
+        // 90010112349 oznaczał rok 1990 i po poprawieniu kontroli wieku dawał 0 zł ulgi.
+        const string Pesel = "01210112341";
         await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
         await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
         var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
