@@ -1,4 +1,6 @@
 using System.IO.Compression;
+using System.Text;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace PelnaKsiegowosc.Infrastructure.Xml;
@@ -18,33 +20,36 @@ public sealed record SchemaStatus(KnownSchema Schema, string? Path)
 /// </summary>
 public sealed class SchemaLibrary
 {
+    private const int MaxSchemaBytes = 8 * 1024 * 1024;
+    private const int MaxArchiveSchemas = 128;
+    private const long MaxArchiveBytes = 64L * 1024 * 1024;
     public static readonly IReadOnlyList<KnownSchema> Known = new KnownSchema[]
     {
         new("FA(3) — e-Faktura KSeF", Ksef.Fa3InvoiceBuilder.SchemaFile, null,
             "https://github.com/CIRFMF/ksef-docs", "Faktury wysyłane do KSeF (schemat dołączony do programu)"),
-        new("JPK_V7M(3)", Jpk.JpkV7Rules.SchemaFile, "http://crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
+        new("JPK_V7M(3)", Jpk.JpkV7Rules.SchemaFile, "https://crd.gov.pl/wzor/2025/12/19/14090/schemat.xsd",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/jpk_vat-z-deklaracja/", "Ewidencja VAT z deklaracją — rozliczenie miesięczne"),
-        new("JPK_V7K(3)", Jpk.JpkV7Rules.SchemaFileQuarterly, "http://crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
+        new("JPK_V7K(3)", Jpk.JpkV7Rules.SchemaFileQuarterly, "https://crd.gov.pl/wzor/2025/12/19/14089/schemat.xsd",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/jpk_vat-z-deklaracja/", "Ewidencja VAT z deklaracją — rozliczenie kwartalne"),
         new("JPK_CIT (JPK_KR_PD)", Jpk.JpkKrPdBuilder.SchemaFile, "https://www.gov.pl/attachment/4ec8f106-032c-42f2-9fb5-15b5ec5ca670",
             "https://www.podatki.gov.pl/jednolity-plik-kontrolny/", "Księgi rachunkowe ze znacznikami podatkowymi — CIT (od roku 2026 dla podatników JPK_V7)"),
-        new("e-Sprawozdanie SFJINZ(2) — jednostka inna, w złotych", FinancialStatementXmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd",
+        new("e-Sprawozdanie SFJINZ(2) — jednostka inna, w złotych", FinancialStatementXmlBuilder.SchemaFile, "https://crd.gov.pl/wzor/2025/08/07/13817/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie finansowe w formie elektronicznej (art. 45 ust. 1g UoR)"),
-        new("e-Sprawozdanie SFJMAZ(2) — jednostka mała, w złotych", FinancialStatementXmlBuilder.SchemaFileMala, "http://crd.gov.pl/wzor/2025/08/07/13818/schemat.xsd",
+        new("e-Sprawozdanie SFJMAZ(2) — jednostka mała, w złotych", FinancialStatementXmlBuilder.SchemaFileMala, "https://crd.gov.pl/wzor/2025/08/07/13818/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki małej korzystającej z uproszczeń (zał. nr 5 UoR)"),
-        new("e-Sprawozdanie SFJMIZ(2) — jednostka mikro, w złotych", FinancialStatementXmlBuilder.SchemaFileMikro, "http://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd",
+        new("e-Sprawozdanie SFJMIZ(2) — jednostka mikro, w złotych", FinancialStatementXmlBuilder.SchemaFileMikro, "https://crd.gov.pl/wzor/2025/08/12/13821/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki mikro (zał. nr 4 UoR)"),
-        new("e-Sprawozdanie SFJINT(2) — jednostka inna, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileInnaTys, "http://crd.gov.pl/wzor/2025/08/04/13810/schemat.xsd",
+        new("e-Sprawozdanie SFJINT(2) — jednostka inna, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileInnaTys, "https://crd.gov.pl/wzor/2025/08/04/13810/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie w tysiącach złotych (zał. nr 1 UoR)"),
-        new("e-Sprawozdanie SFJMAT(2) — jednostka mała, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMalaTys, "http://crd.gov.pl/wzor/2025/09/10/13846/schemat.xsd",
+        new("e-Sprawozdanie SFJMAT(2) — jednostka mała, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMalaTys, "https://crd.gov.pl/wzor/2025/09/10/13846/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki małej w tysiącach złotych (zał. nr 5 UoR)"),
-        new("e-Sprawozdanie SFJMIT(2) — jednostka mikro, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMikroTys, "http://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd",
+        new("e-Sprawozdanie SFJMIT(2) — jednostka mikro, w tysiącach zł", FinancialStatementXmlBuilder.SchemaFileMikroTys, "https://crd.gov.pl/wzor/2025/08/11/13819/schemat.xsd",
             "https://www.podatki.gov.pl/e-sprawozdania-finansowe/", "Sprawozdanie jednostki mikro w tysiącach złotych (zał. nr 4 UoR)"),
-        new("VAT-UE(5)", Declarations.VatUeXmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2021/01/12/10293/schemat.xsd",
+        new("VAT-UE(5)", Declarations.VatUeXmlBuilder.SchemaFile, "https://crd.gov.pl/wzor/2021/01/12/10293/schemat.xsd",
             "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Informacja podsumowująca VAT-UE"),
-        new("VAT-UEK(5)", Declarations.VatUeXmlBuilder.SchemaFileCorrection, "http://crd.gov.pl/wzor/2021/01/26/10316/schemat.xsd",
+        new("VAT-UEK(5)", Declarations.VatUeXmlBuilder.SchemaFileCorrection, "https://crd.gov.pl/wzor/2021/01/26/10316/schemat.xsd",
             "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Korekta informacji podsumowującej VAT-UEK"),
-        new("PIT-11(29)", Declarations.Pit11XmlBuilder.SchemaFile, "http://crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd",
+        new("PIT-11(29)", Declarations.Pit11XmlBuilder.SchemaFile, "https://crd.gov.pl/wzor/2022/11/09/11890/schemat.xsd",
             "https://www.podatki.gov.pl/e-deklaracje/dokumentacja-it/struktury-dokumentow-xml/", "Informacja o dochodach i pobranych zaliczkach"),
     };
 
@@ -78,11 +83,25 @@ public sealed class SchemaLibrary
     private async Task FetchAsync(Uri url, string fileName, List<string> saved, int depth, CancellationToken ct)
     {
         if (depth > 6) return;
-        if ((url.Scheme != Uri.UriSchemeHttps && url.Scheme != Uri.UriSchemeHttp) ||
-            !(url.Host.Equals("gov.pl", StringComparison.OrdinalIgnoreCase) || url.Host.EndsWith(".gov.pl", StringComparison.OrdinalIgnoreCase)))
-            throw new InvalidOperationException($"Odmowa pobrania schematu spoza domeny gov.pl: {url}");
-        var text = await _http!.GetStringAsync(url, ct);
-        var doc = XDocument.Parse(text);
+        CheckOfficialUrl(url);
+        using var response = await _http!.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);
+        response.EnsureSuccessStatusCode();
+        // HttpClient może obsługiwać przekierowania — nie zaakceptuj treści z innej domeny ani HTTP.
+        CheckOfficialUrl(response.RequestMessage?.RequestUri ?? url);
+        if (response.Content.Headers.ContentLength is > MaxSchemaBytes)
+            throw new InvalidDataException("Pobrany schemat XSD przekracza limit 8 MiB.");
+        await using var source = await response.Content.ReadAsStreamAsync(ct);
+        using var bytes = new MemoryStream();
+        var chunk = new byte[64 * 1024];
+        int read;
+        while ((read = await source.ReadAsync(chunk.AsMemory(), ct)) > 0)
+        {
+            if (bytes.Length + read > MaxSchemaBytes)
+                throw new InvalidDataException("Pobrany schemat XSD przekracza limit 8 MiB.");
+            bytes.Write(chunk, 0, read);
+        }
+        var text = Encoding.UTF8.GetString(bytes.ToArray());
+        var doc = ParseSchema(bytes.ToArray());
         Directory.CreateDirectory(_userDirectory);
         var target = Path.Combine(_userDirectory, SafeName(fileName));
         await File.WriteAllTextAsync(target, text, ct);
@@ -113,23 +132,69 @@ public sealed class SchemaLibrary
             if (path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
             {
                 using var zip = ZipFile.OpenRead(path);
-                foreach (var e in zip.Entries.Where(e => e.Name.EndsWith(".xsd", StringComparison.OrdinalIgnoreCase)))
+                var entries = zip.Entries.Where(e => e.Name.EndsWith(".xsd", StringComparison.OrdinalIgnoreCase)).ToList();
+                if (entries.Count > MaxArchiveSchemas)
+                    throw new InvalidDataException("Archiwum zawiera zbyt wiele schematów XSD (limit 128).");
+                var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                long total = 0;
+                foreach (var e in entries)
                 {
-                    using var s = e.Open();
-                    var bytes = new MemoryStream();
-                    s.CopyTo(bytes);
-                    saved.Add(Store(e.Name, bytes.ToArray()));
+                    var name = SafeName(e.Name);
+                    if (!names.Add(name))
+                        throw new InvalidDataException($"Archiwum zawiera powtarzający się schemat XSD: {name}.");
+                    if (e.Length > MaxSchemaBytes || total + e.Length > MaxArchiveBytes)
+                        throw new InvalidDataException("Archiwum XSD przekracza limit rozmiaru.");
+                    using var source = e.Open();
+                    using var bytes = new MemoryStream();
+                    var chunk = new byte[64 * 1024];
+                    int read;
+                    while ((read = source.Read(chunk, 0, chunk.Length)) > 0)
+                    {
+                        if (bytes.Length + read > MaxSchemaBytes || total + bytes.Length + read > MaxArchiveBytes)
+                            throw new InvalidDataException("Rozpakowany schemat XSD przekracza limit rozmiaru.");
+                        bytes.Write(chunk, 0, read);
+                    }
+                    total += bytes.Length;
+                    saved.Add(Store(name, bytes.ToArray()));
                 }
             }
-            else saved.Add(Store(Path.GetFileName(path), File.ReadAllBytes(path)));
+            else
+            {
+                if (new FileInfo(path).Length > MaxSchemaBytes)
+                    throw new InvalidDataException("Schemat XSD przekracza limit 8 MiB.");
+                saved.Add(Store(Path.GetFileName(path), File.ReadAllBytes(path)));
+            }
         }
         return saved;
     }
 
+    private static void CheckOfficialUrl(Uri url)
+    {
+        if (url.Scheme != Uri.UriSchemeHttps ||
+            !(url.Host.Equals("gov.pl", StringComparison.OrdinalIgnoreCase) ||
+              url.Host.EndsWith(".gov.pl", StringComparison.OrdinalIgnoreCase)))
+            throw new InvalidOperationException($"Schematy można pobierać wyłącznie przez HTTPS z domen gov.pl: {url}");
+    }
+
+    private static XDocument ParseSchema(byte[] content)
+    {
+        using var reader = XmlReader.Create(new MemoryStream(content),
+            new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null, MaxCharactersInDocument = MaxSchemaBytes });
+        var document = XDocument.Load(reader);
+        if (document.Root?.Name != XName.Get("schema", "http://www.w3.org/2001/XMLSchema"))
+            throw new InvalidDataException("Plik nie jest schematem XSD.");
+        return document;
+    }
+
     private string Store(string name, byte[] content)
     {
-        try { XDocument.Load(new MemoryStream(content)); }
-        catch (Exception e) { throw new InvalidOperationException($"Plik {name} nie jest poprawnym dokumentem XML/XSD: {e.Message}"); }
+        if (content.Length > MaxSchemaBytes)
+            throw new InvalidDataException("Schemat XSD przekracza limit 8 MiB.");
+        try { ParseSchema(content); }
+        catch (Exception e) when (e is XmlException or InvalidDataException)
+        {
+            throw new InvalidOperationException($"Plik {name} nie jest poprawnym dokumentem XSD: {e.Message}", e);
+        }
         var target = Path.Combine(_userDirectory, SafeName(name));
         File.WriteAllBytes(target, content);
         return Path.GetFileName(target);
