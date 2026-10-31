@@ -296,7 +296,7 @@ public class KsefAndJpkTests
         await using var books = await TestBooks.CreateAsync();
         books.Company.Email = "ksiegowosc@example.org";
         var documents = new DocumentService(books.Db, books.User, books.Clock);
-        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K-NO-STATUS");
+        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K003");
         await documents.PostAsync(invoice.Id);
         var vat = new VatService(books.Db, books.User, books.Clock);
         var period = new DateOnly(2026, 2, 1);
