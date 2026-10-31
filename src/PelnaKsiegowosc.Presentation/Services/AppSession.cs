@@ -7,6 +7,7 @@ using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Periods;
+using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Infrastructure.Backup;
 using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Infrastructure.Storage;
@@ -236,7 +237,14 @@ public sealed class AppSession
     public async Task RefreshAsync(CancellationToken ct = default)
     {
         await using var db = OpenDb();
-        Company = await db.Companies.AsNoTracking().OrderBy(c => c.CreatedAtUtc).FirstOrDefaultAsync(ct);
+        // Role operatora mają aktualnie zasięg całej bazy, nie pojedynczej jednostki.
+        // Bez kontroli dostępu per jednostka nie można bezpiecznie wybierać pierwszej
+        // z wielu jednostek i traktować tego jako skutecznej izolacji danych.
+        var companies = await db.Companies.AsNoTracking()
+            .OrderBy(c => c.CreatedAtUtc).Take(2).ToListAsync(ct);
+        if (companies.Count > 1)
+            throw new DomainException("Baza zawiera kilka jednostek. Aktualny model uprawnień nie zapewnia ich bezpiecznej izolacji. Do czasu wdrożenia autoryzacji per jednostka stosuj oddzielną bazę dla każdej jednostki.");
+        Company = companies.FirstOrDefault();
         var authenticatedLogin = OperatorIdentity.LoginFor(Profile);
         User = Company is null
             ? OperatorIdentity.For(Guid.Empty, Profile)
@@ -289,6 +297,7 @@ public sealed class AppSession
 
     public async Task<BackupResult> BackupAsync(string reason, bool upload, CancellationToken ct = default)
     {
+        User.Require(Permission.ManageBackups);
         var key = StoredBackupKey() ?? throw new DomainException("Brak klucza kopii zapasowych na tym stanowisku — wygeneruj go lub wprowadź klucz odzyskiwania w sekcji „Backupy”.");
         using var remote = upload && Config.Backup.UploadToObjectStorage ? RemoteTarget() : null;
         await using var db = OpenDb();
