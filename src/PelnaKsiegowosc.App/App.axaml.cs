@@ -94,6 +94,10 @@ public partial class App : Avalonia.Application
             _backupTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(15) };
             _backupTimer.Tick += async (_, _) => await mainVm.AutomaticBackupAsync();
             _backupTimer.Start();
+            _sharedChangesTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(20) };
+            _sharedChangesTimer.Tick += async (_, _) => await mainVm.CheckSharedChangesAsync();
+            _sharedChangesTimer.Start();
+            await mainVm.CheckSharedChangesAsync();
             await mainVm.AutomaticBackupAsync();
             _ = Task.Run(() => RegulationsCheck.RunDailyAsync(session));
             main.ClosingAccepted += async () => await mainVm.BackupOnExitAsync();
