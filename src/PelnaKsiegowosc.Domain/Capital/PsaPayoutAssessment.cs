@@ -64,8 +64,17 @@ public sealed class PsaPayoutAssessment
             issues.Add("nieprawidłowe (ujemne lub brakujące) kwoty elementów kalkulacji P.S.A.");
         if (NonDistributableReserveAllocation < MandatoryCapitalAllocation)
             issues.Add($"art. 300¹⁹ KSH: należy przeznaczyć co najmniej {MandatoryCapitalAllocation:0.00} zł na obowiązkowe zasilenie kapitału akcyjnego");
-        if (DistributableLimit < ev.TotalAmount)
-            issues.Add($"art. 300¹⁵ § 2 KSH: limit podziału {DistributableLimit:0.00} zł jest niższy od kwoty zdarzenia {ev.TotalAmount:0.00} zł");
+        // Obniżenie kapitału jest księgowane z ShareCapitalAmount, nawet jeżeli
+        // stary formularz pozostawił TotalAmount równe zero. Nie wolno wtedy
+        // uznać wypłaty za zerową przy teście z art. 300¹⁵ § 2 KSH.
+        var proposedAmount = ev.Type == CapitalEventType.ObnizenieKapitaluAkcyjnego
+            ? Math.Max(ev.TotalAmount, ev.ShareCapitalAmount)
+            : ev.TotalAmount;
+        if (DistributableLimit < proposedAmount)
+            issues.Add($"art. 300¹⁵ § 2 KSH: limit podziału {DistributableLimit:0.00} zł jest niższy od kwoty zdarzenia {proposedAmount:0.00} zł");
+        if (ev.Type == CapitalEventType.ObnizenieKapitaluAkcyjnego &&
+            ShareCapitalApprovedForDistribution < ev.ShareCapitalAmount)
+            issues.Add("art. 300¹⁵ § 2 KSH: suma środków z kapitału akcyjnego zatwierdzonych do wypłaty nie pokrywa całego obniżenia");
         if (ev.Type == CapitalEventType.ZaliczkaNaPoczetDywidendy && ShareCapitalApprovedForDistribution != 0)
             issues.Add("art. 300¹⁷ KSH: zaliczki nie można wypłacać z kapitału akcyjnego");
         if (ShareCapitalApprovedForDistribution > 0 || ev.Type == CapitalEventType.ObnizenieKapitaluAkcyjnego)
