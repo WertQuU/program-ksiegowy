@@ -452,7 +452,13 @@ public class FixedAssetCitCapitalTests
         var ex = await Assert.ThrowsAsync<DomainException>(() => cap.ConfirmDocumentsAsync(advance.Id));
         Assert.Contains("wypłacalności", ex.Message);
         advance.SolvencyTestConfirmed = true;
-        advance.SolvencyTestNotes = "Analiza wypłacalności PSA/1/2026: limit dywidendy, wymogi kapitału i prognoza sześciu miesięcy.";
+        advance.SolvencyTestNotes = System.Text.Json.JsonSerializer.Serialize(new PsaPayoutAssessment
+        {
+            ApprovedFinancialStatementReference = "SF/2025", SixMonthForecastReference = "PROG/2026/01",
+            LastYearProfit = 4000m, ShareCapitalBefore = 1000m,
+            LiabilitiesInApprovedStatement = 100000m, NonDistributableReserveAllocation = 320m,
+            MinimumProjectedLiquidityAfterPayout = 500m, SixMonthSolvencyConfirmed = true
+        });
         await t.Db.SaveChangesAsync();
         await cap.ConfirmDocumentsAsync(advance.Id);
         await cap.PostEventAsync(advance.Id);
