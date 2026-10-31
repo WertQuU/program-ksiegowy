@@ -84,8 +84,21 @@ public sealed class GitHubReleaseUpdater
         VerifyDestination(checksumsResponse.RequestMessage?.RequestUri);
         if (checksumsResponse.Content.Headers.ContentLength is > 131072)
             throw new DomainException("Lista sum kontrolnych jest zbyt duża.");
-        var checksums = await checksumsResponse.Content.ReadAsByteArrayAsync(ct);
-        if (checksums.Length > 131072) throw new DomainException("Lista sum kontrolnych jest zbyt duża.");
+        await using var manifestSource = await checksumsResponse.Content.ReadAsStreamAsync(ct);
+        using var manifestBuffer = new MemoryStream();
+        var manifestChunk = new byte[8192];
+        int manifestRead;
+        while ((manifestRead = await manifestSource.ReadAsync(manifestChunk, ct)) > 0)
+        {
+            if (manifestBuffer.Length + manifestRead > 131072)
+                throw new DomainException("Lista sum kontrolnych jest zbyt duża.");
+            await manifestBuffer.WriteAsync(manifestChunk.AsMemory(0, manifestRead), ct);
+        }
+        var checksums = manifestBuffer.ToArray();
+        if (checksum.GitHubDigest is { Length: > 0 } checksumDigest &&
+            !string.Equals(checksumDigest, "sha256:" + Convert.ToHexString(SHA256.HashData(checksums)),
+                StringComparison.OrdinalIgnoreCase))
+            throw new DomainException("Plik SHA256SUMS.txt różni się od sumy z metadanych GitHub.");
         var hash = ParseChecksum(System.Text.Encoding.UTF8.GetString(checksums), asset.Name);
         if (asset.GitHubDigest is { Length: > 0 } digest &&
             !string.Equals(digest, "sha256:" + hash, StringComparison.OrdinalIgnoreCase))
