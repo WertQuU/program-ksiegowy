@@ -344,6 +344,29 @@ public sealed class PayrollService
         if (missingAmount.Count > 0)
             throw new DomainException("Uzupełnij kwotę należności określoną w umowie (Osoby → „kwota z umowy”) i przelicz pozycje: " + string.Join(", ", missingAmount) +
                                       " — od niej zależy ryczałt od umów do 200 zł (art. 30 ust. 1 pkt 5a ustawy o PIT).");
+        // PIT art. 21 ust. 1 pkt 148: zwolnienie tylko do 26. urodzin włącznie, według daty wypłaty.
+        // SUS art. 6 ust. 4: zwolnienie ucznia/studenta ze zlecenia kończy się w dniu 26. urodzin
+        // (okres wykonywania umowy, NIE data wypłaty). Nie wolno księgować ulgi bez potwierdzenia wieku.
+        var ageUnknown = list.Items.Where(i => employees.TryGetValue(i.EmployeeId, out var e) &&
+            ((e.YouthRelief && i.ExemptRevenue > 0) ||
+             (e.StudentUnder26 && e.ContractType == ContractType.UmowaZlecenie && i.Gross > 0 && i.SocialBasis == 0)) &&
+            (e.BirthDate ?? Identifiers.BirthDateFromPesel(e.Pesel)) is null)
+            .Select(i => i.EmployeeName).Distinct().ToList();
+        if (ageUnknown.Count > 0)
+            throw new DomainException("Nie można potwierdzić wieku osoby korzystającej z ulgi dla młodych lub zwolnienia studenta ze składek ZUS: " +
+                                      string.Join(", ", ageUnknown) + ". Uzupełnij datę urodzenia lub poprawny PESEL przed zaksięgowaniem listy.");
+        // W miesiącu ukończenia 26 lat jeden znacznik StudentUnder26 nie pozwala ustalić
+        // odrębnych okresów podlegania ZUS; nie wolno zwolnić automatycznie całej wypłaty.
+        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
+        var studentAgeConflict = list.Items.Where(i => employees.TryGetValue(i.EmployeeId, out var e) &&
+            e.StudentUnder26 && e.ContractType == ContractType.UmowaZlecenie && i.Gross > 0 && i.SocialBasis == 0 &&
+            (e.BirthDate ?? Identifiers.BirthDateFromPesel(e.Pesel)) is { } birth &&
+            birth.AddYears(26) <= monthEnd)
+            .Select(i => i.EmployeeName).Distinct().ToList();
+        if (studentAgeConflict.Count > 0)
+            throw new DomainException("Zwolnienie studenta ze składek ZUS wymaga ustalenia okresu wykonywania zlecenia: " +
+                                      string.Join(", ", studentAgeConflict) +
+                                      ". Osoba ukończyła 26 lat przed końcem miesiąca listy; zweryfikuj daty i rozdziel wynagrodzenie na okresy przed/od 26. urodzin oraz przelicz listę.");
         var lines = new List<LineInput>
         {
             new("404", list.Items.Sum(i => i.Gross), 0, Description: "Wynagrodzenia brutto")
