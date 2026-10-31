@@ -143,8 +143,13 @@ public class PayrollSickBasisAuditTests
         Assert.Equal(3, march.Items.Single().SickDaysEmployer);
         Assert.Equal(517.74m, march.Items.Single().SickPay); // 6000 × 86,29% / 30 × 3
         Assert.Contains("100%", march.Items.Single().Notes);
-        await service.PostAsync(march.Id);
-        Assert.Equal(PayrollStatus.Zaksiegowana, march.Status);
+        // 3 z 10 dni opłaca pracodawca, pozostałe 7 to odrębny zasiłek.
+        // Nie zatwierdzamy niekompletnej listy: byłaby myląca podatkowo i płacowo.
+        var blocked = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
+        Assert.Contains("zasiłku chorobowego", blocked.Message);
+        Assert.Equal(PayrollStatus.Robocza, march.Status);
+        await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
+            30, SickWageCause.Pregnancy100, "OSW/2026/3-POWT");
         await Assert.ThrowsAsync<DomainException>(() =>
             service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
                 0, SickWageCause.Ordinary80, "NOWA/2026"));
