@@ -445,7 +445,11 @@ public class DatabaseEncryptionTests
     public void Remote_postgres_requires_tls()
     {
         var p = new DatabaseProfile { Engine = DatabaseEngine.PostgreSql, Host = "db.firma.pl", Database = "ksiegi", Username = "ksiegowa", SslMode = PgSslMode.Disable };
-        Assert.Throws<InvalidOperationException>(() => p.BuildConnectionString("x"));
+        foreach (var mode in new[] { PgSslMode.Disable, PgSslMode.Prefer, PgSslMode.Require, PgSslMode.VerifyCA })
+        {
+            p.SslMode = mode;
+            Assert.Throws<InvalidOperationException>(() => p.BuildConnectionString("x"));
+        }
         p.SslMode = PgSslMode.VerifyFull;
         Assert.Contains("db.firma.pl", p.BuildConnectionString("x"));
     }
