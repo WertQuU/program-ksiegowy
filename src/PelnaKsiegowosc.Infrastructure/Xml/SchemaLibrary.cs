@@ -109,6 +109,12 @@ public sealed class SchemaLibrary
         foreach (var location in ImportedLocations(doc))
         {
             var child = new Uri(url, location);
+            // Niektóre oficjalne schematy nadal deklarują importy przez HTTP.
+            // Przed pobraniem podnosimy transport do HTTPS tylko dla domen urzędowych.
+            if (child.Scheme == Uri.UriSchemeHttp &&
+                (child.Host.Equals("gov.pl", StringComparison.OrdinalIgnoreCase) ||
+                 child.Host.EndsWith(".gov.pl", StringComparison.OrdinalIgnoreCase)))
+                child = new UriBuilder(child) { Scheme = Uri.UriSchemeHttps, Port = -1 }.Uri;
             var childName = SafeName(Path.GetFileName(child.LocalPath));
             if (Find(childName) is not null || saved.Any(s => Path.GetFileName(s) == childName)) continue;
             await FetchAsync(child, childName, saved, depth + 1, ct);
