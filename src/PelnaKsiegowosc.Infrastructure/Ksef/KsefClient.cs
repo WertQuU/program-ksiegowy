@@ -93,7 +93,7 @@ public sealed class KsefClient
         _http.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
 
-    private async Task<T> SendAsync<T>(string operation, Func<HttpRequestMessage> make, CancellationToken ct)
+    private async Task<T> SendAsync<T>(string operation, Func<HttpRequestMessage> make, CancellationToken ct, bool allowRetries = true)
     {
         for (var attempt = 0; ; attempt++)
         {
@@ -104,7 +104,7 @@ public sealed class KsefClient
             {
                 resp = await _http.SendAsync(req, ct);
             }
-            catch (HttpRequestException ex) when (attempt < _maxRetries)
+            catch (HttpRequestException ex) when (allowRetries && attempt < _maxRetries)
             {
                 _log?.Invoke(operation, false, null, "błąd sieci, ponawianie: " + ex.Message);
                 await Task.Delay(Backoff(attempt, null), ct);
@@ -121,7 +121,7 @@ public sealed class KsefClient
                 }
                 var retriable = resp.StatusCode == HttpStatusCode.TooManyRequests || (int)resp.StatusCode >= 500;
                 _log?.Invoke(operation, false, (int)resp.StatusCode, Trunc(body, 500));
-                if (retriable && attempt < _maxRetries)
+                if (retriable && allowRetries && attempt < _maxRetries)
                 {
                     await Task.Delay(Backoff(attempt, resp.Headers.RetryAfter), ct);
                     continue;
@@ -253,7 +253,9 @@ public sealed class KsefClient
         var enc = EncryptInvoice(invoiceXml, s.Key, s.Iv);
         var body = new KsefDto.SendInvoiceRequest(Convert.ToBase64String(SHA256.HashData(invoiceXml)), invoiceXml.Length,
             Convert.ToBase64String(SHA256.HashData(enc)), enc.Length, Convert.ToBase64String(enc), false);
-        return SendAsync<KsefDto.SendInvoiceResponse>("wysyłka faktury", () => Req(HttpMethod.Post, $"sessions/online/{s.ReferenceNumber}/invoices", s.AccessToken, body), ct);
+        // POST faktury NIE jest operacją idempotentną: po utracie odpowiedzi nie wiadomo, czy serwer odebrał dokument.
+        // Nie ponawiaj automatycznie; stan próby jest trwale zapisywany w KsefService przed żądaniem.
+        return SendAsync<KsefDto.SendInvoiceResponse>("wysyłka faktury", () => Req(HttpMethod.Post, $"sessions/online/{s.ReferenceNumber}/invoices", s.AccessToken, body), ct, allowRetries: false);
     }
 
     public Task<KsefDto.InvoiceStatus> GetInvoiceStatusAsync(OnlineSession s, string invoiceReference, CancellationToken ct = default) =>
