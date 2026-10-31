@@ -27,6 +27,7 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-10 | Chorobowe wyliczane domyślnie od bieżącej pensji bez weryfikacji historii | Dla prostego przypadku (pełne miesiące, jedno wynagrodzenie zasadnicze, niezmieniona pensja) podstawa z zaksięgowanych miesięcy poprzedzających chorobę (do 12); brak/zmiana historii, dodatkowe umowy i wcześniejsze nieobecności blokują księgowanie. Trzy testy regresyjne. **Częściowe zabezpieczenie, nie pełna implementacja art. 36–43.** |
 | A-11 | Limit 33/14 dni chorobowego błędnie sumowany według roku wypłaty | Oddzielono rok wypłaty (PIT/ZUS) od roku niezdolności (art. 92 KP). `YearToDateAsync` sumuje chorobowe wg `PayrollList.Month`, a `PayrollAbsence.SickYear` wskazuje rok dla limitu 33/14 dni. Testy granicy grudzień/styczeń, wypłaty z opóźnieniem i 50. urodzin. |
 | A-12 | Brak wieku przy chorobowym mógł domyślnie zastosować limit 33 dni | `PostAsync` blokuje zaksięgowanie chorobowego bez zweryfikowanej daty urodzenia/PESEL; test regresyjny. |
+| A-13 | Data urodzenia w kartotece mogła być sprzeczna z poprawnym PESEL | `PayrollService.Validate` odrzuca sprzeczne daty i PESEL z nieprawidłową zakodowaną datą; test regresyjny. |
 
 ## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
 
