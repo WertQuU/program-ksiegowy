@@ -270,6 +270,9 @@ public class PostgresTests
     public async Task Posting_works_directly_on_postgres_and_connection_loss_is_reported()
     {
         var (pg, cs, name) = await CreateEmptyPostgresAsync();
+        // Przygotowanie schematu jest obowiązkiem administratora/testu, nie OpenActiveAsync.
+        // Aktywny klient nie może wykonywać automatycznych migracji istniejącej bazy.
+        await pg.Database.MigrateAsync();
         await pg.DisposeAsync();
         var connector = new DatabaseConnector(new InMemorySecretStore());
         var b = new NpgsqlConnectionStringBuilder(cs);
