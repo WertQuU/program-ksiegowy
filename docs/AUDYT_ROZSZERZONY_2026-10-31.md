@@ -8,7 +8,7 @@ PR: https://github.com/WertQuU/program-ksiegowy/pull/2
 
 Priorytet 1: zgodność z polskim prawem rachunkowym, podatkowym, ubezpieczeniowym i ochroną danych.
 Pozostałe obszary: bezpieczeństwo, kopie zapasowe, spójność i trwałość zapisów, integralność danych, migracje, współbieżność, wydajność i testy.
-Numer wersji: **1.0.0**. Nie scalać do main bez zgody właściciela.
+Numer wersji: **1.0.0**. Zgoda właściciela na scalenie została udzielona 31.10.2026, ale nie zwalnia to z weryfikacji CI ani usunięcia znanych blokujących ryzyk prawnych.
 Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach faktycznych.
 
 ## Poprawki w tej gałęzi (wymagają pozytywnego CI dla ostatecznego SHA)
@@ -22,6 +22,8 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-05 | Niezweryfikowany nagłówek kopii mógł narzucać koszt PBKDF2 i rozmiar bufora | Istniejąca walidacja stałych parametrów `ArchiveCrypto.ValidateHeader` i test `Malformed_archive_header_cannot_control_kdf_workload_or_chunk_allocation` — potwierdzone w kodzie, oczekuje na zielone CI |
 | A-06 | Brak wiarygodnego wieku przy ulgach PIT/ZUS lub ukończenie 26 lat w miesiącu zlecenia | `PayrollService.PostAsync` blokuje księgowanie bez daty urodzenia/PESEL i przy granicy 26 lat w miesiącu zlecenia; testy regresyjne. Podział okresów nadal wymaga ustalenia przez użytkownika |
 | A-07 | Błędy CS0246/CS0103 w testach pełnej kopii | Poprawiono przestrzeń nazw `PelnaKsiegowosc.Data` w `BackupCompletenessAuditTests.cs`; weryfikacja przez CI w toku |
+| A-08 | Test wspólnego limitu ulgi PIT używał PESEL osoby 36-letniej | Zmieniono dane testowe na poprawny PESEL osoby urodzonej 01.01.2001 (25 lat w dniu wypłaty 10.03.2026); nie zmieniano zasad naliczania ulgi | 
+| A-09 | Logowanie nieznanego użytkownika zużywało tylko 10 000 iteracji PBKDF2 wobec 600 000 domyślnie | Wyrównano koszt fikcyjnej weryfikacji hasła do konfiguracji `SecurityService` (`_iterations`); dalszy audyt ograniczania prób i starszych hashy pozostaje otwarty |
 
 ## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
 
@@ -58,7 +60,7 @@ Testować kompletność dowodów i trwałość zapisów, numerację, historię k
 
 ### T-01 — Różnica czasu sprawdzenia loginu (P2, potwierdzone ryzyko)
 
-SecurityService.LoginAsync dla nieznanego loginu uruchamia PBKDF2 z maksymalnie 10 000 iteracji, a dla istniejącego konta zwykle z 600 000. Może to ułatwiać enumerację użytkowników. Wyrównać koszt bez zwiększania ryzyka DoS oraz zastosować limity prób.
+**Częściowo naprawiono**: nieznany login używa tej samej skonfigurowanej liczby iteracji PBKDF2 co nowe konta (domyślnie 600 000). Wciąż wymagają oceny starsze hashe z inną liczbą iteracji, ograniczanie prób na poziomie źródłowego adresu/urządzenia i wpływ obciążenia KDF na DoS.
 
 ### T-02 — Kopie zapasowe (P1, do weryfikacji)
 
@@ -83,6 +85,6 @@ Nie zwiększać numeru wersji, nie publikować wydania ani nie scalać PR bez wy
 3. Test regresyjny dla każdej naprawionej niezgodności i przypadków granicznych.
 4. Porównanie wyliczeń podatkowych, kadrowych, JPK i sprawozdań z przykładami urzędowymi.
 5. Brak znanych blokujących rozbieżności księgowych/prawnych; niezależny przegląd merytoryczny.
-6. Wyraźna zgoda właściciela na scalenie, utrzymanie numeru **1.0.0**.
+6. Zgoda właściciela na scalenie została udzielona; utrzymać numer **1.0.0**, nie scalać bez pozytywnych kontroli 1–5.
 
 Źródła: ustawa o rachunkowości Dz.U. 2026 poz. 522 — https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522 ; KSR nr 1 https://www.gov.pl/documents/1079560/1080340/20171106_KSR_nr_1_nowelizacja.pdf/b0281da0-4875-3e8c-87cf-3422a239f40c ; ZUS https://www.zus.pl/
