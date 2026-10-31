@@ -19,6 +19,7 @@ namespace PelnaKsiegowosc.App;
 public partial class App : Avalonia.Application
 {
     private DispatcherTimer? _backupTimer;
+    private DispatcherTimer? _sharedChangesTimer;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
