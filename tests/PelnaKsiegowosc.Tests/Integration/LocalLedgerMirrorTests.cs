@@ -1,6 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Infrastructure.Integrity;
 using PelnaKsiegowosc.Tests.Infrastructure;
 
@@ -15,6 +16,17 @@ public sealed class LocalLedgerMirrorTests
         await using var cleanup = db;
         await db.Database.MigrateAsync();
         var companyId = Guid.NewGuid();
+        db.Companies.Add(new Company
+        {
+            Id = companyId,
+            FullName = "Testowa P.S.A.",
+            Nip = "5260250274",
+            Street = "Testowa",
+            BuildingNumber = "1",
+            PostalCode = "00-001",
+            City = "Warszawa"
+        });
+        await db.SaveChangesAsync();
         var root = Path.Combine(Path.GetTempPath(), "pk-local-integrity-" + Guid.NewGuid().ToString("N"));
         try
         {
@@ -52,6 +64,51 @@ public sealed class LocalLedgerMirrorTests
         {
             if (Directory.Exists(root)) Directory.Delete(root, true);
         }
+    }
+
+    [PostgresFact]
+    public async Task Missing_company_does_not_create_a_false_integrity_baseline()
+    {
+        var (db, _, _) = await PostgresTests.CreateEmptyPostgresAsync();
+        await using var cleanup = db;
+        await db.Database.MigrateAsync();
+        var companyId = Guid.NewGuid();
+        var root = Path.Combine(Path.GetTempPath(), "pk-missing-company-integrity-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var profile = new DatabaseProfile
+            {
+                Engine = DatabaseEngine.PostgreSql,
+                Host = "127.0.0.1",
+                Database = "missing-company-test"
+            };
+            var mirror = new LocalLedgerMirror(root, profile, companyId);
+            var result = await mirror.CompareAsync(db, companyId);
+            Assert.Equal(LocalLedgerMirror.MirrorStatus.Divergence, result.Status);
+            Assert.Contains(result.Problems, p => p.Contains("Brak firmy"));
+            Assert.False(File.Exists(mirror.FilePath));
+            Assert.Null(db.Database.CurrentTransaction);
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Checkpoint_of_one_company_cannot_be_used_to_check_another_company()
+    {
+        var profile = new DatabaseProfile
+        {
+            Engine = DatabaseEngine.PostgreSql,
+            Host = "127.0.0.1",
+            Database = "multi-company-check"
+        };
+        var firstCompany = Guid.NewGuid();
+        var mirror = new LocalLedgerMirror("temp", profile, firstCompany);
+        await using var db = DbContextFactory.Create(DatabaseEngine.Sqlite, "Data Source=:memory:");
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => mirror.CompareAsync(db, Guid.NewGuid()));
+        Assert.Contains("innej firmy", ex.Message);
     }
 
     [Fact]
