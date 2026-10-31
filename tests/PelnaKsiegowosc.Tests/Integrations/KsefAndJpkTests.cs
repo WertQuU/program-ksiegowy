@@ -219,7 +219,7 @@ public class KsefAndJpkTests
         Assert.Equal(KsefStatus.Wyslana, pending.KsefStatus);
         Assert.Null(pending.KsefReferenceNumber);
         Assert.Contains(await t.Db.DocumentHistory.ToListAsync(),
-            h => h.DocumentId == invoice.Id && h.Action == "KSEF_PROBA_WYSLANIA" && h.Details.Contains("SHA256="));
+            h => h.DocumentId == invoice.Id && h.Action == "KSEF_PROBA_WYSLANIA" && (h.Details?.Contains("SHA256=") ?? false));
 
         var ex = await Assert.ThrowsAsync<DomainException>(() => service.SendAsync(invoice.Id, client, FakeKsef.Token));
         Assert.Contains("nierozstrzygniętą wysyłkę", ex.Message);
