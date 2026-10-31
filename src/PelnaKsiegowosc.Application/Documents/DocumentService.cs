@@ -125,8 +125,10 @@ public sealed class DocumentService
     {
         cp.Validate().ThrowIfInvalid();
         if (input.Lines.Count == 0) throw new DomainException("Dokument musi zawierać co najmniej jedną pozycję.");
-        if (doc.IsSales && input.OperationDate > input.IssueDate.AddMonths(1))
-            throw new DomainException("Data sprzedaży nie może przypadać później niż miesiąc po dacie wystawienia.");
+        // Art. 106i ust. 7 VAT: standardowo fakturę wolno wystawić najwyżej 60 dni przed wykonaniem świadczenia.
+        // Wyjątki z ust. 8 (świadczenia rozliczane okresowo) wymagają odrębnej ścieżki z potwierdzonym okresem.
+        if (doc.IsSales && input.OperationDate > input.IssueDate.AddDays(60))
+            throw new DomainException("Faktura wyprzedza dostawę/usługę o ponad 60 dni (art. 106i ust. 7 ustawy o VAT). Wyjątki art. 106i ust. 8 wymagają odrębnej, udokumentowanej kwalifikacji.");
         if (input.Currency != "PLN" && input.ExchangeRate <= 0) throw new DomainException("Podaj kurs waluty (np. średni kurs NBP z dnia poprzedzającego).");
         if (input.Currency.Length != 3) throw new DomainException("Kod waluty musi mieć 3 litery (ISO 4217).");
         if (doc.IsPurchase && string.IsNullOrWhiteSpace(input.ExternalNumber)) throw new DomainException("Podaj numer dokumentu dostawcy.");
@@ -217,7 +219,10 @@ public sealed class DocumentService
     public static DateOnly DefaultVatPeriod(Document doc)
     {
         DateOnly d;
-        if (doc.IsSales) d = doc.OperationDate == default ? doc.IssueDate : (doc.OperationDate < doc.IssueDate ? doc.OperationDate : doc.IssueDate);
+        // Art. 19a ust. 1 VAT: samo wcześniejsze wystawienie faktury NIE przesuwa obowiązku na miesiąc wystawienia.
+        // Zaliczki, dostawy okresowe i wyjątki art. 19a wymagają osobnej klasyfikacji i nie mogą korzystać
+        // z niezweryfikowanego domyślnego okresu.
+        if (doc.IsSales) d = doc.OperationDate == default ? doc.IssueDate : doc.OperationDate;
         else d = new[] { doc.OperationDate, doc.ReceiptDate ?? doc.IssueDate, doc.IssueDate }.Max();
         return new DateOnly(d.Year, d.Month, 1);
     }
