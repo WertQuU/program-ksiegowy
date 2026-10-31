@@ -91,7 +91,7 @@ public class OctoberLegalAndWorkstationAuditTests
         var profile = new DatabaseProfile
         {
             Engine = DatabaseEngine.PostgreSql,
-            Host = "db.example.invalid", Database = "ksiegi", Username = "Ksiegowy_1"
+            Host = "db.example.invalid", Database = "ksiegi", Username = "ksiegowy_1"
         };
         Assert.Equal("db:ksiegowy_1", OperatorIdentity.LoginFor(profile));
         Assert.Equal(OperatorAccessService.IdFor("db:ksiegowy_1"),
@@ -155,15 +155,15 @@ public class OctoberLegalAndWorkstationAuditTests
     }
 
     [Fact]
-    public async Task Administrator_can_pre_register_workstation_with_narrow_roles()
+    public async Task Workstation_identity_and_ambiguous_database_login_are_rejected()
     {
         await using var t = await TestBooks.CreateAsync();
         var service = new OperatorAccessService(t.Db, t.Clock);
-        var login = "accountant@LAPTOP";
-        var registered = await service.RegisterAsync(t.User, login, new[] { Role.Ksiegowy });
-        Assert.Equal(OperatorAccessService.IdFor(login), registered.Id);
-        Assert.Equal(new[] { Role.Ksiegowy },
-            await service.ResolveAsync(registered.Id, login, t.Company.Id));
-        await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(t.User, login, new[] { Role.Administrator }));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            service.RegisterAsync(t.User, "accountant@LAPTOP", new[] { Role.Ksiegowy }));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            service.RegisterAsync(t.User, "db:Kasia", new[] { Role.Ksiegowy }));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            service.RegisterAsync(t.User, "db:pg_admin", new[] { Role.Ksiegowy }));
     }
 }
