@@ -10,6 +10,20 @@ namespace PelnaKsiegowosc.Tests.Modules;
 public class PayrollAgeAuditTests
 {
     [Fact]
+    public async Task Conflicting_pesel_and_explicit_birth_date_are_rejected()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new PayrollService(books.Db, books.User, books.Clock);
+        var error = await Assert.ThrowsAsync<DomainException>(() => service.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Anna", LastName = "Błędna", ContractType = ContractType.UmowaOPrace,
+            Pesel = "01210112341", BirthDate = new DateOnly(2002, 1, 1),
+            Gross = 6000m, StartDate = new DateOnly(2026, 1, 1)
+        }));
+        Assert.Contains("nie zgadza się", error.Message);
+    }
+
+    [Fact]
     public async Task Posting_youth_relief_without_verifiable_birth_date_is_blocked()
     {
         await using var books = await TestBooks.CreateAsync();
