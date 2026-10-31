@@ -143,7 +143,7 @@ public sealed class PayrollService
                              join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
                              where i.EmployeeId == e.Id && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
                                    l.Month >= startMonth && l.Month < list.Month
-                             select new { l.Month, i.BaseGross, i.SocialBasis, i.SickDays, i.UnpaidDays, i.ContractType }).ToListAsync(ct);
+                             select new { l.Month, i.BaseGross, i.SocialBasis, i.SickDays, i.UnpaidDays, i.ContractType, i.PensionEmployee, i.DisabilityEmployee, i.SicknessEmployee }).ToListAsync(ct);
         var months = new List<decimal>();
         for (var month = startMonth; month < list.Month; month = month.AddMonths(1))
         {
@@ -154,6 +154,12 @@ public sealed class PayrollService
             if (item.ContractType != ContractType.UmowaOPrace || item.SickDays != 0 || item.UnpaidDays != 0 ||
                 item.BaseGross is null || item.SocialBasis <= 0 || item.BaseGross.Value != item.SocialBasis)
                 return (null, $"w {month:MM.yyyy} wystąpiła nieobecność lub składniki wymagające uzupełnienia/kwalifikacji");
+            var rules = PayrollRules.For(month.Year);
+            static decimal Round2(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
+            if (item.PensionEmployee != Round2(item.SocialBasis * rules.PensionEmployee / 100m) ||
+                item.DisabilityEmployee != Round2(item.SocialBasis * rules.DisabilityEmployee / 100m) ||
+                item.SicknessEmployee != Round2(item.SocialBasis * rules.Sickness / 100m))
+                return (null, $"w {month:MM.yyyy} potrącone składki nie odpowiadają standardowym 13,71% (np. limit 30-krotności)");
             months.Add(item.SocialBasis);
         }
 
