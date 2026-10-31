@@ -636,7 +636,12 @@ public sealed class DocumentService
         var register = doc.IsSales ? VatRegisterType.Sprzedaz : VatRegisterType.Zakup;
         var ord = await _db.VatRegister.CountAsync(v => v.CompanyId == doc.CompanyId && v.Register == register && v.Period == period, ct)
                   + _db.VatRegister.Local.Count(v => v.CompanyId == doc.CompanyId && v.Register == register && v.Period == period && _db.Entry(v).State == EntityState.Added);
-        var marker = doc.KsefNumber is { Length: > 0 } ? JpkKsefMarker.NrKSeF : doc.JpkMarker ?? JpkKsefMarker.BFK;
+        // JPK_V7(3): BFK oznacza rzeczywiście potwierdzony wyjątek od KSeF,
+        // a nie brak danych. Nie wpisujemy więc BFK automatycznie dla okresów
+        // od lutego 2026. Eksport JPK blokuje brak kwalifikacji.
+        JpkKsefMarker? marker = doc.KsefNumber is { Length: > 0 }
+            ? JpkKsefMarker.NrKSeF
+            : doc.JpkMarker ?? (period < new DateOnly(2026, 2, 1) ? JpkKsefMarker.BFK : null);
         var gtu = string.Join(",", doc.Lines.Where(l => l.GtuCode != null).Select(l => "GTU_" + l.GtuCode).Distinct().OrderBy(x => x));
         foreach (var v in doc.VatLines)
         {
@@ -659,7 +664,7 @@ public sealed class DocumentService
     }
 
     private static VatRegisterEntry NewEntry(Document doc, VatRegisterType reg, DateOnly period, int ord, DocumentVatLine v, JpkFieldMapping map,
-        JpkKsefMarker marker, string gtu, decimal vatForRegister) => new()
+        JpkKsefMarker? marker, string gtu, decimal vatForRegister) => new()
     {
         CompanyId = doc.CompanyId,
         DocumentId = doc.Id,
