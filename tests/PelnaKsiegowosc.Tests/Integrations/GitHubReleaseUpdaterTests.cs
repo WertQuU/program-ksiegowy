@@ -59,7 +59,7 @@ public sealed class GitHubReleaseUpdaterTests
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
                     Content = new ByteArrayContent(brokenDownload
-                        ? Encoding.UTF8.GetBytes("testowa niebezpieczna zawartość inst!")
+                        ? content.Select((b, i) => i == 0 ? (byte)(b ^ 1) : b).ToArray()
                         : content)
                 };
             return new HttpResponseMessage(HttpStatusCode.NotFound);
@@ -75,7 +75,7 @@ public sealed class GitHubReleaseUpdaterTests
     }
 
     [Fact]
-    public async Task Stable_release_with_signed_off_checksums_is_downloaded_verifiably()
+    public async Task Stable_release_with_matching_checksums_is_downloaded_verifiably()
     {
         var (http, payload, _) = ReleaseClient();
         using (http)
