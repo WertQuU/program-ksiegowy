@@ -43,6 +43,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
     [ObservableProperty] private TableData _operators = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedOperator;
     [ObservableProperty] private string _operatorsInfo = "";
+    [ObservableProperty] private string _newOperatorLogin = "";
     [ObservableProperty] private bool _opAdmin;
     [ObservableProperty] private bool _opChief;
     [ObservableProperty] private bool _opAccountant;
@@ -90,7 +91,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
             foreach (var o in await new OperatorAccessService(db, Session.Clock).ListAsync(Session.User))
                 ops.Add(o.Id, o.Login, string.Join(", ", o.Roles.Select(RolePermissions.Name)), o.IsActive, o.LastSeenUtc is { } ls ? DateOnly.FromDateTime(ls) : (DateOnly?)null);
             Operators = ops;
-            OperatorsInfo = me + " Nowy operator (inne konto lub komputer) pojawia się tu po pierwszym uruchomieniu programu i nie ma uprawnień, dopóki administrator ich nie nada.";
+            OperatorsInfo = me + " Dodaj wcześniej operatora jako użytkownik@komputer (np. jan@LAPTOP), wybierz jego role i zapisz. Nowe stanowisko może też samo zgłosić się po połączeniu — bez praw do momentu przyznania dostępu. Konto PostgreSQL i token KSeF są konfigurowane oddzielnie na komputerze.";
         }
         else
         {
@@ -109,10 +110,8 @@ public sealed partial class CompanyViewModel : SectionViewModel
         OpActive = value.Cells[2] == "tak";
     }
 
-    [RelayCommand]
-    private Task SaveOperatorAsync() => ChangeAsync(async () =>
+    private List<Role> SelectedOperatorRoles()
     {
-        if (SelectedOperator?.Tag is not Guid id) throw new DomainException("Zaznacz operatora.");
         var roles = new List<Role>();
         if (OpAdmin) roles.Add(Role.Administrator);
         if (OpChief) roles.Add(Role.GlownyKsiegowy);
@@ -120,8 +119,24 @@ public sealed partial class CompanyViewModel : SectionViewModel
         if (OpInvoicing) roles.Add(Role.Fakturzysta);
         if (OpBoard) roles.Add(Role.Zarzad);
         if (OpAuditor) roles.Add(Role.Audytor);
+        return roles;
+    }
+
+    [RelayCommand]
+    private Task AddOperatorAsync() => ChangeAsync(async () =>
+    {
+        if (string.IsNullOrWhiteSpace(NewOperatorLogin)) throw new DomainException("Podaj użytkownik@komputer.");
         await using var db = Session.OpenDb();
-        await new OperatorAccessService(db, Session.Clock).SetAsync(Session.User, id, roles, OpActive);
+        await new OperatorAccessService(db, Session.Clock).RegisterAsync(Session.User, NewOperatorLogin, SelectedOperatorRoles());
+        NewOperatorLogin = "";
+    }, "Dodano operatora/stanowisko; uprawnienia zapisano w dzienniku zdarzeń.");
+
+    [RelayCommand]
+    private Task SaveOperatorAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedOperator?.Tag is not Guid id) throw new DomainException("Zaznacz operatora.");
+        await using var db = Session.OpenDb();
+        await new OperatorAccessService(db, Session.Clock).SetAsync(Session.User, id, SelectedOperatorRoles(), OpActive);
     }, "Zapisano uprawnienia operatora (zmiana zapisana w dzienniku zdarzeń).");
 
     [RelayCommand]
