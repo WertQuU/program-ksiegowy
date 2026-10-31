@@ -136,20 +136,47 @@ public static class JpkKrPdBuilder
             string.IsNullOrWhiteSpace(c.Nip) ? null : E("T_2", string.IsNullOrWhiteSpace(c.CountryCode) ? "PL" : c.CountryCode.ToUpperInvariant()),
             string.IsNullOrWhiteSpace(c.Nip) ? null : E("T_3", c.CountryCode is null or "PL" ? Identifiers.NormalizeNip(c.Nip) : c.Nip!.Trim()))).ToList();
 
-        // Zestawienie obrotów i sald — konta analityczne (najniższy poziom), wariant „jednostki pozostałe” (ZOiS7)
+        // Zestawienie obrotów i sald (ZOiS7, jednostki pozostałe): wszystkie konta — syntetyczne, pośrednie i analityczne — na
+        // których w roku wystąpiły obroty lub salda (wyjaśnienia MF do JPK_KR_PD). S_3 — konto nadrzędne; dla konta syntetycznego
+        // jego własny numer (przykład MF: S_1 = S_3 = 403). Obroty i salda kont nadrzędnych — suma kont podrzędnych. Znacznik konta
+        // nadrzędnego: wspólny znacznik kont podrzędnych, a przy różnych — „INNE” (konto syntetyczne ma jeden znacznik).
         var zois = new XElement(ns + "ZOiS");
-        var leafs = tb.Where(t => t.IsLeaf && (t.TotalDebit != 0 || t.TotalCredit != 0)).OrderBy(t => t.Account.Number, StringComparer.Ordinal).ToList();
+        var active = tb.Where(t => t.TotalDebit != 0 || t.TotalCredit != 0).OrderBy(t => t.Account.Number, StringComparer.Ordinal).ToList();
+        var leafs = active.Where(t => t.IsLeaf).ToList();
         var parentNumbers = tb.ToDictionary(t => t.Account.Id, t => t.Account.Number);
+        var byId = tb.ToDictionary(t => t.Account.Id);
+        var leafMarkers = new Dictionary<Guid, (string Marker, string? Pd)>();
         foreach (var t in leafs)
         {
             var a = t.Account;
-            var closing = t.TotalDebit - t.TotalCredit;
-            var marker = StatementMarker(a, closing);
+            var marker = StatementMarker(a, t.TotalDebit - t.TotalCredit);
             if (marker == "INNE" && a.Type != AccountType.Pozabilansowe)
                 warnings.Add($"Konto {a.Number} {a.Name}: brak przypisania do pozycji sprawozdania — znacznik „INNE”. Uzupełnij przypisanie w planie kont.");
-            var pd = TaxMarker(a.CitClassification, a.ProfitLossLine);
             if (a.IsResultAccount && a.CitClassification == CitClassification.DoAnalizy && (t.CumulativeDebit != 0 || t.CumulativeCredit != 0))
                 warnings.Add($"Konto {a.Number} {a.Name}: kwalifikacja podatkowa „do analizy” — ustal ją w planie kont (znacznik PD).");
+            leafMarkers[a.Id] = (marker, TaxMarker(a.CitClassification, a.ProfitLossLine));
+        }
+        bool IsDescendant(Guid accountId, Guid ancestorId)
+        {
+            var p = byId[accountId].Account.ParentId;
+            while (p is { } pid) { if (pid == ancestorId) return true; p = byId.TryGetValue(pid, out var x) ? x.Account.ParentId : null; }
+            return false;
+        }
+        foreach (var t in active)
+        {
+            var a = t.Account;
+            var closing = t.TotalDebit - t.TotalCredit;
+            string marker;
+            string? pd;
+            if (t.IsLeaf) (marker, pd) = leafMarkers[a.Id];
+            else
+            {
+                var children = leafMarkers.Where(kv => IsDescendant(kv.Key, a.Id)).Select(kv => kv.Value).ToList();
+                var markers = children.Select(c => c.Marker).Distinct().ToList();
+                marker = markers.Count == 1 ? markers[0] : "INNE";
+                var pds = children.Select(c => c.Pd).Distinct().ToList();
+                pd = pds.Count == 1 ? pds[0] : null;
+            }
             zois.Add(new XElement(ns + "ZOiS7",
                 E("S_1", a.Number), E("S_2", Text(a.Name)),
                 E("S_3", a.ParentId is { } pid && parentNumbers.TryGetValue(pid, out var pn) ? pn : a.Number),

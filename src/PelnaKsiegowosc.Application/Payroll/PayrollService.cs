@@ -135,7 +135,8 @@ public sealed class PayrollService
                 var (sick, unpaid) = await hr.MonthAbsencesAsync(e.Id, m, ct);
                 if (sick > 0 || unpaid > 0) absence = new PayrollAbsence(sick, unpaid, workingDays);
             }
-            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident, absence);
+            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident, absence,
+                ownEmployee: IsOwnEmployee(e, employees));
             it.PayrollListId = list.Id;
             list.Items.Add(it);
             inputs[it] = (e, absence);
@@ -145,7 +146,7 @@ public sealed class PayrollService
             foreach (var (item, (emp, abs)) in group.ToList())
             {
                 var others = group.Where(x => x.Key != item).Sum(x => x.Key.SocialBasis);
-                var fresh = PayrollCalculator.Compute(emp, emp.Gross, await YearToDateAsync(emp.Id, paymentDate, null, ct), rules, accident, abs, others);
+                var fresh = PayrollCalculator.Compute(emp, emp.Gross, await YearToDateAsync(emp.Id, paymentDate, null, ct), rules, accident, abs, others, IsOwnEmployee(emp, employees));
                 fresh.Id = item.Id;
                 fresh.PayrollListId = list.Id;
                 var i = list.Items.IndexOf(item);
@@ -156,6 +157,11 @@ public sealed class PayrollService
         await _db.SaveChangesAsync(ct);
         return list;
     }
+
+    /// <summary>Ta sama osoba (PESEL) ma w miesiącu umowę o pracę z płatnikiem.</summary>
+    private static bool IsOwnEmployee(Employee e, IEnumerable<Employee> active) =>
+        e.ContractType is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && !string.IsNullOrWhiteSpace(e.Pesel)
+        && active.Any(x => x.Id != e.Id && x.ContractType == ContractType.UmowaOPrace && x.Pesel == e.Pesel);
 
     public Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default) => ChangeAsync(itemId, gross, 0, 0, ct);
 
@@ -174,7 +180,10 @@ public sealed class PayrollService
                                                                       join p in _db.Employees on x.EmployeeId equals p.Id
                                                                       where x.PayrollListId == list.Id && x.Id != it.Id && p.Pesel == e.Pesel
                                                                       select x.SocialBasis).ToListAsync(ct)).Sum();
-        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence, others);
+        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
+        var sameMonth = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId && x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToListAsync(ct);
+        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence, others,
+            IsOwnEmployee(e, sameMonth));
         fresh.Id = it.Id;
         fresh.PayrollListId = list.Id;
         _db.Entry(it).CurrentValues.SetValues(fresh);

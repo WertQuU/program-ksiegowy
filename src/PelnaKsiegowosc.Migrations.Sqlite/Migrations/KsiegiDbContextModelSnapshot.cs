@@ -2490,6 +2490,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal?>("ContractTotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ContractType")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -982,3 +982,26 @@ public class FiledVatDeclarationTests
         Assert.Equal(2, (await vat.FiledDeclarationsAsync(jan)).Count);
     }
 }
+
+public class CitPaymentsTests
+{
+    [Fact]
+    public async Task Cit8_matches_cash_payments_to_advance_deadlines_and_reports_arrears_without_calling_it_overpayment()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        foreach (var (no, due, deadline) in new[] { (1, 1000m, new DateOnly(2026, 2, 20)), (2, 500m, new DateOnly(2026, 3, 20)) })
+            t.Db.CitAdvances.Add(new CitAdvance { CompanyId = t.Company.Id, FiscalYearId = t.Year.Id, PeriodNumber = no, PeriodEnd = new DateOnly(2026, no, 28),
+                AdvanceDue = due, PaymentDeadline = deadline, IsApproved = true, UserId = t.User.UserId, CalculatedAtUtc = DateTime.UtcNow });
+        await t.Db.SaveChangesAsync();
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 2, 15), "WB/1", new("220-01", 1000m, 0), new("130-01", 0, 1000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 3, 25), "WB/2", new("220-01", 300m, 0), new("130-01", 0, 300m)));
+        await t.Db.SaveChangesAsync();
+        var r = await new Application.Reports.ReportService(t.Db, t.User, t.Clock).Cit8Async(t.Year.Id);
+        string Label(object? c) => c as string ?? "";
+        Assert.Equal(1300m, r.Rows.Single(x => (string?)x.Cells[0] == "G.5").Cells[2]);
+        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("w terminie"));
+        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("ZALEGŁOŚĆ 200,00"));
+        Assert.Contains(r.Notes, n => n.Contains("zaległość podatkowa"));
+        Assert.DoesNotContain(r.Rows, x => Label(x.Cells[1]) == "Nadpłata");
+    }
+}

@@ -309,11 +309,18 @@ public class KsefAndJpkTests
         Assert.Equal("BPAI", Marker("801"));
         Assert.Equal("BAAII1c_W", Marker("010-03"));
         Assert.Equal("BAAII1c_U", Marker("070-03"));
-        // ZOiS: konta ostatecznego zapisu (S_1, XSD TZOiS) z kontem syntetycznym jako nadrzędnym w S_3 — syntetyka nie jest
-        // dublowana jako odrębny wiersz (wyjaśnienia MF: konto ostatecznego zapisu — syntetyczne lub analityczne)
-        Assert.Equal("700", zois.Single(z => z.Element(ns + "S_1")!.Value == "700-01").Element(ns + "S_3")!.Value);
-        Assert.DoesNotContain(zois, z => z.Element(ns + "S_1")!.Value == "700");
+        // ZOiS: konta syntetyczne i analityczne z obrotami lub saldami (wyjaśnienia MF); syntetyka: S_3 = własny numer,
+        // obroty = suma analityk; analityka: S_3 = konto nadrzędne
+        var z700 = zois.Single(z => z.Element(ns + "S_1")!.Value == "700");
+        var z70001 = zois.Single(z => z.Element(ns + "S_1")!.Value == "700-01");
+        Assert.Equal("700", z700.Element(ns + "S_3")!.Value);
+        Assert.Equal("700", z70001.Element(ns + "S_3")!.Value);
+        var analytics700 = zois.Where(z => z.Element(ns + "S_3")!.Value == "700" && z.Element(ns + "S_1")!.Value != "700").ToList();
+        Assert.Equal(analytics700.Sum(z => decimal.Parse(z.Element(ns + "S_7")!.Value, System.Globalization.CultureInfo.InvariantCulture)),
+            decimal.Parse(z700.Element(ns + "S_7")!.Value, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal("RPAI_RKAI_POZ", z700.Element(ns + "S_12_1")!.Value);                 // jednolity znacznik analityk
         Assert.Equal("801", zois.Single(z => z.Element(ns + "S_1")!.Value == "801").Element(ns + "S_3")!.Value); // konto bez analityki
+        Assert.Equal(zois.Count, zois.Select(z => z.Element(ns + "S_1")!.Value).Distinct().Count()); // każde konto raz
         var ctrl = r.Document.Descendants(ns + "Ctrl").Single();
         Assert.Equal(ctrl.Element(ns + "C_4")!.Value, ctrl.Element(ns + "C_5")!.Value);
         Assert.True(r.Document.Descendants(ns + "Dziennik").Count() > 5);

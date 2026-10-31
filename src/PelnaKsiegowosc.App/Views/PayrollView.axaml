@@ -14,7 +14,7 @@
             <TextBlock Grid.Column="2" Text="Nazwisko" /><TextBox Grid.Column="3" Text="{Binding LastName}" />
             <TextBlock Grid.Column="4" Text="PESEL" /><TextBox Grid.Column="5" Text="{Binding Pesel}" />
             <TextBlock Grid.Row="1" Text="Rodzaj umowy" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ContractTypes}" SelectedItem="{Binding Contract}" HorizontalAlignment="Stretch" />
-            <TextBlock Grid.Row="1" Grid.Column="2" Text="Brutto miesięcznie" /><TextBox Grid.Row="1" Grid.Column="3" Text="{Binding Gross}" />
+            <TextBlock Grid.Row="1" Grid.Column="2" Text="Brutto miesięcznie" /><Grid Grid.Row="1" Grid.Column="3" ColumnDefinitions="*,*"><TextBox Text="{Binding Gross}" Margin="0,2,4,2" /><TextBox Grid.Column="1" Text="{Binding ContractTotal}" Watermark="kwota z umowy (zlec./dzieło)" ToolTip.Tip="Łączna kwota należności określona w umowie zlecenia / o dzieło — decyduje o ryczałcie do 200 zł (art. 30 ust. 1 pkt 5a ustawy o PIT)" Margin="0,2,12,2" /></Grid>
             <TextBlock Grid.Row="1" Grid.Column="4" Text="Wymiar etatu" /><TextBox Grid.Row="1" Grid.Column="5" Text="{Binding Fraction}" Watermark="1 = pełny etat" />
             <TextBlock Grid.Row="2" Text="Koszty uzyskania" /><ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding CostTypes}" SelectedItem="{Binding Costs}" HorizontalAlignment="Stretch" />
             <TextBlock Grid.Row="2" Grid.Column="2" Text="Umowa od / do" />

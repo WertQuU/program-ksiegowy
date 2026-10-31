@@ -67,6 +67,30 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Flat_rate_depends_on_contract_amount_not_single_payout_and_excludes_own_employees()
+    {
+        // umowa zlecenia na 600 zł wypłacana w trzech ratach po 200 zł — kwota z umowy > 200 zł: zaliczka na zasadach ogólnych
+        var big = new Employee { FirstName = "Z", LastName = "R", ContractType = ContractType.UmowaZlecenie, ContractTotalAmount = 600m };
+        var part = PayrollCalculator.Compute(big, 200m, new PayrollYearToDate(), R, 1.67m);
+        Assert.False(part.FlatRateTax);
+        // umowa o dzieło na 180 zł — ryczałt 12% (22 zł po zaokrągleniu podstawy)
+        var small = new Employee { FirstName = "D", LastName = "R", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 180m };
+        var f = PayrollCalculator.Compute(small, 180m, new PayrollYearToDate(), R, 1.67m);
+        Assert.True(f.FlatRateTax);
+        Assert.Equal(22m, f.TaxAdvance);
+        // ta sama umowa z własnym pracownikiem — bez ryczałtu
+        var own = PayrollCalculator.Compute(small, 180m, new PayrollYearToDate(), R, 1.67m, ownEmployee: true);
+        Assert.False(own.FlatRateTax);
+        Assert.Contains("własnym pracownikiem", own.Notes);
+        // brak kwoty z umowy — ostrzeżenie; ulga dla młodych — przychód zwolniony, bez ryczałtu
+        Assert.Contains("brak kwoty należności z umowy", PayrollCalculator.Compute(new Employee { FirstName = "B", LastName = "K", ContractType = ContractType.UmowaODzielo }, 150m, new PayrollYearToDate(), R, 1.67m).Notes);
+        var young = new Employee { FirstName = "M", LastName = "Ł", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, ContractTotalAmount = 150m };
+        var y = PayrollCalculator.Compute(young, 150m, new PayrollYearToDate(), R, 1.67m);
+        Assert.False(y.FlatRateTax);
+        Assert.Equal(0m, y.TaxAdvance);
+    }
+
+    [Fact]
     public void Thresholds_caps_and_special_cases()
     {
         var e = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace };

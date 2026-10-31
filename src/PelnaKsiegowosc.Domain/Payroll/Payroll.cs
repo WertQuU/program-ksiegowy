@@ -47,6 +47,11 @@ public class Employee : CompanyEntity
     public DateOnly? EndDate { get; set; }
     /// <summary>Wynagrodzenie miesięczne brutto (umowa o pracę, powołanie) albo domyślna kwota umowy cywilnoprawnej.</summary>
     public decimal Gross { get; set; }
+    /// <summary>
+    /// Umowa zlecenia / o dzieło: łączna kwota należności określona w umowie (art. 30 ust. 1 pkt 5a ustawy o PIT — ryczałt tylko,
+    /// gdy nie przekracza 200 zł; decyduje kwota z umowy, nie pojedyncza wypłata). Brak — przyjmowana jest kwota wypłaty z ostrzeżeniem.
+    /// </summary>
+    public decimal? ContractTotalAmount { get; set; }
     public decimal WorkTimeFraction { get; set; } = 1m;
     public CostsOfIncome Costs { get; set; } = CostsOfIncome.Standardowe;
     /// <summary>Złożony PIT-2 — płatnik stosuje kwotę zmniejszającą podatek (1/12 z 3600 zł).</summary>

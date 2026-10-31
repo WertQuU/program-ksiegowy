@@ -2495,6 +2495,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<Guid>("CompanyId")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("ContractTotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("ContractType")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -66,8 +66,10 @@ public static class PayrollCalculator
 
     /// <param name="otherTitlesFpBasis">Podstawy składek z innych tytułów tej samej osoby u tego płatnika w miesiącu (np. umowa o pracę
     /// i umowa zlecenia) — obowiązek opłacania Funduszu Pracy ustala się od łącznej podstawy.</param>
+    /// <param name="ownEmployee">Zleceniobiorca / wykonawca dzieła jest jednocześnie pracownikiem płatnika (umowa o pracę) — ryczałt
+    /// z art. 30 ust. 1 pkt 5a nie ma zastosowania.</param>
     public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null,
-        decimal otherTitlesFpBasis = 0m)
+        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false)
     {
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
         var fullMonthGross = gross;
@@ -111,8 +113,14 @@ public static class PayrollCalculator
         it.HealthBase = healthDue ? R2(gross - it.SocialEmployee) : 0;
         it.Health = Pct(it.HealthBase, rules.Health);
 
-        // ryczałt od umów zlecenia/o dzieło do 200 zł (art. 30 ust. 1 pkt 5a ustawy o PIT)
-        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && gross <= rules.FlatRateLimit && !e.Pit2 && !e.YouthRelief)
+        // ryczałt od umów zlecenia/o dzieło (art. 30 ust. 1 pkt 5a ustawy o PIT): kwota należności OKREŚLONA W UMOWIE nie przekracza
+        // 200 zł, umowa zawarta z osobą niebędącą pracownikiem płatnika; przychód zwolniony (ulga dla młodych) — bez podatku
+        var contractAmount = e.ContractTotalAmount ?? gross;
+        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && e.ContractTotalAmount is null)
+            notes.Add("brak kwoty należności z umowy — przy ocenie ryczałtu (do 200 zł) przyjęto kwotę tej wypłaty; uzupełnij kwotę z umowy");
+        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && contractAmount <= rules.FlatRateLimit && ownEmployee)
+            notes.Add("umowa z własnym pracownikiem — ryczałt z art. 30 ust. 1 pkt 5a nie ma zastosowania (zaliczka na zasadach ogólnych)");
+        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && contractAmount <= rules.FlatRateLimit && !ownEmployee && !e.YouthRelief)
         {
             it.FlatRateTax = true;
             it.TaxBase = R0(gross);
