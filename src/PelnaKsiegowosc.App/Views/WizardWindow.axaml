@@ -134,6 +134,18 @@
       <!-- 8. Kopie -->
       <StackPanel IsVisible="{Binding IsBackup}" Spacing="8">
         <TextBlock Classes="info" Text="Kopie zapasowe są szyfrowane (AES-256-GCM). Klucz kopii jest przechowywany w magazynie haseł systemu, a klucz odzyskiwania musisz zapisać poza komputerem — bez niego nie odtworzysz kopii po awarii. Kopie w chmurze (OVHcloud Object Storage) skonfigurujesz w sekcji „Integracje”." />
+        <TextBlock Text="Katalog lokalnych kopii (na tym komputerze)" />
+        <TextBox Text="{Binding LocalBackupDirectory}" Watermark="Wskaż katalog kopii" />
+        <CheckBox Content="Skonfiguruj dodatkową kopię w magazynie S3 (np. OVHcloud Object Storage)"
+                  IsChecked="{Binding ConfigureS3}" />
+        <StackPanel Spacing="6" IsVisible="{Binding ConfigureS3}">
+          <TextBlock Text="Endpoint S3 (HTTPS)" /><TextBox Text="{Binding S3Endpoint}" Watermark="https://s3.region.example.com" />
+          <TextBlock Text="Region" /><TextBox Text="{Binding S3Region}" Watermark="np. gra" />
+          <TextBlock Text="Nazwa bucketu" /><TextBox Text="{Binding S3Bucket}" />
+          <TextBlock Text="S3 Access Key" /><TextBox Text="{Binding S3AccessKey}" PasswordChar="•" />
+          <TextBlock Text="S3 Secret Key" /><TextBox Text="{Binding S3SecretKey}" PasswordChar="•" />
+          <TextBlock Classes="info" Text="Klucze S3 zostaną zapisane wyłącznie w magazynie haseł systemu. Konfigurację sprawdzisz w Integracjach; samo zapisanie danych nie potwierdza, że kopia zdalna działa." TextWrapping="Wrap" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="Wygeneruj nowy klucz kopii" Command="{Binding GenerateKeyCommand}" />
           <Button Content="Mam już klucz odzyskiwania…" Command="{Binding EnterKeyCommand}" />
