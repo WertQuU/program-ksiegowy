@@ -90,8 +90,11 @@ public sealed class DatabaseProfile
                     throw new InvalidOperationException("Profil PostgreSQL wymaga hosta, nazwy bazy i użytkownika.");
                 if (!PostgresLoginPolicy.IsValid(Username))
                     throw new InvalidOperationException("Login PostgreSQL musi mieć maksymalnie 63 znaki, zaczynać się od małej litery lub _ i zawierać tylko małe litery, cyfry i _. Nie używaj zastrzeżonego prefiksu pg_.");
-                if (SslMode is PgSslMode.Disable or PgSslMode.Prefer && !IsLocalHost(Host))
-                    throw new InvalidOperationException("Połączenie z serwerem bazy poza tym komputerem musi być szyfrowane (TLS: Require, VerifyCA lub VerifyFull) — dane księgowe i osobowe (RODO art. 32).");
+                // Require i VerifyCA szyfrują połączenie, ale nie weryfikują pełnej nazwy
+                // hosta. Przy zdalnym serwerze ksiąg dopuszczamy wyłącznie VerifyFull,
+                // włącznie z weryfikacją certyfikatu i nazwy podanego serwera.
+                if (!IsLocalHost(Host) && SslMode != PgSslMode.VerifyFull)
+                    throw new InvalidOperationException("Zdalne połączenie PostgreSQL wymaga TLS VerifyFull z weryfikacją certyfikatu i nazwy serwera. Zainstaluj poprawny certyfikat CA; samo Require/VerifyCA nie wystarcza.");
                 var b = new NpgsqlConnectionStringBuilder
                 {
                     Host = Host,
