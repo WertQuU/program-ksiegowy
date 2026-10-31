@@ -25,6 +25,8 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-08 | Test wspólnego limitu ulgi PIT używał PESEL osoby 36-letniej | Zmieniono dane testowe na poprawny PESEL osoby urodzonej 01.01.2001 (25 lat w dniu wypłaty 10.03.2026); nie zmieniano zasad naliczania ulgi | 
 | A-09 | Logowanie nieznanego użytkownika zużywało tylko 10 000 iteracji PBKDF2 wobec 600 000 domyślnie | Wyrównano koszt fikcyjnej weryfikacji hasła do konfiguracji `SecurityService` (`_iterations`); dalszy audyt ograniczania prób i starszych hashy pozostaje otwarty |
 | A-10 | Chorobowe wyliczane domyślnie od bieżącej pensji bez weryfikacji historii | Dla prostego przypadku (pełne miesiące, jedno wynagrodzenie zasadnicze, niezmieniona pensja) podstawa z zaksięgowanych miesięcy poprzedzających chorobę (do 12); brak/zmiana historii, dodatkowe umowy i wcześniejsze nieobecności blokują księgowanie. Trzy testy regresyjne. **Częściowe zabezpieczenie, nie pełna implementacja art. 36–43.** |
+| A-11 | Limit 33/14 dni chorobowego błędnie sumowany według roku wypłaty | Oddzielono rok wypłaty (PIT/ZUS) od roku niezdolności (art. 92 KP). `YearToDateAsync` sumuje chorobowe wg `PayrollList.Month`, a `PayrollAbsence.SickYear` wskazuje rok dla limitu 33/14 dni. Testy granicy grudzień/styczeń, wypłaty z opóźnieniem i 50. urodzin. |
+| A-12 | Brak wieku przy chorobowym mógł domyślnie zastosować limit 33 dni | `PostAsync` blokuje zaksięgowanie chorobowego bez zweryfikowanej daty urodzenia/PESEL; test regresyjny. |
 
 ## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
 
@@ -33,6 +35,7 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | R-10 | ZUS P0 | **Częściowo zabezpieczone**: blokada księgowania przy nieznanym wieku i w miesiącu ukończenia 26 lat. Nadal brak rejestru okresów statusu ucznia/studenta i automatycznego rozdzielenia wynagrodzenia przed/od urodzin; nie utożsamiać daty wypłaty z okresem ubezpieczenia | Testy `PayrollAgeAuditTests`, dokumenty potwierdzające status, test rozdzielenia okresów |
 | R-11 | JPK P0 | Osobna struktura `JPK_ST_KR` jest oznaczona w dokumentacji jako poza programem; dla podmiotów objętych obowiązkiem trzeba zapewnić kompletne raportowanie także środków trwałych | Porównanie eksportu z materiałami MF i ustalenie zakresu samodzielności aplikacji |
 | R-12 | ochrona danych P1 | Należy potwierdzić systematyczne wykonywanie i testowe odtwarzanie kopii oraz okresy retencji odpowiednie do rodzaju dokumentów | Art. 10, 13, 71–74 UoR i procedury organizacyjne |
+| R-13 | ZUS P0 | Wg ZUS limit 33/14 dni sumuje choroby w danym roku również u **innych pracodawców**. Program nie ma potwierdzenia wcześniejszego wykorzystania limitu ani kwalifikacji stawki 100% (ciąża, wypadek w drodze do pracy, dawstwo); nie wolno uznawać automatu za kompletny | Ewidencja wcześniejszych okresów i przyczyn, udokumentowane oświadczenia, testy |
 
 Oficjalne źródła: ulga dla młodych https://podatki.gov.pl/ulgi-i-odliczenia/ulga-dla-mlodych-pit ; ZUS (umowy cywilnoprawne) https://www.zus.pl/en/-/umowy-cywilnoprawne-w-ubezpieczeniach-spolecznych ; JPK_PD https://podatki.gov.pl/podatki-firmowe/jednolity-plik-kontrolny/jpk_pd/jpk_pd ; UoR Dz.U. 2026 poz. 522 https://eli.gov.pl/eli/DU/2026/522/ogl .
 
@@ -43,7 +46,7 @@ Oficjalne źródła: ulga dla młodych https://podatki.gov.pl/ulgi-i-odliczenia/
 ### L-01 — Podstawa świadczenia chorobowego (P0, potwierdzone ryzyko)
 
 **Częściowo naprawiono:** `PayrollService.VerifiedSickBasisAsync` odczytuje maksymalnie 12 pełnych miesięcy zaksięgowanych list poprzedzających chorobę i przekazuje historyczną kwotę brutto jako `PayrollAbsence.SickBasis`, ale wyłącznie dla stabilnego wynagrodzenia zasadniczego bez nieobecności, innych umów i zmian płacy. Brak jednoznacznej historii lub przypadek szczególny blokuje `PostAsync`; wyświetlana na liście kwota wstępna NIE jest kwotą zatwierdzoną. Nie ma jeszcze ręcznego, audytowalnego zatwierdzania podstawy dla przypadków złożonych.
-**Nadal P0:** składniki zmienne i kwartalne/roczne, niepełne miesiące, zmiana etatu, przerwy między niezdolnościami, szczególne stawki i podstawy (art. 36–43), historia sprzed uruchomienia programu oraz kompletna dokumentacja wyliczenia. Potrzebna dalsza implementacja i niezależny przegląd.
+**Nadal P0:** składniki zmienne i kwartalne/roczne, niepełne miesiące, zmiana etatu, przerwy między niezdolnościami, szczególne stawki i podstawy (art. 36–43), wcześniejsze choroby u innych pracodawców (art. 92 KP), stawka 100% przy określonych przyczynach, historia sprzed uruchomienia programu oraz kompletna dokumentacja wyliczenia. Potrzebna dalsza implementacja i niezależny przegląd.
 
 ### L-02 — Rozliczenia płac, PIT i ZUS (P1, do weryfikacji)
 
@@ -77,7 +80,7 @@ Zweryfikować retencję, żądania osób, uprawnienia, szyfrowanie i magazyn klu
 
 ### T-05 — Wersjonowanie i migracje (P1, do weryfikacji)
 
-Nie zwiększać numeru wersji, nie publikować wydania ani nie scalać PR bez wyraźnej decyzji właściciela. Migracje sprawdzić na danych testowych z obu silników i kopii starych wersji.
+Nie zwiększać numeru wersji ani nie publikować wydania; zgoda właściciela na scalenie jest, ale wymagana jest pozytywna bramka akceptacji. Migracje sprawdzić na danych testowych z obu silników i kopii starych wersji.
 
 ## Bramka akceptacji
 
@@ -91,3 +94,5 @@ Nie zwiększać numeru wersji, nie publikować wydania ani nie scalać PR bez wy
 Źródło podstawy chorobowego: https://www.zus.pl/pl/swiadczenia/zasilki/zasilek-chorobowy/podstawa-wymiaru/dla-pracownikow ; ustawa o świadczeniach pieniężnych w razie choroby i macierzyństwa (art. 36–43).
 
 Źródła: ustawa o rachunkowości Dz.U. 2026 poz. 522 — https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522 ; KSR nr 1 https://www.gov.pl/documents/1079560/1080340/20171106_KSR_nr_1_nowelizacja.pdf/b0281da0-4875-3e8c-87cf-3422a239f40c ; ZUS https://www.zus.pl/
+
+Dodatkowe źródło dla art. 92 KP i limitu w roku choroby (również u innych pracodawców): https://bip.zus.pl/pl/web/guest/swiadczenia/zasilki/zasilek-chorobowy/z-ubezpieczenia-chorobowego/prawo-do-zasilku-i-okres-przyslugiwania .
