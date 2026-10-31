@@ -127,6 +127,12 @@ public sealed class BackupService
                     var sha = await DataDump.Sha256FileAsync(dest, ct);
                     if (sha != a.Sha256) manifest.Warnings.Add($"Załącznik {a.FileName}: suma SHA-256 niezgodna z bazą (plik uszkodzony lub zmieniony).");
                 }
+                // Kopia „z załącznikami” musi zawierać komplet nieuszkodzonych dowodów.
+                // Samo poprawne odszyfrowanie ZIP i zweryfikowanie obecnych plików nie
+                // dowodzi kompletności archiwum względem bazy danych (art. 71 UoR).
+                if (manifest.Warnings.Count > 0)
+                    throw new InvalidDataException(
+                        "Nie można utworzyć kompletnej kopii z załącznikami: " + string.Join("; ", manifest.Warnings));
             }
             if (configJsonWithoutSecrets is not null)
             {
