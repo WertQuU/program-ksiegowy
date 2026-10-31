@@ -106,7 +106,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
         new(SickWageCause.CommuteAccident100, "Wypadek w drodze do/z pracy — 100%"),
         new(SickWageCause.OrganOrTissueDonation100, "Badania/zabieg dawstwa — 100%")
     };
-    [ObservableProperty] private Choice<SickWageCause>? _sickWageCause;
+    [ObservableProperty] private Choice<SickWageCause>? _selectedSickWageCause;
     [ObservableProperty] private string _previousEmployerSickDays = "";
     [ObservableProperty] private string _sickEvidenceReference = "";
     [ObservableProperty] private string _sickDays = "";
@@ -258,7 +258,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
     {
         if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
             throw new DomainException("Wybierz listę płac i jej pozycję z dniami choroby.");
-        if (SickWageCause is null)
+        if (SelectedSickWageCause is null)
             throw new DomainException("Wybierz stawkę i podstawę prawną 80% / 100% przed zatwierdzeniem chorobowego.");
         await using var db = Session.OpenDb();
         var list = await db.PayrollLists.AsNoTracking().Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == Session.CompanyId);
@@ -268,7 +268,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
         var svc = new PayrollService(db, Session.User, Session.Clock);
         await svc.RecordSickWageAssessmentAsync(item.EmployeeId, list.Month,
             Parse.Int(PreviousEmployerSickDays, "Dni chorobowego u innych pracodawców w roku"),
-            SickWageCause.Value, SickEvidenceReference);
+            SelectedSickWageCause.Value, SickEvidenceReference);
         await svc.RecalculateAsync(listId);
     }, "Zatwierdzono udokumentowaną stawkę i dni chorobowego; lista została przeliczona.");
 
