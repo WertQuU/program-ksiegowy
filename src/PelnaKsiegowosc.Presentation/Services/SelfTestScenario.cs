@@ -21,13 +21,22 @@ public static class SelfTestScenario
     public static (AppSession session, AutomaticDialogService dialogs) CreateSession(string root, ISecretStore? secrets = null)
     {
         var paths = new AppPaths(root);
-        var session = new AppSession(paths, AppConfig.LoadOrCreate(paths), secrets ?? new InMemorySecretStore(), new SystemClock());
+        // Ten scenariusz powstaje wyłącznie na izolowanym katalogu testowym, bez serwera ksiąg.
+        var config = AppConfig.LoadOrCreate(paths);
+        config.ActiveDatabase = new PelnaKsiegowosc.Data.DatabaseProfile
+        {
+            Engine = PelnaKsiegowosc.Data.DatabaseEngine.Sqlite,
+            SqlitePath = paths.DefaultDatabaseFile
+        };
+        var session = new AppSession(paths, config, secrets ?? new InMemorySecretStore(), new SystemClock(), isolatedSelfTest: true);
         return (session, new AutomaticDialogService());
     }
 
     public static async Task<SetupWizardViewModel> RunWizardAsync(AppSession session, AutomaticDialogService dialogs, LegalForm form = LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia)
     {
         var w = new SetupWizardViewModel(session, dialogs) { TermsAccepted = true };
+        // Sam autotest używa SQLite; normalne uruchomienie programu wymaga PostgreSQL.
+        w.Database.UsePostgres = false;
         await w.NextCommand.ExecuteAsync(null);
         await w.NextCommand.ExecuteAsync(null); // baza (SQLite domyślnie w katalogu danych)
         w.Company.LegalForm = w.Company.LegalFormChoices.First(c => c.Value == form);
