@@ -24,6 +24,7 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-07 | Błędy CS0246/CS0103 w testach pełnej kopii | Poprawiono przestrzeń nazw `PelnaKsiegowosc.Data` w `BackupCompletenessAuditTests.cs`; weryfikacja przez CI w toku |
 | A-08 | Test wspólnego limitu ulgi PIT używał PESEL osoby 36-letniej | Zmieniono dane testowe na poprawny PESEL osoby urodzonej 01.01.2001 (25 lat w dniu wypłaty 10.03.2026); nie zmieniano zasad naliczania ulgi | 
 | A-09 | Logowanie nieznanego użytkownika zużywało tylko 10 000 iteracji PBKDF2 wobec 600 000 domyślnie | Wyrównano koszt fikcyjnej weryfikacji hasła do konfiguracji `SecurityService` (`_iterations`); dalszy audyt ograniczania prób i starszych hashy pozostaje otwarty |
+| A-10 | Chorobowe wyliczane domyślnie od bieżącej pensji bez weryfikacji historii | Dla prostego przypadku (pełne miesiące, jedno wynagrodzenie zasadnicze, niezmieniona pensja) podstawa z zaksięgowanych miesięcy poprzedzających chorobę (do 12); brak/zmiana historii, dodatkowe umowy i wcześniejsze nieobecności blokują księgowanie. Trzy testy regresyjne. **Częściowe zabezpieczenie, nie pełna implementacja art. 36–43.** |
 
 ## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
 
@@ -41,8 +42,8 @@ Oficjalne źródła: ulga dla młodych https://podatki.gov.pl/ulgi-i-odliczenia/
 
 ### L-01 — Podstawa świadczenia chorobowego (P0, potwierdzone ryzyko)
 
-PayrollCalculator.Compute używa SickBasis ?? gross. PayrollService nie wylicza podstawy z historycznych wypłat (zwykle 12 wcześniejszych miesięcy). Przy zmiennych składnikach wynagrodzenia może to prowadzić do błędnej kwoty.
-Potrzebne: udokumentowana podstawa chorobowego, historia wynagrodzeń, reguły ZUS dla składników zmiennych, zmiany etatu, przerw i okresów ubezpieczenia, testy; bez wystarczających danych wstrzymać automatyczne uznanie wyniku za ostateczny.
+**Częściowo naprawiono:** `PayrollService.VerifiedSickBasisAsync` odczytuje maksymalnie 12 pełnych miesięcy zaksięgowanych list poprzedzających chorobę i przekazuje historyczną kwotę brutto jako `PayrollAbsence.SickBasis`, ale wyłącznie dla stabilnego wynagrodzenia zasadniczego bez nieobecności, innych umów i zmian płacy. Brak jednoznacznej historii lub przypadek szczególny blokuje `PostAsync`; wyświetlana na liście kwota wstępna NIE jest kwotą zatwierdzoną. Nie ma jeszcze ręcznego, audytowalnego zatwierdzania podstawy dla przypadków złożonych.
+**Nadal P0:** składniki zmienne i kwartalne/roczne, niepełne miesiące, zmiana etatu, przerwy między niezdolnościami, szczególne stawki i podstawy (art. 36–43), historia sprzed uruchomienia programu oraz kompletna dokumentacja wyliczenia. Potrzebna dalsza implementacja i niezależny przegląd.
 
 ### L-02 — Rozliczenia płac, PIT i ZUS (P1, do weryfikacji)
 
@@ -86,5 +87,7 @@ Nie zwiększać numeru wersji, nie publikować wydania ani nie scalać PR bez wy
 4. Porównanie wyliczeń podatkowych, kadrowych, JPK i sprawozdań z przykładami urzędowymi.
 5. Brak znanych blokujących rozbieżności księgowych/prawnych; niezależny przegląd merytoryczny.
 6. Zgoda właściciela na scalenie została udzielona; utrzymać numer **1.0.0**, nie scalać bez pozytywnych kontroli 1–5.
+
+Źródło podstawy chorobowego: https://www.zus.pl/pl/swiadczenia/zasilki/zasilek-chorobowy/podstawa-wymiaru/dla-pracownikow ; ustawa o świadczeniach pieniężnych w razie choroby i macierzyństwa (art. 36–43).
 
 Źródła: ustawa o rachunkowości Dz.U. 2026 poz. 522 — https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522 ; KSR nr 1 https://www.gov.pl/documents/1079560/1080340/20171106_KSR_nr_1_nowelizacja.pdf/b0281da0-4875-3e8c-87cf-3422a239f40c ; ZUS https://www.zus.pl/
