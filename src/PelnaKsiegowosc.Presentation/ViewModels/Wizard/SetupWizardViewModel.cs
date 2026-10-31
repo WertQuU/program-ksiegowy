@@ -283,9 +283,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 var id = await db.Companies.Select(c => c.Id).FirstOrDefaultAsync();
                 if (id == Guid.Empty)
                     throw new DomainException("W bazie brakuje ksiąg. Sprawdź konfigurację serwera.");
-                var login = OperatorIdentity.LoginFor(profile);
+                var existingLogin = OperatorIdentity.LoginFor(profile);
                 await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
-                    OperatorIdentity.IdFor(login), login, id);
+                    OperatorIdentity.IdFor(existingLogin), existingLogin, id);
             }
             if (!ConnectToExisting)
             {
