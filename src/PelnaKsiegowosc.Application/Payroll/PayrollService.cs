@@ -478,10 +478,10 @@ public sealed class PayrollService
         // księgowania bez formalnych korekt.
         var paidYearEnd = new DateOnly(list.PaymentDate.Year + 1, 1, 1);
         var personKeys = list.Items.Select(i => PersonKey(employees[i.EmployeeId])).ToHashSet(StringComparer.Ordinal);
-        var personIds = employees.Values.Where(e => personKeys.Contains(PersonKey(e))).Select(e => e.Id).ToList();
+        var payrollPersonIds = employees.Values.Where(e => personKeys.Contains(PersonKey(e))).Select(e => e.Id).ToList();
         var laterPaid = await (from i in _db.PayrollItems.AsNoTracking()
                                join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
-                               where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
+                               where payrollPersonIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
                                      l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
                                      l.PaymentDate > list.PaymentDate && l.PaymentDate < paidYearEnd
                                select new { l.Number, l.PaymentDate, i.EmployeeName }).FirstOrDefaultAsync(ct);
@@ -497,7 +497,7 @@ public sealed class PayrollService
         var sickYearEnd = new DateOnly(list.Month.Year + 1, 1, 1);
         var futureSickness = await (from i in _db.PayrollItems.AsNoTracking()
                                     join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
-                                    where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
+                                    where payrollPersonIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
                                           l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
                                           l.Month > list.Month && l.Month < sickYearEnd && i.SickDays > 0
                                     select new { l.Number, l.Month, i.EmployeeName }).FirstOrDefaultAsync(ct);
