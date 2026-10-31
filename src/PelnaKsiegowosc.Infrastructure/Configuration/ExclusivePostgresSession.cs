@@ -72,12 +72,21 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 await using var roleCheck = new NpgsqlCommand("""
                     SELECT r.rolsuper, r.rolcreaterole, r.rolcreatedb,
                            r.rolreplication, r.rolbypassrls,
-                           pg_has_role(session_user, d.datdba, 'MEMBER'),
+                           pg_has_role(r.oid, d.datdba, 'MEMBER'),
                            EXISTS (
                              SELECT 1 FROM pg_namespace n
                              WHERE n.nspname = 'public'
-                               AND pg_has_role(session_user, n.nspowner, 'MEMBER')
-                           )
+                               AND (pg_has_role(r.oid, n.nspowner, 'MEMBER')
+                                    OR has_schema_privilege(r.oid, n.oid, 'CREATE'))
+                           ),
+                           EXISTS (
+                             SELECT 1 FROM pg_class c
+                             JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public'
+                               AND c.relkind IN ('r','p','v','m','f')
+                               AND pg_has_role(r.oid, c.relowner, 'MEMBER')
+                           ),
+                           has_database_privilege(r.oid, d.oid, 'CREATE')
                     FROM pg_roles r
                     JOIN pg_database d ON d.datname = current_database()
                     WHERE r.rolname = session_user
@@ -85,7 +94,7 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 await using var roles = await roleCheck.ExecuteReaderAsync(ct);
                 if (!await roles.ReadAsync(ct))
                     throw new DomainException("Nie można zweryfikować uprawnień operatora PostgreSQL.");
-                var privileged = Enumerable.Range(0, 7).Any(i => roles.GetBoolean(i));
+                var privileged = Enumerable.Range(0, 9).Any(i => roles.GetBoolean(i));
                 await roles.CloseAsync();
                 if (privileged)
                     throw new DomainException(
