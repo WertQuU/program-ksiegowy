@@ -5,6 +5,27 @@
 **Punkt odniesienia (kod po integracji i poprawkach):** 3e60c9eefe4231158e1ee6df6d6a2fc6121343b1  
 **Charakter oceny:** przegląd statyczny wybranych plików krytycznych, wcześniejszych raportów, konfiguracji GitHub oraz aktualnych oficjalnych źródeł prawa. Nie jest certyfikacją, testem penetracyjnym, wynikiem uruchomienia wszystkich modułów ani opinią prawną. Wnioski niewykazane testem oznaczono jako niepotwierdzone.
 
+## Aktualizacja po dalszych pracach na main (31.10.2026)
+
+**Wersja nadal 1.0.0.** Wprowadzone zabezpieczenia (każde wymaga pozytywnego wyniku CI dokładnie dla aktualnego SHA):
+
+- Połączenia do **zdalnego** PostgreSQL dopuszczają tylko `VerifyFull` (certyfikat CA oraz nazwa hosta); dodano test blokujący `Disable`, `Prefer`, `Require` i `VerifyCA`.
+- Sesja operatora sprawdza po stronie PostgreSQL uprawnienia `rolsuper`, `rolcreaterole`, `rolcreatedb`, `rolreplication`, `rolbypassrls`, własność bazy i schematu public. Role administracyjne są odrzucane. **To ogranicza ryzyko, ale nie rozwiązuje P0-01**, bo bezpośredni SQL z uprawnieniami DML nadal omija aplikacyjne reguły autoryzacji.
+- Przy nieudanym imporcie danych zrzutu JSONL przywracany jest tryb `AutoDetectChangesEnabled` i czyszczony jest `ChangeTracker`, dzięki czemu zapis po rollbacku nie może przypadkowo ponownie dodać encji z niekompletnego importu.
+- Eksport PostgreSQL obejmuje tabele, sumy i metadane załączników w jednym snapshotcie `REPEATABLE READ`; pliki porównywane są z odciskami w metadanych. Nadal potrzebny jest pełny test DR oraz zabezpieczenie przełączenia bazy i katalogu załączników.
+- Zmiana szyfrowania SQLite nie zeruje oryginalnego pliku przed zastąpieniem, weryfikuje kompletność zaszyfrowanej kopii i odmawia nadpisania pozostałości po przerwaniu. Nie zapewnia to usunięcia starych bloków SSD — wymagane szyfrowanie nośnika i testy awaryjne.
+- Dla wypłat P.S.A. i uchwał dywidendowych wymagane są dokumentacja kwoty do podziału i 6-miesięcznej wypłacalności, oprócz samego pola potwierdzenia. Program nie wylicza automatycznie wszystkich limitów ustawowych: nadal nie wolno uznawać tej kontroli za pełny test prawny.
+
+### Wymagane dowody przed dopuszczeniem produkcyjnym
+
+1. CI Windows i Linux dla końcowego commita: kompilacja, testy, brak regresji.
+2. Testy pod odrębnymi kontami operatorów na PostgreSQL, w tym bezpośredni SQL i próby modyfikacji tabel audytu, użytkowników i dziennika.
+3. Demonstracja pełnego odzyskiwania ksiąg i załączników na innym serwerze; pomiar RPO/RTO i weryfikacja kompletności.
+4. Niezależna weryfikacja prawna i merytoryczna całego cyklu pełnej księgowości, VAT, CIT, JPK i szczególnych przypadków płacowych oraz P.S.A.
+5. Procedury organizacyjne RODO, zatwierdzona polityka rachunkowości jednostki, retencja, ochrona backupów i kluczy.
+
+Źródła do ponownej oceny na dzień wdrożenia: [ustawa o rachunkowości, Dz.U. 2026 poz. 522](https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522), [API KSeF 2.0](https://api.ksef.mf.gov.pl/), [komunikat MF 30.10.2026 o JPK_ST_KR](https://www.gov.pl/web/finanse/rozporzadzenie-w-sprawie-czasowego-zwolnienia-w-cit-z-obowiazkow-w-zakresie-jpk-cit-dotyczacych-ewidencji-srodkow-trwalych-i-wartosci-niematerialnych-i-prawnych).
+
 ## 1. Wynik i zakres
 
 **Werdykt: nie potwierdzono gotowości produkcyjnej i pełnej zgodności z prawem.** Wersja pozostaje **1.0.0**. Zgoda na prace na main nie oznacza automatycznej zgody na wydanie produkcyjne. Nie wolno opierać niezweryfikowanych deklaracji, list płac ani sprawozdań wyłącznie na wynikach programu.
