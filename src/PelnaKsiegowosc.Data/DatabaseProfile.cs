@@ -151,6 +151,7 @@ public static class DbContextFactory
                     o.MigrationsAssembly(PostgresMigrationsAssembly);
                     o.EnableRetryOnFailure(0);
                 });
+                b.AddInterceptors(new ProtectedFieldsMaterializationInterceptor());
                 break;
         }
         b.EnableSensitiveDataLogging(false);
