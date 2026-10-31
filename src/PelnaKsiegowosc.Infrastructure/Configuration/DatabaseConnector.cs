@@ -144,17 +144,20 @@ public sealed class DatabaseConnector
     }
 
     /// <summary>
-    /// Otwarcie aktywnej bazy przy starcie: migracje schematu (po wcześniejszej kopii — wykonuje wywołujący).
-    /// Zwraca błąd zamiast przełączać się na inną bazę.
+    /// Starszy punkt wejścia do otwierania aktywnych ksiąg. Tak samo jak AppSession.OpenAsync
+    /// nie może samodzielnie przeprowadzać migracji schematu ani uruchomić SQLite jako głównej bazy.
+    /// Migracje PostgreSQL wykonuje administrator w osobnej operacji z kopią bezpieczeństwa.
     /// </summary>
     public async Task<(KsiegiDbContext? db, string? error)> OpenActiveAsync(DatabaseProfile p, CancellationToken ct = default)
     {
+        if (p.Engine != DatabaseEngine.PostgreSql)
+            return (null, "Aktywne księgi wymagają centralnej bazy PostgreSQL. SQLite służy wyłącznie do kontroli, testów i odzyskiwania.");
         var test = await TestAsync(p, ct);
-        if (!test.Success && p.Engine == DatabaseEngine.PostgreSql)
-            return (null, test.Message + " Program nie przełącza się automatycznie na bazę lokalną. Możesz ponowić próbę albo świadomie uruchomić tryb awaryjny (osobna kopia robocza).");
-        var db = CreateContext(p);
-        await db.Database.MigrateAsync(ct);
-        return (db, null);
+        if (!test.Success)
+            return (null, test.Message + " Program nie przełącza się automatycznie na bazę lokalną.");
+        if (test.PendingMigrations > 0)
+            return (null, $"Wymagana aktualizacja schematu PostgreSQL ({test.PendingMigrations} oczekujących migracji). Administrator musi wykonać ją osobno, po sprawdzeniu kopii zapasowej i zakończeniu pozostałych sesji. Program nie aktualizuje schematu automatycznie.");
+        return (CreateContext(p), null);
     }
 
     /// <summary>
