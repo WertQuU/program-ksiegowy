@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
+using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Application.Payroll;
 using PelnaKsiegowosc.Application.Security;
 using PelnaKsiegowosc.Domain.Common;
@@ -59,13 +60,26 @@ public class OctoberLegalAndWorkstationAuditTests
     }
 
     [Fact]
-    public async Task New_workstation_does_not_get_admin_merely_by_connecting_to_existing_books()
+    public async Task Unknown_database_login_is_rejected_and_cannot_provision_itself()
     {
         await using var t = await TestBooks.CreateAsync();
         var service = new OperatorAccessService(t.Db, t.Clock);
-        var login = "newuser@NEWPC";
-        var roles = await service.ResolveAsync(OperatorAccessService.IdFor(login), login, t.Company.Id);
-        Assert.Empty(roles);
+        var login = "db:nieznany";
+        await Assert.ThrowsAsync<DomainException>(() => service.ResolveAsync(
+            OperatorAccessService.IdFor(login), login, t.Company.Id));
+        Assert.False(await t.Db.Users.AnyAsync(u => u.Login == login));
+    }
+
+    [Fact]
+    public async Task Operator_deactivated_by_admin_cannot_connect()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var service = new OperatorAccessService(t.Db, t.Clock);
+        var login = "db:zablokowany";
+        var user = await service.RegisterAsync(t.User, login, new[] { Role.Ksiegowy });
+        await service.SetAsync(t.User, user.Id, new[] { Role.Ksiegowy }, active: false);
+        await Assert.ThrowsAsync<DomainException>(() =>
+            service.ResolveAsync(user.Id, login, t.Company.Id));
     }
 
     [Fact]
@@ -79,6 +93,14 @@ public class OctoberLegalAndWorkstationAuditTests
         Assert.Equal("db:ksiegowy_1", OperatorIdentity.LoginFor(profile));
         Assert.Equal(OperatorAccessService.IdFor("db:ksiegowy_1"),
             OperatorIdentity.For(Guid.NewGuid(), profile).UserId);
+    }
+
+    [Fact]
+    public void Session_exclusion_lock_is_stable_for_same_database_login()
+    {
+        var a = ExclusivePostgresSession.LockKey("ksiegowy_1");
+        Assert.Equal(a, ExclusivePostgresSession.LockKey("ksiegowy_1"));
+        Assert.NotEqual(a, ExclusivePostgresSession.LockKey("ksiegowy_2"));
     }
 
     [Fact]
