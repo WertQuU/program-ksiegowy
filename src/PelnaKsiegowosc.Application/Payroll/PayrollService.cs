@@ -402,7 +402,11 @@ public sealed class PayrollService
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
         foreach (var item in list.Items.Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
         {
-            var (basis, problem) = await VerifiedSickBasisAsync(employees[item.EmployeeId], list, ct);
+            var employee = employees[item.EmployeeId];
+            if ((employee.BirthDate ?? Identifiers.BirthDateFromPesel(employee.Pesel)) is null)
+                throw new DomainException($"Nie można zaksięgować chorobowego dla {item.EmployeeName}: brak potwierdzonej daty urodzenia. " +
+                    "Bez wieku nie da się ustalić limitu 33/14 dni pracodawcy z art. 92 KP. Uzupełnij datę urodzenia lub PESEL i przelicz listę.");
+            var (basis, problem) = await VerifiedSickBasisAsync(employee, list, ct);
             if (basis is null)
                 throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
                     "Ustal i udokumentuj podstawę według art. 36–43 ustawy zasiłkowej; program nie obsługuje jeszcze ręcznego zatwierdzania przypadków szczególnych.");
