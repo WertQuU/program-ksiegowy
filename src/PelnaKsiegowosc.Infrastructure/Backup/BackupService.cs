@@ -461,8 +461,25 @@ public sealed class BackupService
             if (problems.Count > 0) throw new DomainException("Archiwum jest uszkodzone: " + string.Join("; ", problems));
             var content = Path.Combine(dir, "zawartosc");
             await target.Database.MigrateAsync(ct);
-            await DataDump.ImportAsync(target, Path.Combine(content, "dane"), ct);
+            // Odtwarzanie powinno dotyczyć nowej bazy i pustego magazynu, a nie
+            // nadpisywać istniejące dowody innej jednostki.
+            if ((await DataDump.CountsAsync(target, ct)).Values.Any(n => n != 0))
+                throw new DomainException("Odtwarzanie serwera wymaga pustej bazy — istniejące księgi nie będą nadpisane.");
+            if (Directory.Exists(attachmentsTarget.RootPath) &&
+                Directory.EnumerateFiles(attachmentsTarget.RootPath, "*", SearchOption.AllDirectories)
+                    .Any(f => Path.GetFileName(f) != ".szyfrowanie"))
+                throw new DomainException("Odtwarzanie wymaga pustego magazynu załączników — istniejące dowody nie będą nadpisane.");
+            // Najpierw odtwórz pliki, a bazę zatwierdź dopiero po weryfikacji
+            // wszystkich tabel i obrotów wewnątrz transakcji. W razie błędu
+            // kopiowania plików baza pozostaje pusta.
             await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), attachmentsTarget, ct);
+            await DataDump.ImportAsync(target, Path.Combine(content, "dane"), ct,
+                async (candidate, token) =>
+                {
+                    var differences = await CompareAsync(candidate, manifest, token);
+                    if (differences.Count > 0)
+                        throw new InvalidDataException("Odtworzone księgi różnią się od kopii: " + string.Join("; ", differences));
+                });
             problems.AddRange(await CompareAsync(target, manifest, ct));
             return new RestoreResult("(serwer)", attachmentsTarget.RootPath, manifest, problems);
         }
