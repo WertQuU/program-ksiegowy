@@ -55,12 +55,12 @@ P0-01 ma charakter systemowy: to, że triggery blokują część modyfikacji, ni
 ## 5. Poprawki wykonane bezpośrednio w main po integracji
 
 1. PR #8 scalono własnym commitem dwurodzicowym, rozstrzygając konflikt README z zachowaniem nowszych korekt merytorycznych. Pozostałych pięć plików PR miało już identyczną zawartość na main.
-2. KSeF: POST faktury nie jest automatycznie ponawiany, a stan nierozstrzygniętej próby utrwalany jest przed transmisją; dodany test utraty odpowiedzi po odebraniu dokumentu.
+2. KSeF: POST faktury nie jest automatycznie ponawiany; przed transmisją utrwalany jest stan próby i atomowa rezerwacja faktury, chroniąca przed równoległymi próbami. Dodany test utraty odpowiedzi po odebraniu dokumentu; test współbieżności dwóch instancji nadal wymagany.
 3. XSD: wymuszony HTTPS dla oficjalnych domen, podnoszenie historycznych adresów importów HTTP do HTTPS, limit 8 MiB pojedynczego pliku i 64 MiB/128 plików w ZIP, zakaz DTD, testy nadużyć.
 4. Logi: zapisywany tylko typ wyjątku, bez treści i stosu mogących ujawnić dane/sekrety; prywatne uprawnienia logów na Linuksie; test regresyjny.
-5. GitHub Actions: trzy automatyczne aktualizatory schematów nie powinny zapisywać pobranych plików bezpośrednio na main; zmiana na gałąź i PR wymagający kontroli.
+5. GitHub Actions: trzy automatyczne aktualizatory schematów nie zapisują pobranych plików bezpośrednio do repozytorium. Publikują artefakty workflow do ręcznej kontroli i oddzielnej integracji. Próba automatycznego PR została wycofana, ponieważ token workflow nie ma uprawnień do publikowania gałęzi zawierających zmiany plików workflow.
 
-**Nie zaliczać tych zmian jako ostatecznie potwierdzonych przed ukończeniem CI dla końcowego SHA.** Działania na poziomie polityki GitHub i serwera PostgreSQL wymagają również konfiguracji poza kodem.
+**Nie zaliczać tych zmian jako ostatecznie potwierdzonych przed ukończeniem CI dla końcowego SHA.** CI wykryło i pozwoliło poprawić błąd kompilacji przy użyciu uprawnień Unix; wymagany jest ponowny zielony przebieg. Działania na poziomie polityki GitHub i serwera PostgreSQL wymagają również konfiguracji poza kodem.
 
 ## 6. Scenariusze bezpieczeństwa do wykonania
 
