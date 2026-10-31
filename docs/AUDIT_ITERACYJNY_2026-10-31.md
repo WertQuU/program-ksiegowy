@@ -89,6 +89,17 @@ Test: `Five_invalid_mfa_codes_lock_account_even_when_password_is_correct` weryfi
 - Zmiana: walidacja wszystkich przekazanych parametrów `PayrollAbsence` działa przed sprawdzeniem, czy należy obliczyć potrącenie. Odrzucane są dni ujemne, więcej dni niż miesiąc, nieprawidłowa liczba dni roboczych oraz stawka chorobowego inna niż 80% albo 100% w obsługiwanym modelu art. 92 KP.
 - Testy: `PayrollAbsenceValidationAuditTests` — przypadki ujemne, przekroczenie dni roboczych, stawki 70%/110% oraz odmowa zapisu wadliwej pozycji roboczej.
 
+### A-06 — 30 dni choroby w miesiącu liczącym 31 dni (P0 — blokada do ręcznej weryfikacji)
+
+- Problem: `PayrollCalculator` ustalał pensję za pracę na 0 zł, jeśli w 31-dniowym miesiącu wpisano 30 dni choroby. Jeżeli pozostały dzień rzeczywiście przepracowano, wyzerowanie wynagrodzenia za pracę narusza art. 80 KP. GIP wskazał konieczność zapłaty za wykonaną pracę (stanowisko GPP-87-4560-64/09/PE/RP; metoda pomocnicza według § 4 ust. 2 pkt 1 rozporządzenia z 29.05.1996).
+- Zmiana: lista robocza jest oznaczona **WSTĘPNA**, a `PostAsync` blokuje automatyczne księgowanie do czasu potwierdzenia grafiku i faktycznie przepracowanych godzin. Bez dodatkowych danych nie jest możliwe bezpieczne automatyczne wyliczenie; **nie jest to pełna implementacja rozliczenia**.
+- Testy: `PayrollThirtyOfThirtyOneDaysTests` — oznaczenie podglądu i odmowa księgowania.
+- Źródło: [stanowisko GIP z 2009 r.](https://www.rp.pl/wyjasnienia-urzedow/art15366541-stanowisko-glownego-inspekcji-pracy-w-sprawie-sposobu-ustalania-wynagrodzenia-za-jeden-dzien-wykonywania-pracy-gpp-87-4560-64-09-pe-rp); [art. 80 KP](https://eli.gov.pl/api/acts/DU/2023/1465/text.html).
+
+### Dodatkowe ustalenie — szczególne kategorie danych (P1, wymagany przegląd RODO)
+
+Chociaż zapis `SickWageAssessment` nie zawiera dokumentu medycznego, enum `Pregnancy100` może ujawniać informację o ciąży. Takie metadane nie powinny być traktowane jako neutralne dane techniczne. Wymagana jest ocena podstawy prawnej, kontroli uprawnień, ograniczenia dostępu, zasad retencji i audytu odczytów (RODO art. 9 i 32). Samo szyfrowanie bazy nie wyczerpuje obowiązków.
+
 ### Pozostałe ryzyka P0 / P1
 
 | Priorytet | Zagadnienie | Stan / wymagane dalsze działania |
