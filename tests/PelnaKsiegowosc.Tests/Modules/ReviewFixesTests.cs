@@ -381,7 +381,12 @@ public class ReviewFixesTests
         // faktura krajowa z adnotacją „mechanizm podzielonej płatności”
         var mpp = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, pl.Id, d, d,
             new[] { new DocumentLineInput("Usługa", 1, 20000m, "23") }, DueDate: d.AddDays(14), SplitPayment: true, JpkProcedures: "MPP"));
-        foreach (var x in new[] { b2b, mpp }) { await docs.ApproveAsync(x.Id); await docs.PostAsync(x.Id); }
+        foreach (var x in new[] { b2b, mpp })
+        {
+            x.JpkMarker = JpkKsefMarker.BFK; // wyraźna kwalifikacja dokumentów testowych
+            await docs.ApproveAsync(x.Id);
+            await docs.PostAsync(x.Id);
+        }
 
         var vat = new VatService(t.Db, t.User, t.Clock);
         var feb = new DateOnly(2026, 2, 1);
@@ -491,6 +496,7 @@ public class VatFullMonthScenarioTests
         {
             var inv = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaSprzedazy, cp, d, d,
                 new[] { new DocumentLineInput("Pozycja", 1, net, rate) }, DueDate: d.AddDays(14), VatTransactionType: type));
+            inv.JpkMarker = JpkKsefMarker.BFK; // potwierdzone świadomie w teście
             await docs.ApproveAsync(inv.Id);
             await docs.PostAsync(inv.Id);
             return inv;
@@ -500,6 +506,7 @@ public class VatFullMonthScenarioTests
             var doc = await docs.CreateInvoiceAsync(new InvoiceInput(DocumentKind.FakturaZakupu, cp, d, d,
                 new[] { new DocumentLineInput("Zakup", 1, net, "23") }, DueDate: d.AddDays(14), ExternalNumber: number, ReceiptDate: d, VatTransactionType: type));
             await docs.SetVatDeductionAsync(doc.Id, new Dictionary<string, (decimal, bool)> { ["23"] = (deduction, false) }, new DateOnly(2026, 2, 1));
+            doc.JpkMarker = JpkKsefMarker.BFK; // wyraźna kwalifikacja dokumentu testowego
             await docs.ApproveAsync(doc.Id);
             await docs.PostAsync(doc.Id);
         }
@@ -509,6 +516,7 @@ public class VatFullMonthScenarioTests
         await SaleAsync(euClient.Id, 3000m, "npII", VatTransactionType.UslugiPozaKrajem);
         // korekta sprzedaży krajowej in minus (rabat) w tym samym okresie
         var corr = await docs.CreateCorrectionAsync(domestic.Id, "Rabat posprzedażowy", d, new[] { new DocumentLineInput("Pozycja", 1, -1000m, "23") });
+        corr.JpkMarker = JpkKsefMarker.BFK;
         await docs.ApproveAsync(corr.Id);
         await docs.PostAsync(corr.Id);
         await PurchaseAsync(supplier.Id, 2000m, "FZ/1", 50m, VatTransactionType.Krajowa);              // odliczenie 50% (np. samochód)
