@@ -61,7 +61,7 @@ public sealed class AppSession
                 throw new DomainException("Utracono blokadę sesji PostgreSQL. Zamknij program i uruchom go ponownie.");
             return;
         }
-        _operatorSession = await ExclusivePostgresSession.AcquireAsync(Profile, Connector.ConnectionString(Profile), ct);
+        _operatorSession = await ExclusivePostgresSession.AcquireAsync(Profile, Connector.ConnectionString(Profile), ct, requireOperatorRole: true);
     }
 
     /// <summary>Wyłączna blokada na czas administracyjnej aktualizacji schematu (brak innych aktywnych klientów).</summary>
