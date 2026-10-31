@@ -173,7 +173,11 @@ public sealed class AppSession
     public async Task<OpenResult> OpenAsync(CancellationToken ct = default)
     {
         BackupService.CleanupStaleTemporaryData(Paths.TempDirectory); // pozostałości po poprzednim uruchomieniu
-        await AcquireOperatorSessionAsync(ct);
+        try { await AcquireOperatorSessionAsync(ct); }
+        catch (Exception ex) when (ex is DomainException or Npgsql.NpgsqlException or InvalidOperationException or IOException or TimeoutException)
+        {
+            return new OpenResult(false, ex is DomainException ? ex.Message : DatabaseConnector.Describe(ex), null);
+        }
         var test = await Connector.TestAsync(Profile, ct);
         if (!test.Success)
             return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql
