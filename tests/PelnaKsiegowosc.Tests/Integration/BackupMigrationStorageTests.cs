@@ -69,7 +69,7 @@ public class BackupTests
         var restoreDir = Path.Combine(t.Directory, "odtworzona");
         var dbKey = SqliteEncryption.NewKey();
         await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, "", AttKey)); // bez klucza — odmowa
-        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey, AttKey);
+        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir + Path.DirectorySeparatorChar, dbKey, AttKey);
         Assert.True(restored.Ok, string.Join("; ", restored.Problems));
         Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));
         await using var db2 = DbContextFactory.Create(DatabaseEngine.Sqlite,
