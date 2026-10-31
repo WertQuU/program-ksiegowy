@@ -28,6 +28,7 @@ public static class Program
           weryfikuj PLIK                        weryfikacja archiwum kopii (sumy, szyfrowanie, kompletność)
           odtworz PLIK KATALOG                  odtworzenie kopii do nowego katalogu (baza SQLite + załączniki)
           integralnosc                          pełna kontrola integralności ksiąg (kod wyjścia 1 przy nieprawidłowościach)
+          aktualizuj-schemat --potwierdzam     aktualizacja PostgreSQL wyłącznie po zamknięciu innych stanowisk i z kopią bezpieczeństwa
           migruj --host H --baza B --uzytkownik U [--port 5432] [--ssl VerifyFull|Require|Prefer|Disable]
                  [--przelacz]                   migracja danych do pustej bazy PostgreSQL (hasło: zmienna PK_DB_HASLO)
           pomoc                                 ten opis
@@ -48,16 +49,21 @@ public static class Program
             var paths = new AppPaths();
             ErrorLog.Directory = paths.LogsDirectory;
             var session = new AppSession(paths, AppConfig.LoadOrCreate(paths), SecretStoreFactory.Create(paths), new SystemClock());
-            return args[0] switch
+            try
             {
-                "info" => await InfoAsync(session),
-                "kopia" => await BackupAsync(session, args),
-                "weryfikuj" => await VerifyAsync(session, Arg(args, 1, "PLIK")),
-                "odtworz" => await RestoreAsync(session, Arg(args, 1, "PLIK"), Arg(args, 2, "KATALOG")),
-                "integralnosc" => await IntegrityAsync(session),
-                "migruj" => await MigrateAsync(session, args),
-                _ => Fail($"Nieznane polecenie „{args[0]}”. Użyj: pk-cli pomoc")
-            };
+                return args[0] switch
+                {
+                    "info" => await InfoAsync(session),
+                    "kopia" => await BackupAsync(session, args),
+                    "weryfikuj" => await VerifyAsync(session, Arg(args, 1, "PLIK")),
+                    "odtworz" => await RestoreAsync(session, Arg(args, 1, "PLIK"), Arg(args, 2, "KATALOG")),
+                    "integralnosc" => await IntegrityAsync(session),
+                    "aktualizuj-schemat" => await UpgradeSchemaAsync(session, args),
+                    "migruj" => await MigrateAsync(session, args),
+                    _ => Fail($"Nieznane polecenie „{args[0]}”. Użyj: pk-cli pomoc")
+                };
+            }
+            finally { session.ReleaseOperatorSession(); }
         }
         catch (DomainException ex)
         {
@@ -99,6 +105,37 @@ public static class Program
             return new BackupKey.RawKey(Presentation.ViewModels.Sections.BackupsViewModel.TryParseRecoveryKey(rk) ?? throw new DomainException("Nieprawidłowy klucz w PK_KLUCZ_ODZYSKIWANIA."));
         if (Environment.GetEnvironmentVariable("PK_HASLO_KOPII") is { Length: > 0 } pass) return new BackupKey.Passphrase(pass);
         return session.StoredBackupKey() ?? throw new DomainException("Brak klucza kopii — ustaw PK_KLUCZ_ODZYSKIWANIA albo zapisz klucz w programie (sekcja „Backupy”).");
+    }
+
+    /// <summary>
+    /// Jedyna jawna ścieżka migracji schematu na serwerze. Nie uruchamia jej automatycznie
+    /// aplikacja okienkowa ani zwykły operator. Przed zmianą wykonywana jest pełna kopia.
+    /// </summary>
+    private static async Task<int> UpgradeSchemaAsync(AppSession session, string[] args)
+    {
+        if (!args.Contains("--potwierdzam"))
+            throw new DomainException("Zamknij wszystkie pozostałe stanowiska i użyj opcji --potwierdzam.");
+        if (!session.Config.SetupCompleted || session.Profile.Engine != DatabaseEngine.PostgreSql)
+            throw new DomainException("Aktualizacja dotyczy wyłącznie skonfigurowanej centralnej bazy PostgreSQL.");
+        await session.AcquireOperatorSessionAsync();
+        await using var db = session.OpenDb();
+        var login = OperatorIdentity.LoginFor(session.Profile);
+        var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Login == login && u.IsActive);
+        if (user is null || !user.Roles.Contains(PelnaKsiegowosc.Domain.Security.Role.Administrator))
+            throw new DomainException("Aktualizację schematu może wykonać wyłącznie aktywny administrator ksiąg.");
+
+        await session.EnterMaintenanceAsync(); // odmowa, gdy jakikolwiek inny klient posiada blokadę schematu
+        var pending = (await db.Database.GetPendingMigrationsAsync()).ToArray();
+        if (pending.Length == 0) { Console.WriteLine("Schemat PostgreSQL jest aktualny."); return 0; }
+        if (session.StoredBackupKey() is null)
+            throw new DomainException("Brak zapisanego klucza szyfrowanych kopii zapasowych. Skonfiguruj kopie przed aktualizacją.");
+        var copy = await session.BackupAsync("obowiązkowa kopia przed aktualizacją schematu", upload: false);
+        if (!copy.Verified)
+            throw new DomainException("Kopia przed aktualizacją nie przeszła weryfikacji — migracja anulowana.");
+        Console.WriteLine($"Zweryfikowana kopia: {copy.FilePath}, SHA-256: {copy.Sha256}");
+        await db.Database.MigrateAsync();
+        Console.WriteLine($"Zaktualizowano schemat ({pending.Length} migracji). Każde stanowisko może teraz ponownie uruchomić program.");
+        return 0;
     }
 
     private static async Task<int> InfoAsync(AppSession session)
