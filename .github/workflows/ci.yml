@@ -50,6 +50,7 @@ jobs:
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -72,7 +73,7 @@ jobs:
       - name: Kompilacja
         run: dotnet build PelnaKsiegowosc.sln -c Release --no-restore
       - name: Testy
-        run: dotnet test PelnaKsiegowosc.sln -c Release --no-build --logger "trx;LogFileName=wyniki.trx"
+        run: dotnet test PelnaKsiegowosc.sln -c Release --no-build --blame-hang --blame-hang-timeout 12m --blame-hang-dump-type none --logger "trx;LogFileName=wyniki.trx" --logger "console;verbosity=normal"
       - name: Wyniki testów
         if: always()
         uses: actions/upload-artifact@v4
