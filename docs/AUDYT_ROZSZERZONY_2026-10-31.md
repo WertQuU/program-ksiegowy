@@ -34,7 +34,7 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | Id | Priorytet | Zmiana lub ryzyko | Dowód / test |
 | --- | --- | --- | --- |
 | R-10 | ZUS P0 | **Częściowo zabezpieczone**: blokada księgowania przy nieznanym wieku i w miesiącu ukończenia 26 lat. Nadal brak rejestru okresów statusu ucznia/studenta i automatycznego rozdzielenia wynagrodzenia przed/od urodzin; nie utożsamiać daty wypłaty z okresem ubezpieczenia | Testy `PayrollAgeAuditTests`, dokumenty potwierdzające status, test rozdzielenia okresów |
-| R-11 | JPK P0 | Osobna struktura `JPK_ST_KR` jest oznaczona w dokumentacji jako poza programem; dla podmiotów objętych obowiązkiem trzeba zapewnić kompletne raportowanie także środków trwałych | Porównanie eksportu z materiałami MF i ustalenie zakresu samodzielności aplikacji |
+| R-11 | JPK P0 (warunkowo) | `JPK_ST_KR` poza programem. MF 30.10.2026 ogłosiło podpisanie rozporządzenia o zwolnieniu wybranych podmiotów CIT i spółek niebędących osobami prawnymi za lata rozpoczynające się w 2026–2028; wejście w życie dopiero po ogłoszeniu w Dz.U. **Nie potwierdzono jeszcze publikacji ani zakresu wobec PIT**. Nie uznawać zwolnienia za obowiązujące bez weryfikacji | https://github.com/WertQuU/program-ksiegowy/issues/4 ; weryfikacja Dz.U., zakresu podmiotowego i generator dla niezwolnionych |
 | R-12 | ochrona danych P1 | Należy potwierdzić systematyczne wykonywanie i testowe odtwarzanie kopii oraz okresy retencji odpowiednie do rodzaju dokumentów | Art. 10, 13, 71–74 UoR i procedury organizacyjne |
 | R-13 | ZUS P0 | Wg ZUS limit 33/14 dni sumuje choroby w danym roku również u **innych pracodawców**. Program nie ma potwierdzenia wcześniejszego wykorzystania limitu ani kwalifikacji stawki 100% (ciąża, wypadek w drodze do pracy, dawstwo); nie wolno uznawać automatu za kompletny | Ewidencja wcześniejszych okresów i przyczyn, udokumentowane oświadczenia, testy |
 
@@ -55,7 +55,7 @@ Testować PIT-2, zbiegi tytułów, 50% koszty autorskie, ulgę dla młodych, PPK
 
 ### L-03 — JPK i sprawozdawczość (P1, do weryfikacji)
 
-Weryfikować aktualne XSD i zgodność merytoryczną JPK_V7, JPK_KR_PD oraz e-sprawozdań. RPP: różnice kursowe, leasing, inwestycje, operacje niepieniężne, przelewy wewnętrzne, porównanie danych z bilansem i dokumentacją.
+Weryfikować aktualne XSD i zgodność merytoryczną JPK_V7, JPK_KR_PD oraz e-sprawozdań. JPK_ST_KR: zwolnienie zapowiedziane przez MF nie jest równoważne z potwierdzonym wejściem w życie ani automatycznym objęciem wszystkich podmiotów. RPP: różnice kursowe, leasing, inwestycje, operacje niepieniężne, przelewy wewnętrzne, porównanie danych z bilansem i dokumentacją.
 
 ### L-04 — Księgi rachunkowe (P1, do weryfikacji)
 
@@ -97,3 +97,5 @@ Nie zwiększać numeru wersji ani nie publikować wydania; zgoda właściciela n
 Źródła: ustawa o rachunkowości Dz.U. 2026 poz. 522 — https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522 ; KSR nr 1 https://www.gov.pl/documents/1079560/1080340/20171106_KSR_nr_1_nowelizacja.pdf/b0281da0-4875-3e8c-87cf-3422a239f40c ; ZUS https://www.zus.pl/
 
 Dodatkowe źródło dla art. 92 KP i limitu w roku choroby (również u innych pracodawców): https://bip.zus.pl/pl/web/guest/swiadczenia/zasilki/zasilek-chorobowy/z-ubezpieczenia-chorobowego/prawo-do-zasilku-i-okres-przyslugiwania .
+
+Komunikat MF 30.10.2026 o podpisanym rozporządzeniu dotyczącym czasowego zwolnienia CIT z JPK_ST_KR: https://www.gov.pl/web/kas/rozporzadzenie-w-sprawie-czasowego-zwolnienia-w-cit-z-obowiazkow-w-zakresie-jpk-cit-dotyczacych-ewidencji-srodkow-trwalych-i-wartosci-niematerialnych-i-prawnych (wejście w życie po ogłoszeniu w Dz.U. — wymaga potwierdzenia).
