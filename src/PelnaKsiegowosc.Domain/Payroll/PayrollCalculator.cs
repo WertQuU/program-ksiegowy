@@ -98,7 +98,15 @@ public static class PayrollCalculator
             var sickDeduction = wholeMonthSick || a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
-            var sickBasis = (a.SickBasis ?? gross) * (1 - 0.1371m);
+            // Art. 36–43 ustawy zasiłkowej: nie wolno przyjmować bieżącego gross
+            // jako podstawy chorobowego. Serwis płac przekazuje zweryfikowaną
+            // podstawę, a przy brakach — 0 z oznaczeniem listy jako wstępnej,
+            // której nie można zaksięgować. Bez jawnej podstawy kalkulator odmawia.
+            if (a.SickDays > 0 && a.SickBasis is null)
+                throw new Common.DomainException("Brak zweryfikowanej podstawy chorobowego — nie można domyślnie użyć bieżącego wynagrodzenia.");
+            if (a.SickBasis < 0)
+                throw new Common.DomainException("Podstawa chorobowego nie może być ujemna.");
+            var sickBasis = (a.SickBasis ?? 0m) * (1 - 0.1371m);
             // art. 92 KP: wynagrodzenie chorobowe płaci pracodawca do 33 dni w roku (14 dni — pracownik po 50. roku życia); dalej zasiłek ZUS
             // Art. 92 KP: limit dotyczy roku wystąpienia niezdolności, nie roku wypłaty
             // (np. choroba w grudniu wypłacona w styczniu).
