@@ -575,24 +575,18 @@ public sealed class PayrollService
             // Sprawdzenie również przy księgowaniu chroni przed niespójnymi
             // potwierdzeniami zapisanymi przez wcześniejsze wersje programu.
             await ValidateExternalSickDaysChronologyAsync(employee.Id, list.Month, assessment.PreviousEmployerDays, ct);
+            // Dopiero po weryfikacji potwierdzenia i chronologii dni pracodawcy
+            // identyfikujemy okres wymagający odrębnego zasiłku.
+            if (item.SickDays > item.SickDaysEmployer)
+                throw new DomainException("Nie można zaksięgować wynagrodzenia dla " + item.EmployeeName +
+                    ": " + (item.SickDays - item.SickDaysEmployer) +
+                    " dni wymaga rozliczenia zasiłku chorobowego. Program nie ustala jeszcze prawa do zasiłku, jego płatnika, " +
+                    "podstawy ani kwoty. Lista jest niekompletna — rozlicz świadczenie w zweryfikowanym systemie kadrowo-płacowym.");
             var (basis, problem) = await VerifiedSickBasisAsync(employee, list, ct);
             if (basis is null)
                 throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
                     "Ustal i udokumentuj podstawę według art. 36–43 ustawy zasiłkowej; program nie obsługuje jeszcze ręcznego zatwierdzania przypadków szczególnych.");
         }
-        // Do czasu zaimplementowania pełnej obsługi zasiłku (ustalenie płatnika,
-        // okresu wyczekiwania, prawa do świadczenia, podstawy i ZUS RSA/Z-3)
-        // nie wolno zatwierdzić automatycznej listy, która obejmuje dni zasiłkowe,
-        // lecz wylicza wyłącznie wynagrodzenie chorobowe z art. 92 KP.
-        // Częściowa kwota mogłaby zostać mylnie potraktowana jako pełna wypłata.
-        var pendingBenefits = list.Items.Where(i =>
-            i.ContractType == ContractType.UmowaOPrace && i.SickDays > i.SickDaysEmployer)
-            .Select(i => $"{i.EmployeeName}: {i.SickDays - i.SickDaysEmployer} dni")
-            .ToList();
-        if (pendingBenefits.Count > 0)
-            throw new DomainException("Lista obejmuje dni wymagające odrębnego rozliczenia zasiłku chorobowego (" +
-                string.Join("; ", pendingBenefits) + "). Program nie ustala jeszcze prawa do zasiłku, płatnika ani jego kwoty. " +
-                "Nie księguj tej listy jako pełnego wynagrodzenia; rozlicz świadczenie w zweryfikowanym systemie kadrowo-płacowym.");
         // aktualność wyliczenia: dane osób (kwota z umowy, PIT-2, zbieg tytułów, PPK…), limity roczne i inne zaksięgowane listy
         // mogły zmienić się po wyliczeniu — lista musi odpowiadać ponownemu wyliczeniu z bieżących danych
         var fresh = await ComputeItemsAsync(list, await StoredInputsAsync(list, ct), ct);
