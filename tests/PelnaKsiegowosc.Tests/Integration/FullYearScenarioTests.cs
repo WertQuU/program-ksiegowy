@@ -132,11 +132,17 @@ public class FullYearScenarioTests
         // zamknięcie roku
         var periods = new PeriodService(t.Db, t.User, t.Clock);
         await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "zamknij", "x"));
-        // ostateczne zamknięcie bez zatwierdzenia sprawozdania — zablokowane (art. 12 ust. 4 UoR); wyjątek tylko z udokumentowaną decyzją
+        // ostateczne zamknięcie bez zatwierdzenia sprawozdania — zablokowane (art. 12 ust. 4 UoR);
+        // dokumentowanie zdarzenia szczególnego nie może obejść tej blokady
         var blocked = await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "CIT zweryfikowany"));
         Assert.Contains("zatwierdzone", blocked.Message);
         await Assert.ThrowsAsync<DomainException>(() => periods.RecordFinalCloseExceptionAsync(t.Year.Id, PeriodService.FinalCloseExceptionBasis.ZakonczenieDzialalnosci, "Uchwała 3/2027", "krótko"));
         await Assert.ThrowsAsync<DomainException>(() => periods.RecordFinalCloseExceptionAsync(t.Year.Id, PeriodService.FinalCloseExceptionBasis.ZakonczenieDzialalnosci, " ", "Otwarcie likwidacji spółki uchwałą wspólników"));
+        await periods.RecordFinalCloseExceptionAsync(t.Year.Id, PeriodService.FinalCloseExceptionBasis.NiezatwierdzoneWTerminie,
+            "Protokół zgromadzenia 3/2027", "Sprawozdanie roczne nie zostało zatwierdzone przez zgromadzenie w terminie.");
+        Assert.True((await periods.PreviewYearCloseAsync(t.Year.Id)).Checklist.HasBlocking);
+        await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "CIT zweryfikowany"));
+        await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026 TRYB WYJĄTKOWY", "CIT zweryfikowany"));
         await new FinancialStatementApprovals(t.Db, t.User, t.Clock).RecordApprovalAsync("2026", t.Clock.Today, "Zwyczajne Walne Zgromadzenie", "Uchwała nr 1/2027");
         var next = await periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "CIT zweryfikowany");
         t.Db.ChangeTracker.Clear();
