@@ -345,6 +345,54 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Audited_manual_classification_updates_posted_vat_register_and_allows_jpk_export()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        books.Company.Email = "podatki@example.org";
+        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K006");
+        invoice.JpkMarker = null;
+        await books.Db.SaveChangesAsync();
+        var docs = new DocumentService(books.Db, books.User, books.Clock);
+        await docs.PostAsync(invoice.Id);
+        var vat = new VatService(books.Db, books.User, books.Clock);
+        var period = new DateOnly(2026, 2, 1);
+        var rows = await vat.RegisterAsync(VatRegisterType.Sprzedaz, period);
+        Assert.All(rows, row => Assert.Null(row.KsefMarker));
+        await Assert.ThrowsAsync<DomainException>(() =>
+            docs.SetJpkClassificationAsync(invoice.Id, JpkKsefMarker.BFK, "a"));
+        await docs.SetJpkClassificationAsync(invoice.Id, JpkKsefMarker.BFK, "DOWOD/FZ/2026");
+        rows = await vat.RegisterAsync(VatRegisterType.Sprzedaz, period);
+        Assert.All(rows, row => Assert.Equal(JpkKsefMarker.BFK, row.KsefMarker));
+        var decl = await vat.ComputeDeclarationAsync(period);
+        var result = JpkV7Builder.Build(books.Company, period, rows, new List<VatRegisterEntry>(),
+            decl, false, new DateTime(2026, 3, 10, 9, 0, 0, DateTimeKind.Utc), Validator());
+        Assert.True(result.Validation.IsValid, string.Join(Environment.NewLine, result.Validation.Errors));
+        Assert.NotEmpty(result.Document.Descendants(JpkV7Rules.Ns + "BFK"));
+    }
+
+    [Fact]
+    public async Task Registered_ksef_number_updates_every_posted_vat_row_including_jpk()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K007");
+        var docs = new DocumentService(books.Db, books.User, books.Clock);
+        await docs.PostAsync(invoice.Id);
+        const string number = "5260250274-20260216-0123456789AB-CD";
+        await docs.SetKsefNumberAsync(invoice.Id, number);
+        Assert.Equal(number, invoice.KsefNumber);
+        var rows = await new VatService(books.Db, books.User, books.Clock).RegisterAsync(
+            VatRegisterType.Sprzedaz, new DateOnly(2026, 2, 1));
+        Assert.NotEmpty(rows);
+        Assert.All(rows, row =>
+        {
+            Assert.Equal(number, row.KsefNumber);
+            Assert.Equal(JpkKsefMarker.NrKSeF, row.KsefMarker);
+        });
+        await Assert.ThrowsAsync<DomainException>(() =>
+            docs.SetJpkClassificationAsync(invoice.Id, JpkKsefMarker.BFK, "DOWOD/FZ/2026"));
+    }
+
+    [Fact]
     public async Task Jpk_v7k_has_monthly_records_and_quarterly_declaration_only_in_last_month()
     {
         await using var t = await TestBooks.CreateAsync();
