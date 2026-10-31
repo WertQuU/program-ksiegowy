@@ -121,6 +121,12 @@ public class OctoberLegalAndWorkstationAuditTests
             Assert.True(first.IsHealthy);
             await Assert.ThrowsAsync<DomainException>(() =>
                 ExclusivePostgresSession.AcquireAsync(profile, connectionString));
+            await first.EnterMaintenanceAsync();
+            await using var outsider = new NpgsqlConnection(connectionString);
+            await outsider.OpenAsync();
+            await using var blocked = new NpgsqlCommand("SELECT pg_try_advisory_lock_shared(@key)", outsider);
+            blocked.Parameters.AddWithValue("key", ExclusivePostgresSession.MaintenanceLockKey);
+            Assert.False((bool)(await blocked.ExecuteScalarAsync())!);
         }
         await using var resumed = await ExclusivePostgresSession.AcquireAsync(profile, connectionString);
         Assert.True(resumed.IsHealthy);
