@@ -18,7 +18,7 @@ public class PayrollSickBasisAuditTests
         await service.AddEmployeeAsync(new Employee
         {
             FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace,
-            Gross = 6000m, StartDate = Start
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
         });
         var list = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
         await service.ChangeAsync(list.Items.Single().Id, null, 10, null);
@@ -36,7 +36,7 @@ public class PayrollSickBasisAuditTests
         await service.AddEmployeeAsync(new Employee
         {
             FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace,
-            Gross = 6000m, StartDate = Start
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
         });
         var jan = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
         await service.PostAsync(jan.Id);
@@ -51,6 +51,26 @@ public class PayrollSickBasisAuditTests
     }
 
     [Fact]
+    public async Task Unknown_age_blocks_sickness_posting_even_with_complete_pay_history()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new PayrollService(books.Db, books.User, books.Clock);
+        await service.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "Bez daty", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start
+        });
+        var jan = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
+        await service.PostAsync(jan.Id);
+        var feb = await service.CreateListAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 28));
+        await service.PostAsync(feb.Id);
+        var march = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+        await service.ChangeAsync(march.Items.Single().Id, null, 5, null);
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
+        Assert.Contains("daty urodzenia", ex.Message);
+    }
+
+    [Fact]
     public async Task Changed_pay_or_possible_change_of_work_time_requires_manual_sick_basis_review()
     {
         await using var books = await TestBooks.CreateAsync();
@@ -58,7 +78,7 @@ public class PayrollSickBasisAuditTests
         await service.AddEmployeeAsync(new Employee
         {
             FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace,
-            Gross = 6000m, StartDate = Start
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
         });
         var jan = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
         await service.PostAsync(jan.Id);
