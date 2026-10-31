@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Application.Documents;
+using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Infrastructure.Backup;
 using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Tests.Infrastructure;
@@ -101,6 +102,42 @@ public class BackupCompletenessAuditTests
         Assert.Equal("zachowany dokument", await File.ReadAllTextAsync(evidence));
         Assert.False(File.Exists(Path.Combine(target, "ksiegi.db")));
         Assert.Empty(Directory.EnumerateDirectories(source.Directory, ".occupied-target-odtwarzanie-*"));
+    }
+
+    [Fact]
+    public async Task Server_restore_does_not_commit_books_when_attachment_store_reports_wrong_content()
+    {
+        var (source, attachments) = await BackupTests.BooksWithAttachmentAsync();
+        await using var _ = source;
+        var service = new BackupService(source.Clock, Path.Combine(source.Directory, "restore-stage"));
+        var backup = await service.CreateAsync(source.Db,
+            new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = source.DbPath },
+            attachments, null, new BackupOptions(Key, Path.Combine(source.Directory, "backups")));
+
+        await using var target = TestBooks.Open(Path.Combine(source.Directory, "empty-restore.db"));
+        await target.Database.MigrateAsync();
+        var dest = new CorruptingFileStore(new LocalFileStore(
+            Path.Combine(source.Directory, "fresh-attachments"),
+            System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
+            service.RestoreToDatabaseAsync(backup.FilePath, Key, target, dest));
+        Assert.Equal(0, await target.Companies.CountAsync());
+    }
+
+    private sealed class CorruptingFileStore(LocalFileStore inner) : IFileStore
+    {
+        public string RootPath => inner.RootPath;
+        public Task<bool> ExistsAsync(string storagePath, CancellationToken ct = default) =>
+            inner.ExistsAsync(storagePath, ct);
+        public Task<Stream> OpenAsync(string storagePath, CancellationToken ct = default) =>
+            inner.OpenAsync(storagePath, ct);
+        public Task<(string storagePath, string sha256, long size)> SaveAsync(Stream content, string suggestedName, CancellationToken ct = default) =>
+            inner.SaveAsync(content, suggestedName, ct);
+        public async Task<(string sha256, long size)> SaveAtAsync(string storagePath, Stream content, CancellationToken ct = default)
+        {
+            var (_, size) = await inner.SaveAtAsync(storagePath, content, ct);
+            return (new string('0', 64), size);
+        }
     }
 
 }
