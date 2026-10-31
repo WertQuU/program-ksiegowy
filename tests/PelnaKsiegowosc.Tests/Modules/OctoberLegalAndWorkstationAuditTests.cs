@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Infrastructure.Export;
+using Npgsql;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Application.Payroll;
 using PelnaKsiegowosc.Application.Security;
@@ -103,6 +104,26 @@ public class OctoberLegalAndWorkstationAuditTests
         var a = ExclusivePostgresSession.LockKey("ksiegowy_1");
         Assert.Equal(a, ExclusivePostgresSession.LockKey("ksiegowy_1"));
         Assert.NotEqual(a, ExclusivePostgresSession.LockKey("ksiegowy_2"));
+    }
+
+    [PostgresFact]
+    public async Task Same_postgres_login_cannot_run_two_clients_at_once_and_is_released_on_exit()
+    {
+        var connectionString = Environment.GetEnvironmentVariable("PK_TEST_PG")!;
+        var b = new NpgsqlConnectionStringBuilder(connectionString);
+        var profile = new DatabaseProfile
+        {
+            Engine = DatabaseEngine.PostgreSql, Host = b.Host, Port = b.Port,
+            Database = b.Database, Username = b.Username
+        };
+        await using (var first = await ExclusivePostgresSession.AcquireAsync(profile, connectionString))
+        {
+            Assert.True(first.IsHealthy);
+            await Assert.ThrowsAsync<DomainException>(() =>
+                ExclusivePostgresSession.AcquireAsync(profile, connectionString));
+        }
+        await using var resumed = await ExclusivePostgresSession.AcquireAsync(profile, connectionString);
+        Assert.True(resumed.IsHealthy);
     }
 
     [Fact]
