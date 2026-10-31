@@ -39,10 +39,16 @@ public sealed partial class DatabaseForm : ObservableObject
         Password = "";
     }
 
-    public DatabaseProfile ToProfile()
+    public DatabaseProfile ToProfile(bool isolatedSelfTest = false)
     {
         if (!UsePostgres)
-            throw new DomainException("Jedyną aktywną bazą ksiąg jest centralny PostgreSQL.");
+        {
+            if (!isolatedSelfTest)
+                throw new DomainException("Jedyną aktywną bazą ksiąg jest centralny PostgreSQL.");
+            if (string.IsNullOrWhiteSpace(SqlitePath))
+                throw new DomainException("Odizolowany autotest wymaga lokalizacji testowej bazy SQLite.");
+            return new DatabaseProfile { Name = "Izolowany autotest SQLite", Engine = DatabaseEngine.Sqlite, SqlitePath = Path.GetFullPath(SqlitePath.Trim()) };
+        }
         if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Database) || string.IsNullOrWhiteSpace(Username))
             throw new DomainException("Podaj adres serwera, nazwę bazy i użytkownika PostgreSQL.");
         return new DatabaseProfile
