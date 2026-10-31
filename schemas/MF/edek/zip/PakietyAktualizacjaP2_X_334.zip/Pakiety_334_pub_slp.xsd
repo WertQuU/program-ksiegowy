@@ -1,0 +1,342 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns="http://www.zus.pl/2013/PUB_SLP" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.zus.pl/2013/PUB_SLP" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1">
+  <xs:complexType name="t_wiersz">
+    <xs:annotation>
+      <xs:documentation>Typ: Pozycja słownika</xs:documentation>
+    </xs:annotation>
+    <xs:attributeGroup ref="AtrybutyPozycjiSlownikaProstego"/>
+  </xs:complexType>
+  <xs:complexType name="t_slownik_prosty">
+    <xs:annotation>
+      <xs:documentation>Typ: Słownik prosty</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="w" type="t_wiersz" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attributeGroup ref="AtrybutySlownikaProstego"/>
+  </xs:complexType>
+  <xs:complexType name="t_PUB_SLP">
+    <xs:annotation>
+      <xs:documentation>Typ: Słowniki proste</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="slp" type="t_slownik_prosty" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:attributeGroup name="AtrybutySlownikaProstego">
+    <xs:attribute name="nazwa" type="xs:string" use="required"/>
+    <xs:attribute name="opis" type="xs:string" use="optional"/>
+    <xs:attribute name="wersja" type="xs:string" use="optional"/>
+    <xs:attribute name="data_modyfikacji" type="xs:dateTime" use="optional"/>
+    <xs:attribute name="status" type="xs:string" use="optional"/>
+    <xs:attribute name="k1" type="xs:string" use="optional"/>
+    <xs:attribute name="t1" type="xs:string" use="optional"/>
+    <xs:attribute name="k2" type="xs:string" use="optional"/>
+    <xs:attribute name="t2" type="xs:string" use="optional"/>
+    <xs:attribute name="k3" type="xs:string" use="optional"/>
+    <xs:attribute name="t3" type="xs:string" use="optional"/>
+    <xs:attribute name="k4" type="xs:string" use="optional"/>
+    <xs:attribute name="t4" type="xs:string" use="optional"/>
+    <xs:attribute name="k5" type="xs:string" use="optional"/>
+    <xs:attribute name="t5" type="xs:string" use="optional"/>
+    <xs:attribute name="k6" type="xs:string" use="optional"/>
+    <xs:attribute name="t6" type="xs:string" use="optional"/>
+    <xs:attribute name="k7" type="xs:string" use="optional"/>
+    <xs:attribute name="t7" type="xs:string" use="optional"/>
+    <xs:attribute name="k8" type="xs:string" use="optional"/>
+    <xs:attribute name="t8" type="xs:string" use="optional"/>
+    <xs:attribute name="k9" type="xs:string" use="optional"/>
+    <xs:attribute name="t9" type="xs:string" use="optional"/>
+    <xs:attribute name="k10" type="xs:string" use="optional"/>
+    <xs:attribute name="t10" type="xs:string" use="optional"/>
+    <xs:attribute name="k11" type="xs:string" use="optional"/>
+    <xs:attribute name="t11" type="xs:string" use="optional"/>
+    <xs:attribute name="k12" type="xs:string" use="optional"/>
+    <xs:attribute name="t12" type="xs:string" use="optional"/>
+    <xs:attribute name="k13" type="xs:string" use="optional"/>
+    <xs:attribute name="t13" type="xs:string" use="optional"/>
+    <xs:attribute name="k14" type="xs:string" use="optional"/>
+    <xs:attribute name="t14" type="xs:string" use="optional"/>
+    <xs:attribute name="k15" type="xs:string" use="optional"/>
+    <xs:attribute name="t15" type="xs:string" use="optional"/>
+    <xs:attribute name="k16" type="xs:string" use="optional"/>
+    <xs:attribute name="t16" type="xs:string" use="optional"/>
+    <xs:attribute name="k17" type="xs:string" use="optional"/>
+    <xs:attribute name="t17" type="xs:string" use="optional"/>
+    <xs:attribute name="k18" type="xs:string" use="optional"/>
+    <xs:attribute name="t18" type="xs:string" use="optional"/>
+    <xs:attribute name="k19" type="xs:string" use="optional"/>
+    <xs:attribute name="t19" type="xs:string" use="optional"/>
+    <xs:attribute name="k20" type="xs:string" use="optional"/>
+    <xs:attribute name="t20" type="xs:string" use="optional"/>
+    <xs:attribute name="k21" type="xs:string" use="optional"/>
+    <xs:attribute name="t21" type="xs:string" use="optional"/>
+    <xs:attribute name="k22" type="xs:string" use="optional"/>
+    <xs:attribute name="t22" type="xs:string" use="optional"/>
+    <xs:attribute name="k23" type="xs:string" use="optional"/>
+    <xs:attribute name="t23" type="xs:string" use="optional"/>
+    <xs:attribute name="k24" type="xs:string" use="optional"/>
+    <xs:attribute name="t24" type="xs:string" use="optional"/>
+    <xs:attribute name="k25" type="xs:string" use="optional"/>
+    <xs:attribute name="t25" type="xs:string" use="optional"/>
+    <xs:attribute name="k26" type="xs:string" use="optional"/>
+    <xs:attribute name="t26" type="xs:string" use="optional"/>
+    <xs:attribute name="k27" type="xs:string" use="optional"/>
+    <xs:attribute name="t27" type="xs:string" use="optional"/>
+    <xs:attribute name="k28" type="xs:string" use="optional"/>
+    <xs:attribute name="t28" type="xs:string" use="optional"/>
+    <xs:attribute name="k29" type="xs:string" use="optional"/>
+    <xs:attribute name="t29" type="xs:string" use="optional"/>
+    <xs:attribute name="k30" type="xs:string" use="optional"/>
+    <xs:attribute name="t30" type="xs:string" use="optional"/>
+    <xs:attribute name="k31" type="xs:string" use="optional"/>
+    <xs:attribute name="t31" type="xs:string" use="optional"/>
+    <xs:attribute name="k32" type="xs:string" use="optional"/>
+    <xs:attribute name="t32" type="xs:string" use="optional"/>
+    <xs:attribute name="k33" type="xs:string" use="optional"/>
+    <xs:attribute name="t33" type="xs:string" use="optional"/>
+    <xs:attribute name="k34" type="xs:string" use="optional"/>
+    <xs:attribute name="t34" type="xs:string" use="optional"/>
+    <xs:attribute name="k35" type="xs:string" use="optional"/>
+    <xs:attribute name="t35" type="xs:string" use="optional"/>
+    <xs:attribute name="k36" type="xs:string" use="optional"/>
+    <xs:attribute name="t36" type="xs:string" use="optional"/>
+    <xs:attribute name="k37" type="xs:string" use="optional"/>
+    <xs:attribute name="t37" type="xs:string" use="optional"/>
+    <xs:attribute name="k38" type="xs:string" use="optional"/>
+    <xs:attribute name="t38" type="xs:string" use="optional"/>
+    <xs:attribute name="k39" type="xs:string" use="optional"/>
+    <xs:attribute name="t39" type="xs:string" use="optional"/>
+    <xs:attribute name="k40" type="xs:string" use="optional"/>
+    <xs:attribute name="t40" type="xs:string" use="optional"/>
+    <xs:attribute name="k41" type="xs:string" use="optional"/>
+    <xs:attribute name="t41" type="xs:string" use="optional"/>
+    <xs:attribute name="k42" type="xs:string" use="optional"/>
+    <xs:attribute name="t42" type="xs:string" use="optional"/>
+    <xs:attribute name="k43" type="xs:string" use="optional"/>
+    <xs:attribute name="t43" type="xs:string" use="optional"/>
+    <xs:attribute name="k44" type="xs:string" use="optional"/>
+    <xs:attribute name="t44" type="xs:string" use="optional"/>
+    <xs:attribute name="k45" type="xs:string" use="optional"/>
+    <xs:attribute name="t45" type="xs:string" use="optional"/>
+    <xs:attribute name="k46" type="xs:string" use="optional"/>
+    <xs:attribute name="t46" type="xs:string" use="optional"/>
+    <xs:attribute name="k47" type="xs:string" use="optional"/>
+    <xs:attribute name="t47" type="xs:string" use="optional"/>
+    <xs:attribute name="k48" type="xs:string" use="optional"/>
+    <xs:attribute name="t48" type="xs:string" use="optional"/>
+    <xs:attribute name="k49" type="xs:string" use="optional"/>
+    <xs:attribute name="t49" type="xs:string" use="optional"/>
+    <xs:attribute name="k50" type="xs:string" use="optional"/>
+    <xs:attribute name="t50" type="xs:string" use="optional"/>
+    <xs:attribute name="k51" type="xs:string" use="optional"/>
+    <xs:attribute name="t51" type="xs:string" use="optional"/>
+    <xs:attribute name="k52" type="xs:string" use="optional"/>
+    <xs:attribute name="t52" type="xs:string" use="optional"/>
+    <xs:attribute name="k53" type="xs:string" use="optional"/>
+    <xs:attribute name="t53" type="xs:string" use="optional"/>
+    <xs:attribute name="k54" type="xs:string" use="optional"/>
+    <xs:attribute name="t54" type="xs:string" use="optional"/>
+    <xs:attribute name="k55" type="xs:string" use="optional"/>
+    <xs:attribute name="t55" type="xs:string" use="optional"/>
+    <xs:attribute name="k56" type="xs:string" use="optional"/>
+    <xs:attribute name="t56" type="xs:string" use="optional"/>
+    <xs:attribute name="k57" type="xs:string" use="optional"/>
+    <xs:attribute name="t57" type="xs:string" use="optional"/>
+    <xs:attribute name="k58" type="xs:string" use="optional"/>
+    <xs:attribute name="t58" type="xs:string" use="optional"/>
+    <xs:attribute name="k59" type="xs:string" use="optional"/>
+    <xs:attribute name="t59" type="xs:string" use="optional"/>
+    <xs:attribute name="k60" type="xs:string" use="optional"/>
+    <xs:attribute name="t60" type="xs:string" use="optional"/>
+    <xs:attribute name="k61" type="xs:string" use="optional"/>
+    <xs:attribute name="t61" type="xs:string" use="optional"/>
+    <xs:attribute name="k62" type="xs:string" use="optional"/>
+    <xs:attribute name="t62" type="xs:string" use="optional"/>
+    <xs:attribute name="k63" type="xs:string" use="optional"/>
+    <xs:attribute name="t63" type="xs:string" use="optional"/>
+    <xs:attribute name="k64" type="xs:string" use="optional"/>
+    <xs:attribute name="t64" type="xs:string" use="optional"/>
+    <xs:attribute name="k65" type="xs:string" use="optional"/>
+    <xs:attribute name="t65" type="xs:string" use="optional"/>
+    <xs:attribute name="k66" type="xs:string" use="optional"/>
+    <xs:attribute name="t66" type="xs:string" use="optional"/>
+    <xs:attribute name="k67" type="xs:string" use="optional"/>
+    <xs:attribute name="t67" type="xs:string" use="optional"/>
+    <xs:attribute name="k68" type="xs:string" use="optional"/>
+    <xs:attribute name="t68" type="xs:string" use="optional"/>
+    <xs:attribute name="k69" type="xs:string" use="optional"/>
+    <xs:attribute name="t69" type="xs:string" use="optional"/>
+    <xs:attribute name="k70" type="xs:string" use="optional"/>
+    <xs:attribute name="t70" type="xs:string" use="optional"/>
+    <xs:attribute name="k71" type="xs:string" use="optional"/>
+    <xs:attribute name="t71" type="xs:string" use="optional"/>
+    <xs:attribute name="k72" type="xs:string" use="optional"/>
+    <xs:attribute name="t72" type="xs:string" use="optional"/>
+    <xs:attribute name="k73" type="xs:string" use="optional"/>
+    <xs:attribute name="t73" type="xs:string" use="optional"/>
+    <xs:attribute name="k74" type="xs:string" use="optional"/>
+    <xs:attribute name="t74" type="xs:string" use="optional"/>
+    <xs:attribute name="k75" type="xs:string" use="optional"/>
+    <xs:attribute name="t75" type="xs:string" use="optional"/>
+    <xs:attribute name="k76" type="xs:string" use="optional"/>
+    <xs:attribute name="t76" type="xs:string" use="optional"/>
+    <xs:attribute name="k77" type="xs:string" use="optional"/>
+    <xs:attribute name="t77" type="xs:string" use="optional"/>
+    <xs:attribute name="k78" type="xs:string" use="optional"/>
+    <xs:attribute name="t78" type="xs:string" use="optional"/>
+    <xs:attribute name="k79" type="xs:string" use="optional"/>
+    <xs:attribute name="t79" type="xs:string" use="optional"/>
+    <xs:attribute name="k80" type="xs:string" use="optional"/>
+    <xs:attribute name="t80" type="xs:string" use="optional"/>
+    <xs:attribute name="k81" type="xs:string" use="optional"/>
+    <xs:attribute name="t81" type="xs:string" use="optional"/>
+    <xs:attribute name="k82" type="xs:string" use="optional"/>
+    <xs:attribute name="t82" type="xs:string" use="optional"/>
+    <xs:attribute name="k83" type="xs:string" use="optional"/>
+    <xs:attribute name="t83" type="xs:string" use="optional"/>
+    <xs:attribute name="k84" type="xs:string" use="optional"/>
+    <xs:attribute name="t84" type="xs:string" use="optional"/>
+    <xs:attribute name="k85" type="xs:string" use="optional"/>
+    <xs:attribute name="t85" type="xs:string" use="optional"/>
+    <xs:attribute name="k86" type="xs:string" use="optional"/>
+    <xs:attribute name="t86" type="xs:string" use="optional"/>
+    <xs:attribute name="k87" type="xs:string" use="optional"/>
+    <xs:attribute name="t87" type="xs:string" use="optional"/>
+    <xs:attribute name="k88" type="xs:string" use="optional"/>
+    <xs:attribute name="t88" type="xs:string" use="optional"/>
+    <xs:attribute name="k89" type="xs:string" use="optional"/>
+    <xs:attribute name="t89" type="xs:string" use="optional"/>
+    <xs:attribute name="k90" type="xs:string" use="optional"/>
+    <xs:attribute name="t90" type="xs:string" use="optional"/>
+    <xs:attribute name="k91" type="xs:string" use="optional"/>
+    <xs:attribute name="t91" type="xs:string" use="optional"/>
+    <xs:attribute name="k92" type="xs:string" use="optional"/>
+    <xs:attribute name="t92" type="xs:string" use="optional"/>
+    <xs:attribute name="k93" type="xs:string" use="optional"/>
+    <xs:attribute name="t93" type="xs:string" use="optional"/>
+    <xs:attribute name="k94" type="xs:string" use="optional"/>
+    <xs:attribute name="t94" type="xs:string" use="optional"/>
+    <xs:attribute name="k95" type="xs:string" use="optional"/>
+    <xs:attribute name="t95" type="xs:string" use="optional"/>
+    <xs:attribute name="k96" type="xs:string" use="optional"/>
+    <xs:attribute name="t96" type="xs:string" use="optional"/>
+    <xs:attribute name="k97" type="xs:string" use="optional"/>
+    <xs:attribute name="t97" type="xs:string" use="optional"/>
+    <xs:attribute name="k98" type="xs:string" use="optional"/>
+    <xs:attribute name="t98" type="xs:string" use="optional"/>
+    <xs:attribute name="k99" type="xs:string" use="optional"/>
+    <xs:attribute name="t99" type="xs:string" use="optional"/>
+    <xs:attribute name="k100" type="xs:string" use="optional"/>
+    <xs:attribute name="t100" type="xs:string" use="optional"/>
+  </xs:attributeGroup>
+  <xs:attributeGroup name="AtrybutyPozycjiSlownikaProstego">
+    <xs:attribute name="id_w" type="xs:nonNegativeInteger" use="optional"/>
+    <xs:attribute name="status" type="xs:string" use="optional"/>
+    <xs:attribute name="k1" type="xs:string" use="optional"/>
+    <xs:attribute name="k2" type="xs:string" use="optional"/>
+    <xs:attribute name="k3" type="xs:string" use="optional"/>
+    <xs:attribute name="k4" type="xs:string" use="optional"/>
+    <xs:attribute name="k5" type="xs:string" use="optional"/>
+    <xs:attribute name="k6" type="xs:string" use="optional"/>
+    <xs:attribute name="k7" type="xs:string" use="optional"/>
+    <xs:attribute name="k8" type="xs:string" use="optional"/>
+    <xs:attribute name="k9" type="xs:string" use="optional"/>
+    <xs:attribute name="k10" type="xs:string" use="optional"/>
+    <xs:attribute name="k11" type="xs:string" use="optional"/>
+    <xs:attribute name="k12" type="xs:string" use="optional"/>
+    <xs:attribute name="k13" type="xs:string" use="optional"/>
+    <xs:attribute name="k14" type="xs:string" use="optional"/>
+    <xs:attribute name="k15" type="xs:string" use="optional"/>
+    <xs:attribute name="k16" type="xs:string" use="optional"/>
+    <xs:attribute name="k17" type="xs:string" use="optional"/>
+    <xs:attribute name="k18" type="xs:string" use="optional"/>
+    <xs:attribute name="k19" type="xs:string" use="optional"/>
+    <xs:attribute name="k20" type="xs:string" use="optional"/>
+    <xs:attribute name="k21" type="xs:string" use="optional"/>
+    <xs:attribute name="k22" type="xs:string" use="optional"/>
+    <xs:attribute name="k23" type="xs:string" use="optional"/>
+    <xs:attribute name="k24" type="xs:string" use="optional"/>
+    <xs:attribute name="k25" type="xs:string" use="optional"/>
+    <xs:attribute name="k26" type="xs:string" use="optional"/>
+    <xs:attribute name="k27" type="xs:string" use="optional"/>
+    <xs:attribute name="k28" type="xs:string" use="optional"/>
+    <xs:attribute name="k29" type="xs:string" use="optional"/>
+    <xs:attribute name="k30" type="xs:string" use="optional"/>
+    <xs:attribute name="k31" type="xs:string" use="optional"/>
+    <xs:attribute name="k32" type="xs:string" use="optional"/>
+    <xs:attribute name="k33" type="xs:string" use="optional"/>
+    <xs:attribute name="k34" type="xs:string" use="optional"/>
+    <xs:attribute name="k35" type="xs:string" use="optional"/>
+    <xs:attribute name="k36" type="xs:string" use="optional"/>
+    <xs:attribute name="k37" type="xs:string" use="optional"/>
+    <xs:attribute name="k38" type="xs:string" use="optional"/>
+    <xs:attribute name="k39" type="xs:string" use="optional"/>
+    <xs:attribute name="k40" type="xs:string" use="optional"/>
+    <xs:attribute name="k41" type="xs:string" use="optional"/>
+    <xs:attribute name="k42" type="xs:string" use="optional"/>
+    <xs:attribute name="k43" type="xs:string" use="optional"/>
+    <xs:attribute name="k44" type="xs:string" use="optional"/>
+    <xs:attribute name="k45" type="xs:string" use="optional"/>
+    <xs:attribute name="k46" type="xs:string" use="optional"/>
+    <xs:attribute name="k47" type="xs:string" use="optional"/>
+    <xs:attribute name="k48" type="xs:string" use="optional"/>
+    <xs:attribute name="k49" type="xs:string" use="optional"/>
+    <xs:attribute name="k50" type="xs:string" use="optional"/>
+    <xs:attribute name="k51" type="xs:string" use="optional"/>
+    <xs:attribute name="k52" type="xs:string" use="optional"/>
+    <xs:attribute name="k53" type="xs:string" use="optional"/>
+    <xs:attribute name="k54" type="xs:string" use="optional"/>
+    <xs:attribute name="k55" type="xs:string" use="optional"/>
+    <xs:attribute name="k56" type="xs:string" use="optional"/>
+    <xs:attribute name="k57" type="xs:string" use="optional"/>
+    <xs:attribute name="k58" type="xs:string" use="optional"/>
+    <xs:attribute name="k59" type="xs:string" use="optional"/>
+    <xs:attribute name="k60" type="xs:string" use="optional"/>
+    <xs:attribute name="k61" type="xs:string" use="optional"/>
+    <xs:attribute name="k62" type="xs:string" use="optional"/>
+    <xs:attribute name="k63" type="xs:string" use="optional"/>
+    <xs:attribute name="k64" type="xs:string" use="optional"/>
+    <xs:attribute name="k65" type="xs:string" use="optional"/>
+    <xs:attribute name="k66" type="xs:string" use="optional"/>
+    <xs:attribute name="k67" type="xs:string" use="optional"/>
+    <xs:attribute name="k68" type="xs:string" use="optional"/>
+    <xs:attribute name="k69" type="xs:string" use="optional"/>
+    <xs:attribute name="k70" type="xs:string" use="optional"/>
+    <xs:attribute name="k71" type="xs:string" use="optional"/>
+    <xs:attribute name="k72" type="xs:string" use="optional"/>
+    <xs:attribute name="k73" type="xs:string" use="optional"/>
+    <xs:attribute name="k74" type="xs:string" use="optional"/>
+    <xs:attribute name="k75" type="xs:string" use="optional"/>
+    <xs:attribute name="k76" type="xs:string" use="optional"/>
+    <xs:attribute name="k77" type="xs:string" use="optional"/>
+    <xs:attribute name="k78" type="xs:string" use="optional"/>
+    <xs:attribute name="k79" type="xs:string" use="optional"/>
+    <xs:attribute name="k80" type="xs:string" use="optional"/>
+    <xs:attribute name="k81" type="xs:string" use="optional"/>
+    <xs:attribute name="k82" type="xs:string" use="optional"/>
+    <xs:attribute name="k83" type="xs:string" use="optional"/>
+    <xs:attribute name="k84" type="xs:string" use="optional"/>
+    <xs:attribute name="k85" type="xs:string" use="optional"/>
+    <xs:attribute name="k86" type="xs:string" use="optional"/>
+    <xs:attribute name="k87" type="xs:string" use="optional"/>
+    <xs:attribute name="k88" type="xs:string" use="optional"/>
+    <xs:attribute name="k89" type="xs:string" use="optional"/>
+    <xs:attribute name="k90" type="xs:string" use="optional"/>
+    <xs:attribute name="k91" type="xs:string" use="optional"/>
+    <xs:attribute name="k92" type="xs:string" use="optional"/>
+    <xs:attribute name="k93" type="xs:string" use="optional"/>
+    <xs:attribute name="k94" type="xs:string" use="optional"/>
+    <xs:attribute name="k95" type="xs:string" use="optional"/>
+    <xs:attribute name="k96" type="xs:string" use="optional"/>
+    <xs:attribute name="k97" type="xs:string" use="optional"/>
+    <xs:attribute name="k98" type="xs:string" use="optional"/>
+    <xs:attribute name="k99" type="xs:string" use="optional"/>
+    <xs:attribute name="k100" type="xs:string" use="optional"/>
+  </xs:attributeGroup>
+  <xs:element name="PUB_SLP" type="t_PUB_SLP">
+    <xs:annotation>
+      <xs:documentation>Słowniki proste</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+</xs:schema>
