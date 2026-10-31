@@ -52,6 +52,8 @@ public class Employee : CompanyEntity
     /// gdy nie przekracza 200 zł; decyduje kwota z umowy, nie pojedyncza wypłata). Brak — przyjmowana jest kwota wypłaty z ostrzeżeniem.
     /// </summary>
     public decimal? ContractTotalAmount { get; set; }
+    /// <summary>Umowa zlecenia / o dzieło zawarta z osobą trzecią, ale wykonywana na rzecz własnego pracodawcy (art. 8 ust. 2a ustawy o sus) — składki jak od stosunku pracy.</summary>
+    public bool WorkForOwnEmployer { get; set; }
     public decimal WorkTimeFraction { get; set; } = 1m;
     public CostsOfIncome Costs { get; set; } = CostsOfIncome.Standardowe;
     /// <summary>Złożony PIT-2 — płatnik stosuje kwotę zmniejszającą podatek (1/12 z 3600 zł).</summary>

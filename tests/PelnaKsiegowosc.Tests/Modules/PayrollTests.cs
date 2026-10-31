@@ -114,6 +114,78 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Civil_contract_with_own_employee_is_insured_as_employment_art_8_2a()
+    {
+        // student do 26 lat — zlecenie z własnym pracownikiem: składki jak od stosunku pracy (bez zwolnienia studenckiego), chorobowa obowiązkowa
+        var student = new Employee { FirstName = "S", LastName = "P", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, ContractTotalAmount = 1000m };
+        var alone = PayrollCalculator.Compute(student, 1000m, new PayrollYearToDate(), R, 1.67m);
+        Assert.Equal(0m, alone.SocialEmployee);                                              // zwykły zleceniobiorca-student — bez składek
+        var own = PayrollCalculator.Compute(student, 1000m, new PayrollYearToDate(), R, 1.67m, ownEmployee: true);
+        Assert.Equal(97.60m, own.PensionEmployee);
+        Assert.Equal(15.00m, own.DisabilityEmployee);
+        Assert.Equal(24.50m, own.SicknessEmployee);                                          // chorobowa obowiązkowa
+        Assert.True(own.Health > 0);
+        Assert.Equal(16.70m, own.Accident);
+        // umowa o dzieło z własnym pracownikiem — oskładkowana; zwykła umowa o dzieło — bez składek społecznych
+        var work = new Employee { FirstName = "D", LastName = "P", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 2000m };
+        Assert.Equal(0m, PayrollCalculator.Compute(work, 2000m, new PayrollYearToDate(), R, 1.67m).SocialEmployee);
+        var workOwn = PayrollCalculator.Compute(work, 2000m, new PayrollYearToDate(), R, 1.67m, ownEmployee: true);
+        Assert.Equal(195.20m, workOwn.PensionEmployee);
+        Assert.Equal(49.00m, workOwn.SicknessEmployee);
+        // dzieło z osobą trzecią wykonywane na rzecz pracodawcy (oznaczenie na umowie)
+        var forEmployer = new Employee { FirstName = "T", LastName = "P", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 2000m, WorkForOwnEmployer = true };
+        Assert.Equal(195.20m, PayrollCalculator.Compute(forEmployer, 2000m, new PayrollYearToDate(), R, 1.67m).PensionEmployee);
+        // zaliczka od zlecenia/dzieła — 12% bez progu 120 000 zł (art. 41 ust. 1), także po przekroczeniu progu w stosunku pracy
+        var high = PayrollCalculator.Compute(work, 2000m, new PayrollYearToDate(TaxBase: 200000m), R, 1.67m);
+        Assert.DoesNotContain("32%", high.Notes ?? "");
+    }
+
+    [Fact]
+    public async Task Annual_limits_are_cumulated_per_person_across_contracts()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        var start = new DateOnly(2026, 1, 1);
+        const string Pesel = "90010112349";
+        // dwie umowy zlecenia tej samej osoby po 150 000 zł w jednym miesiącu — limit 30-krotności 282 600 zł łącznie
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ewa", LastName = "Dwie", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, Gross = 150000m, ContractTotalAmount = 150000m, StartDate = start });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ewa", LastName = "Dwie", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, Gross = 150000m, ContractTotalAmount = 150000m, StartDate = start });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        var pensionBasis = list.Items.Sum(i => Math.Round(i.PensionEmployee / 0.0976m, 0));
+        Assert.Equal(282600m, pensionBasis);
+        Assert.Contains(list.Items, i => (i.Notes ?? "").Contains("30-krotności"));
+    }
+
+    [Fact]
+    public async Task Youth_relief_limit_is_shared_by_all_contracts_of_the_person()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        var start = new DateOnly(2026, 1, 1);
+        const string Pesel = "90010112349";
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        Assert.Equal(85528m, list.Items.Sum(i => i.ExemptRevenue));                         // limit roczny na osobę, nie na umowę
+    }
+
+    [Fact]
+    public async Task Student_with_employment_and_civil_contract_at_same_employer_pays_contributions_on_both()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        var start = new DateOnly(2026, 1, 1);
+        const string Pesel = "90010112349";
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Student", Pesel = Pesel, ContractType = ContractType.UmowaOPrace, WorkTimeFraction = 0.5m, Gross = 2403m, StartDate = start });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Student", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, Gross = 1000m, ContractTotalAmount = 1000m, StartDate = start });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        var civil = list.Items.Single(i => i.ContractType == ContractType.UmowaZlecenie);
+        Assert.Equal(97.60m, civil.PensionEmployee);
+        Assert.Equal(24.50m, civil.SicknessEmployee);
+        Assert.Contains("art. 8 ust. 2a", civil.Notes);
+    }
+
+    [Fact]
     public void Thresholds_caps_and_special_cases()
     {
         var e = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace };

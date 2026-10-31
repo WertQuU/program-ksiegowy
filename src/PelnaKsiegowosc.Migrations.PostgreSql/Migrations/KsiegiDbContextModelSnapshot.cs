@@ -2604,6 +2604,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<bool>("VoluntarySickness")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("WorkForOwnEmployer")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("WorkTimeFraction")
                         .HasPrecision(7, 4)
                         .HasColumnType("numeric(7,4)");

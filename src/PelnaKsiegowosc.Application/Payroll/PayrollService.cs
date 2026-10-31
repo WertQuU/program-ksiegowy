@@ -94,15 +94,26 @@ public sealed class PayrollService
     }
 
     /// <summary>Wartości narastające danej osoby z list zaksięgowanych w roku wypłaty, wypłaconych przed wskazaną datą.</summary>
+    /// <summary>
+    /// Wartości narastające od początku roku dla OSOBY (wszystkie umowy u płatnika z tym samym PESEL): podstawa emerytalno-rentowa
+    /// (limit 30-krotności — łącznie ze wszystkich tytułów), przychód zwolniony z ulgi dla młodych (limit roczny na osobę),
+    /// podstawa opodatkowania i dni chorobowe płatne przez pracodawcę — wyłącznie ze stosunku pracy (próg skali przy zaliczkach, art. 92 KP).
+    /// </summary>
     private async Task<PayrollYearToDate> YearToDateAsync(Guid employeeId, DateOnly paymentDate, Guid? excludeList, CancellationToken ct)
     {
         var yearStart = new DateOnly(paymentDate.Year, 1, 1);
+        var pesel = await _db.Employees.AsNoTracking().Where(e => e.Id == employeeId).Select(e => e.Pesel).FirstOrDefaultAsync(ct);
+        var ids = string.IsNullOrWhiteSpace(pesel)
+            ? new List<Guid> { employeeId }
+            : await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId && e.Pesel == pesel).Select(e => e.Id).ToListAsync(ct);
         var items = await (from i in _db.PayrollItems.AsNoTracking()
                            join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
-                           where i.EmployeeId == employeeId && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                           where ids.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
                                  l.PaymentDate >= yearStart && l.PaymentDate <= paymentDate && l.Id != excludeList
                            select i).ToListAsync(ct);
-        return new PayrollYearToDate(items.Sum(i => i.SocialBasis), items.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue), items.Sum(i => i.SickDaysEmployer));
+        var employment = items.Where(i => i.ContractType == ContractType.UmowaOPrace).ToList();
+        return new PayrollYearToDate(items.Sum(i => i.SocialBasis), employment.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue),
+            employment.Sum(i => i.SickDaysEmployer));
     }
 
     /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>
@@ -141,17 +152,26 @@ public sealed class PayrollService
             list.Items.Add(it);
             inputs[it] = (e, absence);
         }
-        // Fundusz Pracy: osoba z kilkoma tytułami u płatnika (ten sam PESEL) — próg od łącznej podstawy
+        // osoba z kilkoma umowami u płatnika (ten sam PESEL): Fundusz Pracy od łącznej podstawy; limity roczne (30-krotność,
+        // ulga dla młodych, próg skali) — narastająco także z wcześniejszych pozycji tej osoby na tej samej liście (najpierw umowa o pracę)
         foreach (var group in inputs.Where(x => !string.IsNullOrWhiteSpace(x.Value.Employee.Pesel)).GroupBy(x => x.Value.Employee.Pesel!.Trim()).Where(g => g.Count() > 1))
-            foreach (var (item, (emp, abs)) in group.ToList())
+        {
+            var ordered = group.OrderBy(x => x.Value.Employee.ContractType == ContractType.UmowaOPrace ? 0 : 1).ToList();
+            decimal pension = 0, youth = 0, employmentTax = 0;
+            foreach (var (item, (emp, abs)) in ordered)
             {
                 var others = group.Where(x => x.Key != item).Sum(x => x.Key.SocialBasis);
-                var fresh = PayrollCalculator.Compute(emp, emp.Gross, await YearToDateAsync(emp.Id, paymentDate, null, ct), rules, accident, abs, others, IsOwnEmployee(emp, employees));
+                var ytd = await YearToDateAsync(emp.Id, paymentDate, null, ct);
+                ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax };
+                var fresh = PayrollCalculator.Compute(emp, emp.Gross, ytd, rules, accident, abs, others, IsOwnEmployee(emp, employees));
                 fresh.Id = item.Id;
                 fresh.PayrollListId = list.Id;
-                var i = list.Items.IndexOf(item);
-                list.Items[i] = fresh;
+                list.Items[list.Items.IndexOf(item)] = fresh;
+                pension += fresh.SocialBasis;
+                youth += fresh.ExemptRevenue;
+                if (emp.ContractType == ContractType.UmowaOPrace && !fresh.FlatRateTax) employmentTax += fresh.TaxBase;
             }
+        }
         _db.PayrollLists.Add(list);
         await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_UTWORZONA", "PayrollList", list.Id.ToString(), $"{list.Number}; {list.Items.Count} os.", ct);
         await _db.SaveChangesAsync(ct);
@@ -159,6 +179,7 @@ public sealed class PayrollService
     }
 
     /// <summary>Ta sama osoba (PESEL) ma w miesiącu umowę o pracę z płatnikiem.</summary>
+    /// <summary>Ta sama osoba (PESEL) ma w miesiącu umowę o pracę z płatnikiem (art. 8 ust. 2a ustawy o sus; art. 30 ust. 1 pkt 5a ustawy o PIT).</summary>
     private static bool IsOwnEmployee(Employee e, IEnumerable<Employee> active) =>
         e.ContractType is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && !string.IsNullOrWhiteSpace(e.Pesel)
         && active.Any(x => x.Id != e.Id && x.ContractType == ContractType.UmowaOPrace && x.Pesel == e.Pesel);

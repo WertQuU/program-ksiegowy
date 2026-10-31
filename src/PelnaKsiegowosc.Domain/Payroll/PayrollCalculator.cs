@@ -100,7 +100,12 @@ public static class PayrollCalculator
         gross = salary + it.SickPay;
         it.Gross = gross;
 
-        var social = t == ContractType.UmowaOPrace || (t == ContractType.UmowaZlecenie && !e.StudentUnder26);
+        // art. 8 ust. 2a ustawy o sus: umowa zlecenia lub o dzieło zawarta z własnym pracownikiem albo wykonywana na rzecz
+        // pracodawcy — wykonawca jest dla celów ubezpieczeń pracownikiem: składki jak od stosunku pracy (emerytalna, rentowe,
+        // chorobowa obowiązkowa, wypadkowa, FP/FGŚP, zdrowotna), bez zwolnienia studenta do 26 lat; podstawa łączna z wynagrodzeniem
+        var employeeLike = t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && (ownEmployee || e.WorkForOwnEmployer);
+        if (employeeLike) notes.Add("art. 8 ust. 2a ustawy o sus — umowa z własnym pracownikiem / na rzecz pracodawcy: składki jak od stosunku pracy");
+        var social = t == ContractType.UmowaOPrace || employeeLike || (t == ContractType.UmowaZlecenie && !e.StudentUnder26);
         var healthDue = social || t == ContractType.Powolanie;
         var basis = social ? salary : 0m;
         it.SocialBasis = basis;
@@ -109,7 +114,7 @@ public static class PayrollCalculator
 
         it.PensionEmployee = Pct(cappedBasis, rules.PensionEmployee);
         it.DisabilityEmployee = Pct(cappedBasis, rules.DisabilityEmployee);
-        it.SicknessEmployee = t == ContractType.UmowaOPrace || (social && e.VoluntarySickness) ? Pct(basis, rules.Sickness) : 0;
+        it.SicknessEmployee = t == ContractType.UmowaOPrace || employeeLike || (social && e.VoluntarySickness) ? Pct(basis, rules.Sickness) : 0;
         it.HealthBase = healthDue ? R2(gross - it.SocialEmployee) : 0;
         it.Health = Pct(it.HealthBase, rules.Health);
 
@@ -161,7 +166,9 @@ public static class PayrollCalculator
             };
             var income = Math.Max(0, taxableGross - it.CostsOfIncome);
             it.TaxBase = Math.Max(0, R0(income - socialDeductible));
-            var lowPart = Math.Max(0, Math.Min(it.TaxBase, rules.TaxThreshold - ytd.TaxBase));
+            // skala (próg 120 000 zł) przy zaliczkach — tylko ze stosunku pracy (art. 32 ustawy o PIT); zlecenie, dzieło, powołanie
+            // (art. 13 pkt 7–8) — zaliczka według najniższej stawki skali (art. 41 ust. 1), bez progu
+            var lowPart = t == ContractType.UmowaOPrace ? Math.Max(0, Math.Min(it.TaxBase, rules.TaxThreshold - ytd.TaxBase)) : it.TaxBase;
             var tax = lowPart * rules.TaxRate1 / 100m + (it.TaxBase - lowPart) * rules.TaxRate2 / 100m;
             if (it.TaxBase - lowPart > 0) notes.Add("przekroczony próg 120 000 zł — stawka 32%");
             if (e.Pit2 && it.TaxBase > 0) tax -= rules.MonthlyTaxReduction;

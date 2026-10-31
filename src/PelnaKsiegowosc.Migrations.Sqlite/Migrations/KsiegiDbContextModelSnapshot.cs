@@ -2599,6 +2599,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<bool>("VoluntarySickness")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool>("WorkForOwnEmployer")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("WorkTimeFraction")
                         .HasPrecision(7, 4)
                         .HasColumnType("TEXT");
