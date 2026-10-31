@@ -77,6 +77,13 @@
             <TextBlock Text="dni urlopu bezpłatnego (robocze):" /><TextBox Text="{Binding UnpaidDays}" Watermark="(bez zmian)" MinWidth="50" />
             <Button Content="Przelicz" Command="{Binding ChangeGrossCommand}" />
           </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar" ToolTip.Tip="Art. 92 KP: potwierdzenie dotyczy wszystkich dni choroby w wybranym miesiącu; przy kilku różnych przyczynach konieczne jest osobne rozliczenie. Nie wpisuj danych medycznych — tylko odnośnik do dowodu.">
+            <TextBlock Text="Chorobowe — dni u innych pracodawców w roku:" />
+            <TextBox Text="{Binding PreviousEmployerSickDays}" Watermark="np. 0 (potwierdzone)" MinWidth="115" />
+            <ComboBox ItemsSource="{Binding SickWageCauses}" SelectedItem="{Binding SickWageCause}" MinWidth="230" Watermark="Wybierz powód 80/100%" />
+            <TextBox Text="{Binding SickEvidenceReference}" Watermark="Identyfikator dowodu/oświadczenia, bez danych medycznych" MinWidth="250" />
+            <Button Content="Zatwierdź chorobowe i przelicz" Command="{Binding ConfirmSickWageCommand}" />
+          </WrapPanel>
           <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />
         </DockPanel>
       </TabItem>
