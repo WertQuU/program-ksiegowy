@@ -279,7 +279,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 if (await db.Companies.AnyAsync()) throw new DomainException("Baza zawiera już księgi — wróć do kroku wyboru bazy.");
                 await CreateBooksAsync(db);
             }
-            var actor = OperatorIdentity.For(await db.Companies.Select(c => c.Id).FirstAsync());
+            var actor = OperatorIdentity.For(await db.Companies.Select(c => c.Id).FirstAsync(), Session.Profile);
             var settings = new SettingsService(db, Session.Clock);
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
@@ -342,8 +342,8 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private async Task CreateBooksAsync(KsiegiDbContext db)
     {
         var setup = new SetupService(db, Session.Clock);
-        var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty), Company.ToCompany());
-        var actor = OperatorIdentity.For(company.Id);
+        var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty, Session.Profile), Company.ToCompany());
+        var actor = OperatorIdentity.For(company.Id, Session.Profile);
         // Administrator powstaje TYLKO przy utworzeniu nowych ksiąg, nigdy przy pierwszym
         // połączeniu z istniejącą bazą (zabezpieczenie przed przejęciem roli przez obcego klienta).
         var founder = new Domain.Security.User
