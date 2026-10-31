@@ -292,7 +292,11 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 if (await db.Companies.AnyAsync()) throw new DomainException("Baza zawiera już księgi — wróć do kroku wyboru bazy.");
                 await CreateBooksAsync(db);
             }
-            var actor = OperatorIdentity.For(await db.Companies.Select(c => c.Id).FirstAsync(), Session.Profile);
+            var companyId = await db.Companies.Select(c => c.Id).FirstAsync();
+            var login = OperatorIdentity.LoginFor(Session.Profile);
+            var assignedRoles = await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+                OperatorIdentity.IdFor(login), login, companyId);
+            var actor = OperatorIdentity.For(companyId, Session.Profile, assignedRoles);
             var settings = new SettingsService(db, Session.Clock);
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
