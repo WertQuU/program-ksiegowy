@@ -157,6 +157,31 @@ public class OctoberLegalAndWorkstationAuditTests
         Assert.Contains("superuser", ex.Message);
     }
 
+    [PostgresFact]
+    public async Task Privileged_database_creator_is_blocked_for_operator_even_without_superuser()
+    {
+        var cs = Environment.GetEnvironmentVariable("PK_TEST_PG")!;
+        var b = new NpgsqlConnectionStringBuilder(cs);
+        await using var probe = new NpgsqlConnection(cs);
+        await probe.OpenAsync();
+        await using var rights = new NpgsqlCommand(
+            "SELECT rolcreatedb FROM pg_roles WHERE rolname = session_user", probe);
+        if (await rights.ExecuteScalarAsync() is not true)
+            return; // test wymaga środowiska z uprawnieniem CREATEDB
+
+        var profile = new DatabaseProfile
+        {
+            Engine = DatabaseEngine.PostgreSql,
+            Host = b.Host,
+            Port = b.Port,
+            Database = b.Database,
+            Username = b.Username
+        };
+        var ex = await Assert.ThrowsAsync<DomainException>(() =>
+            ExclusivePostgresSession.AcquireAsync(profile, cs, requireOperatorRole: true));
+        Assert.Contains("superuser", ex.Message);
+    }
+
     [Fact]
     public void Paper_archive_printout_is_valid_static_pdf_with_document_id()
     {
