@@ -173,7 +173,8 @@ public sealed class PayrollService
                 {
                     var e = employees[input.EmployeeId];
                     var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
-                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays) : null;
+                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays,
+                            CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month)) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
                         TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
                     var others = pass == 0 ? 0m : bases.Where(b => b.Key != input.ItemId).Sum(b => b.Value);
