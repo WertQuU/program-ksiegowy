@@ -71,11 +71,11 @@ public sealed class OperatorAccessService
         login = (login ?? "").Trim();
         // Połączenie do współdzielonego PostgreSQL: każdy operator ma osobny login DB
         // reprezentowany przez db:<login>. Dla lokalnego SQLite zachowujemy OS user@host.
-        var serverUser = login.StartsWith("db:", StringComparison.OrdinalIgnoreCase);
-        var valid = serverUser && login.Length > 3 && login[3..].All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.');
+        var serverUser = login.StartsWith("db:", StringComparison.Ordinal);
+        var valid = serverUser && PostgresLoginPolicy.IsValid(login[3..]);
         if (login.Length > 256 || !valid || login.Any(char.IsControl))
             throw new DomainException("Podaj login PostgreSQL w formacie db:nazwa_uzytkownika.");
-        if (serverUser) login = "db:" + login[3..].ToLowerInvariant();
+        if (serverUser) login = "db:" + login[3..];
         var id = IdFor(login);
         if (await _db.Users.AnyAsync(u => u.Id == id || u.Login == login, ct))
             throw new DomainException("Operator już istnieje — zaznacz go i edytuj role.");
