@@ -88,8 +88,8 @@ public static class PayrollCalculator
             (given.SickDays < 0 || given.SickDays > 31 ||
              given.UnpaidWorkingDays < 0 || given.WorkingDaysInMonth <= 0 ||
              given.UnpaidWorkingDays > given.WorkingDaysInMonth ||
-             (given.CalendarDaysInMonth is { } monthDays &&
-              (monthDays is < 28 or > 31 || given.SickDays > monthDays)) ||
+             (given.CalendarDaysInMonth is { } calendarDays &&
+              (calendarDays is < 28 or > 31 || given.SickDays > calendarDays)) ||
              (given.SickDays > 0 && given.SickRatePercent is not (80m or 100m))))
             throw new Common.DomainException("Nieprawidłowa liczba dni nieobecności lub stawka wynagrodzenia chorobowego.");
         var fullMonthGross = gross;
