@@ -28,6 +28,9 @@ Audyt statyczny i CI nie gwarantują 100% zgodności we wszystkich stanach fakty
 | A-11 | Limit 33/14 dni chorobowego błędnie sumowany według roku wypłaty | Oddzielono rok wypłaty (PIT/ZUS) od roku niezdolności (art. 92 KP). `YearToDateAsync` sumuje chorobowe wg `PayrollList.Month`, a `PayrollAbsence.SickYear` wskazuje rok dla limitu 33/14 dni. Testy granicy grudzień/styczeń, wypłaty z opóźnieniem i 50. urodzin. |
 | A-12 | Brak wieku przy chorobowym mógł domyślnie zastosować limit 33 dni | `PostAsync` blokuje zaksięgowanie chorobowego bez zweryfikowanej daty urodzenia/PESEL; test regresyjny. |
 | A-13 | Data urodzenia w kartotece mogła być sprzeczna z poprawnym PESEL | `PayrollService.Validate` odrzuca sprzeczne daty i PESEL z nieprawidłową zakodowaną datą; test regresyjny. |
+| A-14 | JPK_KR_PD wybierał dowolnego pierwszego kontrahenta dla zapisu z kilkoma NIP-ami | `JpkKrPdBuilder` blokuje tworzenie nierzetelnego `D_3` w niejednoznacznym zapisie i wskazuje potrzebę rozdzielenia dekretów lub udokumentowanej obsługi zbiorczej; test regresyjny. |
+| A-15 | Kalkulator chorobowego po cichu używał bieżącej pensji jako podstawy, gdy jej nie znano | Zlikwidowano fallback `SickBasis ?? gross`. Kalkulator wymaga jawnej podstawy; lista robocza bez historii pokazuje 0 zł, jednoznaczne ostrzeżenie i blokuje księgowanie. Testy weryfikują oba przypadki. |
+| A-16 | Raport Deep Research błędnie uznał historię NIP i wyrównanie kosztu PBKDF2 za niezaimplementowane | Potwierdzono w **gałęzi PR #2**: `CounterpartyIdentityChange`, migracje, zapis NIP na dokumentach i trzy testy JPK historycznych identyfikatorów; w `SecurityService` brak starego `Math.Min(_iterations, 10_000)`. Ustalenia raportu odnosiły się do innej/starej rewizji albo były nieaktualne. |
 
 ## Dalsze poprawki i wymagania weryfikacyjne (v1.0.0)
 
@@ -46,7 +49,7 @@ Oficjalne źródła: ulga dla młodych https://podatki.gov.pl/ulgi-i-odliczenia/
 
 ### L-01 — Podstawa świadczenia chorobowego (P0, potwierdzone ryzyko)
 
-**Częściowo naprawiono:** `PayrollService.VerifiedSickBasisAsync` odczytuje maksymalnie 12 pełnych miesięcy zaksięgowanych list poprzedzających chorobę i przekazuje historyczną kwotę brutto jako `PayrollAbsence.SickBasis`, ale wyłącznie dla stabilnego wynagrodzenia zasadniczego bez nieobecności, innych umów i zmian płacy. Brak jednoznacznej historii lub przypadek szczególny blokuje `PostAsync`; wyświetlana na liście kwota wstępna NIE jest kwotą zatwierdzoną. Nie ma jeszcze ręcznego, audytowalnego zatwierdzania podstawy dla przypadków złożonych.
+**Częściowo naprawiono:** `PayrollCalculator.Compute` nie dopuszcza już niejawnego zastąpienia podstawy chorobowego bieżącą płacą. Robocza lista z niezweryfikowaną podstawą ma kwotę świadczenia 0 zł i ostrzeżenie, nie może zostać zaksięgowana. `PayrollService.VerifiedSickBasisAsync` odczytuje maksymalnie 12 pełnych miesięcy zaksięgowanych list poprzedzających chorobę i przekazuje historyczną kwotę brutto jako `PayrollAbsence.SickBasis`, ale wyłącznie dla stabilnego wynagrodzenia zasadniczego bez nieobecności, innych umów i zmian płacy. Brak jednoznacznej historii lub przypadek szczególny blokuje `PostAsync`; wyświetlana na liście kwota wstępna NIE jest kwotą zatwierdzoną. Nie ma jeszcze ręcznego, audytowalnego zatwierdzania podstawy dla przypadków złożonych.
 **Nadal P0:** składniki zmienne i kwartalne/roczne, niepełne miesiące, zmiana etatu, przerwy między niezdolnościami, szczególne stawki i podstawy (art. 36–43), wcześniejsze choroby u innych pracodawców (art. 92 KP), stawka 100% przy określonych przyczynach, historia sprzed uruchomienia programu oraz kompletna dokumentacja wyliczenia. Potrzebna dalsza implementacja i niezależny przegląd.
 
 ### L-02 — Rozliczenia płac, PIT i ZUS (P1, do weryfikacji)
@@ -65,7 +68,7 @@ Testować kompletność dowodów i trwałość zapisów, numerację, historię k
 
 ### T-01 — Różnica czasu sprawdzenia loginu (P2, potwierdzone ryzyko)
 
-**Częściowo naprawiono**: nieznany login używa tej samej skonfigurowanej liczby iteracji PBKDF2 co nowe konta (domyślnie 600 000). Wciąż wymagają oceny starsze hashe z inną liczbą iteracji, ograniczanie prób na poziomie źródłowego adresu/urządzenia i wpływ obciążenia KDF na DoS.
+**Częściowo naprawiono**: nieznany login używa tej samej skonfigurowanej liczby iteracji PBKDF2 co nowe konta (domyślnie 600 000). Potwierdzono odczytem bieżącego pliku z PR #2: wskazany przez Deep Research stary fallback 10 tys. iteracji **nie występuje**. Wciąż wymagają oceny starsze hashe z inną liczbą iteracji, ograniczanie prób na poziomie źródłowego adresu/urządzenia i wpływ obciążenia KDF na DoS.
 
 ### T-02 — Kopie zapasowe (P1, do weryfikacji)
 
@@ -99,3 +102,9 @@ Nie zwiększać numeru wersji ani nie publikować wydania; zgoda właściciela n
 Dodatkowe źródło dla art. 92 KP i limitu w roku choroby (również u innych pracodawców): https://bip.zus.pl/pl/web/guest/swiadczenia/zasilki/zasilek-chorobowy/z-ubezpieczenia-chorobowego/prawo-do-zasilku-i-okres-przyslugiwania .
 
 Komunikat MF 30.10.2026 o podpisanym rozporządzeniu dotyczącym czasowego zwolnienia CIT z JPK_ST_KR: https://www.gov.pl/web/kas/rozporzadzenie-w-sprawie-czasowego-zwolnienia-w-cit-z-obowiazkow-w-zakresie-jpk-cit-dotyczacych-ewidencji-srodkow-trwalych-i-wartosci-niematerialnych-i-prawnych (wejście w życie po ogłoszeniu w Dz.U. — wymaga potwierdzenia).
+
+## Weryfikacja nowych poprawek
+
+CI dla poprzedniego SHA `141c5ad985ff20e101f7d271740e059accc213d9` zakończyło się sukcesem na Ubuntu i Windows (GitHub Actions run #41211497930). **Ten wynik nie dotyczy późniejszych commitów A-14–A-16** — ich końcowy SHA musi ponownie przejść oba systemy. Nawet zielone CI nie stanowi niezależnej opinii prawnej.
+
+Oficjalne MF o `D_3` i dokumentach zbiorczych: https://podatki.gov.pl/podatki-firmowe/jednolity-plik-kontrolny/jpk_pd/pytania-i-odpowiedzi-jpk_pd (pytania 112, 121, 146); opcjonalność pola w XSD nie upoważnia do przypisywania innego kontrahenta.
