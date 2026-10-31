@@ -71,6 +71,10 @@ public sealed class PayrollService
         var limit = PayrollRules.EmployerSickDaysLimit(birth, month.Year);
         if (previousEmployerDays < 0 || previousEmployerDays > limit)
             throw new DomainException($"Dni chorobowego u innych pracodawców muszą wynosić 0–{limit} w roku {month.Year}.");
+        // Liczba dni u innych pracodawców jest narastająca w roku kalendarzowym.
+        // Nie wolno jej obniżyć w kolejnej deklaracji ani zwiększyć wstecz
+        // ponad liczbę wcześniej potwierdzoną dla późniejszego miesiąca.
+        await ValidateExternalSickDaysChronologyAsync(employeeId, month, previousEmployerDays, ct);
         var nextYear = new DateOnly(month.Year + 1, 1, 1);
         var booked = await (from i in _db.PayrollItems.AsNoTracking()
                             join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
@@ -85,6 +89,36 @@ public sealed class PayrollService
         await new AuditService(_db, _clock).AddAsync(_user, "CHOROBOWE_ZATWIERDZONE", "Employee", employeeId.ToString(),
             $"{month:yyyy-MM}; zapisano odnośnik do dokumentacji (bez danych medycznych)", ct);
         await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Art. 92 KP: dni wynagrodzenia chorobowego u wszystkich pracodawców sumują się
+    /// w roku choroby. Potwierdzone dni u innych pracodawców są zatem wartością
+    /// narastającą; ich spadek w późniejszym miesiącu grozi ponowną wypłatą.
+    /// Sprawdzamy również wcześniej zapisane dane, by stary niespójny wpis
+    /// nie mógł zostać zaksięgowany po aktualizacji programu.
+    /// </summary>
+    private async Task ValidateExternalSickDaysChronologyAsync(
+        Guid employeeId, DateOnly month, int previousEmployerDays, CancellationToken ct)
+    {
+        for (var candidate = new DateOnly(month.Year, 1, 1);
+             candidate.Year == month.Year;
+             candidate = candidate.AddMonths(1))
+        {
+            if (candidate == month) continue;
+            var recorded = await SickAssessmentAsync(employeeId, candidate, ct);
+            if (recorded is null) continue;
+            if (candidate < month && recorded.PreviousEmployerDays > previousEmployerDays)
+                throw new DomainException(
+                    $"Dni wynagrodzenia chorobowego u innych pracodawców nie mogą maleć w roku {month.Year}. " +
+                    $"W {candidate:MM.yyyy} potwierdzono {recorded.PreviousEmployerDays}, a w {month:MM.yyyy} podano {previousEmployerDays}. " +
+                    "Zweryfikuj dokumentację i skoryguj chronologicznie dane przed zaksięgowaniem.");
+            if (candidate > month && recorded.PreviousEmployerDays < previousEmployerDays)
+                throw new DomainException(
+                    $"Dane chorobowego u innych pracodawców są niespójne: w {month:MM.yyyy} podano {previousEmployerDays} dni, " +
+                    $"ale w późniejszym {candidate:MM.yyyy} potwierdzono tylko {recorded.PreviousEmployerDays}. " +
+                    "Najpierw skoryguj późniejsze ustalenie.");
+        }
     }
 
     private static void Validate(Employee e)
@@ -512,9 +546,13 @@ public sealed class PayrollService
             if ((employee.BirthDate ?? Identifiers.BirthDateFromPesel(employee.Pesel)) is null)
                 throw new DomainException($"Nie można zaksięgować chorobowego dla {item.EmployeeName}: brak potwierdzonej daty urodzenia. " +
                     "Bez wieku nie da się ustalić limitu 33/14 dni pracodawcy z art. 92 KP. Uzupełnij datę urodzenia lub PESEL i przelicz listę.");
-            if (await SickAssessmentAsync(employee.Id, list.Month, ct) is null)
+            var assessment = await SickAssessmentAsync(employee.Id, list.Month, ct);
+            if (assessment is null)
                 throw new DomainException($"Nie można zaksięgować chorobowego dla {item.EmployeeName}: brak potwierdzenia art. 92 KP " +
                     "(dni u innych pracodawców, 80/100% i źródło dokumentacji). Zatwierdź chorobowe, a następnie przelicz listę.");
+            // Sprawdzenie również przy księgowaniu chroni przed niespójnymi
+            // potwierdzeniami zapisanymi przez wcześniejsze wersje programu.
+            await ValidateExternalSickDaysChronologyAsync(employee.Id, list.Month, assessment.PreviousEmployerDays, ct);
             var (basis, problem) = await VerifiedSickBasisAsync(employee, list, ct);
             if (basis is null)
                 throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
