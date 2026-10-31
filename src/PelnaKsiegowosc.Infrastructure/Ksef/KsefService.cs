@@ -83,6 +83,19 @@ public sealed class KsefService
             // Zapisz stan PRZED pierwszym żądaniem wysyłki: serwer może przyjąć fakturę, mimo że
             // połączenie zostanie przerwane przed zwróceniem numeru referencyjnego.
             // W takiej sytuacji nie wolno wysłać jej ponownie bez ręcznego uzgodnienia z KSeF.
+            // Rezerwacja atomowa na poziomie bazy chroni przed równoległą wysyłką tej samej faktury
+            // z dwóch procesów po przejściu początkowego sprawdzenia statusu.
+            var reserved = await _db.Documents
+                .Where(d => d.Id == doc.Id && d.CompanyId == _user.CompanyId
+                    && (d.KsefNumber == null || d.KsefNumber == "")
+                    && d.KsefStatus != KsefStatus.Wyslana
+                    && d.KsefStatus != KsefStatus.Przyjeta
+                    && d.KsefStatus != KsefStatus.Pobrana
+                    && ((d.KsefReferenceNumber == null || d.KsefReferenceNumber == "")
+                        || d.KsefStatus == KsefStatus.Odrzucona))
+                .ExecuteUpdateAsync(u => u.SetProperty(d => d.KsefStatus, KsefStatus.Wyslana), ct);
+            if (reserved != 1)
+                throw new DomainException("Inna instancja rozpoczęła już wysyłkę faktury do KSeF lub status jest nierozstrzygnięty. Uzgodnij status przed kolejną próbą.");
             doc.KsefStatus = KsefStatus.Wyslana;
             _db.DocumentHistory.Add(new DocumentHistory
             {
