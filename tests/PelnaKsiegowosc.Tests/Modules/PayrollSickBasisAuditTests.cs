@@ -23,6 +23,7 @@ public class PayrollSickBasisAuditTests
         var list = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
         await service.ChangeAsync(list.Items.Single().Id, null, 10, null);
         Assert.Contains("WSTĘPNA", list.Items.Single().Notes);
+        Assert.Equal(0m, list.Items.Single().SickPay); // bez zweryfikowanej podstawy nie wyświetlamy fikcyjnego świadczenia
         var ex = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(list.Id));
         Assert.Contains("brak jednoznacznej", ex.Message);
         Assert.Equal(PayrollStatus.Robocza, list.Status);
