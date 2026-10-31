@@ -127,27 +127,29 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private string _adjustmentAmount = "";
     [ObservableProperty] private string _adjustmentDescription = "";
     [ObservableProperty] private string _adjustmentBasis = "";
+    /// <summary>Rodzaj różnicy (RPD JPK_CIT): 1 — trwała, 2 — przejściowa.</summary>
+    [ObservableProperty] private Choice<int> _adjustmentDifference = DifferenceKinds[0];
+    [ObservableProperty] private bool _adjustmentPriorYears;
+    public static List<Choice<int>> DifferenceKinds { get; } = new() { new(0, "rodzaj różnicy: —"), new(1, "różnica trwała"), new(2, "różnica przejściowa") };
     public List<Choice<CitAdjustmentType>> AdjustmentTypes { get; } = Choices.Of<CitAdjustmentType>();
 
     [RelayCommand]
     private async Task DeferredTaxAsync()
     {
         var y = Session.CurrentYear;
-        var lossText = await Dialogs.PromptAsync("Podatek odroczony",
-            $"Na dzień {y.EndDate.ToPl()}. Kwota strat podatkowych do rozliczenia w przyszłości (jeśli prawdopodobne jest osiągnięcie dochodu; 0 — brak):", "0");
-        if (lossText is null) return;
         await RunAsync(async () =>
         {
             await using var db = Session.OpenDb();
             var policy = await db.AccountingPolicies.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
             var svc = new DeferredTaxService(db, Session.User, Session.Clock);
-            var loss = Parse.Amount(lossText, "Straty");
+            const decimal loss = 0m; // straty podatkowe — z rejestru strat (zakładka „Straty z lat ubiegłych”)
             var c = await svc.ComputeAsync(y.Id, y.EndDate, loss);
-            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: wartość bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} ({d.Basis})")) +
-                $"{Environment.NewLine}{Environment.NewLine}Stawka: {c.RatePercent:0}%{Environment.NewLine}" +
+            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} × {d.RatePercent:0}% (rok odwrócenia {d.ReversalYear}) = {Money.Format(d.Tax)} ({d.Basis})")) +
+                $"{Environment.NewLine}{Environment.NewLine}" +
                 $"Dodatnie różnice przejściowe: {Money.Format(c.TaxableDifferences)} → rezerwa {Money.Format(c.Provision)} (zaksięgowano {Money.Format(c.BookedProvision)}){Environment.NewLine}" +
                 $"Ujemne różnice przejściowe: {Money.Format(c.DeductibleDifferences)} → aktywo {Money.Format(c.Asset)} (zaksięgowano {Money.Format(c.BookedAsset)}){Environment.NewLine}" +
                 $"Wpływ na wynik (podatek odroczony): {Money.Format(c.ResultCharge)}" +
+                (c.Warnings is { Count: > 0 } w ? Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, w) : "") +
                 (policy is { IsMicroEntity: true } or { IsSmallEntity: true } ? $"{Environment.NewLine}{Environment.NewLine}Jednostka mała/mikro może nie ustalać podatku odroczonego (art. 37 ust. 10 UoR) — zgodnie z polityką rachunkowości." : "");
             if (c.ProvisionChange == 0 && c.AssetChange == 0) { await Dialogs.ShowTextAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Stan zaksięgowany jest aktualny."); return; }
             if (!await Dialogs.ConfirmAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Zaksięgować zmianę (841 / 842 / 872)?")) return;
@@ -155,6 +157,17 @@ public sealed partial class CitViewModel : SectionViewModel
             StatusMessage = "Podatek odroczony zaksięgowany.";
         });
     }
+
+    [ObservableProperty] private string _expectedRate = "19";
+    [ObservableProperty] private string _expectedRateJustification = "";
+
+    /// <summary>Prognoza stawki CIT na rok odwrócenia różnic przejściowych (art. 37 ust. 6 UoR).</summary>
+    [RelayCommand]
+    private Task SaveExpectedRateAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        await new DeferredTaxService(db, Session.User, Session.Clock).SetExpectedRateAsync(Session.CurrentYear.EndDate.Year + 1, Parse.Amount(ExpectedRate, "Stawka"), ExpectedRateJustification);
+    }, "Zapisano prognozę stawki dla podatku odroczonego.");
 
     protected override async Task LoadCoreAsync()
     {
@@ -353,7 +366,8 @@ public sealed partial class CitViewModel : SectionViewModel
             throw new DomainException("Zaznacz zobowiązanie w zakładce art. 18f.");
         await new CitService(db, Session.User, Session.Clock).AddAdjustmentAsync(Session.CurrentYear.Id, Parse.Int(AdjustmentPeriod, "Okres korekty"), AdjustmentType.Value,
             Parse.Amount(AdjustmentAmount, "Kwota"), AdjustmentDescription, Parse.Trim(AdjustmentBasis),
-            openItemId: LinkAdjustmentToLiability ? (Guid?)SelectedLiability!.Tag : null, capitalGains: AdjustmentCapitalGains);
+            openItemId: LinkAdjustmentToLiability ? (Guid?)SelectedLiability!.Tag : null, capitalGains: AdjustmentCapitalGains,
+            bookedInPriorYears: AdjustmentPriorYears, permanentDifference: AdjustmentDifference.Value switch { 1 => true, 2 => false, _ => null });
         AdjustmentAmount = AdjustmentDescription = AdjustmentBasis = "";
     }, "Dodano korektę wyniku podatkowego.");
 

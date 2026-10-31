@@ -50,7 +50,7 @@ public static class LegalRules
         // KSeF
         new("KSEF_DUZI", "KSeF", "Obowiązek KSeF — najwięksi podatnicy", "od 1.02.2026 (sprzedaż w 2024 r. > 200 mln zł)", "przepisy przejściowe nowelizacji ustawy o VAT wprowadzającej KSeF", new(2026, 2, 1), null, RuleStatus.Zweryfikowana),
         new("KSEF_POZOSTALI", "KSeF", "Obowiązek KSeF — pozostali podatnicy", "od 1.04.2026", "przepisy przejściowe nowelizacji ustawy o VAT wprowadzającej KSeF", new(2026, 4, 1), null, RuleStatus.Zweryfikowana),
-        new("KSEF_MIKRO", "KSeF", "Okres przejściowy KSeF — sprzedaż do 10 000 zł miesięcznie i faktury z kas", "do 31.12.2026", "przepisy przejściowe nowelizacji ustawy o VAT wprowadzającej KSeF", Y2026, new DateOnly(2026, 12, 31), RuleStatus.Zweryfikowana),
+        new("KSEF_MIKRO", "KSeF", "Okres przejściowy KSeF — sprzedaż dokumentowana fakturami do 10 000 zł brutto miesięcznie i faktury z kas", "do 31.12.2026 (po przekroczeniu limitu — KSeF od następnej faktury)", "przepisy przejściowe nowelizacji ustawy o VAT wprowadzającej KSeF", Y2026, new DateOnly(2026, 12, 31), RuleStatus.Zweryfikowana),
         new("KSEF_KARY", "KSeF", "Sankcje za wystawianie faktur poza KSeF", "od 1.01.2027 (projekt MF zakłada przesunięcie)", "przepisy o sankcjach za niestosowanie KSeF (ustawa o VAT)", new(2027, 1, 1), null, RuleStatus.DoPotwierdzenia,
             "We wrześniu 2026 r. MF zapowiedziało projekt przesunięcia sankcji — sprawdź stan legislacji."),
         // CIT
@@ -67,7 +67,7 @@ public static class LegalRules
         new("CIT_REPREZENTACJA", "CIT", "Reprezentacja", "nie jest KUP", "art. 16 ust. 1 pkt 28 ustawy o CIT", new(1993, 1, 1), null, RuleStatus.Zweryfikowana),
         new("CIT_NISKOCENNE", "CIT", "Jednorazowa amortyzacja niskocennych składników", "do 10 000 zł netto", "art. 16d ust. 1 ustawy o CIT", new(2018, 1, 1), null, RuleStatus.Zweryfikowana),
         new("JPK_CIT", "CIT", "JPK_CIT (JPK_KR_PD, JPK_ST_KR) — zakres i termin", "koniec 7. miesiąca po roku podatkowym; od lat 2025 — PGK i podatnicy > 50 mln euro; od 2026 — podatnicy z JPK_V7M; od 2027 — z JPK_V7K i pozostali; JPK_ST_KR (ewidencja środków trwałych) — program jej nie generuje, zwolnienia przejściowe do potwierdzenia", "art. 9 ustawy o CIT; rozporządzenie MFiG (Dz.U. 2026 poz. 188)", Y2026, null, RuleStatus.DoPotwierdzenia,
-            "Termin i zakres pierwszego obowiązku zmieniano w 2026 r. — potwierdź w komunikatach MF."),
+            "Termin i zakres pierwszego obowiązku zmieniano w 2026 r. — potwierdź w komunikatach MF. 29.10.2026 podpisano rozporządzenie o czasowym zwolnieniu z JPK_ST_KR — uwzględnij po ogłoszeniu w Dzienniku Ustaw i wejściu w życie."),
         new("RODO_PRZECHOWYWANIE", "Dane osobowe", "Usuwanie danych osobowych na żądanie", "odmowa w okresie obowiązkowego przechowywania (dowody księgowe 5 lat, dokumentacja podatkowa do przedawnienia, dokumentacja pracownicza 10 lat); po jego upływie anonimizacja", "art. 17 ust. 3 lit. b RODO; art. 74 UoR; art. 70, 86 Ordynacji; art. 94 pkt 9b KP", new(2018, 5, 25), null, RuleStatus.Zweryfikowana),
         // Rachunkowość
         new("UOR_SPRAWOZDANIE", "Rachunkowość", "Sporządzenie sprawozdania finansowego", "3 miesiące od dnia bilansowego", "art. 52 ust. 1 UoR", new(1995, 1, 1), null, RuleStatus.Zweryfikowana),

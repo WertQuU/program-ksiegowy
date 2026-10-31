@@ -25,6 +25,9 @@ public sealed class PersonalDataService
     private readonly ICurrentUser _user;
     private readonly IClock _clock;
 
+    /// <summary>Ścieżki plików załączników objętych usunięciem (usuwa je warstwa magazynu plików po zapisie zmian).</summary>
+    public List<string> PendingAttachmentRemovals { get; } = new();
+
     public PersonalDataService(KsiegiDbContext db, ICurrentUser user, IClock clock)
     {
         _db = db;
@@ -32,7 +35,34 @@ public sealed class PersonalDataService
         _clock = clock;
     }
 
-    public async Task<RetentionDecision> CounterpartyRetentionAsync(Guid counterpartyId, CancellationToken ct = default)
+    public static string HoldKey(Guid subjectId) => $"rodo.wstrzymanie.{subjectId}";
+    public sealed record LegalHold(DateOnly Until, string Reason);
+
+    /// <summary>
+    /// Wstrzymanie usuwania danych (np. zawieszenie lub przerwanie biegu przedawnienia — art. 70 § 2–6 Ordynacji, kontrola
+    /// podatkowa, postępowanie sądowe, szczególny obowiązek archiwizacyjny). Do wskazanej daty żądania usunięcia są odrzucane.
+    /// </summary>
+    public async Task SetLegalHoldAsync(Guid subjectId, DateOnly until, string reason, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCompany);
+        if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Podaj podstawę wstrzymania (np. kontrola podatkowa, spór sądowy, zawieszenie biegu przedawnienia).");
+        await new Setup.SettingsService(_db, _clock).SetAsync<LegalHold?>(_user.CompanyId, HoldKey(subjectId), new LegalHold(until, reason.Trim()), ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "RODO_WSTRZYMANIE_USUNIECIA", "Subject", subjectId.ToString(), $"do {until.ToPl()}: {reason.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    private async Task<RetentionDecision> WithHoldAsync(Guid subjectId, RetentionDecision d, CancellationToken ct)
+    {
+        var hold = await new Setup.SettingsService(_db, _clock).GetAsync<LegalHold?>(_user.CompanyId, HoldKey(subjectId), () => null, ct);
+        if (hold is null || hold.Until < _clock.Today) return d;
+        var until = hold.Until > d.KeepUntil || d.KeepUntil == DateOnly.MaxValue ? hold.Until : d.KeepUntil;
+        return new(false, d.KeepUntil == DateOnly.MaxValue ? DateOnly.MaxValue : until, d.Basis + $" Wstrzymanie usuwania do {hold.Until.ToPl()}: {hold.Reason}.");
+    }
+
+    public async Task<RetentionDecision> CounterpartyRetentionAsync(Guid counterpartyId, CancellationToken ct = default) =>
+        await WithHoldAsync(counterpartyId, await BaseCounterpartyRetentionAsync(counterpartyId, ct), ct);
+
+    private async Task<RetentionDecision> BaseCounterpartyRetentionAsync(Guid counterpartyId, CancellationToken ct)
     {
         var docDates = await _db.Documents.AsNoTracking().Where(d => d.CompanyId == _user.CompanyId && d.CounterpartyId == counterpartyId)
             .Select(d => d.IssueDate).ToListAsync(ct);
@@ -43,7 +73,7 @@ public sealed class PersonalDataService
         if (await _db.OpenItems.AnyAsync(o => o.CounterpartyId == counterpartyId && o.Status != OpenItemStatus.Rozliczona, ct))
             return new(false, DateOnly.MaxValue, "Kontrahent ma nierozliczone należności lub zobowiązania — dane są niezbędne do rozliczeń (RODO art. 6 ust. 1 lit. b i c).");
         var employee = await _db.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.CounterpartyId == counterpartyId && e.CompanyId == _user.CompanyId, ct);
-        if (employee is not null) return await EmployeeRetentionAsync(employee.Id, ct);
+        if (employee is not null) return await BaseEmployeeRetentionAsync(employee.Id, ct);
         var last = docDates.Concat(entryDates).DefaultIfEmpty(DateOnly.MinValue).Max();
         if (last == DateOnly.MinValue) return new(true, _clock.Today, "Brak dokumentów i zapisów — dane można usunąć.");
         var keepUntil = new DateOnly(last.Year + 6, 12, 31);
@@ -51,7 +81,10 @@ public sealed class PersonalDataService
             $"Ostatni dokument/zapis: {last.ToPl()}. Okres przechowywania: art. 74 ust. 2 UoR (5 lat) i art. 70 § 1 w zw. z art. 86 § 1 Ordynacji podatkowej (przedawnienie) — do {keepUntil.ToPl()}.");
     }
 
-    public async Task<RetentionDecision> EmployeeRetentionAsync(Guid employeeId, CancellationToken ct = default)
+    public async Task<RetentionDecision> EmployeeRetentionAsync(Guid employeeId, CancellationToken ct = default) =>
+        await WithHoldAsync(employeeId, await BaseEmployeeRetentionAsync(employeeId, ct), ct);
+
+    private async Task<RetentionDecision> BaseEmployeeRetentionAsync(Guid employeeId, CancellationToken ct)
     {
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
         if (e.IsActive || e.EndDate is null)
@@ -79,14 +112,20 @@ public sealed class PersonalDataService
         cp.Nip = cp.Regon = cp.Pesel = cp.Street = cp.BuildingNumber = cp.ApartmentNumber = cp.PostalCode = cp.City = null;
         cp.Email = cp.Phone = cp.BankAccountIban = cp.Notes = cp.VatEuNumber = cp.WhiteListRequestId = null;
         cp.IsActive = false;
-        foreach (var d in await _db.Documents.Where(d => d.CounterpartyId == counterpartyId && d.CompanyId == _user.CompanyId).ToListAsync(ct))
+        var docs = await _db.Documents.Where(d => d.CounterpartyId == counterpartyId && d.CompanyId == _user.CompanyId).ToListAsync(ct);
+        foreach (var d in docs)
         {
             d.CounterpartyName = label;
             d.CounterpartyNip = null;
             d.CounterpartyAddress = null;
         }
+        // załączniki (skany dokumentów) po upływie okresu przechowywania — do usunięcia plików przez wywołującego (magazyn plików)
+        var docIds = docs.Select(d => d.Id).ToList();
+        var attachments = await _db.Attachments.Where(a => a.DocumentId != null && docIds.Contains(a.DocumentId.Value)).ToListAsync(ct);
+        PendingAttachmentRemovals.AddRange(attachments.Select(a => a.StoragePath));
+        _db.Attachments.RemoveRange(attachments);
         await new AuditService(_db, _clock).AddAsync(_user, "RODO_USUNIECIE_WYKONANE", "Counterparty", cp.Id.ToString(),
-            $"{request.Trim()} — dane zanonimizowane po upływie okresu przechowywania ({decision.KeepUntil.ToPl()}); zapisy księgowe zachowane", ct);
+            $"{request.Trim()} — dane zanonimizowane po upływie okresu przechowywania ({decision.KeepUntil.ToPl()}); zapisy księgowe zachowane; załączników do usunięcia: {PendingAttachmentRemovals.Count}; kopie zapasowe — usunięcie wraz z ich rotacją", ct);
         await _db.SaveChangesAsync(ct);
         return decision;
     }

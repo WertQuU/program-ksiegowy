@@ -137,6 +137,14 @@ public class FinancialStatementTests
         Assert.Contains(gaps, g => g.Contains("Dodatkowe informacje"));
         Assert.Contains(gaps, g => g.Contains("DO UZUPEŁNIENIA"));
         Assert.Contains(gaps, g => g.Contains("nie jest zamknięty"));
+        // pełne sprawozdanie (jednostka inna niż mała/mikro) bez zestawienia zmian w kapitale i RPP — niekompletne nawet bez badania
+        var noEquity = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, extras with { Equity = null, CashFlow = null });
+        var fullGaps = FinancialStatementCompleteness.Check(bsCur, noEquity, texts.Values, texts["kontynuacja"], texts["zasady"], true, auditRequired: false, StatementScope.Inna);
+        Assert.Contains(fullGaps, g => g.Contains("Zestawienie zmian"));
+        Assert.Contains(fullGaps, g => g.Contains("Rachunek przepływów"));
+        // jednostka mała korzystająca z uproszczeń, niebadana — może pominąć oba
+        Assert.DoesNotContain(FinancialStatementCompleteness.Check(bsCur, noEquity, texts.Values, texts["kontynuacja"], texts["zasady"], true, false, StatementScope.Mala),
+            g => g.Contains("Zestawienie zmian") || g.Contains("Rachunek przepływów"));
         // wariant kalkulacyjny
         var xk = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator,
             extras with { CalculationVariant = await sb.ProfitAndLossCalculationAsync(y.Id, y.EndDate, CostAllocationKey.Default) });

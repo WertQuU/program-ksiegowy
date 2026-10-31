@@ -77,7 +77,6 @@ public sealed class BackupService
     {
         var archiveId = Guid.CreateVersion7();
         var staging = Path.Combine(_tempRoot, "kopia-" + archiveId.ToString("N"));
-        var zipPath = staging + ".zip";
         Directory.CreateDirectory(options.TargetDirectory);
         var finalName = $"kopia-{SystemClock.ToWarsaw(_clock.UtcNow):yyyyMMdd-HHmmss}-{archiveId.ToString("N")[^8..]}{Extension}";
         var finalPath = Path.Combine(options.TargetDirectory, finalName);
@@ -85,7 +84,7 @@ public sealed class BackupService
         var record = new BackupRecord { ArchiveId = archiveId, CreatedAtUtc = _clock.UtcNow, FileName = finalName, Target = options.TargetDirectory, Encrypted = true, Status = "W TOKU" };
         try
         {
-            Directory.CreateDirectory(staging);
+            CreatePrivateDirectory(staging);
             var manifest = new BackupManifest
             {
                 ArchiveId = archiveId,
@@ -138,10 +137,29 @@ public sealed class BackupService
                 manifest.Files.Add(new ManifestFile(Path.GetRelativePath(staging, f).Replace('\\', '/'), new FileInfo(f).Length, await DataDump.Sha256FileAsync(f, ct)));
             await File.WriteAllTextAsync(Path.Combine(staging, "manifest.json"), JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }), ct);
 
-            ZipFile.CreateFromDirectory(staging, zipPath, CompressionLevel.Optimal, false);
-            await using (var input = File.OpenRead(zipPath))
+            // ZIP tworzony w potoku i szyfrowany w locie — jawne archiwum nie powstaje na dysku
+            var pipe = new System.IO.Pipelines.Pipe();
+            var zipping = Task.Run(async () =>
+            {
+                try
+                {
+                    await using var pipeOut = pipe.Writer.AsStream();
+                    using (var zip = new ZipArchive(pipeOut, ZipArchiveMode.Create, leaveOpen: true))
+                        foreach (var f in Directory.EnumerateFiles(staging, "*", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal))
+                        {
+                            var entry = zip.CreateEntry(Path.GetRelativePath(staging, f).Replace('\\', '/'), CompressionLevel.Optimal);
+                            await using var es = entry.Open();
+                            await using var fs = File.OpenRead(f);
+                            await fs.CopyToAsync(es, ct);
+                        }
+                    await pipe.Writer.CompleteAsync();
+                }
+                catch (Exception ex) { await pipe.Writer.CompleteAsync(ex); throw; }
+            }, ct);
+            await using (var input = pipe.Reader.AsStream())
             await using (var output = new FileStream(partial, FileMode.Create, FileAccess.Write, FileShare.None))
                 await ArchiveCrypto.EncryptAsync(input, output, options.Key, archiveId, _clock.UtcNow, ct);
+            await zipping;
 
             var verify = await VerifyAsync(partial, options.Key, ct);
             if (!verify.Ok) throw new InvalidOperationException("Weryfikacja kopii po zapisie nie powiodła się: " + string.Join("; ", verify.Problems));
@@ -192,8 +210,33 @@ public sealed class BackupService
         finally
         {
             TryDelete(staging);
-            if (File.Exists(zipPath)) File.Delete(zipPath);
         }
+    }
+
+    /// <summary>
+    /// Katalog roboczy z jawnymi danymi (eksport bazy przed zaszyfrowaniem, rozpakowanie przy weryfikacji) — dostęp tylko
+    /// dla właściciela (Linux: 0700; Windows: katalog w profilu użytkownika z dziedziczonymi uprawnieniami tylko dla niego).
+    /// </summary>
+    internal static void CreatePrivateDirectory(string path)
+    {
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(path);
+        else Directory.CreateDirectory(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+    }
+
+    /// <summary>Usuwa pozostałości katalogów roboczych po przerwanej operacji (np. awaria zasilania) — wywoływane przy starcie.</summary>
+    public static int CleanupStaleTemporaryData(string tempRoot)
+    {
+        if (!Directory.Exists(tempRoot)) return 0;
+        var n = 0;
+        foreach (var d in Directory.EnumerateDirectories(tempRoot).Where(d => Path.GetFileName(d) is var name && (name.StartsWith("kopia-") || name.StartsWith("weryfikacja-") || name.StartsWith("odtwarzanie-") || name.StartsWith("migracja-"))))
+        {
+            try { Directory.Delete(d, true); n++; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        foreach (var f in Directory.EnumerateFiles(tempRoot, "kopia-*.zip"))
+        {
+            try { File.Delete(f); n++; } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        return n;
     }
 
     /// <summary>Weryfikacja archiwum: odszyfrowanie (uwierzytelnienie każdego fragmentu), rozpakowanie, sumy SHA-256 wszystkich plików z manifestu.</summary>
@@ -218,14 +261,44 @@ public sealed class BackupService
 
     private async Task<BackupManifest> ExtractAsync(string archivePath, BackupKey key, string dir, CancellationToken ct)
     {
-        Directory.CreateDirectory(dir);
-        var zip = Path.Combine(dir, "archiwum.zip");
-        await using (var input = File.OpenRead(archivePath))
-        await using (var output = File.Create(zip))
-            await ArchiveCrypto.DecryptAsync(input, output, key, ct);
+        CreatePrivateDirectory(dir);
         var content = Path.Combine(dir, "zawartosc");
-        ZipFile.ExtractToDirectory(zip, content);
-        File.Delete(zip);
+        // odszyfrowanie w potoku i rozpakowanie bez zapisu jawnego archiwum ZIP
+        var pipe = new System.IO.Pipelines.Pipe();
+        var decrypting = Task.Run(async () =>
+        {
+            try
+            {
+                await using var input = File.OpenRead(archivePath);
+                await using var pipeOut = pipe.Writer.AsStream();
+                await ArchiveCrypto.DecryptAsync(input, pipeOut, key, ct);
+                await pipe.Writer.CompleteAsync();
+            }
+            catch (Exception ex) { await pipe.Writer.CompleteAsync(ex); throw; }
+        }, ct);
+        try
+        {
+            await using (var zipIn = pipe.Reader.AsStream())
+            using (var zip = new ZipArchive(zipIn, ZipArchiveMode.Read))
+            {
+                var root = Path.GetFullPath(content) + Path.DirectorySeparatorChar;
+                foreach (var entry in zip.Entries)
+                {
+                    var target = Path.GetFullPath(Path.Combine(content, entry.FullName));
+                    if (!target.StartsWith(root, StringComparison.Ordinal)) throw new InvalidDataException($"Niedozwolona ścieżka w archiwum: {entry.FullName}");
+                    Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                    await using var es = entry.Open();
+                    await using var fs = File.Create(target);
+                    await es.CopyToAsync(fs, ct);
+                }
+            }
+        }
+        catch (Exception) when (!decrypting.IsCompletedSuccessfully)
+        {
+            await decrypting; // przyczyna pierwotna: błędny klucz / uszkodzone archiwum (zamiast błędu ZIP)
+            throw;
+        }
+        await decrypting;
         var manifestPath = Path.Combine(content, "manifest.json");
         if (!File.Exists(manifestPath)) throw new InvalidDataException("Archiwum nie zawiera manifestu.");
         return JsonSerializer.Deserialize<BackupManifest>(await File.ReadAllTextAsync(manifestPath, ct))!;

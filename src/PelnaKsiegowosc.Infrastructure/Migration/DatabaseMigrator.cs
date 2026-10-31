@@ -62,6 +62,7 @@ public sealed class DatabaseMigrator
         {
             report.PreMigrationBackup = await createSourceBackup();
             await target.Database.MigrateAsync(ct);
+            BackupService.CreatePrivateDirectory(dumpDir);
             var tables = await DataDump.ExportAsync(source, dumpDir, ct);
             var sourceSums = await DataDump.ControlSumsAsync(source, ct);
             try

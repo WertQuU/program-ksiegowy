@@ -347,10 +347,17 @@ public class ReviewFixesTests
         await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZwiekszeniePrzychodow, 500m, "Przychód podatkowy ujęty w księgach 2025", "art. 12 ust. 3", bookedInPriorYears: true);
         await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.DodatkowyKUP, 150m, "KUP 2026 ujęty w księgach 2025", "art. 15 ust. 4", bookedInPriorYears: true);
         await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZwiekszeniePrzychodow, 70m, "Przychód nieujęty w księgach", "art. 12");
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.KosztNKUP, 40m, "Kara umowna", "art. 16 ust. 1 pkt 22")); // bez rodzaju różnicy
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.KosztNKUP, 40m, "Kara umowna", "art. 16 ust. 1 pkt 22", permanentDifference: true);
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.KosztNKUP, 60m, "Niewypłacone wynagrodzenie zlecenia", "art. 16 ust. 1 pkt 57", permanentDifference: false);
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZmniejszeniePrzychodow, 20m, "Dywidenda zwolniona", "art. 22 ust. 4", permanentDifference: true);
+        await cit.AddAdjustmentAsync(t.Year.Id, 1, CitAdjustmentType.ZmniejszeniePrzychodow, 30m, "Odsetki naliczone niezapłacone", "art. 12 ust. 4 pkt 2", permanentDifference: false);
 
         var rec = await cit.ReconcileAsync(t.Year.Id, 12);
-        Assert.Equal(300m, rec.Rpd.K4);
-        Assert.Equal(1000m + 600m, rec.Rpd.K5);   // art. 18f + rezerwa netto
+        Assert.Equal(300m + 40m, rec.Rpd.K4);     // reprezentacja + kara (trwałe)
+        Assert.Equal(1000m + 600m + 60m, rec.Rpd.K5); // art. 18f + rezerwa netto + korekta przejściowa
+        Assert.Equal(20m, rec.Rpd.K1);             // przychód zwolniony — trwały
+        Assert.Equal(30m, rec.Rpd.K2);             // przychód opodatkowany w przyszłości — przejściowy
         Assert.Equal(500m, rec.Rpd.K3);
         Assert.Equal(150m, rec.Rpd.K6);
         Assert.Equal(70m, rec.Rpd.K7);
@@ -594,6 +601,29 @@ public class TaxLossTests
         var (_, used, until) = (await cit.LossesAsync()).Single(x => x.Loss.Id == loss.Id);
         Assert.Equal(5000m, used);
         Assert.Equal(new DateOnly(2030, 12, 31), until);
-        Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), new DateOnly(2026, 1, 1), new DateOnly(2026, 12, 31), 5_000_001m, oneTime: true));
+        Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), 1, 5_000_001m, oneTime: true));
+        // lata podatkowe, nie kalendarzowe: strata za rok kończący się 30.06.2024; lata 1.07.2024–31.12.2025 (18 mies.), 2026, 2027, 2028, 2029
+        var years = new List<(DateOnly, DateOnly)> { (new(2024, 7, 1), new(2025, 12, 31)), (new(2026, 1, 1), new(2026, 12, 31)), (new(2027, 1, 1), new(2027, 12, 31)),
+            (new(2028, 1, 1), new(2028, 12, 31)), (new(2029, 1, 1), new(2029, 12, 31)), (new(2030, 1, 1), new(2030, 12, 31)) };
+        Assert.Equal(5, TaxLossRules.TaxYearNumber(new DateOnly(2024, 6, 30), years, new DateOnly(2029, 1, 1)));   // kalendarzowo minęłoby 4,5 roku
+        Assert.Equal(6, TaxLossRules.TaxYearNumber(new DateOnly(2024, 6, 30), years, new DateOnly(2030, 1, 1)));   // poza okresem, choć przed 30.06.2029+5 lat
+        // rok straty spoza programu: luka liczona latami 12-miesięcznymi
+        Assert.Equal(3, TaxLossRules.TaxYearNumber(new DateOnly(2023, 12, 31), years.Skip(1).ToList(), new DateOnly(2026, 1, 1)));
+    }
+
+    [Fact]
+    public async Task Debt_financing_costs_over_limit_are_excluded_automatically_as_temporary_difference()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var d = new DateOnly(2026, 3, 31);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 5_000_000m, 0), new("130-01", 0, 5_000_000m)));
+        await t.Db.SaveChangesAsync();
+        var rec = await new CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        // EBITDA podatkowa 10 mln → limit max(3 mln; 30% × 10 mln) = 3 mln → nadwyżka 2 mln wyłączona z KUP
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c") && a.Amount == 2_000_000m);
+        Assert.Equal(3_000_000m, rec.TaxCosts);
+        Assert.Equal(2_000_000m, rec.Rpd.K5);
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
     }
 }

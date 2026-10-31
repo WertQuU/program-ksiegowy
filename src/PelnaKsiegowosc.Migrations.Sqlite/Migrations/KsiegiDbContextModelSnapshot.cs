@@ -704,6 +704,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<int>("PeriodNumber")
                         .HasColumnType("INTEGER");
 
+                    b.Property<bool?>("PermanentDifference")
+                        .HasColumnType("INTEGER");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(64)

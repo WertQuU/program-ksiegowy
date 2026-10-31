@@ -96,8 +96,28 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
             check.Basis + Environment.NewLine + Environment.NewLine + "Opisz żądanie (data wpływu, kto, w jakiej formie):");
         if (string.IsNullOrWhiteSpace(request)) return;
         var r = await svc.EraseCounterpartyAsync(id, request);
-        await Dialogs.InfoAsync("RODO", r.CanErase ? "Dane osobowe zanonimizowano. Zdarzenie zapisano w dzienniku." : $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis} Przekaż osobie odpowiedź z tą podstawą.");
+        foreach (var path in svc.PendingAttachmentRemovals)
+        {
+            var file = Path.Combine(Session.Attachments.RootPath, path.Replace('/', Path.DirectorySeparatorChar));
+            try { if (File.Exists(file)) File.Delete(file); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+        await Dialogs.InfoAsync("RODO", r.CanErase
+            ? $"Dane osobowe zanonimizowano, usunięto załączniki: {svc.PendingAttachmentRemovals.Count}. Dane w kopiach zapasowych znikną wraz z rotacją kopii (ustawienie liczby przechowywanych kopii); kopie zdalne usuń zgodnie z ich retencją. Zdarzenie zapisano w dzienniku."
+            : $"Odmowa usunięcia (art. 17 ust. 3 lit. b RODO): {r.Basis} Przekaż osobie odpowiedź z tą podstawą.");
     }, "Obsłużono żądanie RODO.");
+
+    /// <summary>Wstrzymanie usuwania danych (kontrola, spór, zawieszenie/przerwanie biegu przedawnienia).</summary>
+    [RelayCommand]
+    private Task LegalHoldAsync() => ChangeAsync(async () =>
+    {
+        if (_editedId is not { } id) throw new DomainException("Otwórz kontrahenta.");
+        var until = await Dialogs.PromptAsync("Wstrzymanie usuwania danych", "Do kiedy dane muszą być przechowywane (dd.mm.rrrr)?");
+        if (string.IsNullOrWhiteSpace(until)) return;
+        var reason = await Dialogs.PromptAsync("Wstrzymanie usuwania danych", "Podstawa (np. kontrola podatkowa, spór sądowy, zawieszenie biegu przedawnienia — art. 70 Ordynacji):");
+        if (string.IsNullOrWhiteSpace(reason)) return;
+        await using var db = Session.OpenDb();
+        await new Application.Security.PersonalDataService(db, Session.User, Session.Clock).SetLegalHoldAsync(id, Parse.Date(until, "Data"), reason);
+    }, "Zapisano wstrzymanie usuwania danych.");
 
     [RelayCommand]
     private void OpenKrz() => Dialogs.OpenInSystem(Infrastructure.Counterparties.CounterpartyVerifier.KrzUrl);

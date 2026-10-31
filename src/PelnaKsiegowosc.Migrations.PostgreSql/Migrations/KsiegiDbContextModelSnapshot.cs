@@ -709,6 +709,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<int>("PeriodNumber")
                         .HasColumnType("integer");
 
+                    b.Property<bool?>("PermanentDifference")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(64)

@@ -20,6 +20,11 @@ public class CitAdjustment : CompanyEntity
     /// różnicy przejściowej z poprzedniego roku. Bez oznaczenia: przychód / koszt nieujmowany w księgach (K_7 / K_8).
     /// </summary>
     public bool BookedInPriorYears { get; set; }
+    /// <summary>
+    /// Rodzaj różnicy dla korekt „koszt NKUP” i „zmniejszenie przychodów”: true — trwała (RPD K_4 / K_1),
+    /// false — przejściowa (K_5 / K_2). Null — korekta sprzed rozróżnienia (traktowana jako przejściowa, z ostrzeżeniem).
+    /// </summary>
+    public bool? PermanentDifference { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -95,12 +100,30 @@ public static class TaxLossRules
 {
     public const decimal OneTimeLimit = 5_000_000m;
 
-    /// <summary>Sprawdzenie odliczenia: 5 kolejnych lat po roku straty; jednorazowo do 5 mln zł (raz) albo do 50% straty w roku; łącznie nie więcej niż strata.</summary>
-    public static void Validate(TaxLoss loss, IReadOnlyCollection<TaxLossDeduction> previous, DateOnly deductionYearStart, DateOnly deductionYearEnd, decimal amount, bool oneTime)
+    /// <summary>
+    /// Numer roku podatkowego po roku straty: lata podatkowe z ksiąg (także dłuższe lub krótsze niż 12 miesięcy); okres między
+    /// rokiem straty a pierwszym rokiem w programie — liczony jako lata 12-miesięczne (zaokrąglenie w górę).
+    /// </summary>
+    public static int TaxYearNumber(DateOnly lossYearEnd, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears, DateOnly deductionYearStart)
+    {
+        var after = taxYears.Where(y => y.Start > lossYearEnd && y.Start <= deductionYearStart).OrderBy(y => y.Start).ToList();
+        if (after.Count == 0) return 0;
+        var gapStart = lossYearEnd.AddDays(1);
+        var months = (after[0].Start.Year - gapStart.Year) * 12 + after[0].Start.Month - gapStart.Month;
+        var gapYears = months <= 0 ? 0 : (months + 11) / 12;
+        return gapYears + after.Count;
+    }
+
+    /// <summary>
+    /// Sprawdzenie odliczenia: w najbliższych kolejno po sobie następujących pięciu latach podatkowych (art. 7 ust. 5) —
+    /// <paramref name="taxYearNumber"/> to numer roku podatkowego po roku straty (1 = pierwszy rok po stracie), liczony
+    /// z lat podatkowych, a nie lat kalendarzowych; jednorazowo do 5 mln zł (raz) albo do 50% straty w roku; łącznie nie więcej niż strata.
+    /// </summary>
+    public static void Validate(TaxLoss loss, IReadOnlyCollection<TaxLossDeduction> previous, int taxYearNumber, decimal amount, bool oneTime)
     {
         if (amount <= 0) throw new DomainException("Kwota odliczenia musi być dodatnia.");
-        if (deductionYearStart <= loss.YearEnd) throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
-        if (deductionYearEnd > loss.YearEnd.AddYears(5)) throw new DomainException($"Stratę z roku {loss.YearLabel} można odliczać przez 5 kolejnych lat podatkowych (do {loss.YearEnd.AddYears(5).ToPl()}).");
+        if (taxYearNumber < 1) throw new DomainException("Stratę odlicza się w latach następujących po roku jej poniesienia.");
+        if (taxYearNumber > 5) throw new DomainException($"Stratę z roku {loss.YearLabel} można odliczać w pięciu kolejnych latach podatkowych — to {taxYearNumber}. rok podatkowy po stracie.");
         var used = previous.Sum(d => d.Amount);
         if (used + amount > loss.Amount) throw new DomainException($"Odliczenia przekroczyłyby stratę ({Money.Format(loss.Amount)} zł; odliczono już {Money.Format(used)} zł).");
         if (oneTime)

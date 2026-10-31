@@ -26,6 +26,10 @@
         <Button Content="Potwierdź sprzedaż poprzedniego roku…" Command="{Binding ConfirmPreviousSalesCommand}" />
         <Button Content="Pobierz kursy z NBP" Command="{Binding FetchNbpRatesCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Spółka powstała z przekształcenia / połączenia / podziału / wniesienia przedsiębiorstwa (art. 19 ust. 1b–1c) — 9% wyłączone" IsChecked="{Binding ReducedRateExcluded}" />
+        <TextBlock Text="Prognoza stawki na kolejny rok (podatek odroczony, art. 37 ust. 6 UoR):" />
+        <TextBox Text="{Binding ExpectedRate}" Watermark="9 albo 19" MinWidth="60" />
+        <TextBox Text="{Binding ExpectedRateJustification}" Watermark="uzasadnienie prognozy" MinWidth="220" />
+        <Button Content="Zapisz prognozę" Command="{Binding SaveExpectedRateCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Podatkowa grupa kapitałowa lub przychody ponad 50 mln euro (JPK_CIT od 2025 r.)" IsChecked="{Binding JpkCit2025}" />
         <Button Content="Zapisz" Command="{Binding SaveRateConditionsCommand}" IsEnabled="{Binding IsApplicable}" />
       </WrapPanel>
@@ -37,6 +41,8 @@
         <TextBox Text="{Binding AdjustmentAmount}" Watermark="kwota" />
         <TextBox Text="{Binding AdjustmentDescription}" Watermark="opis" MinWidth="240" />
         <TextBox Text="{Binding AdjustmentBasis}" Watermark="podstawa prawna" MinWidth="180" />
+        <ComboBox ItemsSource="{Binding DifferenceKinds}" SelectedItem="{Binding AdjustmentDifference}" MinWidth="170" ToolTip.Tip="Wymagane dla kosztu NKUP i zmniejszenia przychodów — decyduje o polach RPD (K_1/K_2, K_4/K_5)" />
+        <CheckBox Content="ujęte w księgach lat ubiegłych" IsChecked="{Binding AdjustmentPriorYears}" ToolTip.Tip="Przychód / KUP bieżącego roku ujęty w księgach lat ubiegłych — RPD K_3 / K_6" />
         <CheckBox Content="Art. 18f — powiąż z zaznaczonym zobowiązaniem" IsChecked="{Binding LinkAdjustmentToLiability}" />
         <CheckBox Content="Koszt zysków kapitałowych" IsChecked="{Binding AdjustmentCapitalGains}" />
         <Button Content="Dodaj korektę" Command="{Binding AddAdjustmentCommand}" />

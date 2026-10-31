@@ -16,6 +16,7 @@
       <Button Content="Pobierz dane z białej listy (po NIP)" Command="{Binding FetchFromWhiteListCommand}" />
       <Button Content="Sprawdź rachunek na białej liście" Command="{Binding CheckAccountCommand}" />
       <Button Content="Żądanie usunięcia danych (RODO)…" Command="{Binding ErasePersonalDataCommand}" />
+      <Button Content="Wstrzymaj usuwanie danych…" Command="{Binding LegalHoldCommand}" />
       <Button Content="Zweryfikuj kontrahenta (VAT, KRS, VIES)" Command="{Binding VerifyCommand}" />
       <Button Content="Otwórz KRZ (dłużnicy)" Command="{Binding OpenKrzCommand}" />
     </WrapPanel>

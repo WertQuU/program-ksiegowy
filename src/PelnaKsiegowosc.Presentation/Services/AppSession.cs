@@ -101,6 +101,7 @@ public sealed class AppSession
     /// <summary>Otwarcie aktywnej bazy: test połączenia, kopia przed migracją schematu (gdy baza zawiera dane), migracje, odczyt kontekstu.</summary>
     public async Task<OpenResult> OpenAsync(CancellationToken ct = default)
     {
+        BackupService.CleanupStaleTemporaryData(Paths.TempDirectory); // pozostałości jawnych danych po przerwanej kopii / weryfikacji
         var test = await Connector.TestAsync(Profile, ct);
         if (!test.Success)
             return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql

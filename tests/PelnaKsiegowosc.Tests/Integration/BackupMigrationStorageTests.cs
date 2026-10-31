@@ -346,11 +346,14 @@ public class PersonalDataTests
         Assert.Equal("Jan Kowalski", (await t.Db.Counterparties.AsNoTracking().SingleAsync(c => c.Id == client.Id)).Name);
 
         var prospect = await t.AddCounterpartyAsync("K002", "Anna Nowak", null);
+        await svc.SetLegalHoldAsync(prospect.Id, new DateOnly(2030, 12, 31), "Kontrola podatkowa — zawieszenie biegu przedawnienia");
+        Assert.False((await svc.CounterpartyRetentionAsync(prospect.Id)).CanErase);                   // wstrzymanie usuwania
+        await svc.SetLegalHoldAsync(prospect.Id, new DateOnly(2020, 1, 1), "Kontrola zakończona");
         var done = await svc.EraseCounterpartyAsync(prospect.Id, "Wniosek pisemny z 30.10.2026");
         Assert.True(done.CanErase);                                                     // brak dokumentów — dane można usunąć
         var anon = await t.Db.Counterparties.AsNoTracking().SingleAsync(c => c.Id == prospect.Id);
         Assert.StartsWith("Osoba usunięta", anon.Name);
         Assert.Null(anon.Nip);
-        Assert.Equal(2, await t.Db.AuditEvents.CountAsync(a => a.Action.StartsWith("RODO_")));
+        Assert.Equal(4, await t.Db.AuditEvents.CountAsync(a => a.Action.StartsWith("RODO_")));
     }
 }

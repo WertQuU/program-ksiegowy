@@ -35,4 +35,27 @@ public class DeferredTaxTests
         var c2 = await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31), 1000m);
         Assert.Equal(Money.Round(4615m * c2.RatePercent / 100m), await t.BalanceAsync("842"));
     }
+
+    [Fact]
+    public async Task Rate_follows_reversal_year_forecast_and_capital_gains_losses_use_19_percent()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        await cit.SetLimitEurRateAsync(t.Year.StartDate, 4.2156m); // bieżący rok: 9% (pierwszy rok)
+        await cit.AddLossAsync("2025", new DateOnly(2025, 12, 31), false, 1000m, null);
+        await cit.AddLossAsync("2025", new DateOnly(2025, 12, 31), true, 1000m, null);
+        var svc = new DeferredTaxService(t.Db, t.User, t.Clock);
+
+        var c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(9m, c.Differences.Single(d => !d.CapitalGains).RatePercent);   // brak prognozy — stawka bieżąca, z ostrzeżeniem
+        Assert.Equal(19m, c.Differences.Single(d => d.CapitalGains).RatePercent);   // zyski kapitałowe zawsze 19%
+        Assert.Equal(90m + 190m, c.Asset);
+        Assert.Contains(c.Warnings!, w => w.Contains("prognozy stawki CIT na 2027"));
+
+        await svc.SetExpectedRateAsync(2027, 19m, "Przewidywane przychody 2027 powyżej limitu 2 mln euro");
+        var c2 = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(19m, c2.Differences.Single(d => !d.CapitalGains).RatePercent);
+        Assert.Equal(190m + 190m, c2.Asset);
+        Assert.DoesNotContain(c2.Warnings!, w => w.Contains("prognozy"));
+    }
 }
