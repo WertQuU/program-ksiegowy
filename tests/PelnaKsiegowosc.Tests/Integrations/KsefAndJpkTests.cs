@@ -316,6 +316,30 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_cit_refuses_ambiguous_d3_for_journal_entry_with_two_tax_identified_counterparties()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var a = await t.AddCounterpartyAsync("KFA", "Firma A", "7740001454");
+        var b = await t.AddCounterpartyAsync("KFB", "Firma B", "5260250274");
+        var date = new DateOnly(2026, 2, 10);
+        // Jeden zbiorczy dekret, dwie różne osoby prawne z NIP: pojedyncze
+        // pole D_3 nie może wskazywać arbitralnie pierwszej analityki.
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(date, "PK/ZBIORCZY/1",
+            new("130-01", 300m, 0),
+            new("200", 0, 150m, a.Id),
+            new("200", 0, 150m, b.Id)));
+        t.Company.Voivodeship = "mazowieckie";
+        t.Company.County = "Warszawa";
+        t.Company.Commune = "Warszawa";
+        t.Company.TaxOfficeCode = "1471";
+        var cit = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        var exception = await Assert.ThrowsAsync<DomainException>(() =>
+            JpkKrPdBuilder.BuildAsync(t.Db, t.Company, t.Year, cit.Rpd, false, t.Clock.UtcNow, Validator()));
+        Assert.Contains("D_3", exception.Message);
+        Assert.Contains("kontrahentów", exception.Message);
+    }
+
+    [Fact]
     public async Task Jpk_cit_reports_every_tax_id_set_of_a_counterparty_used_during_the_year()
     {
         await using var t = await TestBooks.CreateAsync();
