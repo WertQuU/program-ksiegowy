@@ -143,34 +143,94 @@ public class KsiegiDbContext : DbContext
     /// a status „zaksięgowany” ustawiany w tej samej transakcji po wstawieniu pozycji — wyzwalacze bazy bezwzględnie
     /// zabraniają dopisywania pozycji do zapisu już zaksięgowanego.
     /// </summary>
+    // Przed wysłaniem do PostgreSQL szyfrujemy tylko zaznaczone prywatne pola.
+    // Po zapisie przywracamy w śledzonych obiektach tekst jawny, by logika
+    // księgowa, UI i walidatory nie widziały ciągów PK1$.
+    private List<(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry, string Field,
+        string Plain, bool WasModified)> ProtectBeforeSave()
+    {
+        var protectedValues = new List<(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry, string, string, bool)>();
+        if (Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) != true)
+            return protectedValues;
+        ChangeTracker.DetectChanges();
+        try
+        {
+            foreach (var entry in ChangeTracker.Entries<Domain.Common.CompanyEntity>()
+                         .Where(e => e.State is EntityState.Added or EntityState.Modified))
+            {
+                foreach (var name in CompanyProtectedFields.For(entry.Entity.GetType()))
+                {
+                    var property = entry.Property(name);
+                    if (entry.State != EntityState.Added && !property.IsModified) continue;
+                    if (property.CurrentValue is not string plain || plain.Length == 0) continue;
+                    var stored = CompanyFieldCodec.Protect(plain, entry.Entity.CompanyId, entry.Entity.Id, name)!;
+                    if (stored.Length > 1000)
+                        throw new InvalidDataException("Chronione pole jest zbyt długie po zakodowaniu: " + name);
+                    protectedValues.Add((entry, name, plain, property.IsModified));
+                    property.CurrentValue = stored;
+                }
+            }
+            return protectedValues;
+        }
+        catch
+        {
+            RestoreAfterSave(protectedValues);
+            throw;
+        }
+    }
+
+    private static void RestoreAfterSave(List<(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry,
+        string Field, string Plain, bool WasModified)> protectedValues)
+    {
+        foreach (var (entry, name, plain, wasModified) in protectedValues)
+        {
+            var property = entry.Property(name);
+            property.CurrentValue = plain;
+            if (entry.State == EntityState.Unchanged)
+                property.OriginalValue = plain;
+            else if (entry.State == EntityState.Modified)
+                property.IsModified = wasModified;
+        }
+    }
+
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
         EnforceCompanyScope();
-        var direct = DirectlyPosted();
-        if (direct.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        await using var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
-        int n;
-        foreach (var e in direct) e.Status = EntryStatus.Bufor;
-        try { n = await base.SaveChangesAsync(true, cancellationToken); }
-        finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
-        await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        if (own is not null) await own.CommitAsync(cancellationToken);
-        return n;
+        var protectedValues = ProtectBeforeSave();
+        try
+        {
+            var direct = DirectlyPosted();
+            if (direct.Count == 0) return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            await using var own = Database.CurrentTransaction is null ? await Database.BeginTransactionAsync(cancellationToken) : null;
+            int n;
+            foreach (var e in direct) e.Status = EntryStatus.Bufor;
+            try { n = await base.SaveChangesAsync(true, cancellationToken); }
+            finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
+            await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            if (own is not null) await own.CommitAsync(cancellationToken);
+            return n;
+        }
+        finally { RestoreAfterSave(protectedValues); }
     }
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         EnforceCompanyScope();
-        var direct = DirectlyPosted();
-        if (direct.Count == 0) return base.SaveChanges(acceptAllChangesOnSuccess);
-        using var own = Database.CurrentTransaction is null ? Database.BeginTransaction() : null;
-        int n;
-        foreach (var e in direct) e.Status = EntryStatus.Bufor;
-        try { n = base.SaveChanges(true); }
-        finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
-        base.SaveChanges(acceptAllChangesOnSuccess);
-        own?.Commit();
-        return n;
+        var protectedValues = ProtectBeforeSave();
+        try
+        {
+            var direct = DirectlyPosted();
+            if (direct.Count == 0) return base.SaveChanges(acceptAllChangesOnSuccess);
+            using var own = Database.CurrentTransaction is null ? Database.BeginTransaction() : null;
+            int n;
+            foreach (var e in direct) e.Status = EntryStatus.Bufor;
+            try { n = base.SaveChanges(true); }
+            finally { foreach (var e in direct) e.Status = EntryStatus.Zaksiegowany; }
+            base.SaveChanges(acceptAllChangesOnSuccess);
+            own?.Commit();
+            return n;
+        }
+        finally { RestoreAfterSave(protectedValues); }
     }
 
     private List<JournalEntry> DirectlyPosted() => ChangeTracker.Entries<JournalEntry>()
