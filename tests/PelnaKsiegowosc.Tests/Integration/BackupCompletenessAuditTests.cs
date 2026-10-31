@@ -80,4 +80,27 @@ public class BackupCompletenessAuditTests
         Assert.Equal(0, await target.Companies.CountAsync());
     }
 
+    [Fact]
+    public async Task Sqlite_restore_does_not_replace_unrelated_files_in_destination()
+    {
+        var (source, files) = await BackupTests.BooksWithAttachmentAsync();
+        await using var _ = source;
+        var service = new BackupService(source.Clock, Path.Combine(source.Directory, "restore-work"));
+        var result = await service.CreateAsync(source.Db,
+            new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = source.DbPath },
+            files, null, new BackupOptions(Key, Path.Combine(source.Directory, "archives")));
+
+        var target = Path.Combine(source.Directory, "occupied-target");
+        Directory.CreateDirectory(target);
+        var evidence = Path.Combine(target, "existing.txt");
+        await File.WriteAllTextAsync(evidence, "zachowany dokument");
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            service.RestoreToSqliteAsync(result.FilePath, Key, target,
+                SqliteEncryption.NewKey(), System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)));
+        Assert.Contains("pustego", error.Message);
+        Assert.Equal("zachowany dokument", await File.ReadAllTextAsync(evidence));
+        Assert.False(File.Exists(Path.Combine(target, "ksiegi.db")));
+        Assert.Empty(Directory.EnumerateDirectories(source.Directory, ".occupied-target-odtwarzanie-*"));
+    }
+
 }
