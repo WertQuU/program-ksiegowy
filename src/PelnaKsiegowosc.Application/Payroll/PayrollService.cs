@@ -100,11 +100,12 @@ public sealed class PayrollService
     }
 
     /// <summary>
-    /// Wartości narastające od początku roku dla OSOBY (wszystkie umowy u płatnika z tym samym PESEL): podstawa emerytalno-rentowa
-    /// (limit 30-krotności — łącznie ze wszystkich tytułów), przychód zwolniony z ulgi dla młodych (limit roczny na osobę),
-    /// podstawa opodatkowania i dni chorobowe płatne przez pracodawcę — wyłącznie ze stosunku pracy (próg skali przy zaliczkach, art. 92 KP).
+    /// Limity PIT, ZUS i ulgi dla młodych liczone wg roku WYPŁATY.
+    /// Dni wynagrodzenia chorobowego pracodawcy (art. 92 KP) liczone niezależnie
+    /// wg roku kalendarzowego NIEZDOLNOŚCI DO PRACY (miesiąca listy).
+    /// Wypłata grudniowej listy w styczniu nie zużywa styczniowego limitu 33/14 dni.
     /// </summary>
-    private async Task<PayrollYearToDate> YearToDateAsync(IReadOnlyCollection<Guid> ids, DateOnly paymentDate, Guid? excludeList, CancellationToken ct)
+    private async Task<PayrollYearToDate> YearToDateAsync(IReadOnlyCollection<Guid> ids, DateOnly paymentDate, DateOnly serviceMonth, Guid? excludeList, CancellationToken ct)
     {
         var yearStart = new DateOnly(paymentDate.Year, 1, 1);
         var items = await (from i in _db.PayrollItems.AsNoTracking()
@@ -113,8 +114,15 @@ public sealed class PayrollService
                                  l.PaymentDate >= yearStart && l.PaymentDate <= paymentDate && l.Id != excludeList
                            select i).ToListAsync(ct);
         var employment = items.Where(i => i.ContractType == ContractType.UmowaOPrace).ToList();
+        var sickYearStart = new DateOnly(serviceMonth.Year, 1, 1);
+        var sickDays = await (from i in _db.PayrollItems.AsNoTracking()
+                              join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                              where ids.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                                    l.Month >= sickYearStart && l.Month <= serviceMonth && l.Id != excludeList &&
+                                    i.ContractType == ContractType.UmowaOPrace
+                              select i.SickDaysEmployer).ToListAsync(ct);
         return new PayrollYearToDate(items.Sum(i => i.SocialBasis), employment.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue),
-            employment.Sum(i => i.SickDaysEmployer), items.Sum(i => i.AuthorCosts));
+            sickDays.Sum(), items.Sum(i => i.AuthorCosts));
     }
 
     /// <summary>
@@ -199,7 +207,7 @@ public sealed class PayrollService
             var ordered = group.OrderBy(i => Rank(employees[i.EmployeeId])).ThenBy(i => employees[i.EmployeeId].StartDate)
                 .ThenBy(i => employees[i.EmployeeId].CreatedAtUtc).ToList();
             var personIds = employees.Values.Where(x => PersonKey(x) == group.Key).Select(x => x.Id).ToList();
-            var baseYtd = await YearToDateAsync(personIds, list.PaymentDate, list.Id, ct);
+            var baseYtd = await YearToDateAsync(personIds, list.PaymentDate, list.Month, list.Id, ct);
             // PIT-2: kwota zmniejszająca wykorzystana już w miesiącu wypłaty na innych zaksięgowanych listach tej osoby
             var reductionLimit = ordered.Select(i => employees[i.EmployeeId].Pit2Reduction).DefaultIfEmpty(0m).Max();
             var reductionUsed = await (from i in _db.PayrollItems.AsNoTracking()
@@ -237,7 +245,7 @@ public sealed class PayrollService
                     }
                     var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
                         ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays, SickBasis: sickBasis,
-                            CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month)) : null;
+                            CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month), SickYear: list.Month.Year) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
                         TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
                     var others = pass == 0 ? 0m : bases.Where(b => b.Key != input.ItemId).Sum(b => b.Value);
