@@ -4,6 +4,7 @@ using PelnaKsiegowosc.Data;
 using CommunityToolkit.Mvvm.Input;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
+using PelnaKsiegowosc.Infrastructure.Integrity;
 using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Presentation.ViewModels.Sections;
 
@@ -87,6 +88,8 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _footer = "";
     [ObservableProperty] private string? _warning;
     [ObservableProperty] private string? _sharedChangesNotice;
+    [ObservableProperty] private string? _integrityNotice;
+    private bool _checkingLocalIntegrity;
     private long? _lastSeenSharedSequence;
     private bool _pollingSharedChanges;
     [ObservableProperty] private List<Choice<Guid>> _years = new();
@@ -175,6 +178,38 @@ public sealed partial class MainViewModel : ViewModelBase
             ErrorLog.Write(ex);
         }
         finally { _pollingSharedChanges = false; }
+    }
+
+
+    /// <summary>
+    /// Pomocniczy SQLite zawiera tylko lokalne odciski SHA-256 zapisów zatwierdzonych
+    /// w PostgreSQL. Ostrzeżenia nie blokują księgowania ani nawigacji.
+    /// </summary>
+    public async Task CheckLocalIntegrityAsync(CancellationToken ct = default)
+    {
+        if (_checkingLocalIntegrity || Session.Profile.Engine != DatabaseEngine.PostgreSql || Session.Company is null) return;
+        _checkingLocalIntegrity = true;
+        try
+        {
+            await using var db = Session.OpenDb();
+            var mirror = new LocalLedgerMirror(Session.Paths.DataDirectory, Session.Profile, Session.CompanyId);
+            var result = await mirror.CompareAsync(db, Session.CompanyId, ct);
+            IntegrityNotice = result.Status switch
+            {
+                LocalLedgerMirror.MirrorStatus.Divergence =>
+                    "OSTRZEŻENIE — kontrola integralności: " + result.Message +
+                    (result.Problems.Count > 0 ? " Pierwsza niezgodność: " + result.Problems[0] : ""),
+                LocalLedgerMirror.MirrorStatus.BaselineCreated => "Kontrola integralności: " + result.Message,
+                _ => null
+            };
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            ErrorLog.Write(ex);
+            IntegrityNotice = "Nie można wykonać niezależnej kontroli integralności. Sprawdź połączenie z serwerem i lokalny plik kontrolny; program pozostaje dostępny.";
+        }
+        finally { _checkingLocalIntegrity = false; }
     }
 
     [RelayCommand]
