@@ -113,6 +113,14 @@ public static class DataDump
             await tx.CommitAsync(ct);
             return counts;
         }
+        catch
+        {
+            // Po rollbacku usuń także lokalne encje w stanie Added/Modified:
+            // kolejny SaveChanges na tym kontekście nie może przypadkowo
+            // ponownie zapisać danych z przerwanego importu.
+            db.ChangeTracker.Clear();
+            throw;
+        }
         finally
         {
             // Przy błędzie parsowania lub zapisu nie pozostawiaj kontekstu bez
