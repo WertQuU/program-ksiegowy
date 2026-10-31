@@ -33,6 +33,8 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         Session = session;
         TermsText = Terms.Text;
         Database.SqlitePath = session.Paths.DefaultDatabaseFile;
+        // Nowa instalacja pracuje na wspólnym serwerze, po jednym koncie DB na operatora.
+        Database.UsePostgres = true;
         LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
