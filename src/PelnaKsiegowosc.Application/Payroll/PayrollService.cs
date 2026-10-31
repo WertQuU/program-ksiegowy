@@ -250,7 +250,11 @@ public sealed class PayrollService
                         }
                     }
                     var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
-                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays, SickBasis: sickBasis,
+                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays,
+                            // Bez potwierdzonej historii 0 oznacza WYŁĄCZNIE wstępne
+                            // przeliczenie składników; PostAsync nadal blokuje taki zapis.
+                            // Nie podstawiamy bieżącej pensji jako rzekomej podstawy chorobowego.
+                            SickBasis: input.SickDays > 0 ? sickBasis ?? 0m : null,
                             CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month), SickYear: list.Month.Year) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
                         TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
@@ -264,7 +268,7 @@ public sealed class PayrollService
                         e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable, list.PaymentDate);
                     fresh.BaseGross = input.Gross;
                     if (input.SickDays > 0 && sickBasis is null)
-                        fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest WSTĘPNA — brak kompletnej, jednoznacznej historii; księgowanie zablokowane";
+                        fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest NIEUSTALONA — kwota świadczenia = 0 WYŁĄCZNIE W ROBOCZEJ LIŚCIE; księgowanie WSTĘPNEJ listy zablokowane";
                     if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
                     reductionLeft -= fresh.TaxReduction;
                     bases[input.ItemId] = fresh.SocialBasis;
