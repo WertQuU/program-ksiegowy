@@ -16,7 +16,7 @@
     </WrapPanel>
     <Expander DockPanel.Dock="Top" Header="Nowe zdarzenie kapitałowe" Margin="0,0,0,6">
       <StackPanel>
-        <Grid Classes="form" ColumnDefinitions="170,*,170,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid Classes="form" ColumnDefinitions="170,*,170,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
           <TextBlock Text="Zdarzenie" /><ComboBox Grid.Column="1" Grid.ColumnSpan="3" ItemsSource="{Binding EventTypes}" SelectedItem="{Binding EventType}" />
           <TextBlock Grid.Column="4" Text="Data" /><TextBox Grid.Column="5" Text="{Binding EventDate}" />
           <TextBlock Grid.Row="1" Text="Właściciel" /><ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding OwnerChoices}" SelectedItem="{Binding EventOwner}" />
@@ -35,6 +35,9 @@
           <TextBlock Grid.Row="4" Grid.Column="4" Text="Wpis do KRS" /><TextBox Grid.Row="4" Grid.Column="5" Text="{Binding KrsEntry}" />
           <CheckBox Grid.Row="5" Grid.ColumnSpan="5" IsChecked="{Binding PayoutConfirmed}" Content="{Binding PayoutRule}" />
           <Button Grid.Row="5" Grid.Column="5" Content="Zapisz zdarzenie" Command="{Binding CreateEventCommand}" />
+           <TextBlock Grid.Row="6" Grid.ColumnSpan="6" Text="P.S.A.: ustrukturyzowana ocena limitów wypłaty i prognoza płynności (JSON + identyfikatory dowodów)" TextWrapping="Wrap" />
+           <TextBox Grid.Row="7" Grid.ColumnSpan="6" Text="{Binding PayoutNotes}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="88"
+                    Watermark="Wklej JSON oceny wypłacalności P.S.A. z zatwierdzonego wyliczenia i prognozy na 6 miesięcy" />
         </Grid>
       </StackPanel>
     </Expander>
