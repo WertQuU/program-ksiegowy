@@ -439,6 +439,8 @@ public sealed class BackupService
                 await db.Database.MigrateAsync(ct);
                 if (!manifest.IncludesDatabaseFile) await DataDump.ImportAsync(db, Path.Combine(content, "dane"), ct);
                 problems.AddRange(await CompareAsync(db, manifest, ct));
+                if (problems.Count > 0)
+                    throw new InvalidDataException("Odtwarzana baza nie przeszła weryfikacji ksiąg — plik docelowy nie zostanie opublikowany: " + string.Join("; ", problems));
             }
             SqliteConnection.ClearAllPools();
             SqliteEncryption.ExportEncrypted(work, dbPath, databaseKey);
