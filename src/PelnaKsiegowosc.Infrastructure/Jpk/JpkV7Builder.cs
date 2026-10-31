@@ -189,10 +189,6 @@ public static class JpkV7Builder
         foreach (var document in sales.Concat(purchases).GroupBy(v => (v.Register, v.DocumentId)))
         {
             var first = document.First();
-            if (document.Any(v => v.KsefMarker != first.KsefMarker ||
-                                  !string.Equals(v.KsefNumber, first.KsefNumber, StringComparison.Ordinal)))
-                throw new DomainException("Dokument " + first.DocumentNumber +
-                    ": pozycje rejestru VAT mają różne oznaczenia KSeF lub numery KSeF — uzgodnij dane przed eksportem JPK.");
             if (first.KsefMarker is null)
                 throw new DomainException("Dokument " + first.DocumentNumber +
                     ": brak kwalifikacji NrKSeF/OFF/BFK/DI. Program nie przypisuje automatycznie BFK.");
@@ -202,6 +198,10 @@ public static class JpkV7Builder
             if (first.KsefMarker != JpkKsefMarker.NrKSeF && !string.IsNullOrWhiteSpace(first.KsefNumber))
                 throw new DomainException("Dokument " + first.DocumentNumber +
                     ": istnieje numer KSeF, lecz wybrano oznaczenie inne niż NrKSeF — uzgodnij kwalifikację.");
+            if (document.Any(v => v.KsefMarker != first.KsefMarker ||
+                                  !string.Equals(v.KsefNumber, first.KsefNumber, StringComparison.Ordinal)))
+                throw new DomainException("Dokument " + first.DocumentNumber +
+                    ": pozycje rejestru VAT mają różne oznaczenia KSeF lub numery KSeF — uzgodnij dane przed eksportem JPK.");
         }
     }
 
