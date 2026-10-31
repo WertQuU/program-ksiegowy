@@ -19,11 +19,11 @@ public class PayrollSickCalendarYearTests
         // 2025: rok ukończenia 50 lat — nadal 33 dni.
         // Wypłata w styczniu 2026 nie może zmienić limitu za grudzień 2025.
         var december = PayrollCalculator.Compute(employee, 6000m, used, PayrollRules.Y2026, 1.67m,
-            new PayrollAbsence(10, 0, 20, SickYear: 2025));
+            new PayrollAbsence(10, 0, 20, SickBasis: 6000m, SickYear: 2025));
         Assert.Equal(10, december.SickDaysEmployer);
         // 2026: od roku następującego po ukończeniu 50 lat — limit 14 dni.
         var january = PayrollCalculator.Compute(employee, 6000m, used, PayrollRules.Y2026, 1.67m,
-            new PayrollAbsence(10, 0, 20, SickYear: 2026));
+            new PayrollAbsence(10, 0, 20, SickBasis: 6000m, SickYear: 2026));
         Assert.Equal(0, january.SickDaysEmployer);
     }
 
