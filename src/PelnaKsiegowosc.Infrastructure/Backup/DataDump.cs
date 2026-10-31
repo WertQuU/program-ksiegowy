@@ -76,7 +76,16 @@ public static class DataDump
     public static async Task<Dictionary<string, long>> ImportAsync(KsiegiDbContext db, string directory, CancellationToken ct = default,
         Func<KsiegiDbContext, CancellationToken, Task>? verifyBeforeCommit = null)
     {
-        foreach (var et in OrderedEntityTypes(db))
+        // Każda tabela, również pusta, musi mieć swój plik JSONL z eksportu.
+        // Brak pliku jest uszkodzoną kopią, a nie informacją o zerowej liczbie rekordów.
+        var entityTypes = OrderedEntityTypes(db);
+        foreach (var table in entityTypes)
+        {
+            var file = Path.Combine(directory, table.GetTableName() + ".jsonl");
+            if (!File.Exists(file))
+                throw new InvalidDataException("Brak pliku zrzutu tabeli " + table.GetTableName() + " — import przerwany bez zmiany bazy.");
+        }
+        foreach (var et in entityTypes)
             if (await CountAsync(db, et.ClrType, ct) > 0)
                 throw new InvalidOperationException($"Baza docelowa nie jest pusta (tabela {et.GetTableName()}). Import wymaga pustej bazy.");
         var counts = new Dictionary<string, long>();
@@ -88,7 +97,7 @@ public static class DataDump
         // Zapisy zaksięgowane wstawiane są najpierw jako bufor, a status przywracany po zaimportowaniu pozycji —
         // wyzwalacze bazy nie pozwalają dopisać pozycji do zapisu już zaksięgowanego.
         var posted = new List<Guid>();
-        foreach (var et in OrderedEntityTypes(db))
+        foreach (var et in entityTypes)
         {
             var path = Path.Combine(directory, et.GetTableName() + ".jsonl");
             long n = 0;
