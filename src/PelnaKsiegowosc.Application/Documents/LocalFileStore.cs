@@ -76,6 +76,8 @@ public sealed class LocalFileStore : IFileStore
     public async Task<int> EncryptLegacyFilesAsync(CancellationToken ct = default)
     {
         if (_key is null || !Directory.Exists(RootPath)) return 0;
+        var tmpLeft = Directory.EnumerateFiles(RootPath, "*.bin.tmp", SearchOption.AllDirectories).ToList();
+        foreach (var t in tmpLeft) File.Delete(t); // niedokończony zapis — oryginał pozostał nienaruszony
         var n = 0;
         foreach (var f in Directory.EnumerateFiles(RootPath, "*.bin", SearchOption.AllDirectories))
         {
@@ -90,20 +92,38 @@ public sealed class LocalFileStore : IFileStore
         return n;
     }
 
-    /// <summary>Czy klucz otwiera załączniki już zaszyfrowane w katalogu (sprawdzenie pierwszego zaszyfrowanego pliku); pusty katalog — tak.</summary>
-    public static bool KeyMatches(string rootPath, byte[] key)
+    /// <summary>Wynik kontroli magazynu: pliki otwierane kluczem, pliki jawne (do zaszyfrowania), pliki nieczytelne (inny klucz lub uszkodzenie).</summary>
+    public sealed record StoreCheck(int Encrypted, int Plain, IReadOnlyList<string> Unreadable)
     {
-        if (!Directory.Exists(rootPath)) return true;
-        var head = new byte[4];
-        foreach (var f in Directory.EnumerateFiles(rootPath, "*.bin", SearchOption.AllDirectories))
-        {
-            using (var fs = File.OpenRead(f))
-                if (fs.Read(head) < 4 || !AttachmentCrypto.IsEncrypted(head)) continue;
-            try { AttachmentCrypto.Decrypt(File.ReadAllBytes(f), key); return true; }
-            catch (Exception e) when (e is CryptographicException or DomainException) { return false; }
-        }
-        return true;
+        public bool Ok => Unreadable.Count == 0;
     }
+
+    /// <summary>
+    /// Pełna kontrola magazynu: każdy zaszyfrowany załącznik musi dać się odszyfrować i uwierzytelnić podanym kluczem
+    /// (wykrywa pliki zaszyfrowane różnymi kluczami oraz pliki obcięte lub zmienione).
+    /// </summary>
+    public static StoreCheck CheckStore(string rootPath, byte[] key)
+    {
+        var unreadable = new List<string>();
+        int enc = 0, plain = 0;
+        if (Directory.Exists(rootPath))
+            foreach (var f in Directory.EnumerateFiles(rootPath, "*.bin", SearchOption.AllDirectories))
+            {
+                var data = File.ReadAllBytes(f);
+                if (!AttachmentCrypto.IsEncrypted(data)) { plain++; continue; }
+                try { AttachmentCrypto.Decrypt(data, key); enc++; }
+                catch (Exception e) when (e is CryptographicException or DomainException) { unreadable.Add(Path.GetRelativePath(rootPath, f).Replace('\\', '/')); }
+            }
+        return new StoreCheck(enc, plain, unreadable);
+    }
+
+    /// <summary>Czy klucz otwiera wszystkie załączniki zaszyfrowane w katalogu; pusty katalog — tak.</summary>
+    public static bool KeyMatches(string rootPath, byte[] key) => CheckStore(rootPath, key).Ok;
+
+    /// <summary>Pełna kontrola magazynu tym kluczem (przed migracją, zmianą klucza, po imporcie klucza).</summary>
+    public StoreCheck Check() => _key is null
+        ? throw new DomainException("Magazyn nie ma klucza załączników.")
+        : CheckStore(RootPath, _key);
 
     private string Resolve(string rel)
     {
@@ -163,6 +183,8 @@ public static class AttachmentCrypto
             pos += 4;
             if (len < 0 || len > Chunk || pos + len + 16 > data.Length) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
             var last = pos + len + 16 == data.Length;
+            // porcje pośrednie zawsze pełne (1 MiB); porcja pusta tylko jako jedyna (pusty załącznik)
+            if (!last && len != Chunk || len == 0 && i > 0) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
             var buf = new byte[len];
             try { gcm.Decrypt(Nonce(baseNonce, i), data.AsSpan(pos, len), data.AsSpan(pos + len, 16), buf, Aad(i, last)); }
             catch (CryptographicException) { throw new DomainException("Nie można odszyfrować załącznika — nieprawidłowy klucz albo plik zmieniony."); }
@@ -170,6 +192,8 @@ public static class AttachmentCrypto
             pos += len + 16;
             i++;
         }
+        // co najmniej jedna uwierzytelniona porcja z oznaczeniem ostatniej — sam nagłówek nie jest poprawnym plikiem
+        if (i == 0) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (brak treści).");
         return plain.ToArray();
     }
 

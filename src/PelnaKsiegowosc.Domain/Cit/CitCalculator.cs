@@ -83,6 +83,8 @@ public class TaxLoss : CompanyEntity
     /// gdy lat podatkowych po stracie nie ma w programie (nie szacuje się ich długości).
     /// </summary>
     public DateOnly? DeductibleUntil { get; set; }
+    /// <summary>Udokumentowana podstawa potwierdzonego końca okresu (np. zeznania CIT-8 lat pośrednich, uchwała o zmianie roku podatkowego).</summary>
+    public string? DeductibleUntilBasis { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -101,8 +103,9 @@ public class TaxLossDeduction : CompanyEntity
 }
 
 /// <summary>
-/// Nadwyżka kosztów finansowania dłużnego niezaliczona do KUP (art. 15c ust. 1) — do zaliczenia w następnych kolejnych pięciu
-/// latach podatkowych w ramach limitu tych lat (art. 15c ust. 3), odrębnie dla źródła „inne” i „zyski kapitałowe”.
+/// Koszty finansowania dłużnego niezaliczone do KUP z powodu limitu (art. 15c ust. 1; nadwyżka — definicja z ust. 3) — do
+/// zaliczenia w następnych kolejnych pięciu latach podatkowych w ramach limitów tych lat (art. 15c ust. 18), z wyłączeniami
+/// z ust. 19 (podmioty wstępujące w prawa przekształconych, łączonych lub dzielonych), odrębnie dla źródeł przychodów.
 /// </summary>
 public class DebtFinancingCarryforward : CompanyEntity
 {
@@ -114,6 +117,7 @@ public class DebtFinancingCarryforward : CompanyEntity
     public string? Note { get; set; }
     /// <summary>Ostatni dzień 5. roku podatkowego po roku nadwyżki — wymagany, gdy tych lat nie ma w programie.</summary>
     public DateOnly? DeductibleUntil { get; set; }
+    public string? DeductibleUntilBasis { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -124,6 +128,8 @@ public class DebtFinancingCarryforwardUse : CompanyEntity
     public Guid CarryforwardId { get; set; }
     public Guid FiscalYearId { get; set; }
     public decimal Amount { get; set; }
+    /// <summary>Oświadczenie o braku wyłączeń z art. 15c ust. 19 (sukcesja przy przekształceniu, łączeniu, podziale; PGK).</summary>
+    public string ExceptionsStatement { get; set; } = "";
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -158,6 +164,27 @@ public static class TaxLossRules
     /// z lat podatkowych w programie; lata przyszłe — jako 12-miesięczne (do aktualizacji po ich utworzeniu).
     /// Null — lata podatkowe po stracie nie są znane (strata sprzed prowadzenia ksiąg w programie bez potwierdzenia okresu).
     /// </summary>
+    /// <summary>
+    /// Kontrola ręcznie potwierdzanego końca 5-letniego okresu (straty, nadwyżki art. 15c): ostatni dzień miesiąca; po roku
+    /// źródłowym i nie później niż 10 lat; zgodny z latami podatkowymi w programie — gdy program zna 5 lat, musi być końcem
+    /// 5. roku, gdy zna część lat — późniejszy niż ostatni z nich, a data wypadająca w roku z programu musi być jego końcem.
+    /// Wymaga udokumentowanej podstawy (odpowiedzialność potwierdzającego — zapis w dzienniku zdarzeń).
+    /// </summary>
+    public static void ValidateConfirmedEnd(DateOnly sourceYearEnd, DateOnly until, string? basis, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears)
+    {
+        if (string.IsNullOrWhiteSpace(basis))
+            throw new DomainException("Wskaż dokument potwierdzający koniec okresu (np. zeznania CIT-8 za lata pośrednie, uchwała o zmianie roku podatkowego).");
+        if (until <= sourceYearEnd || until > sourceYearEnd.AddMonths(5 * 24) || until.Day != DateTime.DaysInMonth(until.Year, until.Month))
+            throw new DomainException("Koniec okresu: ostatni dzień 5. roku podatkowego po roku źródłowym (ostatni dzień miesiąca).");
+        var chain = Chain(sourceYearEnd, taxYears);
+        if (chain.Count >= 5 && until != chain[4].End)
+            throw new DomainException($"Lata podatkowe po roku źródłowym są w programie — 5. rok kończy się {chain[4].End:dd.MM.yyyy}.");
+        if (chain.Count is > 0 and < 5 && until <= chain[^1].End)
+            throw new DomainException($"W programie jest {chain.Count} lat(a) podatkowych po roku źródłowym (do {chain[^1].End:dd.MM.yyyy}) — 5. rok kończy się później.");
+        if (taxYears.Where(y => y.Start <= until && until <= y.End).Select(y => (DateOnly?)y.End).FirstOrDefault() is { } end && end != until)
+            throw new DomainException($"Data {until:dd.MM.yyyy} przypada w trakcie roku podatkowego z programu (koniec {end:dd.MM.yyyy}) — koniec okresu musi być końcem roku podatkowego.");
+    }
+
     public static DateOnly? WindowEnd(TaxLoss loss, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears) => Window(loss, taxYears).End;
 
     /// <summary>
@@ -320,7 +347,7 @@ public static class CitCalculator
         return last <= previousTaxYearEnd ? last : last.AddYears(-1);
     }
 
-    /// <summary>Limit kwotowy art. 15c: 3 000 000 zł; rok podatkowy krótszy lub dłuższy niż 12 miesięcy — 250 000 zł za każdy rozpoczęty miesiąc (art. 15c ust. 1a).</summary>
+    /// <summary>Limit kwotowy art. 15c: 3 000 000 zł; rok podatkowy krótszy lub dłuższy niż 12 miesięcy — 250 000 zł za każdy rozpoczęty miesiąc roku podatkowego.</summary>
     public static decimal DebtFinancingAmountLimit(DateOnly start, DateOnly end)
     {
         var started = (end.Year - start.Year) * 12 + end.Month - start.Month + 1;

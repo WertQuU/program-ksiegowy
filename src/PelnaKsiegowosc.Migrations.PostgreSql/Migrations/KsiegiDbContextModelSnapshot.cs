@@ -878,6 +878,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<DateOnly?>("DeductibleUntil")
                         .HasColumnType("date");
 
+                    b.Property<string>("DeductibleUntilBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -921,6 +925,11 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ExceptionsStatement")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
                     b.Property<Guid>("FiscalYearId")
                         .HasColumnType("uuid");
 
@@ -957,6 +966,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
 
                     b.Property<DateOnly?>("DeductibleUntil")
                         .HasColumnType("date");
+
+                    b.Property<string>("DeductibleUntilBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)

@@ -873,6 +873,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<DateOnly?>("DeductibleUntil")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DeductibleUntilBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -916,6 +920,11 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ExceptionsStatement")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FiscalYearId")
                         .HasColumnType("TEXT");
 
@@ -951,6 +960,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateOnly?>("DeductibleUntil")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DeductibleUntilBasis")
+                        .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Note")

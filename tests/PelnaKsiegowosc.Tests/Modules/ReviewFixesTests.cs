@@ -585,7 +585,7 @@ public class TaxLossTests
         var cit = new CitService(t.Db, t.User, t.Clock);
         var loss = await cit.AddLossAsync("2025", new DateOnly(2025, 12, 31), false, 10000m, "CIT-8 za 2025");
         var old = await cit.AddLossAsync("2019", new DateOnly(2019, 12, 31), false, 4000m, "CIT-8 za 2019");
-        var capital = await cit.AddLossAsync("2024", new DateOnly(2024, 12, 31), true, 3000m, null, deductibleUntil: new DateOnly(2029, 12, 31)); // rok 2025 poza programem — okres potwierdzony
+        var capital = await cit.AddLossAsync("2024", new DateOnly(2024, 12, 31), true, 3000m, null, deductibleUntil: new DateOnly(2029, 12, 31), deductibleUntilBasis: "CIT-8 za 2024 i 2025"); // rok 2025 poza programem — okres potwierdzony
 
         await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(loss.Id, t.Year.Id, 1, 6000m, oneTime: false)); // > 50%
         await Assert.ThrowsAsync<DomainException>(() => cit.DeductLossAsync(old.Id, t.Year.Id, 1, 1000m, oneTime: false));  // po 5 latach
@@ -796,31 +796,59 @@ public class DebtFinancingTests
         Assert.Equal(2_000_000m, before.DebtFinancingHeadroom);                      // limit 3 mln − 1 mln
 
         // lata sprzed programu: koniec okresu rozliczenia trzeba wskazać (nie szacuje się długości lat)
+        const string Stmt = "oświadczenie: koszty własne spółki, brak sukcesji i PGK (KRS)";
         var noWindow = await cit.AddDebtFinancingCarryforwardAsync("2023", new DateOnly(2023, 12, 31), false, 100_000m, "CIT-8 za 2023");
-        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(noWindow.Id, t.Year.Id, 10_000m));
-        var expired = await cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 100_000m, "CIT-8 za 2019", new DateOnly(2024, 12, 31));
-        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(expired.Id, t.Year.Id, 10_000m)); // po 5 latach
-        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 1m, null)); // duplikat
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(noWindow.Id, t.Year.Id, 10_000m, Stmt));
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2018", new DateOnly(2018, 12, 31), false, 1m, " "));   // bez źródła kwoty
+        // ręczny koniec okresu: wymaga dokumentu, ostatniego dnia miesiąca i zgodności z latami w programie (2026 — kończy się 31.12.2026)
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2021", new DateOnly(2021, 12, 31), false, 1m, "CIT-8", new DateOnly(2026, 12, 31)));
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2021", new DateOnly(2021, 12, 31), false, 1m, "CIT-8", new DateOnly(2026, 6, 30), deductibleUntilBasis: "CIT-8 2022–2025"));
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2021", new DateOnly(2021, 12, 31), false, 1m, "CIT-8", new DateOnly(2026, 12, 15), deductibleUntilBasis: "CIT-8 2022–2025"));
+        var expired = await cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 100_000m, "CIT-8 za 2019", new DateOnly(2024, 12, 31), deductibleUntilBasis: "CIT-8 2020–2024");
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(expired.Id, t.Year.Id, 10_000m, Stmt)); // po 5 latach
+        await Assert.ThrowsAsync<DomainException>(() => cit.AddDebtFinancingCarryforwardAsync("2019", new DateOnly(2019, 12, 31), false, 1m, "CIT-8")); // duplikat
 
-        var c2025 = await cit.AddDebtFinancingCarryforwardAsync("2025", new DateOnly(2025, 12, 31), false, 800_000m, "CIT-8 za 2025", new DateOnly(2030, 12, 31));
-        var c2024 = await cit.AddDebtFinancingCarryforwardAsync("2024", new DateOnly(2024, 12, 31), false, 1_500_000m, "CIT-8 za 2024", new DateOnly(2029, 12, 31));
-        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 900_000m)); // ponad pozostałą kwotę
-        await cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 800_000m);
-        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_300_000m)); // wolny limit 1,2 mln
-        await cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_200_000m);
-        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1m));        // drugi raz w tym roku
+        var c2025 = await cit.AddDebtFinancingCarryforwardAsync("2025", new DateOnly(2025, 12, 31), false, 800_000m, "CIT-8 za 2025", new DateOnly(2030, 12, 31), deductibleUntilBasis: "rok podatkowy = kalendarzowy (umowa spółki)");
+        var c2024 = await cit.AddDebtFinancingCarryforwardAsync("2024", new DateOnly(2024, 12, 31), false, 1_500_000m, "CIT-8 za 2024", new DateOnly(2029, 12, 31), deductibleUntilBasis: "CIT-8 za 2025, rok kalendarzowy");
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 100m, " "));      // bez oświadczenia (art. 15c ust. 19)
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 900_000m, Stmt)); // ponad pozostałą kwotę
+        await cit.UseDebtFinancingCarryforwardAsync(c2025.Id, t.Year.Id, 800_000m, Stmt);
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_300_000m, Stmt)); // wolny limit 1,2 mln
+        await cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1_200_000m, Stmt);
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c2024.Id, t.Year.Id, 1m, Stmt));        // drugi raz w tym roku
+        Assert.Contains(await t.Db.AuditEvents.Where(a => a.Action == "CIT_15C_ZALICZENIE").Select(a => a.Details).ToListAsync(), d => d!.Contains("ust. 18") && d.Contains("ust. 19"));
 
         var rec = await cit.ReconcileAsync(t.Year.Id, 12);
         Assert.Equal(before.TaxCosts + 2_000_000m, rec.TaxCosts);
-        Assert.Contains(rec.Adjustments, a => a.Item.Contains("z roku 2025") && a.Amount == -800_000m && a.Basis.Contains("art. 15c ust. 3"));
+        Assert.Contains(rec.Adjustments, a => a.Item.Contains("z roku 2025") && a.Amount == -800_000m && a.Basis.Contains("art. 15c ust. 18"));
         Assert.Equal(before.Rpd.K6 + 2_000_000m, rec.Rpd.K6);                              // koszty ujęte w księgach lat ubiegłych
         Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
         // zaliczki (okresy przed rocznym rozliczeniem) — bez nadwyżek z lat ubiegłych
-        Assert.DoesNotContain((await cit.ReconcileAsync(t.Year.Id, 6)).Adjustments, a => a.Basis.Contains("art. 15c ust. 3"));
+        Assert.DoesNotContain((await cit.ReconcileAsync(t.Year.Id, 6)).Adjustments, a => a.Basis.Contains("art. 15c ust. 18"));
 
         var register = await cit.DebtFinancingCarryforwardsAsync();
         Assert.Equal(300_000m, register.Single(r => r.Item.Id == c2024.Id) is var x ? x.Item.Amount - x.Used : -1);
         // nadwyżkę z bieżącego wyliczenia rejestruje się dopiero po zamknięciu roku
         await Assert.ThrowsAsync<DomainException>(() => cit.RegisterDebtFinancingExcessFromYearAsync(t.Year.Id));
+    }
+}
+
+public class ConfirmedPeriodEndTests
+{
+    [Fact]
+    public void Manually_confirmed_five_year_end_must_match_known_tax_years_and_have_a_documented_basis()
+    {
+        var years = new List<(DateOnly, DateOnly)> { (new(2025, 7, 1), new(2026, 12, 31)), (new(2027, 1, 1), new(2027, 12, 31)) }; // rok zmieniony 18 mies.
+        var lossEnd = new DateOnly(2025, 6, 30);
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2030, 6, 30), null, years));            // brak dokumentu
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2027, 6, 30), "CIT-8", years));         // w trakcie roku z programu
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2027, 12, 31), "CIT-8", years));        // program zna 2 lata — 5. rok później
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2030, 12, 30), "CIT-8", years));        // nie koniec miesiąca
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2036, 12, 31), "CIT-8", years));        // ponad 10 lat
+        TaxLossRules.ValidateConfirmedEnd(lossEnd, new DateOnly(2030, 12, 31), "uchwała o zmianie roku podatkowego, CIT-8", years);
+        // pięć lat w programie — tylko koniec 5. roku
+        var five = Enumerable.Range(0, 5).Select(i => (new DateOnly(2021 + i, 1, 1), new DateOnly(2021 + i, 12, 31))).ToList();
+        Assert.Throws<DomainException>(() => TaxLossRules.ValidateConfirmedEnd(new DateOnly(2020, 12, 31), new DateOnly(2026, 12, 31), "CIT-8", five));
+        TaxLossRules.ValidateConfirmedEnd(new DateOnly(2020, 12, 31), new DateOnly(2025, 12, 31), "CIT-8", five);
     }
 }

@@ -2,6 +2,7 @@ using PelnaKsiegowosc.Application.Cit;
 using PelnaKsiegowosc.Application.Settlements;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Settlements;
+using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Tests.Infrastructure;
 
 namespace PelnaKsiegowosc.Tests.Modules;
@@ -32,6 +33,11 @@ public class DeferredTaxTests
         await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31))); // granice 2027 r. nadal niepotwierdzone
         await svc.ConfirmTaxYearCalendarAsync(new DateOnly(2035, 12, 31), "Rok podatkowy = kalendarzowy, brak planowanej zmiany (umowa spółki)");
         c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(Money.Round(615m * 19m / 100m), c.UnconfirmedTax);                // odpis na należność — bez kwalifikacji
+        Assert.Contains(c.Warnings!, w => w.Contains("Odpis aktualizujący należność") && w.Contains("brak kwalifikacji"));
+        var item = (await t.Db.ReceivableAllowances.FirstAsync()).OpenItemId;
+        await svc.QualifyDifferenceAsync(item, true, null, "Dłużnik w restrukturyzacji — nieściągalność zostanie udokumentowana w 2027 r. (art. 16 ust. 1 pkt 25)");
+        c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
         Assert.Equal(0m, c.UnconfirmedTax);
         expected = Money.Round(5615m * 19m / 100m);
         Assert.Equal(expected, c.Asset);
@@ -48,6 +54,30 @@ public class DeferredTaxTests
     }
 
     [Fact]
+    public async Task Provisions_are_qualified_individually_permanent_ones_are_excluded_and_long_term_ones_reverse_later()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var val = new ValuationService(t.Db, t.User, t.Clock);
+        var penalty = await val.CreateProvisionAsync(ProvisionKind.Inna, "Kara umowna za opóźnienie dostawy", 10000m, new DateOnly(2026, 12, 31));
+        var pension = await val.CreateProvisionAsync(ProvisionKind.Emerytalna, "Odprawy emerytalne", 20000m, new DateOnly(2026, 12, 31));
+        await val.CreateProvisionAsync(ProvisionKind.Urlopowa, "Niewykorzystane urlopy", 3000m, new DateOnly(2026, 12, 31));
+        var svc = new DeferredTaxService(t.Db, t.User, t.Clock);
+        await svc.ConfirmTaxYearCalendarAsync(new DateOnly(2040, 12, 31), "Rok podatkowy = kalendarzowy");
+        foreach (var y in new[] { 2027, 2031 }) await svc.SetExpectedRateAsync(new DateOnly(y, 1, 1), 19m, "Przychody powyżej limitu 2 mln euro");
+        var c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(3, c.Differences.Count);
+        Assert.Equal(Money.Round(30000m * 0.19m), c.UnconfirmedTax);                    // kara i odprawy — do kwalifikacji; urlopowa — domyślnie
+        await Assert.ThrowsAsync<DomainException>(() => svc.QualifyDifferenceAsync(penalty.Id, false, null, ""));
+        await svc.QualifyDifferenceAsync(penalty.Id, false, null, "Kara umowna za zwłokę w dostawie — art. 16 ust. 1 pkt 22 ustawy o CIT, nigdy KUP");
+        await svc.QualifyDifferenceAsync(pension.Id, true, new DateOnly(2031, 1, 1), "Przejście pracownika na emeryturę w 2031 r.");
+        c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.DoesNotContain(c.Differences, d => d.Item.Contains("Kara umowna"));        // różnica trwała — bez aktywa
+        Assert.Equal(new DateOnly(2031, 1, 1), c.Differences.Single(d => d.Item.Contains("emerytalne")).ReversalPeriodStart);
+        Assert.Equal(0m, c.UnconfirmedTax);
+        Assert.Equal(Money.Round(23000m * 0.19m), c.Asset);
+    }
+
+    [Fact]
     public async Task Materiality_threshold_allows_posting_immaterial_unconfirmed_amounts()
     {
         await using var t = await TestBooks.CreateAsync();
@@ -59,7 +89,7 @@ public class DeferredTaxTests
         await svc.SetMaterialityAsync(500m, "Polityka rachunkowości: próg istotności 500 zł podatku");
         var c = await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31));   // 1000 × 19% (lub 9%) < 500 — dopuszczalne
         Assert.True(c.UnconfirmedTax is > 0 and <= 500m);
-        Assert.Equal(1, await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(t.Db.AuditEvents, a => a.Action == "POD_ODROCZONY_PROG"));
+        Assert.Equal(1, await t.Db.AuditEvents.CountAsync(a => a.Action == "POD_ODROCZONY_PROG"));
     }
 
     [Fact]

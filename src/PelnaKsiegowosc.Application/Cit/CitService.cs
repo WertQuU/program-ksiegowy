@@ -42,7 +42,7 @@ public sealed class CitReconciliation
     /// <summary>Art. 15c: nadwyżka kosztów finansowania dłużnego roku (inne źródła / zyski kapitałowe) — do rejestru nadwyżek.</summary>
     public decimal DebtFinancingExcessOperating { get; set; }
     public decimal DebtFinancingExcessCapital { get; set; }
-    /// <summary>Art. 15c ust. 3: wolny limit roku na zaliczenie nadwyżek z lat ubiegłych (limit − koszty finansowania netto roku).</summary>
+    /// <summary>Art. 15c ust. 18: wolny limit roku na zaliczenie nadwyżek z lat ubiegłych (limit − koszty finansowania netto roku).</summary>
     public decimal DebtFinancingHeadroom { get; set; }
     public List<(string Account, string Name, decimal Amount)> ToAnalyze { get; } = new();
 }
@@ -322,9 +322,9 @@ public sealed class CitService
         // limit kosztów finansowania dłużnego (art. 15c): koszty finansowania wg kwalifikacji konta (art. 15c ust. 12 — odsetki,
         // prowizje, opłaty, premie, część odsetkowa leasingu, różnice kursowe od finansowania); bez kwalifikacji — konta z pozycją
         // RZiS „Odsetki” (R.H.I) będące KUP; przychody odsetkowe — R.G.II. Limit: wyższa z kwot 3 mln zł (rok ≠ 12 mies.: 250 000 zł
-        // za każdy rozpoczęty miesiąc, art. 15c ust. 1a) albo 30% podatkowej EBITDA (przychody ze wszystkich źródeł bez odsetkowych
+        // za każdy rozpoczęty miesiąc roku podatkowego) albo 30% podatkowej EBITDA (przychody ze wszystkich źródeł bez odsetkowych
         // minus KUP bez amortyzacji i kosztów finansowania). Nadwyżka nie jest KUP — korekta automatyczna (różnica przejściowa,
-        // rozliczenie w 5 kolejnych latach, art. 15c ust. 3).
+        // rozliczenie w 5 kolejnych latach, art. 15c ust. 18–19; nadwyżka — definicja z ust. 3).
         bool FinancingCost(Account a) => a.DebtFinancing switch
         {
             DebtFinancingKind.Koszt => true,
@@ -344,6 +344,8 @@ public sealed class CitService
         var financingEbitda = (taxRev + capRev - interestIncome) - (taxCost + capCost - interestCosts - taxDep);
         var financingLimit = Math.Max(amountLimit, Money.Round(0.3m * financingEbitda));
         r.DebtFinancingHeadroom = Math.Max(0m, financingLimit - Math.Max(0m, netFinancing));
+        if (netFinancing > amountLimit)
+            r.Warnings.Add($"Art. 15c: koszty finansowania netto {Money.Format(netFinancing)} zł przekraczają limit kwotowy — wyliczenie opiera się na oznaczeniach kont i wymaga weryfikacji (art. 15c ust. 12: koszty skapitalizowane w wartości aktywów rozliczane w odpisach amortyzacyjnych, wyłączenia ustawowe, finansowanie od podmiotów szczególnych, np. fundacji rodzinnej, część odsetkowa leasingu, różnice kursowe). Nie jest to wynik zweryfikowany automatycznie.");
         if (netFinancing > amountLimit)
         {
             var ebitda = financingEbitda;
@@ -369,7 +371,7 @@ public sealed class CitService
             }
         }
 
-        // art. 15c ust. 3: nadwyżki z lat ubiegłych zaliczone do KUP w tym roku (rozliczenie roczne) — w granicach wolnego limitu;
+        // art. 15c ust. 18: koszty wyłączone w latach ubiegłych zaliczone do KUP w tym roku (rozliczenie roczne) — w granicach wolnego limitu;
         // koszty ujęte w księgach lat ubiegłych → RPD K_6
         if (uptoPeriod == fy.Periods.Count)
         {
@@ -384,11 +386,11 @@ public sealed class CitService
                 var applied = Math.Min(u.Amount, room);
                 room -= applied;
                 if (applied < u.Amount)
-                    r.Warnings.Add($"Art. 15c ust. 3: zaliczenie nadwyżki z roku {u.YearLabel} ({Money.Format(u.Amount)} zł) przekracza wolny limit roku — uwzględniono {Money.Format(applied)} zł. Popraw rozliczenie nadwyżek.");
+                    r.Warnings.Add($"Art. 15c ust. 18: zaliczenie nadwyżki z roku {u.YearLabel} ({Money.Format(u.Amount)} zł) przekracza wolny limit roku — uwzględniono {Money.Format(applied)} zł. Popraw rozliczenie nadwyżek.");
                 if (applied == 0) continue;
                 if (u.CapitalGains) capCost += applied; else taxCost += applied;
                 k6 += applied;
-                r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego z roku {u.YearLabel}{(u.CapitalGains ? " (zyski kapitałowe)" : "")} — zaliczona do KUP", -applied, "art. 15c ust. 3 ustawy o CIT"));
+                r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego z roku {u.YearLabel}{(u.CapitalGains ? " (zyski kapitałowe)" : "")} — zaliczona do KUP", -applied, "art. 15c ust. 18 ustawy o CIT"));
             }
         }
 
@@ -656,11 +658,11 @@ public sealed class CitService
 
     // ---- straty podatkowe (art. 7 ust. 5) ----
 
-    public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default, DateOnly? deductibleUntil = null)
+    public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default,
+        DateOnly? deductibleUntil = null, string? deductibleUntilBasis = null)
     {
-        if (deductibleUntil is { } du && (du <= yearEnd || du > yearEnd.AddMonths(5 * 24)))
-            throw new DomainException("Koniec okresu odliczenia: ostatni dzień 5. roku podatkowego po roku straty.");
         _user.Require(Permission.ManageCit);
+        if (deductibleUntil is { } du) TaxLossRules.ValidateConfirmedEnd(yearEnd, du, deductibleUntilBasis, await TaxYearsAsync(ct));
         if (amount <= 0) throw new DomainException("Kwota straty musi być dodatnia.");
         if (string.IsNullOrWhiteSpace(yearLabel)) throw new DomainException("Podaj rok podatkowy straty.");
         if (await _db.TaxLosses.AnyAsync(l => l.CompanyId == _user.CompanyId && l.YearEnd == yearEnd && l.CapitalGains == capitalGains, ct))
@@ -668,10 +670,11 @@ public sealed class CitService
         var loss = new TaxLoss
         {
             CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
-            Note = note, DeductibleUntil = deductibleUntil, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(), UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         _db.TaxLosses.Add(loss);
-        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ZAREJESTROWANA", "TaxLoss", loss.Id.ToString(), $"{yearLabel} {(capitalGains ? "zyski kapitałowe" : "inne źródła")}: {Money.Xml(amount)}", ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ZAREJESTROWANA", "TaxLoss", loss.Id.ToString(),
+            $"{yearLabel} {(capitalGains ? "zyski kapitałowe" : "inne źródła")}: {Money.Xml(amount)}{(deductibleUntil is { } u ? $"; odliczenie do {u.ToPl()} — potwierdzone przez operatora na podstawie: {deductibleUntilBasis!.Trim()}" : "")}", ct);
         await _db.SaveChangesAsync(ct);
         return loss;
     }
@@ -717,19 +720,20 @@ public sealed class CitService
 
     /// <summary>Rejestracja nadwyżki kosztów finansowania dłużnego z lat sprzed prowadzenia ksiąg w programie (z CIT-8 / ewidencji).</summary>
     public async Task<DebtFinancingCarryforward> AddDebtFinancingCarryforwardAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note,
-        DateOnly? deductibleUntil = null, CancellationToken ct = default)
+        DateOnly? deductibleUntil = null, CancellationToken ct = default, string? deductibleUntilBasis = null)
     {
         _user.Require(Permission.ManageCit);
         if (amount <= 0) throw new DomainException("Kwota nadwyżki musi być dodatnia.");
         if (string.IsNullOrWhiteSpace(yearLabel)) throw new DomainException("Podaj rok podatkowy, w którym powstała nadwyżka.");
-        if (deductibleUntil is { } du && (du <= yearEnd || du > yearEnd.AddMonths(5 * 24)))
-            throw new DomainException("Koniec okresu rozliczenia: ostatni dzień 5. roku podatkowego po roku nadwyżki.");
+        if (string.IsNullOrWhiteSpace(note))
+            throw new DomainException("Wskaż źródło kwoty (np. CIT-8 za dany rok, wyliczenie limitu art. 15c) — kwota musi wynikać z dokumentacji podatnika.");
+        if (deductibleUntil is { } du) TaxLossRules.ValidateConfirmedEnd(yearEnd, du, deductibleUntilBasis, await TaxYearsAsync(ct));
         if (await _db.DebtFinancingCarryforwards.AnyAsync(c => c.CompanyId == _user.CompanyId && c.YearEnd == yearEnd && c.CapitalGains == capitalGains, ct))
             throw new DomainException("Nadwyżka z tego roku i źródła jest już zarejestrowana.");
         var c = new DebtFinancingCarryforward
         {
             CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
-            Note = note, DeductibleUntil = deductibleUntil, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(), UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         _db.DebtFinancingCarryforwards.Add(c);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_15C_NADWYZKA", "DebtFinancingCarryforward", c.Id.ToString(),
@@ -757,38 +761,50 @@ public sealed class CitService
     }
 
     /// <summary>
-    /// Zaliczenie nadwyżki z lat ubiegłych do KUP roku <paramref name="fiscalYearId"/> (art. 15c ust. 3): tylko w 5 kolejnych latach
-    /// podatkowych po roku jej powstania i tylko w granicach wolnego limitu tego roku (limit − koszty finansowania netto roku).
+    /// Zaliczenie wyłączonych kosztów z lat ubiegłych do KUP roku <paramref name="fiscalYearId"/> (art. 15c ust. 18): tylko w 5
+    /// kolejnych latach podatkowych po roku ich wyłączenia i tylko w granicach wolnego limitu tego roku (limit − koszty finansowania
+    /// netto roku). Wymaga oświadczenia o braku wyłączeń z art. 15c ust. 19 (koszty nie pochodzą od podmiotu przekształconego,
+    /// łączonego lub dzielonego, w którego prawa podatnik wstąpił; podatnik nie rozlicza ich jako PGK utworzona po roku wyłączenia).
     /// </summary>
-    public async Task<DebtFinancingCarryforwardUse> UseDebtFinancingCarryforwardAsync(Guid carryforwardId, Guid fiscalYearId, decimal amount, CancellationToken ct = default)
+    public async Task<DebtFinancingCarryforwardUse> UseDebtFinancingCarryforwardAsync(Guid carryforwardId, Guid fiscalYearId, decimal amount, string exceptionsStatement, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCit);
         amount = Money.Round(amount);
         if (amount <= 0) throw new DomainException("Kwota musi być dodatnia.");
+        if (string.IsNullOrWhiteSpace(exceptionsStatement))
+            throw new DomainException("Potwierdź brak wyłączeń z art. 15c ust. 19 ustawy o CIT (sukcesja przy przekształceniu, łączeniu lub podziale; podatkowa grupa kapitałowa) i wskaż podstawę.");
         var c = await _db.DebtFinancingCarryforwards.FirstAsync(x => x.Id == carryforwardId && x.CompanyId == _user.CompanyId, ct);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
         await EnsureManualPeriodEditableAsync(fiscalYearId, fy.Periods.Count, ct);
         if (fy.StartDate <= c.YearEnd) throw new DomainException("Nadwyżkę zalicza się do kosztów w latach następujących po roku jej powstania.");
-        var years = (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
-            .Select(y => (y.StartDate, y.EndDate)).ToList();
+        var years = await TaxYearsAsync(ct);
         var number = TaxLossRules.TaxYearNumber(c.YearEnd, years, fy.StartDate);
         if (number is null && c.DeductibleUntil is null)
             throw new DomainException($"Lat podatkowych między rokiem {c.YearLabel} a {fy.Name} nie ma w programie — wpisz koniec okresu rozliczenia nadwyżki (ostatni dzień 5. roku podatkowego po jej powstaniu).");
         if (number > 5 || c.DeductibleUntil is { } until && fy.EndDate > until)
-            throw new DomainException($"Nadwyżkę z roku {c.YearLabel} można zaliczyć do kosztów tylko w 5 kolejnych latach podatkowych (art. 15c ust. 3).");
+            throw new DomainException($"Nadwyżkę z roku {c.YearLabel} można zaliczyć do kosztów tylko w 5 kolejnych latach podatkowych (art. 15c ust. 18).");
         var used = await _db.DebtFinancingCarryforwardUses.Where(u => u.CarryforwardId == c.Id).ToListAsync(ct);
         if (used.Any(u => u.FiscalYearId == fiscalYearId)) throw new DomainException("Zaliczenie tej nadwyżki w tym roku jest już wprowadzone.");
         if (amount > c.Amount - used.Sum(u => u.Amount)) throw new DomainException($"Do rozliczenia pozostało {Money.Format(c.Amount - used.Sum(u => u.Amount))} zł nadwyżki z roku {c.YearLabel}.");
         var rec = await ReconcileAsync(fiscalYearId, fy.Periods.Count, ct);
         var usedThisYear = (await _db.DebtFinancingCarryforwardUses.Where(u => u.FiscalYearId == fiscalYearId && u.CompanyId == _user.CompanyId).ToListAsync(ct)).Sum(u => u.Amount);
         if (usedThisYear + amount > rec.DebtFinancingHeadroom)
-            throw new DomainException($"Wolny limit kosztów finansowania dłużnego w roku {fy.Name}: {Money.Format(Math.Max(0, rec.DebtFinancingHeadroom - usedThisYear))} zł (art. 15c ust. 3 — zaliczenie tylko w ramach limitu).");
-        var use = new DebtFinancingCarryforwardUse { CompanyId = _user.CompanyId, CarryforwardId = c.Id, FiscalYearId = fiscalYearId, Amount = amount, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow };
+            throw new DomainException($"Wolny limit kosztów finansowania dłużnego w roku {fy.Name}: {Money.Format(Math.Max(0, rec.DebtFinancingHeadroom - usedThisYear))} zł (art. 15c ust. 18 — zaliczenie tylko w ramach limitu).");
+        var use = new DebtFinancingCarryforwardUse
+        {
+            CompanyId = _user.CompanyId, CarryforwardId = c.Id, FiscalYearId = fiscalYearId, Amount = amount, ExceptionsStatement = exceptionsStatement.Trim(),
+            UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+        };
         _db.DebtFinancingCarryforwardUses.Add(use);
-        await new AuditService(_db, _clock).AddAsync(_user, "CIT_15C_ZALICZENIE", "DebtFinancingCarryforwardUse", use.Id.ToString(), $"nadwyżka {c.YearLabel}: {Money.Xml(amount)} w roku {fy.Name}", ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_15C_ZALICZENIE", "DebtFinancingCarryforwardUse", use.Id.ToString(),
+            $"koszty wyłączone w {c.YearLabel}: {Money.Xml(amount)} w roku {fy.Name} (art. 15c ust. 18); brak wyłączeń ust. 19: {exceptionsStatement.Trim()}", ct);
         await _db.SaveChangesAsync(ct);
         return use;
     }
+
+    private async Task<List<(DateOnly Start, DateOnly End)>> TaxYearsAsync(CancellationToken ct) =>
+        (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
+        .Select(y => (y.StartDate, y.EndDate)).OrderBy(y => y.StartDate).ToList();
 
     /// <summary>Rejestr nadwyżek: kwota zaliczona i koniec okresu rozliczenia (null — lat nie ma w programie, do potwierdzenia).</summary>
     public async Task<List<(DebtFinancingCarryforward Item, decimal Used, DateOnly? DeductibleUntil)>> DebtFinancingCarryforwardsAsync(CancellationToken ct = default)
@@ -820,14 +836,15 @@ public sealed class CitService
     }
 
     /// <summary>Potwierdzenie końca okresu odliczenia straty (gdy lat podatkowych po stracie nie ma w programie).</summary>
-    public async Task ConfirmLossWindowAsync(Guid lossId, DateOnly deductibleUntil, CancellationToken ct = default)
+    public async Task ConfirmLossWindowAsync(Guid lossId, DateOnly deductibleUntil, string basis, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageCit);
         var loss = await _db.TaxLosses.FirstAsync(l => l.Id == lossId && l.CompanyId == _user.CompanyId, ct);
-        if (deductibleUntil <= loss.YearEnd || deductibleUntil > loss.YearEnd.AddMonths(5 * 24))
-            throw new DomainException("Koniec okresu odliczenia: ostatni dzień 5. roku podatkowego po roku straty.");
+        TaxLossRules.ValidateConfirmedEnd(loss.YearEnd, deductibleUntil, basis, await TaxYearsAsync(ct));
         loss.DeductibleUntil = deductibleUntil;
-        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_OKRES", "TaxLoss", loss.Id.ToString(), $"{loss.YearLabel}: odliczenie do {deductibleUntil.ToPl()}", ct);
+        loss.DeductibleUntilBasis = basis.Trim();
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_OKRES", "TaxLoss", loss.Id.ToString(),
+            $"{loss.YearLabel}: odliczenie do {deductibleUntil.ToPl()} — potwierdzone przez operatora na podstawie: {basis.Trim()}", ct);
         await _db.SaveChangesAsync(ct);
     }
 

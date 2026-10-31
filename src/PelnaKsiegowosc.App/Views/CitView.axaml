@@ -44,6 +44,7 @@
         <TextBox Text="{Binding ReversalYearStart}" Watermark="rok podatkowy od (dd.mm.rrrr)" MinWidth="120" />
         <TextBox Text="{Binding ReversalJustification}" Watermark="podstawa (np. planowana sprzedaż)" MinWidth="200" />
         <Button Content="Zapisz rok odwrócenia" Command="{Binding SaveReversalYearCommand}" IsEnabled="{Binding IsApplicable}" />
+        <Button Content="Kwalifikuj rezerwy i odpisy (podatek odroczony)…" Command="{Binding QualifyValuationDifferencesCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Podatkowa grupa kapitałowa lub przychody ponad 50 mln euro (JPK_CIT od 2025 r.)" IsChecked="{Binding JpkCit2025}" />
         <Button Content="Zapisz" Command="{Binding SaveRateConditionsCommand}" IsEnabled="{Binding IsApplicable}" />
       </WrapPanel>
@@ -104,7 +105,7 @@
       <TabItem Header="Art. 15c — nadwyżki">
         <DockPanel>
           <TextBlock DockPanel.Dock="Top" Classes="info" TextWrapping="Wrap"
-                     Text="Art. 15c ust. 3 ustawy o CIT: nadwyżkę kosztów finansowania dłużnego niezaliczoną do KUP zalicza się do kosztów w następnych kolejnych pięciu latach podatkowych, w ramach limitu danego roku (rozliczenie roczne, RPD K_6), odrębnie dla źródeł przychodów." />
+                     Text="Art. 15c ust. 18 ustawy o CIT: koszty finansowania dłużnego niezaliczone do KUP z powodu limitu zalicza się do kosztów w następnych kolejnych pięciu latach podatkowych, w ramach limitu danego roku (rozliczenie roczne, RPD K_6), odrębnie dla źródeł przychodów. Ust. 19: nie dotyczy podmiotów wstępujących w prawa przekształconych, łączonych lub dzielonych — przy zaliczeniu wymagane oświadczenie." />
           <TextBlock DockPanel.Dock="Top" Text="{Binding DebtHeadroom}" TextWrapping="Wrap" />
           <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
             <TextBox Text="{Binding DebtExcessYear}" Watermark="rok nadwyżki (np. 2025)" MinWidth="140" />

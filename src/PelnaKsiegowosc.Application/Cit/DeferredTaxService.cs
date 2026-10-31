@@ -103,6 +103,31 @@ public sealed class DeferredTaxService
         await _db.SaveChangesAsync(ct);
     }
 
+    public static string QualificationKey(Guid sourceId) => $"cit.kwalifikacjaRoznicy.{sourceId}";
+
+    /// <summary>
+    /// Kwalifikacja rezerwy lub odpisu aktualizującego: <c>Temporary</c> = false — koszt nie będzie KUP także po realizacji (np. kary
+    /// umowne z art. 16 ust. 1 pkt 22, należność niespełniająca warunków art. 16 ust. 1 pkt 25–26) — różnica trwała, bez podatku
+    /// odroczonego; true — różnica przejściowa odwracająca się w roku podatkowym od <c>ReversalTaxYearStart</c>.
+    /// </summary>
+    public sealed record DifferenceQualification(bool Temporary, DateOnly? ReversalTaxYearStart, string Justification, DateOnly QualifiedOn);
+
+    /// <summary>Udokumentowana kwalifikacja rezerwy / odpisu aktualizującego należności dla podatku odroczonego (art. 37 ust. 1 i 4 UoR — zasada ostrożności).</summary>
+    public async Task QualifyDifferenceAsync(Guid sourceId, bool temporary, DateOnly? reversalTaxYearStart, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(justification))
+            throw new DomainException("Uzasadnij kwalifikację (np. termin wypłaty świadczeń, przewidywane zakończenie sporu, spełnienie warunków art. 16 ust. 1 pkt 25–26 ustawy o CIT).");
+        var exists = await _db.Provisions.AnyAsync(p => p.Id == sourceId && p.CompanyId == _user.CompanyId, ct)
+                     || await _db.ReceivableAllowances.AnyAsync(a => a.OpenItemId == sourceId && a.CompanyId == _user.CompanyId, ct);
+        if (!exists) throw new DomainException("Nie znaleziono rezerwy ani odpisu aktualizującego.");
+        await new Setup.SettingsService(_db, _clock).SetAsync<DifferenceQualification?>(_user.CompanyId, QualificationKey(sourceId),
+            new DifferenceQualification(temporary, temporary ? reversalTaxYearStart : null, justification.Trim(), _clock.Today), ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "POD_ODROCZONY_KWALIFIKACJA", "Valuation", sourceId.ToString(),
+            $"{(temporary ? "różnica przejściowa" + (reversalTaxYearStart is { } r ? $", odwrócenie w roku od {r.ToPl()}" : "") : "różnica trwała")}: {justification.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     /// <summary>Próg istotności (zł podatku) dla różnic opartych na niepotwierdzonych założeniach — powyżej progu księgowanie jest blokowane.</summary>
     public async Task SetMaterialityAsync(decimal threshold, string justification, CancellationToken ct = default)
     {
@@ -320,15 +345,37 @@ public sealed class DeferredTaxService
             }
         }
 
-        // odpisy aktualizujące należności i rezerwy (NKUP) — odwrócenie w najbliższym roku podatkowym po dniu bilansowym
-        var allowance = (await _db.ReceivableAllowances.AsNoTracking().Where(a => a.CompanyId == fy.CompanyId && a.Date <= asOf).Select(a => a.Amount).ToListAsync(ct)).Sum();
-        if (allowance != 0) diffs.Add(await DifferenceAsync("Odpisy aktualizujące należności", "art. 16 ust. 1 pkt 26a ustawy o CIT", -allowance, 0m, -allowance, first.Start, false));
-        var provisions = await _db.Provisions.AsNoTracking().Where(p => p.CompanyId == fy.CompanyId && p.Date <= asOf).ToListAsync(ct);
-        foreach (var g in provisions.GroupBy(p => p.Kind))
+        // odpisy aktualizujące należności i rezerwy (NKUP do czasu realizacji): każda pozycja osobno. Bez udokumentowanej
+        // kwalifikacji przyjmuje się odwrócenie w najbliższym roku podatkowym tylko dla rezerw urlopowych i na koszty (rozliczanych
+        // zwykle w kolejnym roku); pozostałe (odpisy na należności — warunki art. 16 ust. 1 pkt 25–26, rezerwy emerytalne,
+        // gwarancyjne, na sprawy sporne i kary — możliwa różnica trwała lub odwrócenie po latach) — do kwalifikacji (niezatwierdzone).
+        // Różnica trwała — bez podatku odroczonego.
+        async Task ValuationDifferenceAsync(Guid id, string item, string basis, decimal amount, bool defaultConfirmed)
         {
-            var remaining = g.Sum(p => p.Remaining);
-            if (remaining != 0) diffs.Add(await DifferenceAsync($"Rezerwy: {g.Key}", "art. 16 ust. 1 pkt 27 ustawy o CIT", -remaining, 0m, -remaining, first.Start, false));
+            if (amount == 0) return;
+            var q = await settings.GetAsync<DifferenceQualification?>(fy.CompanyId, QualificationKey(id), () => null, ct);
+            if (q is { Temporary: false }) return;
+            var start = q?.ReversalTaxYearStart is { } rs && rs > first.Start ? rs : first.Start;
+            var d = await DifferenceAsync(item + (q is null ? "" : $" (kwalifikacja z {q.QualifiedOn.ToPl()})"), q is null ? basis : $"{basis}; {q.Justification}", -amount, 0m, -amount, start, false);
+            if (q is null && !defaultConfirmed)
+            {
+                d = d with { Unconfirmed = true };
+                warnings.Add($"{item}: brak kwalifikacji (różnica przejściowa czy trwała, rok odwrócenia) — przyjęto odwrócenie w najbliższym roku; zakwalifikuj przed księgowaniem (art. 37 ust. 1 i 4 UoR).");
+            }
+            diffs.Add(d);
         }
+        // odpisy na należność — saldo odpisów (utworzenie − rozwiązanie) dla każdej należności; kwalifikacja wg należności
+        var allowances = (await _db.ReceivableAllowances.AsNoTracking().Where(a => a.CompanyId == fy.CompanyId && a.Date <= asOf)
+                .Select(a => new { a.OpenItemId, a.Amount }).ToListAsync(ct))
+            .GroupBy(a => a.OpenItemId).Select(g => (Item: g.Key, Amount: g.Sum(a => a.Amount))).Where(x => x.Amount != 0).ToList();
+        var itemIds = allowances.Select(a => a.Item).ToList();
+        var refs = await _db.OpenItems.AsNoTracking().Where(o => itemIds.Contains(o.Id)).Select(o => new { o.Id, o.Reference }).ToListAsync(ct);
+        foreach (var (item, amount) in allowances)
+            await ValuationDifferenceAsync(item, $"Odpis aktualizujący należność {refs.FirstOrDefault(r => r.Id == item)?.Reference}", "art. 16 ust. 1 pkt 26a ustawy o CIT", amount, false);
+        var provisions = await _db.Provisions.AsNoTracking().Where(p => p.CompanyId == fy.CompanyId && p.Date <= asOf).ToListAsync(ct);
+        foreach (var p in provisions.Where(p => p.Remaining != 0))
+            await ValuationDifferenceAsync(p.Id, $"Rezerwa {p.Kind}: {p.Description}", "art. 16 ust. 1 pkt 27 ustawy o CIT", p.Remaining,
+                p.Kind is Domain.Settlements.ProvisionKind.Urlopowa or Domain.Settlements.ProvisionKind.NaKoszty);
 
         // straty podatkowe — wyłącznie z rejestru strat: okres odliczenia ze wspólnego mechanizmu lat podatkowych; aktywo tylko
         // po udokumentowanej ocenie możliwości wykorzystania (art. 37 ust. 4 UoR); zyski kapitałowe po 19%

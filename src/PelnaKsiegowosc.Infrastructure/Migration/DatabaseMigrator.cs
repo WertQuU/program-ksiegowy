@@ -58,6 +58,9 @@ public sealed class DatabaseMigrator
     {
         var report = new MigrationReport { StartedUtc = _clock.UtcNow, Source = sourceDescription, Target = targetDescription };
         var dumpDir = Path.Combine(_tempRoot, "migracja-" + Guid.NewGuid().ToString("N"));
+        // pełna kontrola magazynu załączników przed migracją — każdy zaszyfrowany plik musi otwierać się kluczem stanowiska
+        if (sourceAttachments is Application.Documents.LocalFileStore { Encrypted: true } local && local.Check() is { Ok: false } bad)
+            throw new DomainException($"Magazyn załączników zawiera pliki nieczytelne tym kluczem lub uszkodzone ({bad.Unreadable.Count}, np. {bad.Unreadable[0]}) — migracja wstrzymana. Zaimportuj właściwy klucz albo odtwórz pliki z kopii.");
         try
         {
             report.PreMigrationBackup = await createSourceBackup();

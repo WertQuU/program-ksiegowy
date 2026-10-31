@@ -159,6 +159,34 @@ public sealed partial class CitViewModel : SectionViewModel
         });
     }
 
+    /// <summary>Kwalifikacja rezerw i odpisów aktualizujących (różnica przejściowa / trwała, rok odwrócenia) — podatek odroczony.</summary>
+    [RelayCommand]
+    private Task QualifyValuationDifferencesAsync() => RunAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        var svc = new DeferredTaxService(db, Session.User, Session.Clock);
+        var settings = new Application.Setup.SettingsService(db, Session.Clock);
+        var asOf = Session.CurrentYear.EndDate;
+        var items = new List<(Guid Id, string Label)>();
+        foreach (var p in await db.Provisions.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId && p.Date <= asOf).ToListAsync())
+            if (p.Remaining != 0) items.Add((p.Id, $"Rezerwa {p.Kind}: {p.Description} ({Money.Format(p.Remaining)} zł)"));
+        foreach (var g in (await db.ReceivableAllowances.AsNoTracking().Where(a => a.CompanyId == Session.CompanyId && a.Date <= asOf).ToListAsync()).GroupBy(a => a.OpenItemId))
+            if (g.Sum(a => a.Amount) is var sum and not 0)
+                items.Add((g.Key, $"Odpis na należność {await db.OpenItems.Where(o => o.Id == g.Key).Select(o => o.Reference).FirstOrDefaultAsync()} ({Money.Format(sum)} zł)"));
+        var done = 0;
+        foreach (var (id, label) in items)
+        {
+            if (await settings.GetAsync<DeferredTaxService.DifferenceQualification?>(Session.CompanyId, DeferredTaxService.QualificationKey(id), () => null) is not null) continue;
+            var temporary = await Dialogs.ConfirmAsync("Kwalifikacja różnicy", $"{label}{Environment.NewLine}{Environment.NewLine}Czy koszt stanie się kosztem podatkowym po realizacji (wypłacie, uprawdopodobnieniu nieściągalności)? Tak — różnica przejściowa; Nie — różnica trwała (bez podatku odroczonego, np. kary umowne, należność niespełniająca warunków art. 16 ust. 1 pkt 25–26).");
+            var year = temporary ? await Dialogs.PromptAsync("Rok odwrócenia", "Początek roku podatkowego, w którym różnica się odwróci (dd.mm.rrrr; puste — najbliższy rok):", "") : null;
+            var why = await Dialogs.PromptAsync("Uzasadnienie", "Podstawa kwalifikacji (np. termin wypłaty, stan sporu, dokumentacja nieściągalności). Puste — pomiń pozycję:", "");
+            if (string.IsNullOrWhiteSpace(why)) continue;
+            await svc.QualifyDifferenceAsync(id, temporary, Parse.OptionalDate(year, "Rok odwrócenia"), why);
+            done++;
+        }
+        StatusMessage = items.Count == 0 ? "Brak rezerw i odpisów do kwalifikacji." : $"Zakwalifikowano pozycji: {done}.";
+    });
+
     [ObservableProperty] private string _expectedRate = "19";
     [ObservableProperty] private string _expectedRateJustification = "";
     /// <summary>Początek roku podatkowego, którego dotyczy prognoza (domyślnie rok następny).</summary>
@@ -275,7 +303,7 @@ public sealed partial class CitViewModel : SectionViewModel
             excess.Add(c.Id, c.YearLabel, c.CapitalGains ? "zyski kapitałowe" : "inne źródła", c.Amount, used, c.Amount - used, until?.ToPl() ?? "do potwierdzenia");
         DebtExcess = excess;
         var full = await svc.ReconcileAsync(year.Id, year.Periods.Count);
-        DebtHeadroom = $"Art. 15c ust. 3: wolny limit kosztów finansowania w roku {year.Name}: {Money.Format(full.DebtFinancingHeadroom)} zł; nadwyżka roku: {Money.Format(full.DebtFinancingExcessOperating + full.DebtFinancingExcessCapital)} zł.";
+        DebtHeadroom = $"Art. 15c ust. 18: wolny limit kosztów finansowania w roku {year.Name}: {Money.Format(full.DebtFinancingHeadroom)} zł; nadwyżka roku: {Money.Format(full.DebtFinancingExcessOperating + full.DebtFinancingExcessCapital)} zł.";
     }
 
     [ObservableProperty] private TableData _debtExcess = TableData.Empty;
@@ -288,13 +316,22 @@ public sealed partial class CitViewModel : SectionViewModel
     [ObservableProperty] private string _debtExcessUntil = "";
     [ObservableProperty] private string _debtExcessUse = "";
 
-    /// <summary>Nadwyżka kosztów finansowania dłużnego z lat sprzed prowadzenia ksiąg w programie (z CIT-8).</summary>
+    /// <summary>Dokument potwierdzający ręcznie wpisany koniec 5-letniego okresu — operator odpowiada za jego poprawność (zapis w dzienniku).</summary>
+    private Task<string?> PeriodBasisAsync() => Dialogs.PromptAsync("Potwierdzenie końca okresu",
+        "Lat podatkowych nie ma w programie. Wskaż dokumenty, z których wynika koniec 5. roku podatkowego (np. CIT-8 za lata pośrednie, uchwała o zmianie roku podatkowego). Potwierdzenie zostanie zapisane w dzienniku zdarzeń z Twoim nazwiskiem:", "");
+
+    /// <summary>Koszty finansowania dłużnego wyłączone w latach sprzed prowadzenia ksiąg w programie (z CIT-8).</summary>
     [RelayCommand]
     private Task AddDebtExcessAsync() => ChangeAsync(async () =>
     {
+        var until = Parse.OptionalDate(DebtExcessUntil, "Rozliczenie do");
+        var source = await Dialogs.PromptAsync("Źródło kwoty", "Wskaż dokument, z którego wynika kwota wyłączonych kosztów (np. CIT-8 za dany rok, wyliczenie limitu art. 15c):", "");
+        if (string.IsNullOrWhiteSpace(source)) return;
+        var basis = until is null ? null : await PeriodBasisAsync();
+        if (until is not null && basis is null) return;
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).AddDebtFinancingCarryforwardAsync(DebtExcessYear, Parse.Date(DebtExcessYearEnd, "Koniec roku nadwyżki"), DebtExcessCapital,
-            Parse.Amount(DebtExcessAmount, "Nadwyżka"), "wprowadzona ręcznie (zeznanie CIT-8)", Parse.OptionalDate(DebtExcessUntil, "Rozliczenie do"));
+            Parse.Amount(DebtExcessAmount, "Nadwyżka"), source, until, deductibleUntilBasis: basis);
         DebtExcessYear = DebtExcessYearEnd = DebtExcessAmount = DebtExcessUntil = "";
     }, "Zarejestrowano nadwyżkę kosztów finansowania dłużnego.");
 
@@ -310,8 +347,12 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task UseDebtExcessAsync() => ChangeAsync(async () =>
     {
         if (SelectedDebtExcess?.Tag is not Guid id) throw new DomainException("Zaznacz nadwyżkę na liście.");
+        var amount = Parse.Amount(DebtExcessUse, "Kwota");
+        var statement = await Dialogs.PromptAsync("Art. 15c ust. 19 ustawy o CIT",
+            "Potwierdź, że koszty powstały u tej spółki — nie u podmiotu przekształconego, łączonego lub dzielonego, w którego prawa spółka wstąpiła (poza spółką powstałą z przekształcenia) — i że spółka nie rozlicza ich jako podatkowa grupa kapitałowa utworzona po roku ich wyłączenia. Wskaż podstawę (np. KRS, umowa spółki):", "");
+        if (string.IsNullOrWhiteSpace(statement)) return;
         await using var db = Session.OpenDb();
-        await new CitService(db, Session.User, Session.Clock).UseDebtFinancingCarryforwardAsync(id, Session.CurrentYear.Id, Parse.Amount(DebtExcessUse, "Kwota"));
+        await new CitService(db, Session.User, Session.Clock).UseDebtFinancingCarryforwardAsync(id, Session.CurrentYear.Id, amount, statement);
         DebtExcessUse = "";
     }, "Zaliczono nadwyżkę do kosztów bieżącego roku (rozliczenie roczne).");
 
@@ -367,9 +408,12 @@ public sealed partial class CitViewModel : SectionViewModel
     [RelayCommand]
     private Task AddLossAsync() => ChangeAsync(async () =>
     {
+        var until = Parse.OptionalDate(LossUntil, "Koniec okresu odliczenia");
+        var basis = until is null ? null : await PeriodBasisAsync();
+        if (until is not null && basis is null) return;
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).AddLossAsync(LossYear, Parse.Date(LossYearEnd, "Koniec roku straty"), LossCapital, Parse.Amount(LossAmount, "Strata"), "wprowadzona ręcznie (zeznanie CIT-8)",
-            deductibleUntil: Parse.OptionalDate(LossUntil, "Koniec okresu odliczenia"));
+            deductibleUntil: until, deductibleUntilBasis: basis);
         LossYear = LossYearEnd = LossAmount = "";
     }, "Zarejestrowano stratę podatkową.");
 
@@ -399,7 +443,9 @@ public sealed partial class CitViewModel : SectionViewModel
     {
         if (SelectedLoss?.Tag is not Guid id) throw new DomainException("Zaznacz stratę na liście.");
         await using var db = Session.OpenDb();
-        await new CitService(db, Session.User, Session.Clock).ConfirmLossWindowAsync(id, Parse.Date(LossUntil, "Koniec okresu odliczenia"));
+        var until = Parse.Date(LossUntil, "Koniec okresu odliczenia");
+        if (await PeriodBasisAsync() is not { } basis) return;
+        await new CitService(db, Session.User, Session.Clock).ConfirmLossWindowAsync(id, until, basis);
     }, "Zapisano koniec okresu odliczenia straty.");
 
     [RelayCommand]

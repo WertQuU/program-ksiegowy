@@ -422,16 +422,59 @@ public class AttachmentEncryptionTests
             onDisk[onDisk.Length / 2] ^= 1;
             await File.WriteAllBytesAsync(Path.Combine(dir, "a", "plik.bin"), onDisk);
             await Assert.ThrowsAnyAsync<Exception>(() => store.OpenAsync("a/plik.bin"));
+            Assert.Contains("a/plik.bin", store.Check().Unreadable);                 // pełna kontrola magazynu wykrywa zmieniony plik
+            File.Delete(Path.Combine(dir, "a", "plik.bin"));
 
             // dotychczasowe jawne pliki są szyfrowane przy otwarciu firmy
             await new LocalFileStore(dir).SaveAtAsync("b/stary.bin", new MemoryStream("jawny dokument"u8.ToArray()));
             Assert.False(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
             Assert.Equal(1, await store.EncryptLegacyFilesAsync());
             Assert.True(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
-            await using var r = await store.OpenAsync("b/stary.bin");
-            Assert.Equal("jawny dokument", await new StreamReader(r).ReadToEndAsync());
+            await using (var r = await store.OpenAsync("b/stary.bin"))
+                Assert.Equal("jawny dokument", await new StreamReader(r).ReadToEndAsync());
+
+            // magazyn programu bez klucza nie zapisuje (brak plików jawnych ani zaszyfrowanych innym kluczem)
+            Assert.True(LocalFileStore.KeyMatches(dir, key));
+            Assert.False(LocalFileStore.KeyMatches(dir, RandomNumberGenerator.GetBytes(32)));
+            Assert.True(LocalFileStore.KeyMatches(Path.Combine(dir, "brak"), RandomNumberGenerator.GetBytes(32)));
+            await Assert.ThrowsAsync<DomainException>(() => new LocalFileStore(dir, null, keyRequired: true).SaveAtAsync("c/nowy.bin", new MemoryStream(new byte[] { 1 })));
+            // plik zaszyfrowany innym kluczem w tym samym katalogu — wykrywany przez pełną kontrolę (nie tylko pierwszy plik)
+            await new LocalFileStore(dir, RandomNumberGenerator.GetBytes(32)).SaveAtAsync("z/obcy.bin", new MemoryStream("inny klucz"u8.ToArray()));
+            Assert.False(LocalFileStore.KeyMatches(dir, key));
+            var check = store.Check();
+            Assert.False(check.Ok);
+            Assert.Contains("z/obcy.bin", check.Unreadable);
         }
         finally { try { Directory.Delete(dir, true); } catch { } }
+    }
+}
+
+public class AttachmentCryptoTamperTests
+{
+    [Fact]
+    public async Task Header_only_truncated_reordered_and_forged_files_are_rejected()
+    {
+        var key = RandomNumberGenerator.GetBytes(32);
+        async Task<byte[]> Enc(byte[] plain) { using var ms = new MemoryStream(); await AttachmentCrypto.EncryptAsync(plain, ms, key); return ms.ToArray(); }
+        var big = RandomNumberGenerator.GetBytes(2 * 1024 * 1024 + 10);   // 3 porcje
+        var data = await Enc(big);
+        Assert.Equal(big, AttachmentCrypto.Decrypt(data, key));
+        Assert.Empty(AttachmentCrypto.Decrypt(await Enc(Array.Empty<byte>()), key));          // pusty załącznik — jedna uwierzytelniona porcja
+
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(data[..16], key));                          // sam nagłówek
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(data[..20], key));                          // nagłówek + długość
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(data[..^1], key));                          // ucięty tag
+        var chunk = 4 + 1024 * 1024 + 16;
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(data[..(16 + chunk)], key));               // obcięty na granicy porcji
+        var badTag = (byte[])data.Clone(); badTag[^1] ^= 1;
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(badTag, key));                               // fałszywy tag
+        var badLen = (byte[])data.Clone(); BitConverter.GetBytes(-5).CopyTo(badLen, 16);
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(badLen, key));                               // nieprawidłowa długość
+        var swapped = (byte[])data.Clone();                                                                        // zamiana porcji 1 i 2
+        Array.Copy(data, 16 + chunk, swapped, 16, chunk);
+        Array.Copy(data, 16, swapped, 16 + chunk, chunk);
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(swapped, key));
+        Assert.Throws<DomainException>(() => AttachmentCrypto.Decrypt(data, RandomNumberGenerator.GetBytes(32))); // inny klucz
     }
 }
 
