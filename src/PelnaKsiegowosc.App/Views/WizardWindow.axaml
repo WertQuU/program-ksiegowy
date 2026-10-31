@@ -35,13 +35,8 @@
       <!-- 2. Baza -->
       <ScrollViewer IsVisible="{Binding IsDatabase}">
         <StackPanel Spacing="6">
-          <TextBlock Classes="info" Text="Księgi mogą być przechowywane lokalnie (plik bazy na tym komputerze — praca bez internetu) albo na serwerze PostgreSQL (praca wielu stanowisk). Program nigdy nie przełącza się samoczynnie między bazami." />
-                    <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
-            <TextBlock Text="Plik bazy" />
-            <TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />
-            <Button Grid.Column="2" Content="Wybierz…" Command="{Binding PickSqliteCommand}" />
-          </Grid>
-          <CheckBox Content="Serwer PostgreSQL (zamiast lokalnej bazy SQLite na tym komputerze)" IsChecked="{Binding Database.UsePostgres}" />
+          <TextBlock Classes="info" Text="Podaj indywidualny login i hasło do wspólnej bazy PostgreSQL. Wiele komputerów pracuje na tych samych księgach bez kopiowania bazy. Każdy operator musi mieć osobne konto serwera. MySQL/MariaDB nie są jeszcze obsługiwane w tym wydaniu. Lokalne SQLite pozostaje technologią wewnętrzną/kopią awaryjną." />
+          <TextBlock Text="Serwer PostgreSQL — jedna wspólna baza, odrębne konto na operatora" Classes="h2" />
           <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
             <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
             <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />
@@ -52,7 +47,7 @@
             <TextBlock Grid.Row="6" Text="Certyfikat CA (opcjonalnie)" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Database.RootCertificate}" />
             <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
           </Grid>
-          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji." IsVisible="{Binding Database.UsePostgres}" />
+          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
           <Button Content="Sprawdź połączenie" Command="{Binding TestDatabaseCommand}" />
           <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
         </StackPanel>
