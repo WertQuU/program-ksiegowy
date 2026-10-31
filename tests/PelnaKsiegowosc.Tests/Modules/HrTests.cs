@@ -38,6 +38,13 @@ public class HrTests
         Assert.Equal(6m, bal.Used);
         Assert.Equal(20m, bal.Remaining);
 
+        // Podstawa chorobowego w marcu: pełne, zaksięgowane miesiące
+        // zatrudnienia styczeń i luty (art. 36 ust. 2 ustawy zasiłkowej).
+        var january = await payroll.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
+        await payroll.PostAsync(january.Id);
+        var february = await payroll.CreateListAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 28));
+        await payroll.PostAsync(february.Id);
+
         var march = await payroll.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
         var item = Assert.Single(march.Items);
         Assert.Equal(10, item.SickDays);
