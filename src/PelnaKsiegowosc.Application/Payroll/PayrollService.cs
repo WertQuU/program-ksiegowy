@@ -47,7 +47,13 @@ public sealed class PayrollService
     {
         var r = new ValidationResult();
         if (string.IsNullOrWhiteSpace(e.FirstName) || string.IsNullOrWhiteSpace(e.LastName)) r.Error("Podaj imię i nazwisko.");
-        if (!string.IsNullOrWhiteSpace(e.Pesel) && !Identifiers.IsValidPesel(e.Pesel)) r.Error("PESEL jest nieprawidłowy.");
+        if (!string.IsNullOrWhiteSpace(e.Pesel))
+        {
+            if (!Identifiers.IsValidPesel(e.Pesel) || Identifiers.BirthDateFromPesel(e.Pesel) is not { } encodedBirth)
+                r.Error("PESEL jest nieprawidłowy (suma kontrolna lub zakodowana data urodzenia).");
+            else if (e.BirthDate is { } birth && birth != encodedBirth)
+                r.Error("Data urodzenia nie zgadza się z datą zakodowaną w numerze PESEL — wyjaśnij rozbieżność przed naliczeniem PIT/ZUS.");
+        }
         if (e.Gross < 0) r.Error("Wynagrodzenie nie może być ujemne.");
         if (e.WorkTimeFraction is <= 0 or > 1) r.Error("Wymiar etatu podaj jako ułamek z przedziału (0; 1], np. 0,5.");
         if (e.EndDate is { } end && end < e.StartDate) r.Error("Data zakończenia umowy jest wcześniejsza niż data rozpoczęcia.");
