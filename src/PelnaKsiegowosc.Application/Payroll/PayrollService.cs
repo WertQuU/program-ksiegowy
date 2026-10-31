@@ -117,6 +117,53 @@ public sealed class PayrollService
             employment.Sum(i => i.SickDaysEmployer), items.Sum(i => i.AuthorCosts));
     }
 
+    /// <summary>
+    /// Bezpieczny podzbiór art. 36–43 ustawy zasiłkowej: pełne miesiące nieprzerwanego
+    /// zatrudnienia przed chorobą, najwyżej 12, z jednym zaksięgowanym wynagrodzeniem
+    /// zasadniczym w miesiącu. Brak historii, premie, wcześniejsze absencje i zmiana
+    /// warunków płacy wymagają indywidualnego wyliczenia; nie wolno zgadywać podstawy.
+    /// Wynik jest kwotą BRUTTO — kalkulator odejmuje 13,71% składek.
+    /// </summary>
+    private async Task<(decimal? Basis, string Problem)> VerifiedSickBasisAsync(Employee e, PayrollList list, CancellationToken ct)
+    {
+        var firstFullMonth = new DateOnly(e.StartDate.Year, e.StartDate.Month, 1);
+        if (e.StartDate.Day > 1) firstFullMonth = firstFullMonth.AddMonths(1);
+        var from = list.Month.AddMonths(-12);
+        if (firstFullMonth > from) from = firstFullMonth;
+        if (from >= list.Month)
+            return (null, "brak pełnego miesiąca ubezpieczenia przed zachorowaniem — potrzebna indywidualna podstawa z art. 37");
+
+        // Inna umowa tej samej osoby u pracodawcy może zwiększać podstawę chorobowego.
+        // Bez historii składników nie wolno przyjmować samej pensji zasadniczej.
+        if (!string.IsNullOrWhiteSpace(e.Pesel) &&
+            await _db.Employees.AsNoTracking().AnyAsync(x => x.CompanyId == _user.CompanyId && x.Id != e.Id && x.Pesel == e.Pesel, ct))
+            return (null, "wiele umów tej samej osoby — wymagana kwalifikacja składników wynagrodzenia");
+
+        var history = await (from i in _db.PayrollItems.AsNoTracking()
+                             join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                             where i.EmployeeId == e.Id && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                                   l.Month >= from && l.Month < list.Month
+                             select new { l.Month, i.BaseGross, i.SocialBasis, i.SickDays, i.UnpaidDays, i.ContractType }).ToListAsync(ct);
+        var months = new List<decimal>();
+        for (var month = from; month < list.Month; month = month.AddMonths(1))
+        {
+            var entries = history.Where(x => x.Month == month).ToList();
+            if (entries.Count != 1)
+                return (null, $"brak jednoznacznej, zaksięgowanej historii za {month:MM.yyyy} (oczekiwano jednej wypłaty)");
+            var item = entries[0];
+            if (item.ContractType != ContractType.UmowaOPrace || item.SickDays != 0 || item.UnpaidDays != 0 ||
+                item.BaseGross is null || item.SocialBasis <= 0 || item.BaseGross.Value != item.SocialBasis)
+                return (null, $"w {month:MM.yyyy} wystąpiła nieobecność lub składniki wymagające uzupełnienia/kwalifikacji");
+            months.Add(item.SocialBasis);
+        }
+
+        // Zmiana kwoty może oznaczać zmianę etatu lub składników zmiennych, których
+        // historycznego rodzaju system nie przechowuje. Nie wyliczamy jej automatycznie.
+        if (months.Any(x => x != months[0]) || months[0] != e.Gross)
+            return (null, "zmiana wynagrodzenia/etatu w okresie podstawy — potrzebne wyliczenie z historii i kwalifikacja składników");
+        return (months.Average(), "");
+    }
+
     /// <summary>Dane wejściowe pozycji listy: wynagrodzenie zasadnicze za pełny miesiąc i dni nieobecności.</summary>
     private sealed record ItemInput(Guid ItemId, Guid EmployeeId, decimal Gross, int SickDays, int UnpaidDays);
 
@@ -139,6 +186,7 @@ public sealed class PayrollService
         var payMonthStart = new DateOnly(list.PaymentDate.Year, list.PaymentDate.Month, 1);
         var payMonthEnd = payMonthStart.AddMonths(1).AddDays(-1);
         var result = new Dictionary<Guid, PayrollItem>();
+        var sickBases = new Dictionary<Guid, decimal?>();
         foreach (var group in inputs.GroupBy(i => PersonKey(employees[i.EmployeeId])))
         {
             int Rank(Employee e) => e.ContractType switch { ContractType.UmowaOPrace => 0, ContractType.Powolanie => 1, _ => 2 };
@@ -172,8 +220,17 @@ public sealed class PayrollService
                 foreach (var input in ordered)
                 {
                     var e = employees[input.EmployeeId];
+                    decimal? sickBasis = null;
+                    if (e.ContractType == ContractType.UmowaOPrace && input.SickDays > 0)
+                    {
+                        if (!sickBases.TryGetValue(e.Id, out sickBasis))
+                        {
+                            (sickBasis, _) = await VerifiedSickBasisAsync(e, list, ct);
+                            sickBases[e.Id] = sickBasis;
+                        }
+                    }
                     var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
-                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays,
+                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays, SickBasis: sickBasis,
                             CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month)) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
                         TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
@@ -186,6 +243,8 @@ public sealed class PayrollService
                     var fresh = PayrollCalculator.Compute(e, input.Gross, ytd, rules, accident, absence, others, own, civil,
                         e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable, list.PaymentDate);
                     fresh.BaseGross = input.Gross;
+                    if (input.SickDays > 0 && sickBasis is null)
+                        fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest WSTĘPNA — brak kompletnej, jednoznacznej historii; księgowanie zablokowane";
                     if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
                     reductionLeft -= fresh.TaxReduction;
                     bases[input.ItemId] = fresh.SocialBasis;
@@ -327,6 +386,13 @@ public sealed class PayrollService
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
         if (list.Items.Count == 0) throw new DomainException("Lista płac jest pusta.");
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
+        foreach (var item in list.Items.Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
+        {
+            var (basis, problem) = await VerifiedSickBasisAsync(employees[item.EmployeeId], list, ct);
+            if (basis is null)
+                throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
+                    "Ustal i udokumentuj podstawę według art. 36–43 ustawy zasiłkowej; program nie obsługuje jeszcze ręcznego zatwierdzania przypadków szczególnych.");
+        }
         // aktualność wyliczenia: dane osób (kwota z umowy, PIT-2, zbieg tytułów, PPK…), limity roczne i inne zaksięgowane listy
         // mogły zmienić się po wyliczeniu — lista musi odpowiadać ponownemu wyliczeniu z bieżących danych
         var fresh = await ComputeItemsAsync(list, await StoredInputsAsync(list, ct), ct);
