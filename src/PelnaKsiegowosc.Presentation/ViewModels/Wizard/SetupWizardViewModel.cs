@@ -308,6 +308,19 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         var setup = new SetupService(db, Session.Clock);
         var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty), Company.ToCompany());
         var actor = OperatorIdentity.For(company.Id);
+        // Administrator powstaje TYLKO przy utworzeniu nowych ksiąg, nigdy przy pierwszym
+        // połączeniu z istniejącą bazą (zabezpieczenie przed przejęciem roli przez obcego klienta).
+        var founder = new Domain.Security.User
+        {
+            Id = actor.UserId, Login = actor.Login, DisplayName = actor.Login,
+            PasswordAlgorithm = Application.Security.OperatorAccessService.SystemAccount,
+            IsActive = true, CreatedAtUtc = Session.Clock.UtcNow
+        };
+        founder.SetRoles(Application.Security.OperatorAccessService.FounderRoles);
+        db.Users.Add(founder);
+        await new AuditService(db, Session.Clock).AddAsync(actor, "OPERATOR_ZALOZYCIEL", "User",
+            founder.Id.ToString(), $"{founder.Login}; role={founder.RolesCsv}");
+        await db.SaveChangesAsync();
         var year = await setup.CreateFiscalYearAsync(actor, company.Id, Parse.Date(YearStart, "Początek roku"), Parse.Date(YearEnd, "Koniec roku"), IsFirstYear);
         var chart = await new ChartService(db, actor, Session.Clock).CreateFromTemplateAsync(year.Id, ChartTemplate.Build(company.LegalForm, ChartOptions.ToOptions()));
         await ChartOptions.ApplyPostingSettingsAsync(db, company.Id, Session.Clock);
