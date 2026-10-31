@@ -79,8 +79,11 @@ public static class DataDump
             if (await CountAsync(db, et.ClrType, ct) > 0)
                 throw new InvalidOperationException($"Baza docelowa nie jest pusta (tabela {et.GetTableName()}). Import wymaga pustej bazy.");
         var counts = new Dictionary<string, long>();
+        var originalAutoDetect = db.ChangeTracker.AutoDetectChangesEnabled;
         db.ChangeTracker.AutoDetectChangesEnabled = false;
-        await using var tx = await db.Database.BeginTransactionAsync(ct);
+        try
+        {
+            await using var tx = await db.Database.BeginTransactionAsync(ct);
         // Zapisy zaksięgowane wstawiane są najpierw jako bufor, a status przywracany po zaimportowaniu pozycji —
         // wyzwalacze bazy nie pozwalają dopisać pozycji do zapisu już zaksięgowanego.
         var posted = new List<Guid>();
@@ -107,9 +110,15 @@ public static class DataDump
         }
         foreach (var chunk in posted.Chunk(500))
             await db.JournalEntries.Where(e => chunk.Contains(e.Id)).ExecuteUpdateAsync(u => u.SetProperty(e => e.Status, EntryStatus.Zaksiegowany), ct);
-        await tx.CommitAsync(ct);
-        db.ChangeTracker.AutoDetectChangesEnabled = true;
-        return counts;
+            await tx.CommitAsync(ct);
+            return counts;
+        }
+        finally
+        {
+            // Przy błędzie parsowania lub zapisu nie pozostawiaj kontekstu bez
+            // wykrywania zmian: mogłoby to wpłynąć na późniejsze księgowania.
+            db.ChangeTracker.AutoDetectChangesEnabled = originalAutoDetect;
+        }
     }
 
     private static async Task FlushAsync(KsiegiDbContext db, List<object> batch, CancellationToken ct)
