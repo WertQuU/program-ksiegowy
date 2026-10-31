@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Infrastructure.Configuration;
+using PelnaKsiegowosc.Infrastructure.Export;
+using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Application.Payroll;
 using PelnaKsiegowosc.Application.Security;
 using PelnaKsiegowosc.Domain.Common;
@@ -101,6 +103,22 @@ public class OctoberLegalAndWorkstationAuditTests
         var a = ExclusivePostgresSession.LockKey("ksiegowy_1");
         Assert.Equal(a, ExclusivePostgresSession.LockKey("ksiegowy_1"));
         Assert.NotEqual(a, ExclusivePostgresSession.LockKey("ksiegowy_2"));
+    }
+
+    [Fact]
+    public void Paper_archive_printout_is_valid_static_pdf_with_document_id()
+    {
+        var doc = new Document
+        {
+            Number = "PK/1/2026", Description = "Test wydruku",
+            IssueDate = new DateOnly(2026, 10, 31), OperationDate = new DateOnly(2026, 10, 31)
+        };
+        var company = new Company { FullName = "Spółka testowa", Nip = "0000000000" };
+        var data = PaperArchivePdf.Build(doc, company, "db:tester", DateTime.UtcNow,
+            Array.Empty<Attachment>(), Array.Empty<DocumentHistory>(), new Dictionary<Guid, string>());
+        Assert.True(data.Length > 200);
+        Assert.StartsWith("%PDF-", System.Text.Encoding.ASCII.GetString(data, 0, 5));
+        Assert.DoesNotContain("/AcroForm", System.Text.Encoding.Latin1.GetString(data));
     }
 
     [Fact]
