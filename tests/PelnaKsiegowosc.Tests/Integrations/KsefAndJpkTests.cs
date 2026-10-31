@@ -328,6 +328,9 @@ public class KsefAndJpkTests
             new("130-01", 300m, 0),
             new("200", 0, 150m, a.Id),
             new("200", 0, 150m, b.Id)));
+        // CreateAndPostAsync przygotowuje zmianę w DbContext, lecz do zapytania
+        // AsNoTracking w generatorze JPK potrzebny jest jawny commit testowego dekretu.
+        await t.Db.SaveChangesAsync();
         t.Company.Voivodeship = "mazowieckie";
         t.Company.County = "Warszawa";
         t.Company.Commune = "Warszawa";
