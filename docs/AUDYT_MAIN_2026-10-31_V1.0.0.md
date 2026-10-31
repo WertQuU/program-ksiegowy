@@ -26,6 +26,28 @@
 
 Źródła do ponownej oceny na dzień wdrożenia: [ustawa o rachunkowości, Dz.U. 2026 poz. 522](https://isap.sejm.gov.pl/isap.nsf/DocDetails.xsp?id=WDU20260000522), [API KSeF 2.0](https://api.ksef.mf.gov.pl/), [komunikat MF 30.10.2026 o JPK_ST_KR](https://www.gov.pl/web/finanse/rozporzadzenie-w-sprawie-czasowego-zwolnienia-w-cit-z-obowiazkow-w-zakresie-jpk-cit-dotyczacych-ewidencji-srodkow-trwalych-i-wartosci-niematerialnych-i-prawnych).
 
+## Kontynuacja napraw: bezpieczeństwo i odtwarzanie (31.10.2026)
+
+Zapisane w `main`, przy zachowaniu wersji **1.0.0**, i objęte testami regresyjnymi:
+
+1. **PostgreSQL**: kontrola rolcreatedb, rolcreaterole, superuser, bypassrls, własności bazy/schematu/tabel oraz możliwości CREATE. Poprawiono zapytanie o członkostwo ról, korzystając z identyfikatorów `oid`. Wprowadzono testy blokad dla kont uprzywilejowanych. Konta operatorów nadal mają potencjalne prawo do bezpośredniego DML — **P0 otwarte**.
+2. **Import JSONL**: wymagane są wszystkie pliki tabel, także pustych; brak pliku nie oznacza zera rekordów. Weryfikacja liczności i obrotów może odbyć się przed zatwierdzeniem transakcji; błąd wycofuje zmiany. Testy odrzucenia i rollbacku.
+3. **Odtwarzanie PostgreSQL**: zabronione nadpisywanie niepustej bazy lub magazynu dowodów, najpierw kontrola załączników, potem transakcyjny import z weryfikacją manifestu. Błędy kopii i zapisu mają uniemożliwić publikację poprawnie wyglądającej, lecz niekompletnej bazy. Pełnej atomowości plików i zewnętrznej bazy nie da się osiągnąć jedną transakcją SQL — w produkcji używać izolowanego środowiska docelowego i publikować dopiero po udanym teście odtworzenia.
+4. **Odtwarzanie SQLite**: odszyfrowanie, walidacja bazy, załączników i sum w katalogach prywatnych; utworzenie zaszyfrowanej bazy, a następnie publikacja przygotowanego katalogu przez przeniesienie w tym samym woluminie. Odmowa nadpisania niepustego katalogu; obsługa ścieżki zakończonej separatorem. Testy.
+5. **Archiwa**: weryfikacja duplikatów ścieżek w ZIP, rozmiarów i sum, wersji i kompletności manifestu oraz wykazu tabel. Każdy odtworzony załącznik jest dodatkowo sprawdzany na wyjściu magazynu oraz po ponownym odczycie.
+6. **Dowody**: magazyn `LocalFileStore` odrzuca drugi zapis pod istniejącą ścieżką, dzięki czemu import i ponowne operacje nie mogą przypadkowo nadpisać już zapisanego dokumentu.
+7. **Dokumentacja**: `docs/SECURITY.md` opisuje rzeczywiste mechanizmy, ograniczenia, szyfrowanie, backup, procedury DBA i bramkę dopuszczenia.
+
+### Nadal wymagane przed produkcją (nie zaliczać automatycznie)
+
+- **P0 SQL:** zaufana usługa/backend z autoryzacją operacji, zamiast bezpośrednich uprawnień DML dla aplikacji na stanowisku; przegląd ról, testy dostępu bezpośredniego i testy penetracyjne.
+- **P0 obliczenia:** niezależne scenariusze referencyjne VAT/CIT/JPK i pełnego roku księgowego, szczególne przypadki płacowe oraz test prawny wypłat P.S.A. Zaznaczone potwierdzenie i opis dokumentu nie zastępują pełnej weryfikacji danych.
+- **P1 DR:** próba odtworzenia z pełnego archiwum i załączników na niezależnym serwerze PostgreSQL; analiza RPO/RTO, powtarzalny runbook i izolowana kopia z ochroną przed usunięciem.
+- **P1 infrastruktura i organizacja:** ochrona gałęzi `main` w ustawieniach repozytorium, RODO (upoważnienia, retencja, incydenty, powierzenie) i przyjęta dokumentacja rachunkowości jednostki.
+- **Weryfikacja kodu:** wymagana kompilacja i pełny wynik CI dokładnego końcowego SHA na Windows i Linuksie. Commity utworzone po zielonym teście muszą zostać przetestowane ponownie.
+
+**Zasada audytowa:** po poprawce programu można oznaczyć konkretny defekt jako naprawiony dopiero wraz z wynikiem testu. Nie jest to certyfikacja prawna, podatkowa ani gotowość do pracy na jedynym egzemplarzu ksiąg.
+
 ## 1. Wynik i zakres
 
 **Werdykt: nie potwierdzono gotowości produkcyjnej i pełnej zgodności z prawem.** Wersja pozostaje **1.0.0**. Zgoda na prace na main nie oznacza automatycznej zgody na wydanie produkcyjne. Nie wolno opierać niezweryfikowanych deklaracji, list płac ani sprawozdań wyłącznie na wynikach programu.
