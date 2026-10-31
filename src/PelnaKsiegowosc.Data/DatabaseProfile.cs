@@ -10,6 +10,18 @@ public enum DatabaseEngine
     PostgreSql
 }
 
+/// <summary>Wspólny, jednoznaczny format loginów serwera (bez aliasów przez wielkość liter).</summary>
+public static class PostgresLoginPolicy
+{
+    public static bool IsValid(string? login)
+    {
+        if (string.IsNullOrEmpty(login) || login.Length > 63 || login.StartsWith("pg_", StringComparison.Ordinal))
+            return false;
+        if (!(login[0] is >= 'a' and <= 'z' or '_')) return false;
+        return login.Skip(1).All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '_');
+    }
+}
+
 /// <summary>Rola serwera skonfigurowanego przez użytkownika — wybór świadomy, bez automatycznego przełączania.</summary>
 public enum ServerRole
 {
@@ -76,6 +88,8 @@ public sealed class DatabaseProfile
             case DatabaseEngine.PostgreSql:
                 if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Database) || string.IsNullOrWhiteSpace(Username))
                     throw new InvalidOperationException("Profil PostgreSQL wymaga hosta, nazwy bazy i użytkownika.");
+                if (!PostgresLoginPolicy.IsValid(Username))
+                    throw new InvalidOperationException("Login PostgreSQL musi mieć maksymalnie 63 znaki, zaczynać się od małej litery lub _ i zawierać tylko małe litery, cyfry i _. Nie używaj zastrzeżonego prefiksu pg_.");
                 if (SslMode is PgSslMode.Disable or PgSslMode.Prefer && !IsLocalHost(Host))
                     throw new InvalidOperationException("Połączenie z serwerem bazy poza tym komputerem musi być szyfrowane (TLS: Require, VerifyCA lub VerifyFull) — dane księgowe i osobowe (RODO art. 32).");
                 var b = new NpgsqlConnectionStringBuilder
