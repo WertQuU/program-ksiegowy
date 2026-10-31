@@ -22,7 +22,7 @@ public enum WizardStep
 }
 
 /// <summary>
-/// Kreator pierwszego uruchomienia. Kroki: akceptacja warunków licencji, wybór bazy (lokalna/serwer), dane jednostki,
+/// Kreator pierwszego uruchomienia. Kroki: akceptacja warunków licencji, centralny PostgreSQL, dane jednostki,
 /// rok obrotowy, plan kont z szablonu, polityka rachunkowości, kierownik jednostki, klucz kopii zapasowych, utworzenie ksiąg.
 /// Gdy wskazana baza zawiera już księgi (np. drugie stanowisko na serwerze), kreator tylko podłącza stanowisko.
 /// </summary>
@@ -34,7 +34,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         TermsText = Terms.Text;
         Database.SqlitePath = session.Paths.DefaultDatabaseFile;
         // Nowa instalacja pracuje na wspólnym serwerze, po jednym koncie DB na operatora.
-        Database.UsePostgres = true;
+        Database.UsePostgres = !session.IsIsolatedSelfTest;
         LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
