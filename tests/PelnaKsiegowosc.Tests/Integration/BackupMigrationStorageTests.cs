@@ -22,6 +22,16 @@ public class BackupTests
     private static readonly BackupKey Pass = new BackupKey.Passphrase("Bardzo-Tajne-Haslo-Kopii-2026");
     private static readonly byte[] AttKey = RandomNumberGenerator.GetBytes(32);
 
+    [Fact]
+    public void Backup_path_validation_rejects_sibling_directory_prefix_and_parent_escape()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pkbak-test", "zawartosc");
+        Assert.True(BackupService.IsPathInsideBackupRoot(root, Path.Combine("baza", "ksiegi.db")));
+        Assert.False(BackupService.IsPathInsideBackupRoot(root, Path.Combine("..", "zawartosc-inne", "secret.txt")));
+        Assert.False(BackupService.IsPathInsideBackupRoot(root, Path.Combine("..", "obcy.txt")));
+        Assert.False(BackupService.IsPathInsideBackupRoot(root, Path.Combine(Path.GetPathRoot(root)!, "secret.txt")));
+    }
+
     internal static async Task<(TestBooks t, LocalFileStore store)> BooksWithAttachmentAsync()
     {
         var t = await FullYearScenarioTests.BuildFullYearAsync(closeYear: false);
