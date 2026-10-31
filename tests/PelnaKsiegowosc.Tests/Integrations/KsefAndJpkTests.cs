@@ -291,6 +291,33 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_v7m_2026_does_not_invent_BFK_when_Ksef_status_is_missing_or_inconsistent()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        books.Company.Email = "ksiegowosc@example.org";
+        var documents = new DocumentService(books.Db, books.User, books.Clock);
+        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K-NO-STATUS");
+        await documents.PostAsync(invoice.Id);
+        var vat = new VatService(books.Db, books.User, books.Clock);
+        var period = new DateOnly(2026, 2, 1);
+        var sales = await vat.RegisterAsync(VatRegisterType.Sprzedaz, period);
+        var purchases = await vat.RegisterAsync(VatRegisterType.Zakup, period);
+        var declaration = await vat.ComputeDeclarationAsync(period);
+        var row = sales.First();
+        row.KsefMarker = null;
+        var missing = Assert.Throws<DomainException>(() =>
+            JpkV7Builder.Build(books.Company, period, sales, purchases, declaration, false,
+                new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc), Validator()));
+        Assert.Contains("BFK", missing.Message);
+        row.KsefMarker = JpkKsefMarker.NrKSeF;
+        row.KsefNumber = null;
+        var noNumber = Assert.Throws<DomainException>(() =>
+            JpkV7Builder.Build(books.Company, period, sales, purchases, declaration, false,
+                new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc), Validator()));
+        Assert.Contains("numeru KSeF", noNumber.Message);
+    }
+
+    [Fact]
     public async Task Jpk_v7k_has_monthly_records_and_quarterly_declaration_only_in_last_month()
     {
         await using var t = await TestBooks.CreateAsync();
