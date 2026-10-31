@@ -15,6 +15,15 @@
           <TextBlock Text="Motyw:" VerticalAlignment="Center" />
           <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding Theme}" MinWidth="160" />
         </StackPanel>
+        <TextBlock Text="Aktualizacje programu" Classes="h2" />
+        <TextBlock Text="{Binding InstalledVersion}" FontWeight="SemiBold" />
+        <TextBlock Text="{Binding UpdateStatus}" TextWrapping="Wrap" Classes="info" />
+        <WrapPanel Classes="toolbar">
+          <Button Content="Sprawdź aktualizacje na GitHub" Command="{Binding CheckForUpdatesCommand}" />
+          <Button Content="Pobierz i uruchom instalator" Command="{Binding InstallUpdateCommand}" IsVisible="{Binding HasAvailableUpdate}" />
+          <Button Content="Zobacz wydania" Command="{Binding OpenReleasesPageCommand}" />
+        </WrapPanel>
+        <TextBlock Classes="info" TextWrapping="Wrap" Text="Aktualizacje tylko z oficjalnych wydań GitHub Releases, po potwierdzeniu użytkownika i weryfikacji sumy SHA-256. Zamknij program przed instalacją; aktualizacja programu nie wykonuje automatycznie migracji bazy danych." />
         <TextBlock Text="Schematy XSD (walidacja JPK, e-Faktur, e-Sprawozdań)" Classes="h2" />
         <TextBlock Classes="info" TextWrapping="Wrap" Text="Pliki wysyłane do MF są sprawdzane oficjalnym schematem XSD. Brakujący schemat pobierz z serwera MF (crd.gov.pl) albo ze strony MF i wczytaj z pliku (.xsd lub .zip). Walidacja działa potem bez Internetu." />
         <ListBox ItemsSource="{Binding Schemas}" SelectedItem="{Binding SelectedSchema}" MaxHeight="220">
