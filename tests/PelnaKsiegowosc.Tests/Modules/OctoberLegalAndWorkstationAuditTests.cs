@@ -35,7 +35,7 @@ public class OctoberLegalAndWorkstationAuditTests
         {
             FirstName = "Historyczna", LastName = "Osoba",
             ContractType = ContractType.UmowaOPrace, Gross = 3000,
-            StartDate = new DateOnly(2008, 1, 1), EndDate = new DateOnly(2015, 6, 30)
+            StartDate = new DateOnly(2008, 1, 1), EndDate = new DateOnly(2015, 6, 30), IsActive = false
         });
         var decision = await new PersonalDataService(t.Db, t.User, t.Clock).EmployeeRetentionAsync(employee.Id);
         Assert.False(decision.CanErase);
@@ -51,7 +51,7 @@ public class OctoberLegalAndWorkstationAuditTests
         {
             FirstName = "Nowsza", LastName = "Osoba",
             ContractType = ContractType.UmowaOPrace, Gross = 3000,
-            StartDate = new DateOnly(2019, 1, 1), EndDate = new DateOnly(2022, 2, 1)
+            StartDate = new DateOnly(2019, 1, 1), EndDate = new DateOnly(2022, 2, 1), IsActive = false
         });
         var decision = await new PersonalDataService(t.Db, t.User, t.Clock).EmployeeRetentionAsync(employee.Id);
         Assert.False(decision.CanErase);
