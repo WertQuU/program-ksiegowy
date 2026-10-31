@@ -1,12 +1,39 @@
 # Pełna Księgowość
 
-Program do prowadzenia **pełnej księgowości (ksiąg rachunkowych)** zgodnie z polską ustawą o rachunkowości —
-dla spółek kapitałowych (sp. z o.o., P.S.A., S.A.), spółek osobowych, fundacji, stowarzyszeń, spółdzielni
-i działalności gospodarczej prowadzącej księgi rachunkowe. Działa na **Windows i Linux** z centralnym serwerem PostgreSQL i osobnym loginem każdego operatora.
-SQLite służy migracji, odzyskiwaniu i izolowanym autotestom; nie jest aktywną bazą ksiąg użytkownika. Moduły VAT/JPK, KSeF, CIT, środki trwałe, kapitały,
-zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Object Storage).
+[![CI](https://github.com/WertQuU/program-ksiegowy/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/WertQuU/program-ksiegowy/actions/workflows/ci.yml)
+![Wersja](https://img.shields.io/badge/wersja-1.0.0-informational)
+![Etap](https://img.shields.io/badge/etap-w%20rozwoju-orange)
+
+Aplikacja desktopowa na **Windows i Linux** do prowadzenia ksiąg rachunkowych, ewidencji,
+rozliczeń podatkowych, obsługi dokumentów i przygotowywania raportów. Projekt jest w trakcie
+wdrażania i weryfikacji; **nie posiada obecnie zatwierdzonego wydania produkcyjnego ani
+potwierdzenia pełnej zgodności prawno-podatkowej**.
+
+> **Ważne:** program wymaga weryfikacji przed użyciem w realnej księgowości. Wyniki obliczeń podatkowych, list płac i raportów należy porównać z niezależnymi przykładami i aktualnymi przepisami. Testy CI nie stanowią certyfikacji prawnej.
+
+**Aktualna architektura pracy:** jedna **centralna baza PostgreSQL**. Każdy operator
+używa osobnego loginu PostgreSQL nadanego przez administratora; identyfikator w programie
+ma postać `db:login`. Ten sam login może być użyty na kilku urządzeniach, ale **tylko jedna
+aktywna instancja programu na login jednocześnie** (sesyjna blokada serwera). Techniczne
+połączenia SQL w obrębie tej samej instancji nie są w ten sposób limitowane. SQLite jest
+wykorzystywana w odizolowanych autotestach i wybranych operacjach odzyskiwania, **nie jako
+standardowa baza robocza**.
 
 ![Pulpit](docs/zrzuty/pulpit.png)
+
+## Status funkcji i bezpieczeństwa
+
+| Obszar | Stan |
+|---|---|
+| Wspólna baza ksiąg | PostgreSQL; wymaga indywidualnych kont SQL i administracji serwerem |
+| Operatorzy i role | Loginy `db:login`, role w aplikacji, blokada jednej aktywnej sesji na login |
+| Uprawnienia PostgreSQL | **Wymagają utwardzenia po stronie serwera**; sama rola aplikacyjna nie zabezpiecza bezpośredniego SQL |
+| Równoległa praca | Wymagane dalsze testy numeracji, transakcji i konfliktów zapisów |
+| Załączniki | Mogą pozostawać na lokalnym dysku; **nie są automatycznie współdzielone między stanowiskami** |
+| Archiwum PDF | Osobny statyczny PDF dla dowodu i indeks SHA-256; nie zastępuje elektronicznych oryginałów i załączników |
+| KSeF, JPK, VAT, PIT/CIT, ZUS | Implementacja wymaga niezależnej weryfikacji merytorycznej i prawnej |
+| Kopie i odtwarzanie | Dostępne narzędzia; pełna procedura odtworzenia produkcyjnego PostgreSQL wymaga sprawdzenia |
+
 
 ## Najważniejsze cechy
 
@@ -61,9 +88,10 @@ zamknięcie roku, sprawozdania i szyfrowane kopie zapasowe (także w OVHcloud Ob
   eksport do **PDF, XLSX i CSV**; sprawozdanie finansowe w XML.
 - **Kopie zapasowe** szyfrowane AES-256-GCM, weryfikowane po zapisie, odtwarzanie do nowej lokalizacji,
   kopie automatyczne i przy zamknięciu programu, opcjonalnie w OVHcloud Object Storage (S3).
-- **Bez osobnego logowania**: dostęp chroni konto systemu operacyjnego (i konto serwera PostgreSQL);
-  operator jest zapisywany w dzienniku zdarzeń. Hasła i klucze w magazynie systemu (Windows: Menedżer
-  poświadczeń, Linux: pęk kluczy) — nigdy w plikach konfiguracji.
+- **Logowanie operatora przez PostgreSQL**: każdy operator ma odrębny login serwera;
+  administrator rejestruje odpowiedni identyfikator `db:login` i nadaje role w aplikacji.
+  Dostęp wymaga również właściwych uprawnień i konfiguracji TLS po stronie PostgreSQL.
+  Hasła oraz klucze trafiają do magazynu sekretów systemu operacyjnego, a nie do pliku JSON.
 
 | Wydatek z kategorią | Rozlicz miesiąc |
 |---|---|
