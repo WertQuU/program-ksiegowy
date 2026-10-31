@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Application.Documents;
+using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Infrastructure.Backup;
 using PelnaKsiegowosc.Infrastructure.Storage;
@@ -20,7 +22,7 @@ public sealed class PostgresSnapshotBackupTests
         var root = Path.Combine(Path.GetTempPath(), "pk-pg-backup-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var service = new BackupService(new SystemClock(), Path.Combine(root, "staging"));
+            var service = new BackupService(new FixedClock(new DateTime(2026, 10, 31, 12, 0, 0, DateTimeKind.Utc)), Path.Combine(root, "staging"));
             var profile = new DatabaseProfile { Engine = DatabaseEngine.PostgreSql };
             var files = new LocalFileStore(Path.Combine(root, "zalaczniki"));
             var result = await service.CreateAsync(db, profile, files, null,
@@ -47,7 +49,7 @@ public sealed class PostgresSnapshotBackupTests
         var root = Path.Combine(Path.GetTempPath(), "pk-pg-backup-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var service = new BackupService(new SystemClock(), Path.Combine(root, "staging"));
+            var service = new BackupService(new FixedClock(new DateTime(2026, 10, 31, 12, 0, 0, DateTimeKind.Utc)), Path.Combine(root, "staging"));
             await using var transaction = await db.Database.BeginTransactionAsync();
             var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 service.CreateAsync(db,
