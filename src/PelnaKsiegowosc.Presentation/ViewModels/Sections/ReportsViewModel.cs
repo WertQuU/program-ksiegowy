@@ -121,7 +121,9 @@ public sealed partial class ReportsViewModel : SectionViewModel
         var why = await Dialogs.PromptAsync("Rachunek przepływów pieniężnych", "Opisz weryfikację RPP: rozdzielenie wpływów i wydatków inwestycyjnych i finansowych, różnice kursowe, operacje niepieniężne (korekty wprowadzone w pliku lub potwierdzenie, że nie występują):", "");
         if (string.IsNullOrWhiteSpace(why)) return;
         await using var db = Session.OpenDb();
-        await new FinancialStatementApprovals(db, Session.User, Session.Clock).VerifyCashFlowAsync(y.Name, why);
+        var approvals = new FinancialStatementApprovals(db, Session.User, Session.Clock);
+        var cf = await new StatementBuilder(db).CashFlowAsync(y.Id, y.EndDate, default, await approvals.CashFlowAdjustmentPairsAsync(y.Name));
+        await approvals.VerifyCashFlowAsync(y.Name, why, cf);
         StatusMessage = "Zapisano weryfikację rachunku przepływów pieniężnych.";
     });
 
@@ -297,13 +299,14 @@ public sealed partial class ReportsViewModel : SectionViewModel
 
         // kompletność: plik „gotowy do podpisu” tylko bez braków; w przeciwnym razie wyłącznie wersja robocza
         var approvals = new FinancialStatementApprovals(db, Session.User, Session.Clock);
+        var currentCashFlow = simplified ? null : await sb.CashFlowAsync(y.Id, y.EndDate, default, await approvals.CashFlowAdjustmentPairsAsync(y.Name));
         var periodsClosed = await db.Periods.AsNoTracking().Where(p => p.FiscalYearId == y.Id).AllAsync(p => p.Status != Domain.Periods.PeriodStatus.Otwarty);
         var missing = FinancialStatementCompleteness.Check(bs, r, notesTexts.Values, notesTexts["kontynuacja"], notesTexts["zasady"],
             y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany || periodsClosed, AuditRequired, scope,
             notesConfirmed: await approvals.NotesConfirmedAsync(y.Name, notesTexts),
             costKeyApproved: calc ? await approvals.CostKeyApprovalAsync(key) is not null : null,
-            cashFlowVerified: await approvals.CashFlowVerifiedAsync(y.Name) is not null,
-            cashFlowUnreconciled: simplified ? 0m : (await sb.CashFlowAsync(y.Id, y.EndDate, default, await approvals.CashFlowAdjustmentPairsAsync(y.Name))).Unreconciled);
+            cashFlowVerified: simplified || await approvals.CashFlowVerifiedAsync(y.Name, currentCashFlow!),
+            cashFlowUnreconciled: simplified ? 0m : currentCashFlow!.Unreconciled);
         var draft = missing.Count > 0;
         if (AuditRequired && scope != StatementScope.Inna)
             await Dialogs.InfoAsync("Sprawozdanie podlega badaniu", "Jednostka mała/mikro podlegająca badaniu: struktura sprawozdania wynika z kategorii jednostki i polityki rachunkowości (zał. nr 4/5 UoR). Potwierdź z biegłym rewidentem zakres sprawozdania (zestawienie zmian w kapitale, rachunek przepływów) przed podpisaniem.");

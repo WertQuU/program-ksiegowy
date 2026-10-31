@@ -40,6 +40,8 @@
               <CheckBox Content="Zwolnienie z FP/FGŚP" IsChecked="{Binding ExemptFromFp}" />
               <CheckBox Content="Uczestnik PPK (2% + 1,5%)" IsChecked="{Binding Ppk}" />
               <CheckBox Content="Umowa wykonywana na rzecz naszego pracownika/pracodawcy (art. 8 ust. 2a sus)" IsChecked="{Binding WorkForOwnEmployer}" ToolTip.Tip="Zlecenie / dzieło zawarte z osobą trzecią, ale wykonywane na rzecz pracodawcy — składki jak od stosunku pracy. Umowy z własnym pracownikiem (ten sam PESEL) program rozpoznaje sam." />
+              <TextBox Text="{Binding AuthorShare}" Watermark="koszty 50%: udział autorski %" MinWidth="170" ToolTip.Tip="Udział wynagrodzenia za korzystanie z praw autorskich / rozporządzanie nimi (wg umowy i ewidencji utworów)" />
+              <TextBox Text="{Binding AuthorBasis}" Watermark="koszty 50%: podstawa (umowa, ewidencja utworów)" MinWidth="260" />
             </WrapPanel>
             <WrapPanel Grid.Row="7" Grid.ColumnSpan="6" Classes="toolbar">
               <Button Content="Dodaj osobę" Command="{Binding AddEmployeeCommand}" Classes="accent" />

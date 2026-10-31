@@ -321,20 +321,25 @@ public sealed partial class CitViewModel : SectionViewModel
         DebtHeadroom = $"Art. 15c ust. 18: wolny limit kosztów finansowania w roku {year.Name}: {Money.Format(full.DebtFinancingHeadroom)} zł; nadwyżka roku: {Money.Format(full.DebtFinancingExcessOperating + full.DebtFinancingExcessCapital)} zł.";
     }
 
-    /// <summary>Zarachowanie wpłaty CIT według e-Urzędu Skarbowego (zastępuje szacunek w zestawieniu CIT-8).</summary>
+    /// <summary>Zarachowanie wpłaty CIT według e-Urzędu Skarbowego — powiązane z konkretną zaksięgowaną wpłatą.</summary>
     [RelayCommand]
     private Task RecordCitPaymentAllocationAsync() => ChangeAsync(async () =>
     {
-        var date = Parse.Date(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Data wpłaty (dd.mm.rrrr):", ""), "Data wpłaty");
-        var amount = Parse.Amount(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Kwota zarachowana:", ""), "Kwota");
-        var target = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Na co zarachowano: numer okresu zaliczki (np. 3), „R” — podatek roczny, „I” — inne zobowiązanie:", "");
+        await using var db = Session.OpenDb();
+        var cit = new CitService(db, Session.User, Session.Clock);
+        var payments = (await cit.CitPaymentsAsync()).Where(p => p.Unallocated > 0).ToList();
+        if (payments.Count == 0) throw new DomainException("Brak zaksięgowanych wpłat CIT (Wn 220-01 z rachunku lub kasy) z niezarachowaną kwotą.");
+        var listing = string.Join(Environment.NewLine, payments.Select((p, i) => $"{i + 1}. {p.Date.ToPl()} {p.Document}: {Money.Format(p.Amount)} zł (niezarachowane {Money.Format(p.Unallocated)} zł)"));
+        var no = Parse.Int(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", listing + Environment.NewLine + Environment.NewLine + "Numer wpłaty:", ""), "Numer wpłaty");
+        if (no < 1 || no > payments.Count) throw new DomainException("Nieprawidłowy numer.");
+        var amount = Parse.Amount(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Kwota zarachowana:", payments[no - 1].Unallocated.ToString("N2", Money.Pl)), "Kwota");
+        var target = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", $"Na co zarachowano (rok {Session.CurrentYear.Name}): numer okresu zaliczki (np. 3), „R” — podatek roczny, „I” — inne zobowiązanie:", "");
         if (string.IsNullOrWhiteSpace(target)) return;
-        var source = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Źródło potwierdzenia (np. e-Urząd Skarbowy — karta rozliczeń):", "e-Urząd Skarbowy");
+        var source = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Źródło (np. e-Urząd Skarbowy — karta rozliczeń); zapis jest oświadczeniem operatora:", "e-Urząd Skarbowy");
         if (string.IsNullOrWhiteSpace(source)) return;
         var t = target.Trim().ToUpperInvariant();
         int? period = t is "R" or "I" ? null : Parse.Int(t, "Okres zaliczki");
-        await using var db = Session.OpenDb();
-        await new CitService(db, Session.User, Session.Clock).RecordPaymentAllocationAsync(Session.CurrentYear.Id, date, amount, period, t == "R", source);
+        await cit.RecordPaymentAllocationAsync(Session.CurrentYear.Id, payments[no - 1].LineId, amount, period, t == "R", source);
     }, "Zapisano zarachowanie wpłaty.");
 
     /// <summary>Korekta zarachowania wpłaty CIT — anulowanie zapisu z przyczyną (historia zachowana).</summary>
@@ -343,14 +348,14 @@ public sealed partial class CitViewModel : SectionViewModel
     {
         await using var db = Session.OpenDb();
         var cit = new CitService(db, Session.User, Session.Clock);
-        var active = await cit.PaymentAllocationsAsync(Session.CurrentYear.Name);
-        if (active.Count == 0) throw new DomainException("Brak zapisów zarachowania w tym roku.");
-        var listing = string.Join(Environment.NewLine, active.Select((a, i) => $"{i + 1}. {a.PaymentDate.ToPl()} {Money.Format(a.Amount)} zł → {(a.AdvancePeriod is { } p ? $"zaliczka {p}" : a.AnnualTax ? "podatek roczny" : "inne")} ({a.Source}; {a.RecordedBy})"));
+        var active = (await cit.PaymentAllocationHistoryAsync()).Where(a => !a.Cancelled).ToList();
+        if (active.Count == 0) throw new DomainException("Brak zapisów zarachowania.");
+        var listing = string.Join(Environment.NewLine, active.Select((a, i) => $"{i + 1}. wpłata {a.PaymentDate.ToPl()} {Money.Format(a.Amount)} zł → rok {a.Year}, {(a.AdvancePeriod is { } p ? $"zaliczka {p}" : a.AnnualTax ? "podatek roczny" : "inne")} ({a.Source}; {a.RecordedBy})"));
         var no = Parse.Int(await Dialogs.PromptAsync("Korekta zarachowania", listing + Environment.NewLine + Environment.NewLine + "Numer zapisu do anulowania:", ""), "Numer");
         if (no < 1 || no > active.Count) throw new DomainException("Nieprawidłowy numer.");
         var reason = await Dialogs.PromptAsync("Korekta zarachowania", "Przyczyna korekty:", "");
         if (string.IsNullOrWhiteSpace(reason)) return;
-        await cit.CancelPaymentAllocationAsync(Session.CurrentYear.Id, active[no - 1].Id, reason);
+        await cit.CancelPaymentAllocationAsync(active[no - 1].Id, reason);
     }, "Anulowano zapis zarachowania (historia zachowana).");
 
     [ObservableProperty] private TableData _debtExcess = TableData.Empty;

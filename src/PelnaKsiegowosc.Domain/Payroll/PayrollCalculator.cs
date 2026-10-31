@@ -51,7 +51,8 @@ public sealed record PayrollRules(
 public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
-public sealed record PayrollYearToDate(decimal PensionBasis = 0, decimal TaxBase = 0, decimal YouthExemptRevenue = 0, int EmployerSickDays = 0);
+/// <param name="AuthorCosts">Koszty 50% (art. 22 ust. 9 pkt 1–3 ustawy o PIT) uwzględnione od początku roku — limit roczny.</param>
+public sealed record PayrollYearToDate(decimal PensionBasis = 0, decimal TaxBase = 0, decimal YouthExemptRevenue = 0, int EmployerSickDays = 0, decimal AuthorCosts = 0);
 
 /// <summary>
 /// Wyliczenie wynagrodzenia: składki ZUS (pracownik i pracodawca, limit 30-krotności), składka zdrowotna, koszty uzyskania,
@@ -73,7 +74,7 @@ public static class PayrollCalculator
     {
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
         var fullMonthGross = gross;
-        var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType };
+        var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType, BaseGross = gross };
         var notes = new List<string>();
         var t = e.ContractType;
         var salary = gross;
@@ -156,14 +157,26 @@ public static class PayrollCalculator
             }
             var share = gross + it.PpkEmployer == 0 ? 0 : taxableGross / (gross + it.PpkEmployer);
             var socialDeductible = R2(it.SocialEmployee * share);
-            it.CostsOfIncome = taxableGross == 0 ? 0 : e.Costs switch
+            decimal Regular(decimal basePart) => t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo ? R2(basePart * 0.2m)
+                : e.Costs == CostsOfIncome.Podwyzszone ? rules.CostsIncreased : rules.CostsStandard;
+            if (taxableGross == 0 || e.Costs == CostsOfIncome.Brak) it.CostsOfIncome = 0;
+            else if (e.Costs == CostsOfIncome.Autorskie50)
             {
-                CostsOfIncome.Brak => 0,
-                CostsOfIncome.Autorskie50 => R2((taxableGross - socialDeductible) * 0.5m),
-                _ when t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo => R2((taxableGross - socialDeductible) * 0.2m),
-                CostsOfIncome.Podwyzszone => rules.CostsIncreased,
-                _ => rules.CostsStandard
-            };
+                // koszty 50% tylko od części wynagrodzenia za korzystanie z praw autorskich / rozporządzanie nimi (udział z umowy);
+                // limit roczny 120 000 zł (art. 22 ust. 9a); przy uldze dla młodych suma kosztów 50% i przychodów zwolnionych nie
+                // przekracza limitu zwolnienia (art. 22 ust. 9aa); pozostała część — koszty zwykłe
+                var authorShare = Math.Clamp(e.AuthorSharePercent, 0m, 100m) / 100m;
+                var costBasis = taxableGross - socialDeductible;
+                var authorPart = R2(costBasis * authorShare);
+                var available = Math.Max(0, rules.TaxThreshold - ytd.AuthorCosts);
+                if (it.ExemptRevenue > 0 || ytd.YouthExemptRevenue > 0)
+                    available = Math.Min(available, Math.Max(0, rules.YouthReliefLimit - ytd.AuthorCosts - ytd.YouthExemptRevenue - it.ExemptRevenue));
+                var author = Math.Min(R2(authorPart * 0.5m), available);
+                if (author < R2(authorPart * 0.5m)) notes.Add($"limit kosztów 50% (art. 22 ust. 9a–9aa ustawy o PIT) — uwzględniono {author:N2} zł");
+                it.AuthorCosts = author;
+                it.CostsOfIncome = author + (authorShare < 1m || author < R2(authorPart * 0.5m) ? Regular(costBasis - authorPart) : 0m);
+            }
+            else it.CostsOfIncome = Regular(taxableGross - socialDeductible);
             var income = Math.Max(0, taxableGross - it.CostsOfIncome);
             it.TaxBase = Math.Max(0, R0(income - socialDeductible));
             // skala (próg 120 000 zł) przy zaliczkach — tylko ze stosunku pracy (art. 32 ustawy o PIT); zlecenie, dzieło, powołanie

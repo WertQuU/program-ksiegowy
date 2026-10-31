@@ -186,6 +186,52 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Author_costs_are_limited_annually_and_applied_only_to_the_author_share()
+    {
+        var dev = new Employee { FirstName = "P", LastName = "A", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 50000m, Costs = CostsOfIncome.Autorskie50, AuthorCostsBasis = "Umowa o dzieło z przeniesieniem praw" };
+        // bez limitu: 50% przychodu
+        Assert.Equal(25000m, PayrollCalculator.Compute(dev, 50000m, new PayrollYearToDate(), R, 1.67m).CostsOfIncome);
+        // wykorzystano już 110 000 zł limitu — tylko 10 000 zł kosztów 50%
+        var capped = PayrollCalculator.Compute(dev, 50000m, new PayrollYearToDate(AuthorCosts: 110000m), R, 1.67m);
+        Assert.Equal(10000m, capped.AuthorCosts);
+        Assert.Contains("limit kosztów 50%", capped.Notes);
+        // udział autorski 60% — koszty 50% od 60%, pozostałe 40% — koszty 20% (umowa o dzieło)
+        var partial = new Employee { FirstName = "P", LastName = "B", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 10000m, Costs = CostsOfIncome.Autorskie50, AuthorSharePercent = 60m, AuthorCostsBasis = "Ewidencja utworów" };
+        var p = PayrollCalculator.Compute(partial, 10000m, new PayrollYearToDate(), R, 1.67m);
+        Assert.Equal(3000m, p.AuthorCosts);
+        Assert.Equal(3000m + 800m, p.CostsOfIncome);
+        // ulga dla młodych: suma kosztów 50% i przychodów zwolnionych nie przekracza limitu zwolnienia (art. 22 ust. 9aa)
+        var young = new Employee { FirstName = "M", LastName = "A", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, ContractTotalAmount = 100000m,
+            Costs = CostsOfIncome.Autorskie50, AuthorCostsBasis = "Umowa z prawami autorskimi" };
+        var y = PayrollCalculator.Compute(young, 100000m, new PayrollYearToDate(YouthExemptRevenue: 80000m), R, 1.67m);
+        Assert.True(y.AuthorCosts <= 85528m - 80000m - y.ExemptRevenue);
+    }
+
+    [Fact]
+    public async Task Changing_one_contract_recalculates_other_contracts_of_the_same_person_on_the_list()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        var start = new DateOnly(2026, 1, 1);
+        const string Pesel = "90010112349";
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ewa", LastName = "Dwie", Pesel = Pesel, ContractType = ContractType.UmowaOPrace, WorkTimeFraction = 0.5m, Gross = 2403m, StartDate = start });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ewa", LastName = "Dwie", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, Gross = 2403m, ContractTotalAmount = 2403m, StartDate = start });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        Assert.All(list.Items, i => Assert.Equal(58.87m, i.LaborFund));                     // łącznie 4806 zł — FP od obu
+        var employment = list.Items.Single(i => i.ContractType == ContractType.UmowaOPrace);
+        var civil = list.Items.Single(i => i.ContractType == ContractType.UmowaZlecenie);
+        // obniżenie zlecenia do 1000 zł — łącznie 3403 zł < 4806 zł: FP znika także z umowy o pracę (pozycja przeliczona automatycznie)
+        await svc.ChangeGrossAsync(civil.Id, 1000m);
+        Assert.Equal(0m, civil.LaborFund);
+        Assert.Equal(0m, employment.LaborFund);
+        // podwyżka umowy o pracę do 3806 zł — łącznie 4806 zł: FP z obu (zmiana pierwszej umowy przelicza drugą)
+        await svc.ChangeGrossAsync(employment.Id, 3806m);
+        Assert.Equal(1000m, civil.BaseGross);
+        Assert.Equal(24.50m, civil.LaborFund);
+        Assert.Equal(R2(3806m * 0.0245m), employment.LaborFund);
+    }
+
+    [Fact]
     public void Thresholds_caps_and_special_cases()
     {
         var e = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace };

@@ -999,27 +999,37 @@ public class CitPaymentsTests
         var r = await new Application.Reports.ReportService(t.Db, t.User, t.Clock).Cit8Async(t.Year.Id);
         string Label(object? c) => c as string ?? "";
         Assert.Equal(1300m, r.Rows.Single(x => (string?)x.Cells[0] == "G.5").Cells[2]);
-        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("w terminie"));
-        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("ZALEGŁOŚĆ 200,00"));
-        Assert.Contains(r.Notes, n => n.Contains("zaległość podatkowa"));
+        // bez zarachowania: wyłącznie szacunek „do uzgodnienia”, brak definitywnych zaległości ani „nadpłaty”
+        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("DO UZGODNIENIA") && Label(x.Cells[1]).Contains("pokryta"));
+        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("brak wpłat wg ksiąg na 200,00"));
+        Assert.Contains(r.Notes, n => n.Contains("możliwa zaległość podatkowa"));
         Assert.DoesNotContain(r.Rows, x => Label(x.Cells[1]) == "Nadpłata");
-        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("SZACUNEK"));
 
-        // zarachowanie potwierdzone w e-US: wpłata z 25.03 (300 zł) zarachowana na zaliczkę za okres 1 — inny wynik niż szacunek
+        // zarachowanie wprowadzone przez operatora, powiązane z konkretną wpłatą
         var cit = new CitService(t.Db, t.User, t.Clock);
-        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 1000m, 1, false, " "));
-        var wrong = await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 1000m, 1, false, "e-US — karta rozliczeń");
-        // podwójne zarachowanie tej samej wpłaty — odrzucone
-        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 300m, 2, false, "e-US"));
-        // korekta (anulowanie z przyczyną) — historia zachowana
-        await cit.CancelPaymentAllocationAsync(t.Year.Id, wrong.Id, "Urząd zarachował część wpłaty na zaliczkę za okres 2");
-        Assert.Single(await cit.PaymentAllocationHistoryAsync("2026"), a => a.Cancelled);
-        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 700m, 1, false, "e-US — karta rozliczeń");
-        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 3, 25), 300m, 1, false, "e-US — karta rozliczeń");
-        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 300m, 2, false, "e-US — karta rozliczeń");
+        var payments = await cit.CitPaymentsAsync();
+        Assert.Equal(2, payments.Count);
+        var feb = payments.Single(p => p.Date == new DateOnly(2026, 2, 15));
+        var mar = payments.Single(p => p.Date == new DateOnly(2026, 3, 25));
+        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, feb.LineId, 1000m, 1, false, " "));
+        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, Guid.NewGuid(), 10m, 1, false, "e-US")); // nie jest wpłatą podatku
+        var wrong = await cit.RecordPaymentAllocationAsync(t.Year.Id, feb.LineId, 1000m, 1, false, "e-US — karta rozliczeń");
+        // ta sama wpłata ponownie (np. na zobowiązanie innego roku) — odrzucona: przekracza kwotę wpłaty
+        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, feb.LineId, 300m, 2, false, "e-US"));
+        // częściowe uzgodnienie: okres 1 zarachowany, okres 2 — do uzgodnienia (szacunek z niezarachowanej wpłaty z 25.03)
+        var partial = await new Application.Reports.ReportService(t.Db, t.User, t.Clock).Cit8Async(t.Year.Id);
+        Assert.Contains(partial.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("zarachowana w terminie"));
+        Assert.Contains(partial.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("DO UZGODNIENIA"));
+        Assert.Contains(partial.Notes, n => n.Contains("Nieuzgodnione wpłaty"));
+        // korekta: urząd zarachował 300 zł z wpłaty lutowej na okres 2 — anulowanie i ponowne przypisanie, historia zachowana
+        await cit.CancelPaymentAllocationAsync(wrong.Id, "Urząd zarachował część wpłaty na zaliczkę za okres 2");
+        Assert.Single(await cit.PaymentAllocationHistoryAsync(), a => a.Cancelled);
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, feb.LineId, 700m, 1, false, "e-US — karta rozliczeń");
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, mar.LineId, 300m, 1, false, "e-US — karta rozliczeń");
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, feb.LineId, 300m, 2, false, "e-US — karta rozliczeń");
         var c = await new Application.Reports.ReportService(t.Db, t.User, t.Clock).Cit8Async(t.Year.Id);
-        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("WPROWADZONE PRZEZ OPERATORA"));
+        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("WPROWADZONE PRZEZ OPERATORA") || Label(x.Cells[1]).Contains("wprowadzone przez operatora"));
         Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("po terminie"));
-        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("ZALEGŁOŚĆ 200,00"));
+        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("zarachowano 300,00") && Label(x.Cells[1]).Contains("brak wpłat wg ksiąg na 200,00"));
     }
 }

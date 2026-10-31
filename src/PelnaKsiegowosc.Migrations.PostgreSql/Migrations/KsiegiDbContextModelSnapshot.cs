@@ -2478,6 +2478,14 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<int>("AnnualLeaveDays")
                         .HasColumnType("integer");
 
+                    b.Property<string>("AuthorCostsBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal>("AuthorSharePercent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("BankAccountIban")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -2627,6 +2635,14 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<decimal>("Accident")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("AuthorCosts")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("BaseGross")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 

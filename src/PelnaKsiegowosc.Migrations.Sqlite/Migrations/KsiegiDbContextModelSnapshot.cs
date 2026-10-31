@@ -2473,6 +2473,14 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<int>("AnnualLeaveDays")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("AuthorCostsBasis")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AuthorSharePercent")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BankAccountIban")
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
@@ -2622,6 +2630,14 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("Accident")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("AuthorCosts")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("BaseGross")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 

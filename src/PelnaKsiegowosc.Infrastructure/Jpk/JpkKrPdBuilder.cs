@@ -36,6 +36,13 @@ public static class JpkKrPdBuilder
         _ => null
     };
 
+    private static (string Country, string TaxId)? NormalizeIdentity(string? country, string? taxId)
+    {
+        if (string.IsNullOrWhiteSpace(taxId)) return null;
+        var c = string.IsNullOrWhiteSpace(country) ? "PL" : country.Trim().ToUpperInvariant();
+        return (c, c == "PL" ? Identifiers.NormalizeNip(taxId) : taxId.Trim());
+    }
+
     /// <summary>Znacznik konta (słownik TMapKontaPOZ) wyznaczony z pozycji bilansu / RZiS przypisanej do konta.</summary>
     public static string StatementMarker(Account a, decimal closingBalance)
     {
@@ -107,6 +114,10 @@ public static class JpkKrPdBuilder
         var counterparties = await db.Counterparties.AsNoTracking().Where(c => cpIds.Contains(c.Id)).ToDictionaryAsync(c => c.Id, ct);
         var docIds = entries.Where(e => e.SourceDocumentId != null).Select(e => e.SourceDocumentId!.Value).Distinct().ToList();
         var ksef = await db.Documents.AsNoTracking().Where(d => docIds.Contains(d.Id) && d.KsefNumber != null).ToDictionaryAsync(d => d.Id, d => d.KsefNumber!, ct);
+        // dane identyfikacyjne kontrahenta właściwe dla operacji: migawka z dokumentu źródłowego (stan na dzień dokumentu), a gdy
+        // zapis nie ma dokumentu — dane z kartoteki; kontrahent, któremu w roku zmienił się identyfikator, ma kilka zestawów danych
+        var docSnapshots = await db.Documents.AsNoTracking().Where(d => docIds.Contains(d.Id) && d.CounterpartyId != null && d.CounterpartyNip != null)
+            .Select(d => new { d.Id, d.CounterpartyId, d.CounterpartyNip, d.CounterpartyCountry }).ToDictionaryAsync(d => d.Id, ct);
         var users = await db.Users.AsNoTracking().ToDictionaryAsync(u => u.Id, u => string.IsNullOrWhiteSpace(u.DisplayName) ? u.Login : u.DisplayName, ct);
         if (fy.Status != FiscalYearStatus.Zamkniety) warnings.Add($"Rok {fy.Name} nie jest zamknięty — JPK_CIT składa się za zamknięty rok podatkowy.");
 
@@ -131,13 +142,33 @@ public static class JpkKrPdBuilder
                 string.IsNullOrWhiteSpace(company.ApartmentNumber) ? null : D("NrLokalu", company.ApartmentNumber!.Trim()),
                 D("Miejscowosc", company.City.Trim()), D("KodPocztowy", company.PostalCode.Trim()))));
 
-        // węzeł Kontrahent — wyłącznie kontrahenci z nadanym numerem identyfikacji podatkowej (wyjaśnienia MF do JPK_KR_PD);
-        // zapisy z osobami bez NIP (np. konsumenci) nie zawierają odwołania D_3
-        var withTaxId = counterparties.Values.Where(c => !string.IsNullOrWhiteSpace(c.Nip)).ToDictionary(c => c.Id);
-        var kontrahenci = withTaxId.Values.OrderBy(c => c.Code).Select(c => new XElement(ns + "Kontrahent",
-            E("T_1", Text(c.Code)),
-            E("T_2", string.IsNullOrWhiteSpace(c.CountryCode) ? "PL" : c.CountryCode.ToUpperInvariant()),
-            E("T_3", c.CountryCode is null or "PL" ? Identifiers.NormalizeNip(c.Nip) : c.Nip!.Trim()))).ToList();
+        // węzeł Kontrahent — wyłącznie zestawy danych z nadanym numerem identyfikacji podatkowej (wyjaśnienia MF do JPK_KR_PD);
+        // każdy zestaw (kraj + identyfikator) występujący w roku osobno; zapisy z osobami bez NIP nie zawierają odwołania D_3
+        (string Country, string TaxId)? IdentityOf(JournalEntry e, Guid cpId)
+        {
+            if (e.SourceDocumentId is { } sd && docSnapshots.TryGetValue(sd, out var snap) && snap.CounterpartyId == cpId)
+                return NormalizeIdentity(snap.CounterpartyCountry, snap.CounterpartyNip);
+            var c = counterparties[cpId];
+            return string.IsNullOrWhiteSpace(c.Nip) ? null : NormalizeIdentity(c.CountryCode, c.Nip);
+        }
+        var entryIdentity = new Dictionary<Guid, (Guid Cp, string Country, string TaxId)>();
+        foreach (var e in entries)
+        {
+            var cpLine = e.Lines.FirstOrDefault(l => l.CounterpartyId is { } id && counterparties.ContainsKey(id));
+            if (cpLine is not null && IdentityOf(e, cpLine.CounterpartyId!.Value) is { } idt) entryIdentity[e.Id] = (cpLine.CounterpartyId!.Value, idt.Country, idt.TaxId);
+        }
+        var identitySets = entryIdentity.Values.Distinct().GroupBy(x => x.Cp).ToList();
+        var identityCode = new Dictionary<(Guid, string, string), string>();
+        foreach (var g in identitySets)
+        {
+            var ordered = g.OrderBy(x => entries.Where(e => entryIdentity.TryGetValue(e.Id, out var v) && v == x).Min(e => e.OperationDate)).ToList();
+            for (var i = 0; i < ordered.Count; i++)
+                identityCode[ordered[i]] = i == 0 ? counterparties[g.Key].Code : $"{counterparties[g.Key].Code}/{i + 1}";
+            if (ordered.Count > 1)
+                warnings.Add($"Kontrahent {counterparties[g.Key].Code}: w roku wystąpiło {ordered.Count} zestawów danych identyfikacyjnych — wykazano każdy osobno (identyfikatory {string.Join(", ", ordered.Select(o => identityCode[o]))}).");
+        }
+        var kontrahenci = identityCode.OrderBy(kv => kv.Value, StringComparer.Ordinal).Select(kv => new XElement(ns + "Kontrahent",
+            E("T_1", Text(kv.Value)), E("T_2", kv.Key.Item2), E("T_3", kv.Key.Item3))).ToList();
 
         // Zestawienie obrotów i sald (ZOiS7, jednostki pozostałe): wszystkie konta — syntetyczne, pośrednie i analityczne — na
         // których w roku wystąpiły obroty lub salda (wyjaśnienia MF do JPK_KR_PD). S_3 — konto nadrzędne; dla konta syntetycznego
@@ -200,11 +231,11 @@ public static class JpkKrPdBuilder
         {
             var amount = e.TotalDebit;
             dzSum += amount;
-            var cpLine = e.Lines.FirstOrDefault(l => l.CounterpartyId is { } id && withTaxId.ContainsKey(id));
+            string? cpCode = entryIdentity.TryGetValue(e.Id, out var ident) ? identityCode[ident] : null;
             var d = new XElement(ns + "Dziennik",
                 E("D_1", e.JournalNumber ?? e.SequenceNumber?.ToString(Inv) ?? e.DocumentNumber),
                 E("D_2", Text(e.JournalCode)),
-                cpLine is null ? null : E("D_3", Text(counterparties[cpLine.CounterpartyId!.Value].Code)),
+                cpCode is null ? null : E("D_3", Text(cpCode)),
                 E("D_4", Text(e.DocumentNumber)),
                 E("D_5", Text(string.IsNullOrWhiteSpace(e.DocumentType) ? e.Kind.ToString() : e.DocumentType)),
                 E("D_6", Dt(e.OperationDate)), E("D_7", Dt(e.DocumentDate)), E("D_8", Dt(e.PostingDate)),

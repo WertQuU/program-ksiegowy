@@ -409,10 +409,13 @@ public class CashFlowGrossTests
         await Post("PK/FX1", new("130-01", 700m, 0), new("750-02", 0, 700m));
         await Post("PK/FX2", new("751-02", 500m, 0), new("134", 0, 500m));
         var fx = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        // KSR nr 1: wycena środków pieniężnych (+700) nie jest przepływem — wyłączona w A.II.2 i wykazana w E.1; strata z wyceny
+        // kredytu (500) — także wyłączona; D = rzeczywiste przepływy, E = D + E.1, G = stan bilansowy
         Assert.Equal(700m, fx.Get("E.1"));
-        Assert.Equal(500m, fx.Get("A.II.2"));
+        Assert.Equal(-700m + 500m, fx.Get("A.II.2"));
         Assert.Equal(0m, fx.Unreconciled);
-        Assert.Equal(fx.Get("E"), fx.Get("D"));
+        Assert.Equal(fx.Get("D") + 700m, fx.Get("E"));
+        Assert.Equal(fx.Get("F") + fx.Get("E"), fx.Get("G"));
         Assert.Equal(30000m, fx.Get("C.I.2"));                                                   // wycena kredytu nie jest wpływem
 
         // wpływ zaksięgowany na konto bez pozycji sprawozdania — różnica uzgodnienia jest jawna, nie „dopisywana” automatycznie
@@ -424,6 +427,16 @@ public class CashFlowGrossTests
         Assert.Contains(unreconciled.Warnings, w => w.Contains("NIEUZGODNIONE"));
         var withAdjustment = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate, default, new[] { ("Wpływ do wyjaśnienia — zaliczka (konto 249)", 700m) });
         Assert.Equal(0m, withAdjustment.Unreconciled);
+
+        // weryfikacja RPP dotyczy konkretnej wersji wyliczenia — kolejny zapis unieważnia potwierdzenie
+        var approvals = new FinancialStatementApprovals(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => approvals.VerifyCashFlowAsync("2026", "Sprawdzono", unreconciled)); // nieuzgodniony — nie można potwierdzić
+        await approvals.VerifyCashFlowAsync("2026", "Sprawdzono klasyfikację kont i korekty", withAdjustment);
+        Assert.True(await approvals.CashFlowVerifiedAsync("2026", withAdjustment));
+        await Post("WB/9", new("010-03", 1000m, 0), new("130-01", 0, 1000m));
+        var changed = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate, default, new[] { ("Wpływ do wyjaśnienia — zaliczka (konto 249)", 700m) });
+        Assert.False(await approvals.CashFlowVerifiedAsync("2026", changed));
+        Assert.Single(await approvals.CashFlowVerificationsAsync("2026"));
         Assert.Equal(700m, withAdjustment.Get("A.II.10"));
     }
 }

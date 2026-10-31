@@ -165,7 +165,6 @@ public sealed partial class StatementBuilder
             {
                 var fx = e.Lines.Where(l => Cash(l.AccountId)).Sum(l => l.Debit - l.Credit);
                 g.CashFx += fx;
-                g.Operating += fx;
                 continue;
             }
             var inflow = e.Lines.Where(l => Cash(l.AccountId)).Sum(l => l.Debit);

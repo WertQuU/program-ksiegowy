@@ -71,6 +71,8 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private string _gross = "";
     [ObservableProperty] private string _contractTotal = "";
     [ObservableProperty] private bool _workForOwnEmployer;
+    [ObservableProperty] private string _authorShare = "100";
+    [ObservableProperty] private string _authorBasis = "";
     [ObservableProperty] private string _fraction = "1";
     [ObservableProperty] private string _startDate = "";
     [ObservableProperty] private string _endDate = "";
@@ -110,6 +112,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
             Gross = e.Gross.ToString("N2", Money.Pl); ContractTotal = e.ContractTotalAmount?.ToString("N2", Money.Pl) ?? ""; Fraction = e.WorkTimeFraction.ToString("0.####", Money.Pl);
             StartDate = e.StartDate.ToPl(); EndDate = e.EndDate?.ToPl() ?? "";
             Pit2 = e.Pit2; YouthRelief = e.YouthRelief; Student = e.StudentUnder26; VoluntarySickness = e.VoluntarySickness; ExemptFromFp = e.ExemptFromFp; Ppk = e.Ppk; WorkForOwnEmployer = e.WorkForOwnEmployer;
+            AuthorShare = e.AuthorSharePercent.ToString("0.##", Money.Pl); AuthorBasis = e.AuthorCostsBasis ?? "";
         });
     }
 
@@ -169,7 +172,8 @@ public sealed partial class PayrollViewModel : SectionViewModel
         TaxOfficeCode = Parse.Trim(TaxOffice), ContractType = Contract.Value, Costs = Costs.Value, Gross = Parse.Amount(Gross, "Wynagrodzenie brutto"),
         ContractTotalAmount = Parse.OptionalAmount(ContractTotal, "Kwota z umowy"),
         WorkTimeFraction = Parse.Amount(Fraction, "Wymiar etatu"), StartDate = Parse.Date(StartDate, "Data rozpoczęcia"), EndDate = Parse.OptionalDate(EndDate, "Data zakończenia"),
-        Pit2 = Pit2, YouthRelief = YouthRelief, StudentUnder26 = Student, VoluntarySickness = VoluntarySickness, ExemptFromFp = ExemptFromFp, Ppk = Ppk, WorkForOwnEmployer = WorkForOwnEmployer
+        Pit2 = Pit2, YouthRelief = YouthRelief, StudentUnder26 = Student, VoluntarySickness = VoluntarySickness, ExemptFromFp = ExemptFromFp, Ppk = Ppk, WorkForOwnEmployer = WorkForOwnEmployer,
+        AuthorSharePercent = string.IsNullOrWhiteSpace(AuthorShare) ? 100m : Parse.Amount(AuthorShare, "Udział wynagrodzenia autorskiego"), AuthorCostsBasis = Parse.Trim(AuthorBasis)
     };
 
     [RelayCommand]

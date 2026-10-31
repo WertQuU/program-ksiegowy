@@ -316,6 +316,28 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_cit_reports_every_tax_id_set_of_a_counterparty_used_during_the_year()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("KZM", "Klient zmieniający NIP", "7740001454");
+        await PelnaKsiegowosc.Tests.Modules.SalesAndBankScenarioTests.IssueAndPostSalesInvoiceAsync(t, cp.Id, 100m, new DateOnly(2026, 2, 10));
+        cp.Nip = "5260250274";                                                                   // zmiana identyfikatora w trakcie roku
+        await t.Db.SaveChangesAsync();
+        await PelnaKsiegowosc.Tests.Modules.SalesAndBankScenarioTests.IssueAndPostSalesInvoiceAsync(t, cp.Id, 200m, new DateOnly(2026, 6, 10));
+        t.Company.Voivodeship = "mazowieckie"; t.Company.County = "Warszawa"; t.Company.Commune = "Warszawa"; t.Company.TaxOfficeCode = "1471";
+        var rec = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, t.Year, rec.Rpd, false, t.Clock.UtcNow, Validator());
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(10)));
+        var ns = JpkKrPdBuilder.Ns;
+        var sets = r.Document.Descendants(ns + "Kontrahent").ToDictionary(k => k.Element(ns + "T_1")!.Value, k => k.Element(ns + "T_3")!.Value);
+        Assert.Equal("7740001454", sets["KZM"]);
+        Assert.Equal("5260250274", sets["KZM/2"]);
+        var d3 = r.Document.Descendants(ns + "Dziennik").Select(x => x.Element(ns + "D_3")?.Value).Where(v => v is not null).Distinct().ToList();
+        Assert.Contains("KZM", d3);
+        Assert.Contains("KZM/2", d3);
+    }
+
+    [Fact]
     public async Task Jpk_cit_lists_only_counterparties_with_tax_id()
     {
         await using var t = await TestBooks.CreateAsync();

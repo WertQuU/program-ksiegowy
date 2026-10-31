@@ -54,6 +54,10 @@ public class Employee : CompanyEntity
     public decimal? ContractTotalAmount { get; set; }
     /// <summary>Umowa zlecenia / o dzieło zawarta z osobą trzecią, ale wykonywana na rzecz własnego pracodawcy (art. 8 ust. 2a ustawy o sus) — składki jak od stosunku pracy.</summary>
     public bool WorkForOwnEmployer { get; set; }
+    /// <summary>Koszty 50%: udział wynagrodzenia za korzystanie z praw autorskich / rozporządzanie nimi (%, wg umowy i ewidencji utworów).</summary>
+    public decimal AuthorSharePercent { get; set; } = 100m;
+    /// <summary>Koszty 50%: podstawa (umowa, ewidencja utworów, przeniesienie praw) — wymagana przy stosowaniu kosztów autorskich.</summary>
+    public string? AuthorCostsBasis { get; set; }
     public decimal WorkTimeFraction { get; set; } = 1m;
     public CostsOfIncome Costs { get; set; } = CostsOfIncome.Standardowe;
     /// <summary>Złożony PIT-2 — płatnik stosuje kwotę zmniejszającą podatek (1/12 z 3600 zł).</summary>
@@ -120,6 +124,10 @@ public class PayrollItem : Entity
     public int UnpaidDays { get; set; }
     /// <summary>Wynagrodzenie chorobowe (bez składek społecznych; zdrowotna i PIT — tak).</summary>
     public decimal SickPay { get; set; }
+    /// <summary>Wynagrodzenie zasadnicze za pełny miesiąc przyjęte do wyliczenia (do ponownego przeliczenia pozycji).</summary>
+    public decimal BaseGross { get; set; }
+    /// <summary>Koszty 50% (prawa autorskie) w tej pozycji — do limitu rocznego.</summary>
+    public decimal AuthorCosts { get; set; }
     public decimal PpkEmployee { get; set; }
     /// <summary>Wpłata PPK pracodawcy — przychód pracownika (PIT), koszt pracodawcy.</summary>
     public decimal PpkEmployer { get; set; }

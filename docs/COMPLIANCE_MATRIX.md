@@ -140,3 +140,16 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | PK-04 JPK_KR_PD — kontrahenci bez NIP | Poprawione: w węźle Kontrahent tylko podmioty z numerem identyfikacji podatkowej; D_3 tylko dla nich. |
 | PK-05 RPP — różnice kursowe | Poprawione: A.II.2 wyłącza niezrealizowane różnice od pozycji inwestycyjnych i finansowych; wycena środków pieniężnych wykazywana w E.1 (struktura MF: G = F ± D). |
 | PK-06 zarachowanie wpłat CIT | Poprawione: wyraźne oznaczenie „wprowadzone przez operatora”, opcjonalny dokument, blokada podwójnego zarachowania (kontrola z wpłatami wg ksiąg), korekta przez anulowanie z przyczyną i pełną historią. |
+
+
+## Audyt 31.10.2026 (commit 8b72e47) — rozstrzygnięcia
+
+| Ustalenie | Stan |
+|---|---|
+| PK-01 RPP — wycena środków pieniężnych | Poprawione wg KSR nr 1: niezrealizowane różnice od środków pieniężnych wyłączone w A.II.2, wykazane w E.1; D = rzeczywiste przepływy, E = D ± E.1, G = stan bilansowy. |
+| PK-02 limit kosztów 50% | Poprawione: limit roczny 120 000 zł (art. 22 ust. 9a), przy uldze dla młodych suma kosztów 50% i przychodów zwolnionych w granicy limitu (ust. 9aa), udział wynagrodzenia autorskiego (%), wymagana podstawa; koszty narastająco dla osoby. |
+| PK-03 zmiana pozycji listy płac | Poprawione: zmiana jednej umowy przelicza wszystkie umowy tej osoby na liście (kolejność, limity narastające, łączna podstawa FP). |
+| PK-04 podwójne zarachowanie między latami | Poprawione: wspólna ewidencja zarachowań dla wszystkich lat, powiązanie z konkretną zaksięgowaną wpłatą (Wn 220-01 z rachunku/kasy), suma zarachowań ≤ kwota wpłaty. |
+| PK-05 częściowe uzgodnienie wpłat | Poprawione: status per zaliczka — zarachowana / do uzgodnienia (szacunek z niezarachowanych wpłat) / brak wpłat wg ksiąg (możliwa zaległość); informacja o nieuzgodnionych wpłatach. |
+| PK-06 historia identyfikatorów kontrahentów | Poprawione: dane identyfikacyjne z migawki dokumentu źródłowego; każdy zestaw (kraj, identyfikator) wykazany osobno (T_1: kod, kod/2…), D_3 wskazuje właściwy zestaw. |
+| PK-07 potwierdzenie RPP | Poprawione: potwierdzenie dotyczy skrótu konkretnej wersji wyliczenia; każda zmiana danych je unieważnia; historia potwierdzeń; nie można potwierdzić nieuzgodnionego RPP. |

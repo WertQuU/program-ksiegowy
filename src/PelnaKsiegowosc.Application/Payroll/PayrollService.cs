@@ -53,6 +53,12 @@ public sealed class PayrollService
         if (e.EndDate is { } end && end < e.StartDate) r.Error("Data zakończenia umowy jest wcześniejsza niż data rozpoczęcia.");
         if (e.StudentUnder26 && e.ContractType != ContractType.UmowaZlecenie) r.Error("Zwolnienie ucznia/studenta do 26 lat dotyczy umowy zlecenia.");
         if (e.Costs == CostsOfIncome.Podwyzszone && e.ContractType != ContractType.UmowaOPrace) r.Error("Podwyższone koszty (300 zł) dotyczą umowy o pracę.");
+        if (e.Costs == CostsOfIncome.Autorskie50)
+        {
+            if (string.IsNullOrWhiteSpace(e.AuthorCostsBasis))
+                r.Error("Koszty 50%: wskaż podstawę (umowa z postanowieniami o prawach autorskich, ewidencja utworów, przeniesienie praw — art. 22 ust. 9 pkt 1–3 i ust. 9b ustawy o PIT).");
+            if (e.AuthorSharePercent is <= 0 or > 100) r.Error("Koszty 50%: udział wynagrodzenia autorskiego podaj w procentach z przedziału (0; 100].");
+        }
         r.ThrowIfInvalid();
     }
 
@@ -113,7 +119,7 @@ public sealed class PayrollService
                            select i).ToListAsync(ct);
         var employment = items.Where(i => i.ContractType == ContractType.UmowaOPrace).ToList();
         return new PayrollYearToDate(items.Sum(i => i.SocialBasis), employment.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue),
-            employment.Sum(i => i.SickDaysEmployer));
+            employment.Sum(i => i.SickDaysEmployer), items.Sum(i => i.AuthorCosts));
     }
 
     /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>
@@ -157,13 +163,14 @@ public sealed class PayrollService
         foreach (var group in inputs.Where(x => !string.IsNullOrWhiteSpace(x.Value.Employee.Pesel)).GroupBy(x => x.Value.Employee.Pesel!.Trim()).Where(g => g.Count() > 1))
         {
             var ordered = group.OrderBy(x => x.Value.Employee.ContractType == ContractType.UmowaOPrace ? 0 : 1).ToList();
-            decimal pension = 0, youth = 0, employmentTax = 0;
+            decimal pension = 0, youth = 0, employmentTax = 0, authorSum = 0;
             foreach (var (item, (emp, abs)) in ordered)
             {
                 var others = group.Where(x => x.Key != item).Sum(x => x.Key.SocialBasis);
                 var ytd = await YearToDateAsync(emp.Id, paymentDate, null, ct);
-                ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax };
+                ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax, AuthorCosts = ytd.AuthorCosts + authorSum };
                 var fresh = PayrollCalculator.Compute(emp, emp.Gross, ytd, rules, accident, abs, others, IsOwnEmployee(emp, employees));
+                authorSum += fresh.AuthorCosts;
                 fresh.Id = item.Id;
                 fresh.PayrollListId = list.Id;
                 list.Items[list.Items.IndexOf(item)] = fresh;
@@ -191,25 +198,59 @@ public sealed class PayrollService
     {
         _user.Require(Permission.PostEntries);
         var it = await _db.PayrollItems.FirstAsync(i => i.Id == itemId, ct);
-        var list = await _db.PayrollLists.FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
+        var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
-        var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == it.EmployeeId, ct);
-        var absence = sickDays > 0 || unpaidWorkingDays > 0
-            ? new PayrollAbsence(sickDays, unpaidWorkingDays, Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month))
-            : null;
-        var others = string.IsNullOrWhiteSpace(e.Pesel) ? 0m : (await (from x in _db.PayrollItems
-                                                                      join p in _db.Employees on x.EmployeeId equals p.Id
-                                                                      where x.PayrollListId == list.Id && x.Id != it.Id && p.Pesel == e.Pesel
-                                                                      select x.SocialBasis).ToListAsync(ct)).Sum();
-        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
-        var sameMonth = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId && x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToListAsync(ct);
-        var fresh = PayrollCalculator.Compute(e, gross, await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct), PayrollRules.For(list.PaymentDate.Year), await AccidentRateAsync(ct), absence, others,
-            IsOwnEmployee(e, sameMonth));
-        fresh.Id = it.Id;
-        fresh.PayrollListId = list.Id;
-        _db.Entry(it).CurrentValues.SetValues(fresh);
+        await RecomputeAsync(list, new Dictionary<Guid, (decimal, int, int)> { [it.Id] = (gross, sickDays, unpaidWorkingDays) }, ct);
         await _db.SaveChangesAsync(ct);
         return it;
+    }
+
+    /// <summary>
+    /// Ponowne przeliczenie pozycji listy (zmieniona pozycja i — dla tej samej osoby — wszystkie jej pozostałe umowy na liście)
+    /// w kolejności: umowa o pracę, pozostałe; limity roczne narastająco, Fundusz Pracy od łącznej podstawy.
+    /// </summary>
+    private async Task RecomputeAsync(PayrollList list, IReadOnlyDictionary<Guid, (decimal Gross, int Sick, int Unpaid)> changes, CancellationToken ct)
+    {
+        var employees = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, ct);
+        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
+        var sameMonth = employees.Values.Where(x => x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToList();
+        var rules = PayrollRules.For(list.PaymentDate.Year);
+        var accident = await AccidentRateAsync(ct);
+        var workingDays = Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month);
+        string Person(PayrollItem i) => employees.TryGetValue(i.EmployeeId, out var e) && !string.IsNullOrWhiteSpace(e.Pesel) ? e.Pesel!.Trim() : i.EmployeeId.ToString();
+        var affected = changes.Keys.Select(id => list.Items.First(i => i.Id == id)).Select(Person).ToHashSet();
+        foreach (var group in list.Items.Where(i => affected.Contains(Person(i))).GroupBy(Person))
+        {
+            var ordered = group.OrderBy(i => i.ContractType == ContractType.UmowaOPrace ? 0 : 1).ToList();
+            var inputs = ordered.ToDictionary(i => i.Id, i => changes.TryGetValue(i.Id, out var c) ? c : (i.BaseGross != 0 ? i.BaseGross : employees[i.EmployeeId].Gross, i.SickDays, i.UnpaidDays));
+            // pierwszy przebieg — podstawy do Funduszu Pracy; drugi — wynik z narastającymi limitami i łączną podstawą FP
+            var bases = new Dictionary<Guid, decimal>();
+            for (var pass = 0; pass < 2; pass++)
+            {
+                decimal pension = 0, youth = 0, employmentTax = 0, author = 0;
+                foreach (var item in ordered)
+                {
+                    var e = employees[item.EmployeeId];
+                    var (gross, sick, unpaid) = inputs[item.Id];
+                    var absence = e.ContractType == ContractType.UmowaOPrace && (sick > 0 || unpaid > 0) ? new PayrollAbsence(sick, unpaid, workingDays) : null;
+                    var ytd = await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct);
+                    ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax, AuthorCosts = ytd.AuthorCosts + author };
+                    var others = pass == 0 ? 0m : bases.Where(b => b.Key != item.Id).Sum(b => b.Value);
+                    var fresh = PayrollCalculator.Compute(e, gross, ytd, rules, accident, absence, others, IsOwnEmployee(e, sameMonth));
+                    bases[item.Id] = fresh.SocialBasis;
+                    pension += fresh.SocialBasis;
+                    youth += fresh.ExemptRevenue;
+                    author += fresh.AuthorCosts;
+                    if (e.ContractType == ContractType.UmowaOPrace && !fresh.FlatRateTax) employmentTax += fresh.TaxBase;
+                    if (pass == 1)
+                    {
+                        fresh.Id = item.Id;
+                        fresh.PayrollListId = list.Id;
+                        _db.Entry(item).CurrentValues.SetValues(fresh);
+                    }
+                }
+            }
+        }
     }
 
     public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)

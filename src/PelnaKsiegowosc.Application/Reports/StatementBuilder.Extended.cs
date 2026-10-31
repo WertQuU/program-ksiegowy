@@ -197,11 +197,11 @@ public sealed partial class StatementBuilder
         };
         // działalność inwestycyjna i finansowa — wpływy i wydatki brutto z rzeczywistych operacji pieniężnych (zał. nr 1 do UoR)
         var g = await CashFlowGrossAsync(fiscalYearId, asOf, ct);
-        // różnice kursowe niezrealizowane od pozycji inwestycyjnych i finansowych (wycena kredytów, pożyczek, aktywów finansowych)
-        // są w wyniku, ale nie są przepływem — wyłączane w A.II.2 (zysk −, strata +). Wycena środków pieniężnych pozostaje
-        // w działalności operacyjnej (struktura MF: G = F ± D) i jest wykazywana informacyjnie w E.1.
+        // różnice kursowe niezrealizowane (KSR nr 1): wycena środków pieniężnych w walutach oraz pozycji inwestycyjnych
+        // i finansowych jest w wyniku, ale nie jest przepływem — wyłączana w A.II.2 (zysk −, strata +). Wpływ wyceny środków
+        // pieniężnych wykazuje się w E.1 (bilansowa zmiana = przepływy netto D ± różnice kursowe), a stan końcowy G uzgadnia z bilansem.
         var fxIndex = ops.FindIndex(x => x.Item1 == "A.II.2");
-        ops[fxIndex] = ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", -g.NonOperatingFx);
+        ops[fxIndex] = ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", -(g.CashFx + g.NonOperatingFx));
         var invNet = g.InvestingIn - g.InvestingOut;
         var finNet = g.FinancingIn - g.FinancingOut;
         // inne korekty (A.II.10) — wyłącznie udokumentowane przez użytkownika; różnica uzgodnienia nie jest „dopisywana” automatycznie
@@ -265,8 +265,9 @@ public sealed partial class StatementBuilder
         cf.Lines.Add(new CashFlowLine("E", "Bilansowa zmiana stanu środków pieniężnych, w tym:", cashClose - cashOpen, 0));
         cf.Lines.Add(new CashFlowLine("E.1", "– zmiana stanu środków pieniężnych z tytułu różnic kursowych", g.CashFx, 1));
         cf.Lines.Add(new CashFlowLine("F", "Środki pieniężne na początek okresu", cashOpen, 0));
-        cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D)", cashOpen + total, 0, true));
-        cf.Unreconciled = cashClose - cashOpen - total;
+        cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D, z uwzględnieniem różnic kursowych z E.1)", cashOpen + total + g.CashFx, 0, true));
+        // kontrola: rzeczywiste przepływy netto (D) = bilansowa zmiana (E) − różnice kursowe z wyceny środków pieniężnych (E.1)
+        cf.Unreconciled = cashClose - cashOpen - g.CashFx - total;
         if (cf.Unreconciled != 0)
             cf.Warnings.Add($"NIEUZGODNIONE: przepływy netto ({Money.Format(total)}) ≠ bilansowa zmiana środków pieniężnych ({Money.Format(cashClose - cashOpen)}), różnica {Money.Format(cf.Unreconciled)} zł. " +
                             "Ustal przyczynę (klasyfikacja kont — kategoria RPP w planie kont, różnice kursowe od środków pieniężnych, operacje niepieniężne, kompensaty) i wprowadź udokumentowane korekty A.II.10; do tego czasu sprawozdanie nie może być oznaczone jako gotowe.");

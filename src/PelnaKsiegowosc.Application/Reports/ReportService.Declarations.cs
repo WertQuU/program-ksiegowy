@@ -77,52 +77,50 @@ public sealed partial class ReportService
         var paidAfterYear = payments.Where(x => x.OperationDate > fy.EndDate).Sum(x => x.Debit);
         r.Add("G.5", $"Wpłaty na rachunek urzędu skarbowego wg ksiąg od {fy.StartDate.ToPl()} do terminu zeznania {deadline.ToPl()}", paidCash);
         r.Add("G.5a", "w tym wpłaty po zakończeniu roku podatkowego", paidAfterYear);
-        // zarachowanie wpłat: potwierdzone w e-Urzędzie Skarbowym (jeżeli zarejestrowane) albo — pomocniczo — szacunek według
-        // kolejności terminów (najstarsze zobowiązanie najpierw); szacunek nie przesądza o stanie rozliczeń z urzędem
-        var confirmed = await new CitService(_db, _user, _clock).PaymentAllocationsAsync(fy.Name, ct);
+        // zarachowanie wpłat — dla każdej zaliczki odrębnie: część zarachowana przez operatora (na podstawie danych urzędowych)
+        // i część „do uzgodnienia” — szacunek z niezarachowanych wpłat wg ksiąg (kolejność terminów). Pierwsze zarachowanie nie
+        // oznacza uzgodnienia całego roku; brak potwierdzenia nie jest przedstawiany jako definitywna zaległość.
+        var citService = new CitService(_db, _user, _clock);
+        var confirmed = await citService.PaymentAllocationsAsync(fy.Name, ct);
+        var windowPayments = (await citService.CitPaymentsAsync(ct)).Where(pm => pm.Date >= fy.StartDate && pm.Date <= deadline).ToList();
+        var pool = new Queue<(DateOnly Date, decimal Amount)>(windowPayments.Where(pm => pm.Unallocated > 0).Select(pm => (pm.Date, pm.Unallocated)));
         var annualOutstanding = Math.Max(0, rec.Computation.Tax - paid);
-        decimal remainingPaid;
-        if (confirmed.Count > 0)
+        decimal carry = 0;
+        DateOnly lastDate = default;
+        var unreconciled = 0m;
+        r.AddRow(new ReportRow("G.7", "Zarachowanie wpłat na zaliczki (wprowadzone przez operatora na podstawie danych urzędowych; pozostałe — do uzgodnienia)", confirmed.Sum(c => c.Amount)) { IsHeader = true });
+        foreach (var a in advances.Where(a => a.AdvanceDue > 0).OrderBy(a => a.PaymentDeadline))
         {
-            r.AddRow(new ReportRow("G.7", "Zarachowanie wpłat — WPROWADZONE PRZEZ OPERATORA na podstawie danych urzędowych (program nie weryfikuje ich automatycznie)", confirmed.Sum(c => c.Amount)) { IsHeader = true });
-            foreach (var a in advances.Where(a => a.AdvanceDue > 0).OrderBy(a => a.PaymentDeadline))
+            var own = confirmed.Where(c => c.AdvancePeriod == a.PeriodNumber).ToList();
+            var ownSum = own.Sum(c => c.Amount);
+            var need = a.AdvanceDue - ownSum;
+            string status;
+            if (need <= 0)
+                status = own.Any(c => c.PaymentDate > a.PaymentDeadline) ? "zarachowana — wpłata po terminie (odsetki za zwłokę)" : "zarachowana w terminie";
+            else
             {
-                var allocated = confirmed.Where(c => c.AdvancePeriod == a.PeriodNumber).ToList();
-                var sum = allocated.Sum(c => c.Amount);
-                var late = allocated.Any(c => c.PaymentDate > a.PaymentDeadline);
-                var status = sum < a.AdvanceDue ? $"ZALEGŁOŚĆ {Money.Format(a.AdvanceDue - sum)} zł" : late ? "zapłacona po terminie — odsetki za zwłokę" : "zapłacona w terminie";
-                r.AddRow(new ReportRow(null, $"Zaliczka za okres {a.PeriodNumber} (termin {a.PaymentDeadline.ToPl()}): {status}", a.AdvanceDue) { Level = 1 });
-                if (sum < a.AdvanceDue) r.Notes.Add($"Zaliczka za okres {a.PeriodNumber}: zarachowano {Money.Format(sum)} zł z {Money.Format(a.AdvanceDue)} zł — zaległość podatkowa z odsetkami (art. 53 Ordynacji podatkowej).");
-            }
-            remainingPaid = confirmed.Where(c => c.AnnualTax).Sum(c => c.Amount);
-            var other = confirmed.Where(c => c.AdvancePeriod is null && !c.AnnualTax).Sum(c => c.Amount);
-            if (other > 0) r.Notes.Add($"Wpłaty zarachowane na inne zobowiązania: {Money.Format(other)} zł.");
-            if (confirmed.Sum(c => c.Amount) != paidCash)
-                r.Notes.Add($"Suma zarachowanych wpłat ({Money.Format(confirmed.Sum(c => c.Amount))} zł) różni się od wpłat wg ksiąg ({Money.Format(paidCash)} zł) — uzgodnij konto 220-01 z kartą rozliczeń w e-Urzędzie Skarbowym.");
-        }
-        else
-        {
-            r.AddRow(new ReportRow("G.7", "Zarachowanie wpłat — SZACUNEK według kolejności terminów (do potwierdzenia w e-Urzędzie Skarbowym)", paidCash) { IsHeader = true });
-            var pool = new Queue<(DateOnly Date, decimal Amount)>(payments.Select(x => (x.OperationDate, x.Debit)));
-            decimal carry = 0;
-            DateOnly lastDate = default;
-            foreach (var a in advances.Where(a => a.AdvanceDue > 0).OrderBy(a => a.PaymentDeadline))
-            {
-                var need = a.AdvanceDue;
                 DateOnly? settledOn = null;
-                while (need > 0 && (carry > 0 || pool.Count > 0))
+                var estimated = 0m;
+                while (need - estimated > 0 && (carry > 0 || pool.Count > 0))
                 {
                     if (carry == 0) { var (d, amt) = pool.Dequeue(); carry = amt; lastDate = d; }
-                    var take = Math.Min(carry, need);
-                    carry -= take; need -= take; settledOn = lastDate;
+                    var take = Math.Min(carry, need - estimated);
+                    carry -= take; estimated += take; settledOn = lastDate;
                 }
-                var status = need > 0 ? $"ZALEGŁOŚĆ {Money.Format(need)} zł (szacunek wg ksiąg)" : settledOn > a.PaymentDeadline ? $"zapłacona po terminie ({settledOn!.Value.ToPl()}) — odsetki za zwłokę (szacunek)" : "zapłacona w terminie (szacunek)";
-                r.AddRow(new ReportRow(null, $"Zaliczka za okres {a.PeriodNumber} (termin {a.PaymentDeadline.ToPl()}): {status}", a.AdvanceDue) { Level = 1 });
-                if (need > 0) r.Notes.Add($"Zaliczka za okres {a.PeriodNumber}: brak wpłaty {Money.Format(need)} zł wg ksiąg — możliwa zaległość podatkowa z odsetkami (art. 53 Ordynacji podatkowej); potwierdź w e-Urzędzie Skarbowym.");
+                var missing = need - estimated;
+                unreconciled += estimated;
+                status = (ownSum > 0 ? $"zarachowano {Money.Format(ownSum)} zł; " : "") +
+                         (missing > 0 ? $"DO UZGODNIENIA — brak wpłat wg ksiąg na {Money.Format(missing)} zł (możliwa zaległość)"
+                                      : $"DO UZGODNIENIA — szacunek: pokryta wpłatami wg ksiąg{(settledOn > a.PaymentDeadline ? $" (po terminie, {settledOn!.Value.ToPl()})" : "")}");
+                if (missing > 0) r.Notes.Add($"Zaliczka za okres {a.PeriodNumber}: brak wpłat wg ksiąg na {Money.Format(missing)} zł — możliwa zaległość podatkowa z odsetkami (art. 53 Ordynacji podatkowej); potwierdź w e-Urzędzie Skarbowym.");
             }
-            remainingPaid = carry + pool.Sum(x => x.Amount);
-            r.Notes.Add("Przypisanie wpłat do zaliczek jest szacunkiem (kolejność terminów, wyłączenie zaliczek kolejnego roku) — urząd zarachowuje wpłaty według art. 62 Ordynacji podatkowej i wskazań podatnika. Zarejestruj zarachowanie z e-Urzędu Skarbowego (CIT → „Zarachowanie wpłat”).");
+            r.AddRow(new ReportRow(null, $"Zaliczka za okres {a.PeriodNumber} (termin {a.PaymentDeadline.ToPl()}): {status}", a.AdvanceDue) { Level = 1 });
         }
+        var remainingPaid = confirmed.Where(c => c.AnnualTax).Sum(c => c.Amount) + carry + pool.Sum(x => x.Amount);
+        if (unreconciled > 0 || carry + pool.Sum(x => x.Amount) > 0)
+            r.Notes.Add($"Nieuzgodnione wpłaty wg ksiąg (bez zarachowania): {Money.Format(unreconciled + carry + pool.Sum(x => x.Amount))} zł — ich przypisanie jest szacunkiem; zarejestruj zarachowanie z e-Urzędu Skarbowego (CIT → „Zarachowanie wpłaty”).");
+        var otherAllocated = confirmed.Where(c => c.AdvancePeriod is null && !c.AnnualTax).Sum(c => c.Amount);
+        if (otherAllocated > 0) r.Notes.Add($"Wpłaty zarachowane na inne zobowiązania: {Money.Format(otherAllocated)} zł.");
         r.Add("G.8", "Wpłaty na podatek roczny (ponad zaliczki)", remainingPaid);
         if (remainingPaid > annualOutstanding)
             r.Notes.Add($"Wpłaty na podatek roczny przewyższają podatek pozostały do zapłaty o {Money.Format(remainingPaid - annualOutstanding)} zł — możliwa nadpłata; potwierdź w e-Urzędzie Skarbowym.");

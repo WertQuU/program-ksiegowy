@@ -19,12 +19,12 @@ public sealed class FinancialStatementApprovals
 {
     public sealed record NotesConfirmation(string TextsHash, DateOnly ConfirmedOn, string ConfirmedBy);
     public sealed record CostKeyApproval(string Key, string Methodology, DateOnly ApprovedOn, string ApprovedBy);
-    public sealed record CashFlowVerification(string Justification, DateOnly VerifiedOn, string VerifiedBy);
+    public sealed record CashFlowVerification(string Justification, DateOnly VerifiedOn, string VerifiedBy, string Hash = "");
     public sealed record StatementApproval(DateOnly ApprovedOn, string Body, string Reference, DateOnly RecordedOn, string RecordedBy);
 
     public static string NotesKey(string year) => $"sf.informacja.potwierdzenie.{year}";
     public const string CostKeyKey = "rzis.klucz-podzialu.zatwierdzenie";
-    public static string CashFlowKey(string year) => $"sf.rpp.weryfikacja.{year}";
+    public static string CashFlowKey(string year) => $"sf.rpp.weryfikacje.{year}";
     public static string ApprovalKey(string year) => $"sf.zatwierdzenie.{year}";
 
     private readonly KsiegiDbContext _db;
@@ -73,15 +73,32 @@ public sealed class FinancialStatementApprovals
     public async Task<CostKeyApproval?> CostKeyApprovalAsync(CostAllocationKey current, CancellationToken ct = default) =>
         await _settings.GetAsync<CostKeyApproval?>(_user.CompanyId, CostKeyKey, () => null, ct) is { } a && a.Key == current.ToString() ? a : null;
 
-    public async Task VerifyCashFlowAsync(string year, string justification, CancellationToken ct = default)
+    /// <summary>Skrót wyliczonego rachunku przepływów (kody i kwoty wszystkich pozycji, w tym korekt) — identyfikuje zweryfikowaną wersję.</summary>
+    public static string CashFlowHash(CashFlowStatement cf) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join("\u001e", cf.Lines.Select(l => $"{l.Code}\u001f{l.Label}\u001f{l.Amount.ToString(System.Globalization.CultureInfo.InvariantCulture)}")))));
+
+    /// <summary>Historia weryfikacji RPP (każda wersja ze skrótem wyliczenia).</summary>
+    public Task<List<CashFlowVerification>> CashFlowVerificationsAsync(string year, CancellationToken ct = default) =>
+        _settings.GetAsync(_user.CompanyId, CashFlowKey(year), () => new List<CashFlowVerification>(), ct);
+
+    /// <summary>Weryfikacja konkretnej wersji RPP — zmiana zapisów, kategorii kont lub korekt zmienia skrót i unieważnia potwierdzenie.</summary>
+    public async Task VerifyCashFlowAsync(string year, string justification, CashFlowStatement cashFlow, CancellationToken ct = default)
     {
         _user.Require(Permission.CloseYear);
         if (string.IsNullOrWhiteSpace(justification))
             throw new DomainException("Opisz weryfikację: rozdzielenie wpływów i wydatków inwestycyjnych i finansowych, różnice kursowe, operacje niepieniężne (zał. nr 1 do UoR).");
-        await _settings.SetAsync<CashFlowVerification?>(_user.CompanyId, CashFlowKey(year), new CashFlowVerification(justification.Trim(), _clock.Today, _user.Login), ct);
-        await new AuditService(_db, _clock).AddAsync(_user, "SF_RPP_ZWERYFIKOWANY", "AppSetting", CashFlowKey(year), justification.Trim(), ct);
+        if (cashFlow.Unreconciled != 0) throw new DomainException("Rachunek przepływów nie uzgadnia się ze zmianą środków pieniężnych — nie można potwierdzić weryfikacji.");
+        var hash = CashFlowHash(cashFlow);
+        var history = await CashFlowVerificationsAsync(year, ct);
+        history.Add(new CashFlowVerification(justification.Trim(), _clock.Today, _user.Login, hash));
+        await _settings.SetAsync(_user.CompanyId, CashFlowKey(year), history, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "SF_RPP_ZWERYFIKOWANY", "AppSetting", CashFlowKey(year), $"{justification.Trim()} (wersja {hash[..16]}…)", ct);
         await _db.SaveChangesAsync(ct);
     }
+
+    /// <summary>Czy bieżąca wersja RPP została zweryfikowana (skrót zgodny z ostatnim potwierdzeniem).</summary>
+    public async Task<bool> CashFlowVerifiedAsync(string year, CashFlowStatement current, CancellationToken ct = default) =>
+        (await CashFlowVerificationsAsync(year, ct)).LastOrDefault() is { } v && v.Hash == CashFlowHash(current);
 
     public sealed record CashFlowAdjustment(string Description, decimal Amount, string Basis, DateOnly RecordedOn, string RecordedBy);
     public static string CashFlowAdjustmentsKey(string year) => $"sf.rpp.korekty.{year}";
