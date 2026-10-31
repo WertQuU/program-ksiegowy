@@ -12,11 +12,13 @@ namespace PelnaKsiegowosc.Application.Security;
 public sealed record OperatorInfo(Guid Id, string Login, IReadOnlyList<Role> Roles, bool IsActive, DateTime? LastSeenUtc, DateTime CreatedAtUtc);
 
 /// <summary>
-/// Uprawnienia operatorów. Program nie ma własnych haseł (ani hasła uniwersalnego) — operatora identyfikuje konto systemu
-/// operacyjnego (login@komputer), a w trybie serwerowym dodatkowo konto PostgreSQL. Role każdego operatora są zapisane
-/// w bazie: pierwszy operator, który zakłada księgi, otrzymuje role administratora, głównego księgowego i zarządu;
-/// każdy kolejny operator zaczyna bez uprawnień i otrzymuje role od administratora (rozdział obowiązków). Wszystkie
-/// zmiany ról trafiają do dziennika zdarzeń.
+/// Uprawnienia operatorów stanowisk. Program identyfikuje operatora za pomocą konta OS (login@komputer)
+/// i oddzielnie uwierzytelnia połączenie w PostgreSQL. W bazie zapisane są role aplikacyjne.
+/// Administrator powstaje TYLKO podczas zakładania nowych ksiąg; samo pierwsze połączenie
+/// do istniejącej bazy NIE przyznaje praw. Pozostałych operatorów dodaje administrator.
+/// WAŻNE: identyfikator OS nie jest kryptograficznym uwierzytelnieniem użytkownika w serwerze;
+/// osoby mające bezpośrednie uprawnienia DML do bazy mogą ominąć zabezpieczenia aplikacji.
+/// Produkcyjna izolacja wymaga osobnych kont PostgreSQL, ścisłych uprawnień albo warstwy API.
 /// </summary>
 public sealed class OperatorAccessService
 {
