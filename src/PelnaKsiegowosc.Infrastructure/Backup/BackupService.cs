@@ -461,7 +461,7 @@ public sealed class BackupService
             var content = Path.Combine(workDir, "zawartosc");
             var pendingAttachments = Path.Combine(pending, "Zalaczniki");
             await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"),
-                new Application.Documents.LocalFileStore(pendingAttachments, attachmentsKey), ct);
+                new Application.Documents.LocalFileStore(pendingAttachments, attachmentsKey), manifest, ct);
 
             // Wszystkie operacje wrażliwe wykonaj poza katalogiem docelowym.
             var work = Path.Combine(workDir, "odtwarzana.db");
@@ -528,7 +528,7 @@ public sealed class BackupService
             // Najpierw odtwórz pliki, a bazę zatwierdź dopiero po weryfikacji
             // wszystkich tabel i obrotów wewnątrz transakcji. W razie błędu
             // kopiowania plików baza pozostaje pusta.
-            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), attachmentsTarget, ct);
+            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), attachmentsTarget, manifest, ct);
             await DataDump.ImportAsync(target, Path.Combine(content, "dane"), ct,
                 async (candidate, token) =>
                 {
@@ -577,15 +577,40 @@ public sealed class BackupService
         foreach (var f in ListLocal(directory).Skip(keep)) f.Delete();
     }
 
-    /// <summary>Załączniki z archiwum zapisywane przez magazyn docelowy (szyfrowanie) — bez jawnych kopii w katalogu docelowym.</summary>
-    private static async Task RestoreAttachmentsAsync(string from, IFileStore target, CancellationToken ct)
+    /// <summary>
+    /// Odtworzenie załączników wraz z walidacją zapisu i ponownego odczytu.
+    /// Dla magazynu zaszyfrowanego kontrola odczytu weryfikuje również uwierzytelnienie AES-GCM.
+    /// </summary>
+    private static async Task RestoreAttachmentsAsync(string from, IFileStore target, BackupManifest manifest, CancellationToken ct)
     {
-        if (!Directory.Exists(from)) return;
+        if (!Directory.Exists(from))
+        {
+            if (manifest.Files.Any(f => f.Path.StartsWith("zalaczniki/", StringComparison.Ordinal)))
+                throw new InvalidDataException("Archiwum nie zawiera wymaganych załączników.");
+            return;
+        }
+        var expected = manifest.Files
+            .Where(f => f.Path.StartsWith("zalaczniki/", StringComparison.Ordinal))
+            .ToDictionary(f => f.Path["zalaczniki/".Length..], StringComparer.Ordinal);
+        var restored = new HashSet<string>(StringComparer.Ordinal);
         foreach (var f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
         {
-            await using var s = File.OpenRead(f);
-            await target.SaveAtAsync(Path.GetRelativePath(from, f).Replace('\\', '/'), s, ct);
+            var relative = Path.GetRelativePath(from, f).Replace('\\', '/');
+            if (!expected.TryGetValue(relative, out var expectedFile) || !restored.Add(relative))
+                throw new InvalidDataException("Nieoczekiwany lub powtarzający się załącznik w kopii: " + relative);
+            await using (var source = File.OpenRead(f))
+            {
+                var (sha, size) = await target.SaveAtAsync(relative, source, ct);
+                if (size != expectedFile.Size || !string.Equals(sha, expectedFile.Sha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("Załącznik nie przeszedł weryfikacji po zapisie: " + relative);
+            }
+            await using var check = await target.OpenAsync(relative, ct);
+            var restoredSha = Convert.ToHexString(await SHA256.HashDataAsync(check, ct));
+            if (!string.Equals(restoredSha, expectedFile.Sha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Załącznik nie przeszedł ponownego odczytu z magazynu: " + relative);
         }
+        if (restored.Count != expected.Count)
+            throw new InvalidDataException("Nie odtworzono wszystkich załączników wymienionych w manifeście.");
     }
 
     private static void CopyDirectory(string from, string to)
