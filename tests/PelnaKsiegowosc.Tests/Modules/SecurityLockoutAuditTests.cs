@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Security;
 using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Tests.Infrastructure;
