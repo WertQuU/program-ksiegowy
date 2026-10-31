@@ -410,6 +410,41 @@ public sealed class PayrollService
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
         if (list.Items.Count == 0) throw new DomainException("Lista płac jest pusta.");
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
+        // Roczne limity PIT/ulgi dla młodych/30-krotności ZUS są liczone kolejno
+        // według daty wypłaty (nie miesiąca pracy). Jeśli zaksięgowano późniejszą
+        // wypłatę tej samej osoby, wpisanie wcześniejszej zmieniłoby jej roczną
+        // podstawę bez przeliczenia zaksięgowanej listy — zakaz retroaktywnego
+        // księgowania bez formalnych korekt.
+        var paidYearEnd = new DateOnly(list.PaymentDate.Year + 1, 1, 1);
+        var personKeys = list.Items.Select(i => PersonKey(employees[i.EmployeeId])).ToHashSet(StringComparer.Ordinal);
+        var personIds = employees.Values.Where(e => personKeys.Contains(PersonKey(e))).Select(e => e.Id).ToList();
+        var laterPaid = await (from i in _db.PayrollItems.AsNoTracking()
+                               join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                               where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
+                                     l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
+                                     l.PaymentDate > list.PaymentDate && l.PaymentDate < paidYearEnd
+                               select new { l.Number, l.PaymentDate, i.EmployeeName }).FirstOrDefaultAsync(ct);
+        if (laterPaid is not null)
+            throw new DomainException($"Nie można zaksięgować listy z datą wypłaty {list.PaymentDate:yyyy-MM-dd}: " +
+                $"istnieje już późniejsza zaksięgowana wypłata tej samej osoby ({laterPaid.EmployeeName}, " +
+                $"{laterPaid.Number}, {laterPaid.PaymentDate:yyyy-MM-dd}). Wcześniejsza wypłata zmieniłaby narastające " +
+                "limity PIT/ZUS i wyniki zaksięgowanej listy. Wymagane ustalenie korekt i poprawnej chronologii wypłat.");
+
+        // Chorobowe z art. 92 KP zużywa limit w kolejności okresów niezdolności,
+        // nie w kolejności sporządzenia list. Zapis za wcześniejszy miesiąc mógłby
+        // zmienić limit już naliczony w późniejszym miesiącu.
+        var sickYearEnd = new DateOnly(list.Month.Year + 1, 1, 1);
+        var futureSickness = await (from i in _db.PayrollItems.AsNoTracking()
+                                    join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                                    where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
+                                          l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
+                                          l.Month > list.Month && l.Month < sickYearEnd && i.SickDays > 0
+                                    select new { l.Number, l.Month, i.EmployeeName }).FirstOrDefaultAsync(ct);
+        if (futureSickness is not null && list.Items.Any(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
+            throw new DomainException($"Chorobowe za {list.Month:MM.yyyy} wymaga korekty już zaksięgowanej " +
+                $"późniejszej listy {futureSickness.Number} ({futureSickness.Month:MM.yyyy}, {futureSickness.EmployeeName}). " +
+                "Limit 33/14 dni stosuje się w kolejności okresów choroby; nie można przeliczyć wyłącznie wcześniejszej listy.");
+
         foreach (var item in list.Items.Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
         {
             var employee = employees[item.EmployeeId];
