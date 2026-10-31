@@ -42,6 +42,35 @@ public static class ArchiveCrypto
 
     private static string KeyCheck(byte[] key) => Convert.ToHexString(HMACSHA256.HashData(key, "PKBAK-keycheck"u8.ToArray()))[..16];
 
+    // The archive header is not authenticated until the first AES-GCM chunk is checked.
+    // Never use its KDF workload or allocation sizes without validating them first.
+    // Version 1 has fixed parameters; future formats must use a new version and validator.
+    private static Header ValidateHeader(Header? h)
+    {
+        if (h is null || h.Version != 1)
+            throw new InvalidDataException("Nieobsługiwana wersja archiwum kopii.");
+        if (h.Iterations != Pbkdf2Iterations || h.ChunkSize != ChunkSize)
+            throw new InvalidDataException("Nieprawidłowe parametry formatu archiwum.");
+        if (h.KeyCheck is not { Length: 16 } || !h.KeyCheck.All(Uri.IsHexDigit))
+            throw new InvalidDataException("Uszkodzony identyfikator klucza archiwum.");
+        if (h.KeyMode is not ("passphrase-pbkdf2-sha256" or "raw-256"))
+            throw new InvalidDataException("Nieznany tryb klucza archiwum.");
+        try
+        {
+            if (Convert.FromBase64String(h.NoncePrefix ?? "").Length != 8)
+                throw new InvalidDataException("Uszkodzony prefiks nonce archiwum.");
+            if (h.KeyMode == "passphrase-pbkdf2-sha256"
+                    ? Convert.FromBase64String(h.Salt ?? "").Length != 16
+                    : h.Salt is not null)
+                throw new InvalidDataException("Nieprawidłowa sól archiwum.");
+        }
+        catch (FormatException ex)
+        {
+            throw new InvalidDataException("Uszkodzone kodowanie nagłówka archiwum.", ex);
+        }
+        return h;
+    }
+
     public static async Task EncryptAsync(Stream input, Stream output, BackupKey key, Guid archiveId, DateTime nowUtc, CancellationToken ct = default)
     {
         byte[]? salt = key is BackupKey.Passphrase ? RandomNumberGenerator.GetBytes(16) : null;
@@ -91,12 +120,12 @@ public static class ArchiveCrypto
         var magic = new byte[8];
         if (await ReadFullAsync(input, magic, ct) != 8 || !magic.AsSpan().SequenceEqual(Magic)) throw new InvalidDataException("Plik nie jest zaszyfrowanym archiwum kopii (PKBAK1).");
         var len = new byte[4];
-        await ReadFullAsync(input, len, ct);
+        if (await ReadFullAsync(input, len, ct) != len.Length) throw new InvalidDataException("Archiwum jest obcięte (nagłówek).");
         var hl = BinaryPrimitives.ReadInt32LittleEndian(len);
         if (hl is <= 0 or > 65536) throw new InvalidDataException("Uszkodzony nagłówek archiwum.");
         var hb = new byte[hl];
         if (await ReadFullAsync(input, hb, ct) != hl) throw new InvalidDataException("Uszkodzony nagłówek archiwum.");
-        return JsonSerializer.Deserialize<Header>(hb)! with { };
+        return ValidateHeader(JsonSerializer.Deserialize<Header>(hb));
     }
 
     public static async Task<Header> DecryptAsync(Stream input, Stream output, BackupKey key, CancellationToken ct = default)
@@ -104,12 +133,12 @@ public static class ArchiveCrypto
         var magic = new byte[8];
         if (await ReadFullAsync(input, magic, ct) != 8 || !magic.AsSpan().SequenceEqual(Magic)) throw new InvalidDataException("Plik nie jest zaszyfrowanym archiwum kopii (PKBAK1).");
         var len = new byte[4];
-        await ReadFullAsync(input, len, ct);
+        if (await ReadFullAsync(input, len, ct) != len.Length) throw new InvalidDataException("Archiwum jest obcięte (nagłówek).");
         var hl = BinaryPrimitives.ReadInt32LittleEndian(len);
         if (hl is <= 0 or > 65536) throw new InvalidDataException("Uszkodzony nagłówek archiwum.");
         var hb = new byte[hl];
-        await ReadFullAsync(input, hb, ct);
-        var header = JsonSerializer.Deserialize<Header>(hb)!;
+        if (await ReadFullAsync(input, hb, ct) != hl) throw new InvalidDataException("Archiwum jest obcięte (nagłówek).");
+        var header = ValidateHeader(JsonSerializer.Deserialize<Header>(hb));
         var headerHash = SHA256.HashData(hb);
         var k = DeriveKey(key, header.Salt is null ? null : Convert.FromBase64String(header.Salt), header.Iterations);
         if (KeyCheck(k) != header.KeyCheck) throw new CryptographicException("Nieprawidłowe hasło lub klucz kopii zapasowej.");
