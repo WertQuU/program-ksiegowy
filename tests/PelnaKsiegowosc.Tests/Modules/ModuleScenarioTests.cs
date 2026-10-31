@@ -452,6 +452,7 @@ public class FixedAssetCitCapitalTests
         var ex = await Assert.ThrowsAsync<DomainException>(() => cap.ConfirmDocumentsAsync(advance.Id));
         Assert.Contains("wypłacalności", ex.Message);
         advance.SolvencyTestConfirmed = true;
+        advance.SolvencyTestNotes = "Analiza wypłacalności PSA/1/2026: limit dywidendy, wymogi kapitału i prognoza sześciu miesięcy.";
         await t.Db.SaveChangesAsync();
         await cap.ConfirmDocumentsAsync(advance.Id);
         await cap.PostEventAsync(advance.Id);
