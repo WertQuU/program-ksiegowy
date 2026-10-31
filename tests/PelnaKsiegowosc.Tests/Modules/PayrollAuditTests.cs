@@ -259,7 +259,12 @@ public class PayrollAuditTests
         await svc.ChangeGrossAsync(item.Id, 7000m);
         Assert.Equal(10, item.SickDays);                                                        // błąd: dni choroby były zerowane
         Assert.Equal(2, item.UnpaidDays);
-        Assert.True(item.SickPay > sickPay);
+        // Bez zaksięgowanej historii nie wolno zgadywać podstawy z nowego gross.
+        // Zmiana wynagrodzenia zachowuje dni nieobecności, ale robocze chorobowe
+        // pozostaje 0 zł z blokadą księgowania (art. 36–43).
+        Assert.Equal(0m, sickPay);
+        Assert.Equal(0m, item.SickPay);
+        Assert.Contains("WSTĘPNA", item.Notes);
         Assert.Equal(7000m, item.BaseGross);
         await svc.ChangeAsync(item.Id, null, 0, null);                                         // świadome usunięcie choroby
         Assert.Equal(0, item.SickDays);
