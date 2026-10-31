@@ -25,7 +25,13 @@ public sealed class PsaCapitalPostingTests
         });
         var missing = await Assert.ThrowsAsync<DomainException>(() => service.ConfirmDocumentsAsync(ev.Id));
         Assert.Contains("P.S.A.", missing.Message);
-        ev.SolvencyTestNotes = "Kontrola limitu dywidendy, kapitału i płynności na sześć miesięcy: analiza FIN/2026/1.";
+        ev.SolvencyTestNotes = System.Text.Json.JsonSerializer.Serialize(new PsaPayoutAssessment
+        {
+            ApprovedFinancialStatementReference = "SF/2025", SixMonthForecastReference = "PROG/2026/01",
+            LastYearProfit = 4000m, ShareCapitalBefore = 1000m,
+            LiabilitiesInApprovedStatement = 100000m, NonDistributableReserveAllocation = 320m,
+            MinimumProjectedLiquidityAfterPayout = 200m, SixMonthSolvencyConfirmed = true
+        });
         await t.Db.SaveChangesAsync();
         await service.ConfirmDocumentsAsync(ev.Id);
         Assert.Equal(CapitalEventStatus.DokumentyPotwierdzone, ev.Status);
@@ -46,7 +52,13 @@ public sealed class PsaCapitalPostingTests
             EventDate = new DateOnly(2026, 1, 20), TotalAmount = 500m,
             ShareholderId = shareholder.Id, ResolutionReference = "Uchwała 1/2026 i umowa spółki",
             SolvencyTestConfirmed = true,
-            SolvencyTestNotes = "Wyliczenie kwoty do podziału i prognoza wypłacalności: arkusz PSA/2026/01, okres 6 miesięcy."
+            SolvencyTestNotes = System.Text.Json.JsonSerializer.Serialize(new PsaPayoutAssessment
+        {
+            ApprovedFinancialStatementReference = "SF/2025", SixMonthForecastReference = "PROG/2026/01",
+            LastYearProfit = 4000m, ShareCapitalBefore = 1000m,
+            LiabilitiesInApprovedStatement = 100000m, NonDistributableReserveAllocation = 320m,
+            MinimumProjectedLiquidityAfterPayout = 200m, SixMonthSolvencyConfirmed = true
+        })
         });
         await service.ConfirmDocumentsAsync(ev.Id);
         // Stare/importowane dane albo inna ścieżka edycji nie mogą ominąć kontroli księgowania.
@@ -61,4 +73,27 @@ public sealed class PsaCapitalPostingTests
         Assert.Null(ev.JournalEntryId);
         Assert.Equal(CapitalEventStatus.DokumentyPotwierdzone, ev.Status);
     }
+    [Fact]
+    public void Psa_payout_rejects_distributable_limit_and_mandatory_capital_allocation_violations()
+    {
+        var ev = new CapitalEvent { Type = CapitalEventType.UchwalenieDywidendy, TotalAmount = 500m,
+            SolvencyTestConfirmed = true, ResolutionReference = "WZA/1/2026" };
+        var bad = new PsaPayoutAssessment
+        {
+            ApprovedFinancialStatementReference = "SF/2025",
+            SixMonthForecastReference = "PROG/2026/01",
+            LastYearProfit = 200m, ShareCapitalBefore = 1000m,
+            LiabilitiesInApprovedStatement = 100000m,
+            NonDistributableReserveAllocation = 0m,
+            MinimumProjectedLiquidityAfterPayout = 100m,
+            SixMonthSolvencyConfirmed = true
+        };
+        var errors = bad.Problems(ev);
+        Assert.Contains(errors, e => e.Contains("300¹⁵"));
+        Assert.Contains(errors, e => e.Contains("300¹⁹"));
+        bad.LastYearProfit = 1000m;
+        bad.NonDistributableReserveAllocation = 80m;
+        Assert.Empty(bad.Problems(ev));
+    }
+
 }
