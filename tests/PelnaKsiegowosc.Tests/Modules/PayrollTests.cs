@@ -69,10 +69,9 @@ public class PayrollTests
     [Fact]
     public void Flat_rate_depends_on_contract_amount_not_single_payout_and_excludes_own_employees()
     {
-        // umowa zlecenia na 600 zł wypłacana w trzech ratach po 200 zł — kwota z umowy > 200 zł: zaliczka na zasadach ogólnych
+        // umowa zlecenia na 600 zł wypłacana w ratach po 150 zł — kwota z umowy > 200 zł: zaliczka na zasadach ogólnych
         var big = new Employee { FirstName = "Z", LastName = "R", ContractType = ContractType.UmowaZlecenie, ContractTotalAmount = 600m };
-        var part = PayrollCalculator.Compute(big, 200m, new PayrollYearToDate(), R, 1.67m);
-        Assert.False(part.FlatRateTax);
+        Assert.False(PayrollCalculator.Compute(big, 150m, new PayrollYearToDate(), R, 1.67m).FlatRateTax);
         // umowa o dzieło na 180 zł — ryczałt 12% (22 zł po zaokrągleniu podstawy)
         var small = new Employee { FirstName = "D", LastName = "R", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 180m };
         var f = PayrollCalculator.Compute(small, 180m, new PayrollYearToDate(), R, 1.67m);
@@ -82,12 +81,36 @@ public class PayrollTests
         var own = PayrollCalculator.Compute(small, 180m, new PayrollYearToDate(), R, 1.67m, ownEmployee: true);
         Assert.False(own.FlatRateTax);
         Assert.Contains("własnym pracownikiem", own.Notes);
-        // brak kwoty z umowy — ostrzeżenie; ulga dla młodych — przychód zwolniony, bez ryczałtu
-        Assert.Contains("brak kwoty należności z umowy", PayrollCalculator.Compute(new Employee { FirstName = "B", LastName = "K", ContractType = ContractType.UmowaODzielo }, 150m, new PayrollYearToDate(), R, 1.67m).Notes);
+        // brak kwoty z umowy — bez domniemania ryczałtu (wypłata 150 zł z umowy o nieznanej kwocie), wyraźna informacja
+        var unknown = PayrollCalculator.Compute(new Employee { FirstName = "B", LastName = "K", ContractType = ContractType.UmowaODzielo }, 150m, new PayrollYearToDate(), R, 1.67m);
+        Assert.False(unknown.FlatRateTax);
+        Assert.Contains("BRAK KWOTY NALEŻNOŚCI Z UMOWY", unknown.Notes);
+        // ulga dla młodych nie obejmuje ryczałtu (art. 21 ust. 1 pkt 148 / art. 30 ust. 1 pkt 5a): zlecenie 150 zł, osoba < 26 lat — 18 zł
         var young = new Employee { FirstName = "M", LastName = "Ł", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, ContractTotalAmount = 150m };
         var y = PayrollCalculator.Compute(young, 150m, new PayrollYearToDate(), R, 1.67m);
-        Assert.False(y.FlatRateTax);
-        Assert.Equal(0m, y.TaxAdvance);
+        Assert.True(y.FlatRateTax);
+        Assert.Equal(18m, y.TaxAdvance);
+        Assert.Equal(0m, y.ExemptRevenue);
+        // osoba > 26 lat — ten sam wynik
+        var older = new Employee { FirstName = "S", LastName = "K", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, ContractTotalAmount = 150m };
+        Assert.Equal(18m, PayrollCalculator.Compute(older, 150m, new PayrollYearToDate(), R, 1.67m).TaxAdvance);
+        // ulga dla młodych przy umowie powyżej 200 zł — przychód zwolniony
+        var youngBig = new Employee { FirstName = "M", LastName = "W", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, ContractTotalAmount = 1000m };
+        var yb = PayrollCalculator.Compute(youngBig, 1000m, new PayrollYearToDate(), R, 1.67m);
+        Assert.False(yb.FlatRateTax);
+        Assert.Equal(0m, yb.TaxAdvance);
+        Assert.Equal(1000m, yb.ExemptRevenue);
+    }
+
+    [Fact]
+    public async Task Payroll_list_with_civil_contract_without_contract_amount_cannot_be_posted()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Dzieło", ContractType = ContractType.UmowaODzielo, Gross = 150m, StartDate = new DateOnly(2026, 1, 1) });
+        var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        var ex = await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(list.Id));
+        Assert.Contains("kwotę należności", ex.Message);
     }
 
     [Fact]
@@ -106,13 +129,13 @@ public class PayrollTests
         Assert.Equal(3000m, s.Net);
         Assert.Equal(3000m, s.ExemptRevenue);
 
-        var small = new Employee { FirstName = "M", LastName = "K", ContractType = ContractType.UmowaODzielo };
+        var small = new Employee { FirstName = "M", LastName = "K", ContractType = ContractType.UmowaODzielo, ContractTotalAmount = 200m };
         var f = PayrollCalculator.Compute(small, 200m, new PayrollYearToDate(), R, 1.67m);
         Assert.True(f.FlatRateTax);
         Assert.Equal(24m, f.TaxAdvance);
         Assert.Equal(0m, f.Health);
 
-        var zl = new Employee { FirstName = "Z", LastName = "L", ContractType = ContractType.UmowaZlecenie };
+        var zl = new Employee { FirstName = "Z", LastName = "L", ContractType = ContractType.UmowaZlecenie, ContractTotalAmount = 1000m };
         var z = PayrollCalculator.Compute(zl, 1000m, new PayrollYearToDate(), R, 1.67m);
         Assert.Equal(0m, z.SicknessEmployee);
         Assert.Equal(0m, z.LaborFund); // poniżej minimalnego wynagrodzenia
@@ -181,7 +204,7 @@ public class PayrollTests
         var svc = new PayrollService(t.Db, t.User, t.Clock);
         await Assert.ThrowsAsync<DomainException>(() => svc.AddEmployeeAsync(new Employee { FirstName = "X", LastName = "Y", Pesel = "12345678901", StartDate = new DateOnly(2026, 1, 1) }));
         var jan = await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace, Gross = 6000m, Pit2 = true, StartDate = new DateOnly(2026, 1, 1), Pesel = "44051401359" });
-        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Zlecenie", ContractType = ContractType.UmowaODzielo, Gross = 150m, StartDate = new DateOnly(2026, 1, 1) });
+        await svc.AddEmployeeAsync(new Employee { FirstName = "Ola", LastName = "Zlecenie", ContractType = ContractType.UmowaODzielo, Gross = 150m, ContractTotalAmount = 150m, StartDate = new DateOnly(2026, 1, 1) });
         await Assert.ThrowsAsync<DomainException>(() => svc.SetAccidentRateAsync(5m));
 
         var list = await svc.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));

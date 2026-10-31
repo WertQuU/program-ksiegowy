@@ -218,6 +218,12 @@ public sealed class PayrollService
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
         if (list.Items.Count == 0) throw new DomainException("Lista płac jest pusta.");
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
+        // umowy cywilnoprawne bez kwoty należności z umowy — sposób opodatkowania (art. 30 ust. 1 pkt 5a) nieustalony
+        var missingAmount = list.Items.Where(i => employees.TryGetValue(i.EmployeeId, out var emp) && emp.ContractType is ContractType.UmowaZlecenie or ContractType.UmowaODzielo
+                                                  && emp.ContractTotalAmount is null).Select(i => i.EmployeeName).ToList();
+        if (missingAmount.Count > 0)
+            throw new DomainException("Uzupełnij kwotę należności określoną w umowie (Osoby → „kwota z umowy”) i przelicz pozycje: " + string.Join(", ", missingAmount) +
+                                      " — od niej zależy ryczałt od umów do 200 zł (art. 30 ust. 1 pkt 5a ustawy o PIT).");
         var lines = new List<LineInput>
         {
             new("404", list.Items.Sum(i => i.Gross), 0, Description: "Wynagrodzenia brutto")

@@ -83,6 +83,29 @@ public sealed class FinancialStatementApprovals
         await _db.SaveChangesAsync(ct);
     }
 
+    public sealed record CashFlowAdjustment(string Description, decimal Amount, string Basis, DateOnly RecordedOn, string RecordedBy);
+    public static string CashFlowAdjustmentsKey(string year) => $"sf.rpp.korekty.{year}";
+
+    /// <summary>Udokumentowane korekty działalności operacyjnej RPP (A.II.10) — np. różnice kursowe od środków pieniężnych.</summary>
+    public Task<List<CashFlowAdjustment>> CashFlowAdjustmentsAsync(string year, CancellationToken ct = default) =>
+        _settings.GetAsync(_user.CompanyId, CashFlowAdjustmentsKey(year), () => new List<CashFlowAdjustment>(), ct);
+
+    public async Task AddCashFlowAdjustmentAsync(string year, string description, decimal amount, string basis, CancellationToken ct = default)
+    {
+        _user.Require(Permission.CloseYear);
+        if (string.IsNullOrWhiteSpace(description) || string.IsNullOrWhiteSpace(basis))
+            throw new DomainException("Opisz korektę i wskaż dokument / wyliczenie, z którego wynika (np. wycena środków pieniężnych w walucie na dzień bilansowy).");
+        if (amount == 0) throw new DomainException("Kwota korekty nie może być zerowa.");
+        var list = await CashFlowAdjustmentsAsync(year, ct);
+        list.Add(new CashFlowAdjustment(description.Trim(), Money.Round(amount), basis.Trim(), _clock.Today, _user.Login));
+        await _settings.SetAsync(_user.CompanyId, CashFlowAdjustmentsKey(year), list, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "SF_RPP_KOREKTA", "AppSetting", CashFlowAdjustmentsKey(year), $"{description.Trim()}: {Money.Xml(amount)}; podstawa: {basis.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<(string Description, decimal Amount)>> CashFlowAdjustmentPairsAsync(string year, CancellationToken ct = default) =>
+        (await CashFlowAdjustmentsAsync(year, ct)).Select(a => (a.Description, a.Amount)).ToList();
+
     public Task<CashFlowVerification?> CashFlowVerifiedAsync(string year, CancellationToken ct = default) =>
         _settings.GetAsync<CashFlowVerification?>(_user.CompanyId, CashFlowKey(year), () => null, ct);
 

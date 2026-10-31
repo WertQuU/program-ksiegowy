@@ -114,13 +114,19 @@ public static class PayrollCalculator
         it.Health = Pct(it.HealthBase, rules.Health);
 
         // ryczałt od umów zlecenia/o dzieło (art. 30 ust. 1 pkt 5a ustawy o PIT): kwota należności OKREŚLONA W UMOWIE nie przekracza
-        // 200 zł, umowa zawarta z osobą niebędącą pracownikiem płatnika; przychód zwolniony (ulga dla młodych) — bez podatku
-        var contractAmount = e.ContractTotalAmount ?? gross;
-        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && e.ContractTotalAmount is null)
-            notes.Add("brak kwoty należności z umowy — przy ocenie ryczałtu (do 200 zł) przyjęto kwotę tej wypłaty; uzupełnij kwotę z umowy");
-        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && contractAmount <= rules.FlatRateLimit && ownEmployee)
+        // 200 zł i umowa zawarta z osobą niebędącą pracownikiem płatnika. Ryczałt obowiązuje niezależnie od wieku — zwolnienie dla
+        // młodych (art. 21 ust. 1 pkt 148) nie obejmuje przychodów opodatkowanych na podstawie art. 30 ust. 1 pkt 5a. Bez kwoty
+        // z umowy ryczałtu nie stosuje się domyślnie (lista płac nie może zostać zaksięgowana do czasu jej uzupełnienia).
+        var civil = t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo;
+        if (civil && e.ContractTotalAmount is null)
+            notes.Add("BRAK KWOTY NALEŻNOŚCI Z UMOWY — sposobu opodatkowania (ryczałt do 200 zł / zasady ogólne) nie można ustalić; uzupełnij kwotę z umowy przed zaksięgowaniem listy");
+        var flatRate = civil && e.ContractTotalAmount is { } contractAmount && contractAmount <= rules.FlatRateLimit;
+        if (flatRate && ownEmployee)
+        {
             notes.Add("umowa z własnym pracownikiem — ryczałt z art. 30 ust. 1 pkt 5a nie ma zastosowania (zaliczka na zasadach ogólnych)");
-        if (t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && contractAmount <= rules.FlatRateLimit && !ownEmployee && !e.YouthRelief)
+            flatRate = false;
+        }
+        if (flatRate)
         {
             it.FlatRateTax = true;
             it.TaxBase = R0(gross);

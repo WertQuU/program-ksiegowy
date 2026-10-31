@@ -44,6 +44,7 @@
         <Button Content="Zapisz teksty" Command="{Binding SaveNotesCommand}" />
         <Button Content="Potwierdź treść informacji dodatkowej…" Command="{Binding ConfirmNotesCommand}" />
         <Button Content="Potwierdź weryfikację RPP…" Command="{Binding VerifyCashFlowCommand}" />
+        <Button Content="Korekta RPP (A.II.10)…" Command="{Binding AddCashFlowAdjustmentCommand}" />
         <Button Content="Zapisz zatwierdzenie sprawozdania…" Command="{Binding RecordStatementApprovalCommand}" />
       </StackPanel>
     </Border>

@@ -806,6 +806,30 @@ public sealed class CitService
         return use;
     }
 
+    /// <summary>Zarachowanie wpłaty potwierdzone w e-Urzędzie Skarbowym (art. 62 Ordynacji podatkowej): na zaliczkę za okres, podatek roczny albo inne zobowiązanie.</summary>
+    public sealed record CitPaymentAllocation(DateOnly PaymentDate, decimal Amount, int? AdvancePeriod, bool AnnualTax, string Source, DateOnly RecordedOn, string RecordedBy);
+    public static string PaymentAllocationsKey(string year) => $"cit.wplaty.zarachowanie.{year}";
+
+    public async Task<List<CitPaymentAllocation>> PaymentAllocationsAsync(string year, CancellationToken ct = default) =>
+        await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PaymentAllocationsKey(year), () => new List<CitPaymentAllocation>(), ct);
+
+    /// <summary>Rejestracja zarachowania wpłaty według stanu w e-Urzędzie Skarbowym (zastępuje szacunek według kolejności terminów).</summary>
+    public async Task RecordPaymentAllocationAsync(Guid fiscalYearId, DateOnly paymentDate, decimal amount, int? advancePeriod, bool annualTax, string source, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        if (amount <= 0) throw new DomainException("Kwota wpłaty musi być dodatnia.");
+        if (string.IsNullOrWhiteSpace(source)) throw new DomainException("Wskaż źródło potwierdzenia (np. e-Urząd Skarbowy — karta rozliczeń, postanowienie o zaliczeniu wpłaty).");
+        if (advancePeriod is { } n && (n < 1 || n > fy.Periods.Count)) throw new DomainException("Nieprawidłowy okres zaliczki.");
+        if (advancePeriod is not null && annualTax) throw new DomainException("Wpłatę zarachowuje się na zaliczkę albo na podatek roczny.");
+        var list = await PaymentAllocationsAsync(fy.Name, ct);
+        list.Add(new CitPaymentAllocation(paymentDate, Money.Round(amount), advancePeriod, annualTax, source.Trim(), _clock.Today, _user.Login));
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey(fy.Name), list, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_WPLATA_ZARACHOWANA", "FiscalYear", fy.Id.ToString(),
+            $"{paymentDate.ToPl()} {Money.Xml(amount)} → {(advancePeriod is { } p ? $"zaliczka za okres {p}" : annualTax ? "podatek roczny" : "inne zobowiązanie")}; źródło: {source.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     private async Task EnsureEvidenceAsync(Guid? attachmentId, CancellationToken ct)
     {
         if (attachmentId is { } id && !await _db.Attachments.AnyAsync(a => a.Id == id && a.CompanyId == _user.CompanyId, ct))

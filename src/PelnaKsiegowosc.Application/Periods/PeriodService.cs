@@ -264,26 +264,38 @@ public sealed class PeriodService
             approval is { } a
                 ? $"Zatwierdzone {a.ApprovedOn.ToPl()} ({a.Body}, {a.Reference}); termin ostatecznego zamknięcia: {a.ApprovedOn.AddDays(15).ToPl()}" + (_clock.Today > a.ApprovedOn.AddDays(15) ? " — PRZEKROCZONY" : "")
                 : exception is { } x
-                    ? $"Bez zatwierdzenia — decyzja z {x.DecidedOn.ToPl()} ({x.DecidedBy}): {x.Reason}"
+                    ? $"TRYB WYJĄTKOWY ({x.Basis}) — decyzja z {x.DecidedOn.ToPl()} ({x.DecidedBy}), dokument: {x.Document}; {x.Reason}. Program nie potwierdza legalności zamknięcia w tym trybie; potwierdzenie zamknięcia wymaga frazy „ZAMKNIJ {fy.Name} TRYB WYJĄTKOWY”."
                     : "Brak zapisu zatwierdzenia sprawozdania. Sprawozdanie sporządza się po zamknięciu ksiąg na dzień bilansowy (zamknięte okresy); ostateczne zamknięcie następuje po zatwierdzeniu. Zarejestruj uchwałę (Raporty) albo — w sytuacji wyjątkowej — udokumentowaną decyzję o zamknięciu bez zatwierdzenia."));
         return new YearClosePreview(c, resultCredit, lines);
     }
 
-    public sealed record FinalCloseException(string Reason, DateOnly DecidedOn, string DecidedBy);
+    /// <summary>Podstawa trybu wyjątkowego ostatecznego zamknięcia ksiąg bez zarejestrowanego zatwierdzenia sprawozdania.</summary>
+    public enum FinalCloseExceptionBasis
+    {
+        /// <summary>Zakończenie działalności, likwidacja, upadłość, połączenie / przekształcenie (zamknięcie ksiąg w związku z tymi zdarzeniami — art. 12 ust. 2 UoR).</summary>
+        ZakonczenieDzialalnosci,
+        /// <summary>Organ zatwierdzający nie zatwierdził sprawozdania w terminie ustawowym (art. 53 ust. 1 UoR) — dalsze postępowanie wymaga oceny prawnej.</summary>
+        NiezatwierdzoneWTerminie
+    }
+
+    public sealed record FinalCloseException(string Reason, DateOnly DecidedOn, string DecidedBy, FinalCloseExceptionBasis Basis = FinalCloseExceptionBasis.NiezatwierdzoneWTerminie, string Document = "");
     public static string FinalCloseExceptionKey(string year) => $"rok.zamkniecie.bezZatwierdzenia.{year}";
 
     /// <summary>
     /// Udokumentowana decyzja o ostatecznym zamknięciu ksiąg bez zarejestrowanego zatwierdzenia sprawozdania (sytuacje wyjątkowe,
     /// np. likwidacja, niezatwierdzenie sprawozdania w terminie). Wymaga uprawnienia do zamknięcia roku i uzasadnienia; zapis w dzienniku.
     /// </summary>
-    public async Task RecordFinalCloseExceptionAsync(Guid fiscalYearId, string reason, CancellationToken ct = default)
+    public async Task RecordFinalCloseExceptionAsync(Guid fiscalYearId, FinalCloseExceptionBasis basis, string document, string reason, CancellationToken ct = default)
     {
         _user.Require(Permission.CloseYear);
         var fy = await _db.FiscalYears.FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        if (string.IsNullOrWhiteSpace(document))
+            throw new DomainException("Wskaż dokument źródłowy (np. uchwała o rozwiązaniu i otwarciu likwidacji, postanowienie sądu, protokół zgromadzenia bez zatwierdzenia sprawozdania).");
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < 20)
-            throw new DomainException("Opisz szczegółowo przyczynę ostatecznego zamknięcia bez zatwierdzenia sprawozdania (podstawa prawna, okoliczności) — co najmniej 20 znaków.");
-        await new SettingsService(_db, _clock).SetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), new FinalCloseException(reason.Trim(), _clock.Today, _user.Login), ct);
-        await _audit.AddAsync(_user, "ROK_ZAMKNIECIE_BEZ_ZATWIERDZENIA", "FiscalYear", fy.Id.ToString(), reason.Trim(), ct);
+            throw new DomainException("Opisz szczegółowo okoliczności i podstawę prawną (co najmniej 20 znaków). Program nie potwierdza dopuszczalności zamknięcia w trybie wyjątkowym — decyzja należy do kierownika jednostki.");
+        await new SettingsService(_db, _clock).SetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name),
+            new FinalCloseException(reason.Trim(), _clock.Today, _user.Login, basis, document.Trim()), ct);
+        await _audit.AddAsync(_user, "ROK_ZAMKNIECIE_TRYB_WYJATKOWY", "FiscalYear", fy.Id.ToString(), $"{basis}; dokument: {document.Trim()}; {reason.Trim()}", ct);
         await _db.SaveChangesAsync(ct);
     }
 
@@ -295,7 +307,10 @@ public sealed class PeriodService
     {
         _user.Require(Permission.CloseYear);
         var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
-        if (confirmation != $"ZAMKNIJ {fy.Name}") throw new DomainException($"Aby potwierdzić nieodwracalne zamknięcie roku, wpisz: ZAMKNIJ {fy.Name}");
+        var exceptionMode = await new SettingsService(_db, _clock).GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct) is null
+                            && await new SettingsService(_db, _clock).GetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), () => null, ct) is not null;
+        var expected = exceptionMode ? $"ZAMKNIJ {fy.Name} TRYB WYJĄTKOWY" : $"ZAMKNIJ {fy.Name}";
+        if (confirmation != expected) throw new DomainException($"Aby potwierdzić nieodwracalne zamknięcie roku, wpisz: {expected}");
         var preview = await PreviewYearCloseAsync(fiscalYearId, ct);
         if (preview.Checklist.HasBlocking)
             throw new DomainException("Nie można zamknąć roku:" + Environment.NewLine +

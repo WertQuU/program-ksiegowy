@@ -37,6 +37,31 @@ public enum AccountGroup
 }
 
 /// <summary>Domyślna klasyfikacja podatkowa (CIT) obrotów konta.</summary>
+/// <summary>
+/// Kategoria przepływów pieniężnych konta przeciwstawnego (RPP, zał. nr 1 do UoR) — gdy pusta, wynika z pozycji bilansu / RZiS konta.
+/// Ustawia się ją dla kont, których pozycja bilansu nie rozstrzyga treści (np. leasing finansowy w „innych zobowiązaniach
+/// finansowych”, udzielone pożyczki, rozrachunki z tytułu dywidend, nieruchomości inwestycyjne).
+/// </summary>
+public enum CashFlowCategory
+{
+    Operacyjna,
+    RzeczoweAktywaTrwaleIWnip,
+    InwestycjeWNieruchomosci,
+    AktywaFinansowePowiazane,
+    AktywaFinansowe,
+    PozyczkiUdzielone,
+    InneInwestycyjne,
+    KapitalWlasny,
+    WyplatyNaRzeczWlascicieli,
+    InneWydatkiZPodzialuZysku,
+    UdzialyWlasne,
+    KredytyIPozyczki,
+    DluznePapieryWartosciowe,
+    InneZobowiazaniaFinansowe,
+    LeasingFinansowy,
+    InneFinansowe
+}
+
 /// <summary>Kwalifikacja do limitu kosztów finansowania dłużnego (art. 15c ust. 12 ustawy o CIT).</summary>
 public enum DebtFinancingKind
 {
@@ -105,6 +130,8 @@ public class Account : CompanyEntity
     public CitClassification CitClassification { get; set; } = CitClassification.NieDotyczy;
     /// <summary>Art. 15c ustawy o CIT: null — automatycznie wg pozycji RZiS (R.H.I odsetki → koszt, R.G.II → przychód odsetkowy).</summary>
     public DebtFinancingKind? DebtFinancing { get; set; }
+    /// <summary>Kategoria RPP (null — wg pozycji bilansu / RZiS).</summary>
+    public CashFlowCategory? CashFlow { get; set; }
 
     public bool IsActive { get; set; } = true;
     public bool IsBlocked { get; set; }

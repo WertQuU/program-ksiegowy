@@ -115,3 +115,16 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | PK-03 ryczałt do 200 zł | Poprawione: kwota należności z umowy (pole „kwota z umowy”), nie dla umów z własnym pracownikiem; ulga dla młodych — przychód zwolniony. |
 | PK-04 wpłaty CIT | Poprawione: wpłaty do terminu zeznania (także w kolejnym roku, bez zaliczek kolejnego roku) przypisane do terminów zaliczek; zaległości, wpłaty po terminie, możliwa nadpłata — do potwierdzenia w e-US. |
 | PK-05 ostateczne zamknięcie | Poprawione: blokada bez zarejestrowanego zatwierdzenia sprawozdania; wyjątek tylko po odrębnej, udokumentowanej decyzji zapisanej w dzienniku. |
+
+
+## Audyt 31.10.2026 (commit 9367e02) — rozstrzygnięcia
+
+| Ustalenie | Stan |
+|---|---|
+| PK-01 ryczałt a ulga dla młodych | Poprawione: ryczałt z art. 30 ust. 1 pkt 5a stosuje się niezależnie od wieku (zwolnienie z art. 21 ust. 1 pkt 148 nie obejmuje tych przychodów); test: 150 zł → 18 zł. |
+| PK-02 brak kwoty z umowy | Poprawione: bez kwoty należności z umowy nie ma domniemania ryczałtu; lista płac z taką umową nie może zostać zaksięgowana. |
+| PK-03 struktura RPP | Poprawione: wszystkie pozycje zał. nr 1 (B.I.1–4 z B.I.3.a/b.1–5, B.II.1–4 z B.II.3.a/b.1–2, C.I.1–4, C.II.1–9) w raporcie i XML; kategoria RPP na koncie (leasing finansowy, obligacje, pożyczki udzielone, dywidendy, nieruchomości inwestycyjne). |
+| PK-04 kompensowanie w zapisie | Poprawione: wpływy i wydatki zapisu analizowane odrębnie; przeniesienia między własnymi rachunkami rozpoznawane i wyłączane. |
+| PK-05 korekta uzgadniająca | Poprawione: brak automatycznej korekty; A.II.10 tylko z udokumentowanych korekt; nieuzgodniona różnica blokuje wersję „gotową do podpisu”. |
+| PK-06 wpłaty CIT | Poprawione: rejestr zarachowania wpłat potwierdzonego w e-US (zastępuje szacunek); szacunek wyraźnie oznaczony. |
+| PK-07 tryb wyjątkowy zamknięcia | Poprawione: wymagane wskazanie podstawy (zakończenie działalności / brak zatwierdzenia w terminie), dokumentu i uzasadnienia, osobna fraza potwierdzenia; program nie potwierdza legalności trybu. |

@@ -239,12 +239,11 @@ public static partial class FinancialStatementXmlBuilder
         }
         XElement J(string n, decimal a, decimal b, params object?[] children) => new(Jin + n, Amounts(a, b), children);
         decimal G(CashFlowStatement? s, string code) => s?.Get(code) ?? 0;
-        decimal In(CashFlowStatement? s, string code) => Math.Max(0, G(s, code));
-        decimal Out(CashFlowStatement? s, string code) => Math.Max(0, -G(s, code));
+        XElement P(string n, string code) => J(n, G(cf, code), G(prev, code));
         var ops = new XElement(Jin + "A_II", Amounts(G(cf, "A.II"), G(prev, "A.II")));
         for (var i = 1; i <= 10; i++) ops.Add(J($"A_II_{i}", G(cf, $"A.II.{i}"), G(prev, $"A.II.{i}")));
-        // działalność inwestycyjna i finansowa: wpływy i wydatki brutto z operacji pieniężnych (StatementBuilder.CashFlowGrossAsync);
-        // aktywa finansowe i inne pozycje — w pozycjach „inne” (bez podziału na jednostki powiązane i pozostałe)
+        // działalność inwestycyjna i finansowa: wpływy i wydatki brutto z operacji pieniężnych (StatementBuilder.CashFlowGrossAsync),
+        // każda pozycja załącznika nr 1 do UoR w odpowiadającym jej elemencie schematu
         return new XElement(container, new XElement(Jin + "PrzeplywyPosr",
             new XElement(Jin + "A",
                 J("A_I", G(cf, "A.I"), G(prev, "A.I")),
@@ -252,23 +251,28 @@ public static partial class FinancialStatementXmlBuilder
                 J("A_III", G(cf, "A.III"), G(prev, "A.III"))),
             new XElement(Jin + "B",
                 J("B_I", G(cf, "B.I"), G(prev, "B.I"),
-                    J("B_I_1", G(cf, "B.I.1"), G(prev, "B.I.1")),
-                    J("B_I_4", G(cf, "B.I.3") + G(cf, "B.I.4"), G(prev, "B.I.3") + G(prev, "B.I.4"))),
+                    P("B_I_1", "B.I.1"),
+                    P("B_I_2", "B.I.2"),
+                    J("B_I_3", G(cf, "B.I.3"), G(prev, "B.I.3"),
+                        P("B_I_3_A", "B.I.3.A"),
+                        J("B_I_3_B", G(cf, "B.I.3.B"), G(prev, "B.I.3.B"),
+                            P("B_I_3_B_1", "B.I.3.B.1"), P("B_I_3_B_2", "B.I.3.B.2"), P("B_I_3_B_3", "B.I.3.B.3"), P("B_I_3_B_4", "B.I.3.B.4"), P("B_I_3_B_5", "B.I.3.B.5"))),
+                    P("B_I_4", "B.I.4")),
                 J("B_II", G(cf, "B.II"), G(prev, "B.II"),
-                    J("B_II_1", G(cf, "B.II.1"), G(prev, "B.II.1")),
-                    J("B_II_4", G(cf, "B.II.3") + G(cf, "B.II.4"), G(prev, "B.II.3") + G(prev, "B.II.4"))),
+                    P("B_II_1", "B.II.1"),
+                    P("B_II_2", "B.II.2"),
+                    J("B_II_3", G(cf, "B.II.3"), G(prev, "B.II.3"),
+                        P("B_II_3_A", "B.II.3.A"),
+                        J("B_II_3_B", G(cf, "B.II.3.B"), G(prev, "B.II.3.B"),
+                            P("B_II_3_B_1", "B.II.3.B.1"), P("B_II_3_B_2", "B.II.3.B.2"))),
+                    P("B_II_4", "B.II.4")),
                 J("B_III", G(cf, "B.III"), G(prev, "B.III"))),
             new XElement(Jin + "C",
                 J("C_I", G(cf, "C.I"), G(prev, "C.I"),
-                    J("C_I_1", G(cf, "C.I.1"), G(prev, "C.I.1")),
-                    J("C_I_2", G(cf, "C.I.2"), G(prev, "C.I.2")),
-                    J("C_I_4", G(cf, "C.I.4"), G(prev, "C.I.4"))),
+                    P("C_I_1", "C.I.1"), P("C_I_2", "C.I.2"), P("C_I_3", "C.I.3"), P("C_I_4", "C.I.4")),
                 J("C_II", G(cf, "C.II"), G(prev, "C.II"),
-                    J("C_II_1", G(cf, "C.II.1"), G(prev, "C.II.1")),
-                    J("C_II_2", G(cf, "C.II.2"), G(prev, "C.II.2")),
-                    J("C_II_4", G(cf, "C.II.4"), G(prev, "C.II.4")),
-                    J("C_II_8", G(cf, "C.II.8"), G(prev, "C.II.8")),
-                    J("C_II_9", G(cf, "C.II.9"), G(prev, "C.II.9"))),
+                    P("C_II_1", "C.II.1"), P("C_II_2", "C.II.2"), P("C_II_3", "C.II.3"), P("C_II_4", "C.II.4"), P("C_II_5", "C.II.5"),
+                    P("C_II_6", "C.II.6"), P("C_II_7", "C.II.7"), P("C_II_8", "C.II.8"), P("C_II_9", "C.II.9")),
                 J("C_III", G(cf, "C.III"), G(prev, "C.III"))),
             J("D", G(cf, "D"), G(prev, "D")),
             J("E", G(cf, "E"), G(prev, "E")),

@@ -125,6 +125,21 @@ public sealed partial class ReportsViewModel : SectionViewModel
         StatusMessage = "Zapisano weryfikację rachunku przepływów pieniężnych.";
     });
 
+    /// <summary>Udokumentowana korekta działalności operacyjnej RPP (A.II.10).</summary>
+    [RelayCommand]
+    private Task AddCashFlowAdjustmentAsync() => RunAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        var description = await Dialogs.PromptAsync("Korekta RPP (A.II.10)", "Treść korekty (np. różnice kursowe z wyceny środków pieniężnych):", "");
+        if (string.IsNullOrWhiteSpace(description)) return;
+        var amount = Parse.Amount(await Dialogs.PromptAsync("Korekta RPP (A.II.10)", "Kwota (zwiększenie przepływów operacyjnych +, zmniejszenie −):", ""), "Kwota korekty");
+        var basis = await Dialogs.PromptAsync("Korekta RPP (A.II.10)", "Podstawa (dokument / wyliczenie):", "");
+        if (string.IsNullOrWhiteSpace(basis)) return;
+        await using var db = Session.OpenDb();
+        await new FinancialStatementApprovals(db, Session.User, Session.Clock).AddCashFlowAdjustmentAsync(y.Name, description, amount, basis);
+        StatusMessage = "Zapisano korektę RPP.";
+    });
+
     [RelayCommand]
     private Task RecordStatementApprovalAsync() => RunAsync(async () =>
     {
@@ -272,8 +287,8 @@ public sealed partial class ReportsViewModel : SectionViewModel
             calc && prev is not null ? await sb.ProfitAndLossCalculationAsync(prev.Id, prev.EndDate, key) : null,
             simplified ? null : await sb.EquityChangesAsync(y.Id, y.EndDate),
             simplified || prev is null ? null : await sb.EquityChangesAsync(prev.Id, prev.EndDate),
-            simplified ? null : await sb.CashFlowAsync(y.Id, y.EndDate),
-            simplified || prev is null ? null : await sb.CashFlowAsync(prev.Id, prev.EndDate),
+            simplified ? null : await sb.CashFlowAsync(y.Id, y.EndDate, default, await new FinancialStatementApprovals(db, Session.User, Session.Clock).CashFlowAdjustmentPairsAsync(y.Name)),
+            simplified || prev is null ? null : await sb.CashFlowAsync(prev.Id, prev.EndDate, default, await new FinancialStatementApprovals(db, Session.User, Session.Clock).CashFlowAdjustmentPairsAsync(prev.Name)),
             notesTexts["kontynuacja"], notesTexts["zasady"], notesPdf, $"informacja-dodatkowa-{y.Name}.pdf",
             AverageEmployment: await AverageEmploymentAsync(db, y.StartDate, y.EndDate), AuditRequired: AuditRequired,
             IncomeTax: Domain.Companies.LegalForms.IsCitTaxpayer(company.LegalForm) ? await IncomeTaxAsync(db, y) : null,
@@ -287,7 +302,8 @@ public sealed partial class ReportsViewModel : SectionViewModel
             y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany || periodsClosed, AuditRequired, scope,
             notesConfirmed: await approvals.NotesConfirmedAsync(y.Name, notesTexts),
             costKeyApproved: calc ? await approvals.CostKeyApprovalAsync(key) is not null : null,
-            cashFlowVerified: await approvals.CashFlowVerifiedAsync(y.Name) is not null);
+            cashFlowVerified: await approvals.CashFlowVerifiedAsync(y.Name) is not null,
+            cashFlowUnreconciled: simplified ? 0m : (await sb.CashFlowAsync(y.Id, y.EndDate, default, await approvals.CashFlowAdjustmentPairsAsync(y.Name))).Unreconciled);
         var draft = missing.Count > 0;
         if (AuditRequired && scope != StatementScope.Inna)
             await Dialogs.InfoAsync("Sprawozdanie podlega badaniu", "Jednostka mała/mikro podlegająca badaniu: struktura sprawozdania wynika z kategorii jednostki i polityki rachunkowości (zał. nr 4/5 UoR). Potwierdź z biegłym rewidentem zakres sprawozdania (zestawienie zmian w kapitale, rachunek przepływów) przed podpisaniem.");

@@ -38,6 +38,27 @@ public sealed partial class ChartViewModel : SectionViewModel
         new(1, "art. 15c: koszt finansowania dłużnego"), new(2, "art. 15c: przychód odsetkowy")
     };
     [ObservableProperty] private Choice<int> _debtFinancing = DebtFinancingChoices[0];
+    public static List<Choice<int>> CashFlowChoices { get; } = new List<Choice<int>> { new(-1, "RPP: automatycznie (wg pozycji bilansu / RZiS)") }
+        .Concat(Enum.GetValues<CashFlowCategory>().Select(c => new Choice<int>((int)c, "RPP: " + c switch
+        {
+            CashFlowCategory.Operacyjna => "działalność operacyjna",
+            CashFlowCategory.RzeczoweAktywaTrwaleIWnip => "rzeczowe aktywa trwałe i WNiP (B.I.1 / B.II.1)",
+            CashFlowCategory.InwestycjeWNieruchomosci => "inwestycje w nieruchomości i WNiP (B.I.2 / B.II.2)",
+            CashFlowCategory.AktywaFinansowePowiazane => "aktywa finansowe w jednostkach powiązanych (B.I.3.a / B.II.3.a)",
+            CashFlowCategory.AktywaFinansowe => "aktywa finansowe w pozostałych jednostkach (B.I.3.b / B.II.3.b)",
+            CashFlowCategory.PozyczkiUdzielone => "udzielone pożyczki długoterminowe (spłata / udzielenie)",
+            CashFlowCategory.InneInwestycyjne => "inne inwestycyjne (B.I.4 / B.II.4)",
+            CashFlowCategory.KapitalWlasny => "wydanie udziałów, dopłaty do kapitału (C.I.1)",
+            CashFlowCategory.WyplatyNaRzeczWlascicieli => "dywidendy i wypłaty na rzecz właścicieli (C.II.2)",
+            CashFlowCategory.InneWydatkiZPodzialuZysku => "inne wydatki z podziału zysku (C.II.3)",
+            CashFlowCategory.UdzialyWlasne => "nabycie udziałów własnych (C.II.1)",
+            CashFlowCategory.KredytyIPozyczki => "kredyty i pożyczki (C.I.2 / C.II.4)",
+            CashFlowCategory.DluznePapieryWartosciowe => "dłużne papiery wartościowe (C.I.3 / C.II.5)",
+            CashFlowCategory.InneZobowiazaniaFinansowe => "inne zobowiązania finansowe (C.I.4 / C.II.6)",
+            CashFlowCategory.LeasingFinansowy => "leasing finansowy (C.II.7)",
+            _ => "inne finansowe (C.I.4 / C.II.9)"
+        }))).ToList();
+    [ObservableProperty] private Choice<int> _cashFlow = CashFlowChoices[0];
     public List<Choice<AccountType>> Types { get; } = Choices.Of<AccountType>();
     public List<Choice<CitClassification>> CitClasses { get; } = Choices.Of<CitClassification>();
 
@@ -103,6 +124,7 @@ public sealed partial class ChartViewModel : SectionViewModel
             BalanceDebitLine = a.BalanceDebitLine ?? ""; BalanceCreditLine = a.BalanceCreditLine ?? ""; ProfitLossLine = a.ProfitLossLine ?? "";
             Settlement = a.IsSettlementAccount; IsActive = a.IsActive; Cit = CitClasses.First(x => x.Value == a.CitClassification);
             DebtFinancing = DebtFinancingChoices.First(x => x.Value == (a.DebtFinancing is { } k ? (int)k : -1));
+            CashFlow = CashFlowChoices.First(x => x.Value == (a.CashFlow is { } cfk ? (int)cfk : -1));
         });
     }
 
@@ -151,6 +173,7 @@ public sealed partial class ChartViewModel : SectionViewModel
         await new ChartService(db, Session.User, Session.Clock).UpdateAccountAsync(id, Name, Parse.Trim(BalanceDebitLine), Parse.Trim(BalanceCreditLine),
             Parse.Trim(ProfitLossLine), Cit.Value, IsActive);
         await new ChartService(db, Session.User, Session.Clock).SetDebtFinancingAsync(id, DebtFinancing.Value < 0 ? null : (DebtFinancingKind)DebtFinancing.Value);
+        await new ChartService(db, Session.User, Session.Clock).SetCashFlowCategoryAsync(id, CashFlow.Value < 0 ? null : (CashFlowCategory)CashFlow.Value);
     }, "Zapisano zmiany konta.");
 
     [RelayCommand]

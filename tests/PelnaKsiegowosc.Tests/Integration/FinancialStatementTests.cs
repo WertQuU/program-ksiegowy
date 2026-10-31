@@ -149,9 +149,11 @@ public class FinancialStatementTests
             notesConfirmed: false, costKeyApproved: false, cashFlowVerified: false);
         Assert.Contains(approvalGaps, g => g.Contains("informacji dodatkowej") && g.Contains("potwierdzona"));
         Assert.Contains(approvalGaps, g => g.Contains("klucz podziału kosztów"));
-        Assert.Contains(approvalGaps, g => g.Contains("Rachunek przepływów pieniężnych wyliczony metodą uproszczoną"));
+        Assert.Contains(approvalGaps, g => g.Contains("Rachunek przepływów pieniężnych nie został zweryfikowany"));
+        Assert.Contains(FinancialStatementCompleteness.Check(bsCur, x, texts.Values, texts["kontynuacja"], texts["zasady"], true, false, StatementScope.Inna, cashFlowUnreconciled: 12.5m),
+            g => g.Contains("nie uzgadnia się"));
         Assert.DoesNotContain(FinancialStatementCompleteness.Check(bsCur, x, texts.Values, texts["kontynuacja"], texts["zasady"], true, false, StatementScope.Mala, cashFlowVerified: false),
-            g => g.Contains("Rachunek przepływów pieniężnych wyliczony"));
+            g => g.Contains("Rachunek przepływów pieniężnych"));
 
         // potwierdzenie treści informacji dodatkowej — zmiana tekstu je unieważnia
         var approvals = new FinancialStatementApprovals(t.Db, t.User, t.Clock);
@@ -364,5 +366,54 @@ public class CashFlowGrossTests
         Assert.Equal(-20000m, cf.Get("B.III"));
         Assert.Equal(200000m, cf.Get("C.I.1"));
         Assert.Equal(cf.Get("E"), cf.Get("D"));
+    }
+
+    [Fact]
+    public async Task All_cash_flow_items_are_classified_without_netting_and_unreconciled_difference_is_not_hidden()
+    {
+        await using var t = await PelnaKsiegowosc.Tests.Infrastructure.TestBooks.CreateAsync();
+        var chart = new PelnaKsiegowosc.Application.Ledger.ChartService(t.Db, t.User, t.Clock);
+        await chart.AddAccountAsync(t.Chart.Id, "040", "Nieruchomości inwestycyjne", Domain.Accounts.AccountType.Aktywne, "A.IV.1");
+        await chart.AddAccountAsync(t.Chart.Id, "134", "Kredyty bankowe", Domain.Accounts.AccountType.Pasywne, balanceCreditLine: "P.B.III.3.a");
+        await chart.AddAccountAsync(t.Chart.Id, "241", "Obligacje wyemitowane", Domain.Accounts.AccountType.Pasywne, balanceCreditLine: "P.B.III.3.b");
+        var leasing = await chart.AddAccountAsync(t.Chart.Id, "242", "Zobowiązania z tytułu leasingu finansowego", Domain.Accounts.AccountType.Pasywne, balanceCreditLine: "P.B.III.3.c");
+        await chart.SetCashFlowCategoryAsync(leasing.Id, Domain.Accounts.CashFlowCategory.LeasingFinansowy);
+        var d = new DateOnly(2026, 5, 4);
+        async Task Post(string no, params PelnaKsiegowosc.Application.Ledger.LineInput[] lines)
+        {
+            await t.Ledger().CreateAndPostAsync(PelnaKsiegowosc.Tests.Infrastructure.TestBooks.Entry(d, no, lines));
+            await t.Db.SaveChangesAsync();
+        }
+        await Post("PK/K", new("130-01", 500000m, 0), new("801", 0, 500000m));
+        await Post("WB/1", new("040", 150000m, 0), new("130-01", 0, 150000m));                       // nieruchomość inwestycyjna — zakup
+        await Post("WB/2", new("130-01", 90000m, 0), new("760-01", 0, 90000m));                        // zbycie środka trwałego
+        await Post("WB/3", new("130-01", 100000m, 0), new("241", 0, 100000m));                         // emisja obligacji
+        await Post("WB/4", new("241", 40000m, 0), new("130-01", 0, 40000m));                           // wykup obligacji
+        await Post("WB/5", new("242", 12000m, 0), new("130-01", 0, 12000m));                           // rata leasingu finansowego
+        // jeden zapis: wpływ kredytu 30 000 i zapłata za środek trwały 30 000 — bez kompensowania
+        await Post("WB/6", new("130-01", 30000m, 0), new("134", 0, 30000m), new("010-03", 30000m, 0), new("130-01", 0, 30000m));
+        await Post("WB/7", new("100", 5000m, 0), new("130-01", 0, 5000m));                              // przelew rachunek → kasa (wewnętrzny)
+        var cf = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Equal(150000m, cf.Get("B.II.2"));
+        Assert.Equal(90000m, cf.Get("B.I.1"));
+        Assert.Equal(30000m, cf.Get("B.II.1"));
+        Assert.Equal(100000m, cf.Get("C.I.3"));
+        Assert.Equal(40000m, cf.Get("C.II.5"));
+        Assert.Equal(12000m, cf.Get("C.II.7"));
+        Assert.Equal(30000m, cf.Get("C.I.2"));
+        Assert.Equal(500000m, cf.Get("C.I.1"));
+        Assert.Equal(0m, cf.Unreconciled);
+        Assert.Equal(cf.Get("E"), cf.Get("D"));
+
+        // wpływ zaksięgowany na konto bez pozycji sprawozdania — różnica uzgodnienia jest jawna, nie „dopisywana” automatycznie
+        await chart.AddAccountAsync(t.Chart.Id, "249", "Rozliczenia do wyjaśnienia", Domain.Accounts.AccountType.AktywnoPasywne);
+        await Post("WB/8", new("130-01", 700m, 0), new("249", 0, 700m));
+        var unreconciled = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Equal(0m, unreconciled.Get("A.II.10"));
+        Assert.Equal(700m, unreconciled.Unreconciled);
+        Assert.Contains(unreconciled.Warnings, w => w.Contains("NIEUZGODNIONE"));
+        var withAdjustment = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate, default, new[] { ("Wpływ do wyjaśnienia — zaliczka (konto 249)", 700m) });
+        Assert.Equal(0m, withAdjustment.Unreconciled);
+        Assert.Equal(700m, withAdjustment.Get("A.II.10"));
     }
 }

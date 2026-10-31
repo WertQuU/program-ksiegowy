@@ -321,6 +321,22 @@ public sealed partial class CitViewModel : SectionViewModel
         DebtHeadroom = $"Art. 15c ust. 18: wolny limit kosztów finansowania w roku {year.Name}: {Money.Format(full.DebtFinancingHeadroom)} zł; nadwyżka roku: {Money.Format(full.DebtFinancingExcessOperating + full.DebtFinancingExcessCapital)} zł.";
     }
 
+    /// <summary>Zarachowanie wpłaty CIT według e-Urzędu Skarbowego (zastępuje szacunek w zestawieniu CIT-8).</summary>
+    [RelayCommand]
+    private Task RecordCitPaymentAllocationAsync() => ChangeAsync(async () =>
+    {
+        var date = Parse.Date(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Data wpłaty (dd.mm.rrrr):", ""), "Data wpłaty");
+        var amount = Parse.Amount(await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Kwota zarachowana:", ""), "Kwota");
+        var target = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Na co zarachowano: numer okresu zaliczki (np. 3), „R” — podatek roczny, „I” — inne zobowiązanie:", "");
+        if (string.IsNullOrWhiteSpace(target)) return;
+        var source = await Dialogs.PromptAsync("Zarachowanie wpłaty CIT", "Źródło potwierdzenia (np. e-Urząd Skarbowy — karta rozliczeń):", "e-Urząd Skarbowy");
+        if (string.IsNullOrWhiteSpace(source)) return;
+        var t = target.Trim().ToUpperInvariant();
+        int? period = t is "R" or "I" ? null : Parse.Int(t, "Okres zaliczki");
+        await using var db = Session.OpenDb();
+        await new CitService(db, Session.User, Session.Clock).RecordPaymentAllocationAsync(Session.CurrentYear.Id, date, amount, period, t == "R", source);
+    }, "Zapisano zarachowanie wpłaty.");
+
     [ObservableProperty] private TableData _debtExcess = TableData.Empty;
     [ObservableProperty] private TableRow? _selectedDebtExcess;
     [ObservableProperty] private string _debtHeadroom = "";

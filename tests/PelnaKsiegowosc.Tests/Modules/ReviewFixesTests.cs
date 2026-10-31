@@ -1003,5 +1003,17 @@ public class CitPaymentsTests
         Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("ZALEGŁOŚĆ 200,00"));
         Assert.Contains(r.Notes, n => n.Contains("zaległość podatkowa"));
         Assert.DoesNotContain(r.Rows, x => Label(x.Cells[1]) == "Nadpłata");
+        Assert.Contains(r.Rows, x => Label(x.Cells[1]).Contains("SZACUNEK"));
+
+        // zarachowanie potwierdzone w e-US: wpłata z 25.03 (300 zł) zarachowana na zaliczkę za okres 1 — inny wynik niż szacunek
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 1000m, 1, false, " "));
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 700m, 1, false, "e-US — karta rozliczeń");
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 3, 25), 300m, 1, false, "e-US — karta rozliczeń");
+        await cit.RecordPaymentAllocationAsync(t.Year.Id, new DateOnly(2026, 2, 15), 300m, 2, false, "e-US — karta rozliczeń");
+        var c = await new Application.Reports.ReportService(t.Db, t.User, t.Clock).Cit8Async(t.Year.Id);
+        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("POTWIERDZONE"));
+        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("okres 1") && Label(x.Cells[1]).Contains("po terminie"));
+        Assert.Contains(c.Rows, x => Label(x.Cells[1]).Contains("okres 2") && Label(x.Cells[1]).Contains("ZALEGŁOŚĆ 200,00"));
     }
 }

@@ -102,11 +102,15 @@ public sealed partial class ClosingViewModel : SectionViewModel
     private Task FinalCloseExceptionAsync() => ChangeAsync(async () =>
     {
         var y = Session.CurrentYear;
-        var reason = await Dialogs.PromptAsync("Zamknięcie bez zatwierdzenia sprawozdania",
-            "Ostateczne zamknięcie ksiąg następuje po zatwierdzeniu sprawozdania (art. 12 ust. 4 UoR). Opisz wyjątkową podstawę zamknięcia bez zarejestrowanej uchwały (np. likwidacja, brak zatwierdzenia w terminie) — decyzja zostanie zapisana w dzienniku zdarzeń:", "");
+        var liquidation = await Dialogs.ConfirmAsync("Tryb wyjątkowy zamknięcia",
+            "Ostateczne zamknięcie ksiąg następuje po zatwierdzeniu sprawozdania (art. 12 ust. 4 UoR). Czy podstawą jest zakończenie działalności, likwidacja, upadłość, połączenie lub przekształcenie? Tak — zakończenie działalności; Nie — sprawozdanie niezatwierdzone w terminie (wymaga oceny prawnej).");
+        var document = await Dialogs.PromptAsync("Tryb wyjątkowy zamknięcia", "Dokument źródłowy (np. uchwała o likwidacji, postanowienie sądu, protokół zgromadzenia):", "");
+        if (string.IsNullOrWhiteSpace(document)) return;
+        var reason = await Dialogs.PromptAsync("Tryb wyjątkowy zamknięcia", "Okoliczności i podstawa prawna (zapis w dzienniku zdarzeń; program nie potwierdza dopuszczalności tego trybu):", "");
         if (string.IsNullOrWhiteSpace(reason)) return;
         await using var db = Session.OpenDb();
-        await new PeriodService(db, Session.User, Session.Clock).RecordFinalCloseExceptionAsync(y.Id, reason);
+        await new PeriodService(db, Session.User, Session.Clock).RecordFinalCloseExceptionAsync(y.Id,
+            liquidation ? PeriodService.FinalCloseExceptionBasis.ZakonczenieDzialalnosci : PeriodService.FinalCloseExceptionBasis.NiezatwierdzoneWTerminie, document, reason);
     }, "Zapisano decyzję o zamknięciu bez zatwierdzenia sprawozdania.");
 
     [RelayCommand]
@@ -127,7 +131,7 @@ public sealed partial class ClosingViewModel : SectionViewModel
         }
         var confirmation = await Dialogs.PromptAsync("Zamknięcie roku — operacja nieodwracalna",
             $"Zamknięcie roku przeksięguje konta wynikowe na wynik finansowy, zablokuje księgi roku i utworzy bilans otwarcia roku następnego.{Environment.NewLine}" +
-            $"Przed zamknięciem zostanie wykonana kopia zapasowa.{Environment.NewLine}Aby potwierdzić, wpisz: ZAMKNIJ {y.Name}");
+            $"Przed zamknięciem zostanie wykonana kopia zapasowa.{Environment.NewLine}Aby potwierdzić, wpisz: ZAMKNIJ {y.Name} (w trybie wyjątkowym: ZAMKNIJ {y.Name} TRYB WYJĄTKOWY)");
         if (confirmation is null) return;
         if (Session.StoredBackupKey() is not null) await Session.BackupAsync($"przed zamknięciem roku {y.Name}", upload: true);
         else if (!await Dialogs.ConfirmAsync("Brak kopii zapasowej", "Na tym stanowisku nie ma klucza kopii zapasowych — kopia przed zamknięciem nie zostanie wykonana. Kontynuować?")) return;

@@ -11,7 +11,8 @@ public sealed record AccountTemplate(
     string? BalanceCreditLine = null,
     string? ProfitLossLine = null,
     bool Settlement = false,
-    CitClassification Cit = CitClassification.NieDotyczy);
+    CitClassification Cit = CitClassification.NieDotyczy,
+    CashFlowCategory? CashFlow = null);
 
 /// <summary>
 /// Przykładowy plan kont jednostki prowadzącej pełną księgowość (układ zbliżony do wzorcowego planu kont, koszty w układzie rodzajowym,
@@ -124,7 +125,7 @@ public static class ChartTemplate
         new("240", "Pozostałe rozrachunki", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true),
         new("245", "Rozrachunki z akcjonariuszami", AccountType.AktywnoPasywne),
         new("245-01", "Należne wkłady na kapitał akcyjny", AccountType.AktywnoPasywne, "C", "P.B.III.3.i", Settlement: true),
-        new("245-02", "Rozrachunki z tytułu dywidend", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true),
+        new("245-02", "Rozrachunki z tytułu dywidend", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true, CashFlow: CashFlowCategory.WyplatyNaRzeczWlascicieli),
         new("245-03", "Pożyczki od akcjonariuszy", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.a", Settlement: true),
         new("245-04", "Inne rozrachunki z akcjonariuszami", AccountType.AktywnoPasywne, "B.II.3.c", "P.B.III.3.i", Settlement: true),
         new("290", "Odpisy aktualizujące należności", AccountType.Pasywne, "B.II.3.a"),

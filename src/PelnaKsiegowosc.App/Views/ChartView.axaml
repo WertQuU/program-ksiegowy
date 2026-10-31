@@ -58,6 +58,7 @@
           <CheckBox Content="Konto rozrachunkowe" IsChecked="{Binding Settlement}" />
           <CheckBox Content="Aktywne" IsChecked="{Binding IsActive}" />
           <ComboBox ItemsSource="{Binding DebtFinancingChoices}" SelectedItem="{Binding DebtFinancing}" MinWidth="260" ToolTip.Tip="Limit kosztów finansowania dłużnego (art. 15c CIT): odsetki, prowizje, opłaty, część odsetkowa leasingu itd." />
+          <ComboBox ItemsSource="{Binding CashFlowChoices}" SelectedItem="{Binding CashFlow}" MinWidth="300" ToolTip.Tip="Kategoria rachunku przepływów pieniężnych dla zapłat z udziałem tego konta (np. leasing finansowy, obligacje, udzielone pożyczki, dywidendy)" />
           <Button Content="Dodaj konto" Command="{Binding AddAccountCommand}" />
           <Button Content="Zapisz zmiany zaznaczonego" Command="{Binding UpdateAccountCommand}" />
           <Button Content="Usuń zaznaczone" Command="{Binding DeleteAccountCommand}" />

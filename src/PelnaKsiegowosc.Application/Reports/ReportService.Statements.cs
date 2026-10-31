@@ -129,9 +129,10 @@ public sealed partial class ReportService
     {
         var fy = await YearAsync(fiscalYearId, ct);
         var sb = new StatementBuilder(_db);
-        var cur = await sb.CashFlowAsync(fiscalYearId, asOf, ct);
+        var approvals = new FinancialStatementApprovals(_db, _user, _clock);
+        var cur = await sb.CashFlowAsync(fiscalYearId, asOf, ct, await approvals.CashFlowAdjustmentPairsAsync(fy.Name, ct));
         var prevYear = await sb.PreviousYearAsync(fiscalYearId, ct);
-        var prev = prevYear is null ? null : await sb.CashFlowAsync(prevYear.Id, prevYear.EndDate, ct);
+        var prev = prevYear is null ? null : await sb.CashFlowAsync(prevYear.Id, prevYear.EndDate, ct, await approvals.CashFlowAdjustmentPairsAsync(prevYear.Name, ct));
         var r = await NewAsync("Rachunek przepływów pieniężnych (metoda pośrednia)", $"{fy.StartDate.ToPl()} – {asOf.ToPl()}", false, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Poz."), new ReportColumn("Wyszczególnienie", ColumnKind.Text, 4), new ReportColumn("Rok bieżący", ColumnKind.Money, 1.2), new ReportColumn("Rok poprzedni", ColumnKind.Money, 1.2) });
         foreach (var l in cur.Lines)

@@ -74,6 +74,7 @@ public sealed class ChartService
                 IsSettlementAccount = t.Settlement,
                 RequiresCounterparty = t.Settlement,
                 CitClassification = t.Cit,
+                CashFlow = t.CashFlow,
                 CreatedAtUtc = _clock.UtcNow
             };
             if (parentNumber is not null)
@@ -143,6 +144,16 @@ public sealed class ChartService
         if (acc.DebtFinancing == kind) return;
         await new Audit.AuditService(_db, _clock).AddAsync(_user, "KONTO_ART15C", "Account", acc.Id.ToString(), $"{acc.Number}: {acc.DebtFinancing?.ToString() ?? "auto"} → {kind?.ToString() ?? "auto"}", ct);
         acc.DebtFinancing = kind;
+        await _db.SaveChangesAsync(ct);
+    }
+
+    public async Task SetCashFlowCategoryAsync(Guid accountId, CashFlowCategory? category, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageChartOfAccounts);
+        var acc = await _db.Accounts.FirstAsync(a => a.Id == accountId && a.CompanyId == _user.CompanyId, ct);
+        if (acc.CashFlow == category) return;
+        await new Audit.AuditService(_db, _clock).AddAsync(_user, "KONTO_RPP", "Account", acc.Id.ToString(), $"{acc.Number}: {acc.CashFlow?.ToString() ?? "auto"} → {category?.ToString() ?? "auto"}", ct);
+        acc.CashFlow = category;
         await _db.SaveChangesAsync(ct);
     }
 

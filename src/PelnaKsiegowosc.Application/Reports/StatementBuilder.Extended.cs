@@ -43,6 +43,8 @@ public sealed record CashFlowLine(string Code, string Label, decimal Amount, int
 public sealed class CashFlowStatement
 {
     public List<CashFlowLine> Lines { get; } = new();
+    /// <summary>Różnica między przepływami netto a bilansową zmianą środków pieniężnych, niewyjaśniona udokumentowanymi korektami.</summary>
+    public decimal Unreconciled { get; set; }
     public List<string> Warnings { get; } = new();
     public decimal Get(string code) => Lines.FirstOrDefault(l => l.Code == code)?.Amount ?? 0m;
 }
@@ -151,7 +153,10 @@ public sealed partial class StatementBuilder
     /// i rozliczeń długoterminowych) skorygowana o amortyzację i wynik ze zbycia; finansowa: kredyty, pożyczki,
     /// papiery dłużne, kapitał (wpłaty, wypłaty z zysku), należne wpłaty i udziały własne. Kontrola: przepływy netto = zmiana środków pieniężnych.
     /// </summary>
-    public async Task<CashFlowStatement> CashFlowAsync(Guid fiscalYearId, DateOnly asOf, CancellationToken ct = default)
+    /// <param name="otherAdjustments">Udokumentowane korekty działalności operacyjnej (A.II.10 — np. różnice kursowe od środków
+    /// pieniężnych, operacje niepieniężne) z opisem; program nie wylicza ich automatycznie.</param>
+    public async Task<CashFlowStatement> CashFlowAsync(Guid fiscalYearId, DateOnly asOf, CancellationToken ct = default,
+        IReadOnlyList<(string Description, decimal Amount)>? otherAdjustments = null)
     {
         var o = await OpeningBalanceSheetAsync(fiscalYearId, ct);
         var c = await BalanceSheetAsync(fiscalYearId, asOf, ct);
@@ -165,6 +170,19 @@ public sealed partial class StatementBuilder
         var disposalResult = pl.Get("R.D.I") - pl.Get("R.E.I");
         var interest = pl.Get("R.H.I") - pl.Get("R.G.II");
         var dividends = pl.Get("R.G.I");
+        // należności i zobowiązania krótkoterminowe zaklasyfikowane do działalności inwestycyjnej lub finansowej (kredyty, dłużne
+        // papiery, inne zobowiązania finansowe, leasing finansowy, rozrachunki z tytułu dywidend, pożyczki udzielone itp.) — ich
+        // zmiana nie jest korektą operacyjną (przepływy wykazane w częściach B i C)
+        decimal nonOperatingLiabilities = 0, nonOperatingReceivables = 0;
+        var (chartAccounts, chartParents) = await ChartAsync(fiscalYearId, ct);
+        var nonOp = chartAccounts.Where(a => !chartParents.Contains(a.Id) && CategoryOf(a) != CashFlowCategory.Operacyjna).ToDictionary(a => a.Id);
+        if (nonOp.Count > 0)
+            foreach (var l in (await LinesAsync(fiscalYearId, asOf, ct)).Where(l => l.Kind != EntryKind.BilansOtwarcia && l.Kind != EntryKind.Zamkniecie && nonOp.ContainsKey(l.AccountId)))
+            {
+                var a = nonOp[l.AccountId];
+                if (Under(a.BalanceCreditLine, "P.B.III") || (a.BalanceDebitLine is null && Under(a.BalanceCreditLine, "P.B.III"))) nonOperatingLiabilities += l.Credit - l.Debit;
+                else if (Under(a.BalanceDebitLine, "B.II")) nonOperatingReceivables += l.Debit - l.Credit;
+            }
         var ops = new List<(string, string, decimal)>
         {
             ("A.II.1", "Amortyzacja", depreciation),
@@ -173,22 +191,17 @@ public sealed partial class StatementBuilder
             ("A.II.4", "Zysk (strata) z działalności inwestycyjnej", -disposalResult),
             ("A.II.5", "Zmiana stanu rezerw", D("P.B.I")),
             ("A.II.6", "Zmiana stanu zapasów", -D("B.I")),
-            ("A.II.7", "Zmiana stanu należności", -(D("B.II") + D("A.III"))),
-            ("A.II.8", "Zmiana stanu zobowiązań krótkoterminowych, z wyjątkiem pożyczek i kredytów", D("P.B.III") - D("P.B.III.3.a") - D("P.B.III.3.b")),
+            ("A.II.7", "Zmiana stanu należności", -(D("B.II") + D("A.III")) + nonOperatingReceivables),
+            ("A.II.8", "Zmiana stanu zobowiązań krótkoterminowych, z wyjątkiem pożyczek i kredytów", D("P.B.III") - nonOperatingLiabilities),
             ("A.II.9", "Zmiana stanu rozliczeń międzyokresowych", D("P.B.IV") - D("A.V") - D("B.IV")),
         };
         // działalność inwestycyjna i finansowa — wpływy i wydatki brutto z rzeczywistych operacji pieniężnych (zał. nr 1 do UoR)
         var g = await CashFlowGrossAsync(fiscalYearId, asOf, ct);
         var invNet = g.InvestingIn - g.InvestingOut;
         var finNet = g.FinancingIn - g.FinancingOut;
-        var cashOpen0 = o.Get("B.III.1.c");
-        var cashClose0 = c.Get("B.III.1.c");
-        // korekta uzgadniająca metodę pośrednią z faktyczną zmianą środków pieniężnych: różnice kursowe od środków pieniężnych,
-        // operacje niepieniężne, rozliczenia międzyokresowe niewidoczne w zmianach sald — wykazywana jawnie i do weryfikacji
-        var other = (cashClose0 - cashOpen0 - invNet - finNet) - (net + ops.Sum(x => x.Item3));
-        ops.Add(("A.II.10", "Inne korekty (w tym różnice kursowe od środków pieniężnych i operacje niepieniężne)", other));
-        if (other != 0)
-            cf.Warnings.Add($"Korekta uzgadniająca działalności operacyjnej {Money.Format(other)} zł (różnice kursowe, operacje niepieniężne, kompensaty) — zweryfikuj jej treść przed zatwierdzeniem RPP.");
+        // inne korekty (A.II.10) — wyłącznie udokumentowane przez użytkownika; różnica uzgodnienia nie jest „dopisywana” automatycznie
+        var other = otherAdjustments?.Sum(x => x.Amount) ?? 0m;
+        ops.Add(("A.II.10", "Inne korekty" + (otherAdjustments is { Count: > 0 } oa ? " (" + string.Join("; ", oa.Select(x => x.Description)) + ")" : ""), other));
         var opsTotal = ops.Sum(x => x.Item3);
         cf.Lines.Add(new CashFlowLine("A", "Przepływy środków pieniężnych z działalności operacyjnej", 0, 0));
         cf.Lines.Add(new CashFlowLine("A.I", "Zysk (strata) netto", net));
@@ -197,28 +210,47 @@ public sealed partial class StatementBuilder
         var opsNet = net + opsTotal;
         cf.Lines.Add(new CashFlowLine("A.III", "Przepływy pieniężne netto z działalności operacyjnej (I ± II)", opsNet, 1, true));
 
+        void L(string code, string label, int level = 2) => cf.Lines.Add(new CashFlowLine(code, label, g.Get(code), level));
         cf.Lines.Add(new CashFlowLine("B", "Przepływy środków pieniężnych z działalności inwestycyjnej", 0, 0));
         cf.Lines.Add(new CashFlowLine("B.I", "Wpływy", g.InvestingIn));
-        cf.Lines.Add(new CashFlowLine("B.I.1", "Zbycie wartości niematerialnych i prawnych oraz rzeczowych aktywów trwałych", g.Get("B.I.1"), 2));
-        cf.Lines.Add(new CashFlowLine("B.I.3", "Z aktywów finansowych (zbycie, dywidendy, odsetki)", g.Get("B.I.3"), 2));
-        cf.Lines.Add(new CashFlowLine("B.I.4", "Inne wpływy inwestycyjne", g.Get("B.I.4"), 2));
+        L("B.I.1", "Zbycie wartości niematerialnych i prawnych oraz rzeczowych aktywów trwałych");
+        L("B.I.2", "Zbycie inwestycji w nieruchomości oraz wartości niematerialne i prawne");
+        cf.Lines.Add(new CashFlowLine("B.I.3", "Z aktywów finansowych", new[] { "B.I.3.A", "B.I.3.B.1", "B.I.3.B.2", "B.I.3.B.3", "B.I.3.B.4", "B.I.3.B.5" }.Sum(g.Get), 2));
+        L("B.I.3.A", "a) w jednostkach powiązanych", 3);
+        cf.Lines.Add(new CashFlowLine("B.I.3.B", "b) w pozostałych jednostkach", new[] { "B.I.3.B.1", "B.I.3.B.2", "B.I.3.B.3", "B.I.3.B.4", "B.I.3.B.5" }.Sum(g.Get), 3));
+        L("B.I.3.B.1", "– zbycie aktywów finansowych", 4);
+        L("B.I.3.B.2", "– dywidendy i udziały w zyskach", 4);
+        L("B.I.3.B.3", "– spłata udzielonych pożyczek długoterminowych", 4);
+        L("B.I.3.B.4", "– odsetki", 4);
+        L("B.I.3.B.5", "– inne wpływy z aktywów finansowych", 4);
+        L("B.I.4", "Inne wpływy inwestycyjne");
         cf.Lines.Add(new CashFlowLine("B.II", "Wydatki", g.InvestingOut));
-        cf.Lines.Add(new CashFlowLine("B.II.1", "Nabycie wartości niematerialnych i prawnych oraz rzeczowych aktywów trwałych", g.Get("B.II.1"), 2));
-        cf.Lines.Add(new CashFlowLine("B.II.3", "Na aktywa finansowe", g.Get("B.II.3"), 2));
-        cf.Lines.Add(new CashFlowLine("B.II.4", "Inne wydatki inwestycyjne", g.Get("B.II.4"), 2));
+        L("B.II.1", "Nabycie wartości niematerialnych i prawnych oraz rzeczowych aktywów trwałych");
+        L("B.II.2", "Inwestycje w nieruchomości oraz wartości niematerialne i prawne");
+        cf.Lines.Add(new CashFlowLine("B.II.3", "Na aktywa finansowe", new[] { "B.II.3.A", "B.II.3.B.1", "B.II.3.B.2" }.Sum(g.Get), 2));
+        L("B.II.3.A", "a) w jednostkach powiązanych", 3);
+        cf.Lines.Add(new CashFlowLine("B.II.3.B", "b) w pozostałych jednostkach", g.Get("B.II.3.B.1") + g.Get("B.II.3.B.2"), 3));
+        L("B.II.3.B.1", "– nabycie aktywów finansowych", 4);
+        L("B.II.3.B.2", "– udzielone pożyczki długoterminowe", 4);
+        L("B.II.4", "Inne wydatki inwestycyjne");
         cf.Lines.Add(new CashFlowLine("B.III", "Przepływy pieniężne netto z działalności inwestycyjnej (I − II)", invNet, 1, true));
 
         cf.Lines.Add(new CashFlowLine("C", "Przepływy środków pieniężnych z działalności finansowej", 0, 0));
         cf.Lines.Add(new CashFlowLine("C.I", "Wpływy", g.FinancingIn));
-        cf.Lines.Add(new CashFlowLine("C.I.1", "Wpływy netto z wydania udziałów (akcji) i innych instrumentów kapitałowych oraz dopłat do kapitału", g.Get("C.I.1"), 2));
-        cf.Lines.Add(new CashFlowLine("C.I.2", "Kredyty i pożyczki", g.Get("C.I.2"), 2));
-        cf.Lines.Add(new CashFlowLine("C.I.4", "Inne wpływy finansowe", g.Get("C.I.4"), 2));
+        L("C.I.1", "Wpływy netto z wydania udziałów (emisji akcji) i innych instrumentów kapitałowych oraz dopłat do kapitału");
+        L("C.I.2", "Kredyty i pożyczki");
+        L("C.I.3", "Emisja dłużnych papierów wartościowych");
+        L("C.I.4", "Inne wpływy finansowe");
         cf.Lines.Add(new CashFlowLine("C.II", "Wydatki", g.FinancingOut));
-        cf.Lines.Add(new CashFlowLine("C.II.1", "Nabycie udziałów (akcji) własnych", g.Get("C.II.1"), 2));
-        cf.Lines.Add(new CashFlowLine("C.II.2", "Dywidendy i inne wypłaty na rzecz właścicieli", g.Get("C.II.2"), 2));
-        cf.Lines.Add(new CashFlowLine("C.II.4", "Spłaty kredytów i pożyczek", g.Get("C.II.4"), 2));
-        cf.Lines.Add(new CashFlowLine("C.II.8", "Odsetki", g.Get("C.II.8"), 2));
-        cf.Lines.Add(new CashFlowLine("C.II.9", "Inne wydatki finansowe", g.Get("C.II.9"), 2));
+        L("C.II.1", "Nabycie udziałów (akcji) własnych");
+        L("C.II.2", "Dywidendy i inne wypłaty na rzecz właścicieli");
+        L("C.II.3", "Inne, niż wypłaty na rzecz właścicieli, wydatki z tytułu podziału zysku");
+        L("C.II.4", "Spłaty kredytów i pożyczek");
+        L("C.II.5", "Wykup dłużnych papierów wartościowych");
+        L("C.II.6", "Z tytułu innych zobowiązań finansowych");
+        L("C.II.7", "Płatności zobowiązań z tytułu umów leasingu finansowego");
+        L("C.II.8", "Odsetki");
+        L("C.II.9", "Inne wydatki finansowe");
         cf.Lines.Add(new CashFlowLine("C.III", "Przepływy pieniężne netto z działalności finansowej (I − II)", finNet, 1, true));
 
         var total = opsNet + invNet + finNet;
@@ -228,8 +260,10 @@ public sealed partial class StatementBuilder
         cf.Lines.Add(new CashFlowLine("E", "Bilansowa zmiana stanu środków pieniężnych", cashClose - cashOpen, 0));
         cf.Lines.Add(new CashFlowLine("F", "Środki pieniężne na początek okresu", cashOpen, 0));
         cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D)", cashOpen + total, 0, true));
-        if (total != cashClose - cashOpen)
-            cf.Warnings.Add($"Przepływy netto ({Money.Format(total)}) ≠ bilansowa zmiana środków pieniężnych ({Money.Format(cashClose - cashOpen)}) — sprawdź, czy bilans się bilansuje i czy wszystkie konta są przypisane do pozycji.");
+        cf.Unreconciled = cashClose - cashOpen - total;
+        if (cf.Unreconciled != 0)
+            cf.Warnings.Add($"NIEUZGODNIONE: przepływy netto ({Money.Format(total)}) ≠ bilansowa zmiana środków pieniężnych ({Money.Format(cashClose - cashOpen)}), różnica {Money.Format(cf.Unreconciled)} zł. " +
+                            "Ustal przyczynę (klasyfikacja kont — kategoria RPP w planie kont, różnice kursowe od środków pieniężnych, operacje niepieniężne, kompensaty) i wprowadź udokumentowane korekty A.II.10; do tego czasu sprawozdanie nie może być oznaczone jako gotowe.");
         return cf;
     }
 }

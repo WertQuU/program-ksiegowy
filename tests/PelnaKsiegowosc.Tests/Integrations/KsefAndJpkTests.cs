@@ -288,6 +288,34 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_cit_reports_multi_level_analytics_with_parent_chain_and_aggregated_turnover()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var chart = new PelnaKsiegowosc.Application.Ledger.ChartService(t.Db, t.User, t.Clock);
+        await chart.AddAccountAsync(t.Chart.Id, "700-02-01", "Sprzedaż usług — klient A", Domain.Accounts.AccountType.WynikowePrzychodowe, profitLossLine: "R.A.I", cit: Domain.Accounts.CitClassification.PrzychodPodatkowy);
+        await chart.AddAccountAsync(t.Chart.Id, "700-02-02", "Sprzedaż usług — klient B", Domain.Accounts.AccountType.WynikowePrzychodowe, profitLossLine: "R.A.I", cit: Domain.Accounts.CitClassification.PrzychodPodatkowy);
+        var d = new DateOnly(2026, 2, 10);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "S/1", new("130-01", 300m, 0), new("700-02-01", 0, 300m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "S/2", new("130-01", 200m, 0), new("700-02-02", 0, 200m)));
+        await t.Db.SaveChangesAsync();
+        t.Company.Voivodeship = "mazowieckie"; t.Company.County = "Warszawa"; t.Company.Commune = "Warszawa"; t.Company.TaxOfficeCode = "1471";
+        var rec = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, t.Year, rec.Rpd, false, t.Clock.UtcNow, Validator());
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(10)));
+        var ns = JpkKrPdBuilder.Ns;
+        var zois = r.Document.Descendants(ns + "ZOiS7").ToDictionary(z => z.Element(ns + "S_1")!.Value);
+        decimal Ma(string acc) => decimal.Parse(zois[acc].Element(ns + "S_7")!.Value, System.Globalization.CultureInfo.InvariantCulture);
+        Assert.Equal("700-02", zois["700-02-01"].Element(ns + "S_3")!.Value);
+        Assert.Equal("700", zois["700-02"].Element(ns + "S_3")!.Value);
+        Assert.Equal("700", zois["700"].Element(ns + "S_3")!.Value);
+        Assert.Equal(500m, Ma("700-02"));
+        Assert.Equal(Ma("700-02-01") + Ma("700-02-02"), Ma("700-02"));
+        Assert.Equal(500m, Ma("700"));
+        Assert.Equal("130", zois["130-01"].Element(ns + "S_3")!.Value);
+        Assert.True(zois.ContainsKey("130"));
+    }
+
+    [Fact]
     public async Task Jpk_cit_is_valid_against_official_jpk_kr_pd_schema()
     {
         await using var t = await PelnaKsiegowosc.Tests.Integration.FullYearScenarioTests.BuildFullYearAsync(closeYear: true);
