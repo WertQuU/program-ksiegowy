@@ -20,6 +20,9 @@
     <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
     </Border>
+    <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding SharedChangesNotice, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding SharedChangesNotice}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
+    </Border>
     <Border DockPanel.Dock="Bottom" Background="{DynamicResource PkFooterBg}" BorderBrush="{DynamicResource PkBorder}" BorderThickness="0,1,0,0" Padding="12,5">
       <Grid ColumnDefinitions="*,Auto">
         <TextBlock Text="{Binding Footer}" Foreground="{DynamicResource PkMuted}" TextTrimming="CharacterEllipsis" />
