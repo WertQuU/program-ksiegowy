@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Security.Cryptography;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Abstractions;
@@ -66,7 +67,7 @@ public sealed class KsefService
         if (doc.Status is not (DocumentStatus.Zatwierdzony or DocumentStatus.Zaksiegowany)) throw new DomainException("Wysłać można fakturę zatwierdzoną lub zaksięgowaną.");
         if (!string.IsNullOrEmpty(doc.KsefNumber)) throw new DomainException($"Faktura ma już numer KSeF {doc.KsefNumber}.");
         if (doc.KsefStatus == KsefStatus.Wyslana || !string.IsNullOrWhiteSpace(doc.KsefReferenceNumber) && doc.KsefStatus != KsefStatus.Odrzucona)
-            throw new DomainException("Faktura ma nierozstrzygniętą wysyłkę KSeF — uzgodnij jej status przed ponownym wysłaniem. Numer referencyjny: " + doc.KsefReferenceNumber);
+            throw new DomainException("Faktura ma nierozstrzygniętą wysyłkę KSeF — uzgodnij jej status przed ponownym wysłaniem. Numer referencyjny: " + (doc.KsefReferenceNumber ?? "brak (odpowiedź serwera nie została potwierdzona)"));
         var (xml, validation) = await BuildAsync(documentId, ct);
         if (!validation.IsValid)
         {
@@ -79,6 +80,17 @@ public sealed class KsefService
         {
             var tokens = await credentials.AuthenticateAsync(client, Identifiers.NormalizeNip(company.Nip), ct);
             using var session = await client.OpenOnlineSessionAsync(tokens.AccessToken.Token, ct);
+            // Zapisz stan PRZED pierwszym żądaniem wysyłki: serwer może przyjąć fakturę, mimo że
+            // połączenie zostanie przerwane przed zwróceniem numeru referencyjnego.
+            // W takiej sytuacji nie wolno wysłać jej ponownie bez ręcznego uzgodnienia z KSeF.
+            doc.KsefStatus = KsefStatus.Wyslana;
+            _db.DocumentHistory.Add(new DocumentHistory
+            {
+                CompanyId = doc.CompanyId, DocumentId = doc.Id, AtUtc = _clock.UtcNow,
+                UserId = _user.UserId, Action = "KSEF_PROBA_WYSLANIA",
+                Details = $"SHA256={Convert.ToHexString(SHA256.HashData(xml))}; sesja={session.ReferenceNumber}"
+            });
+            await _db.SaveChangesAsync(ct);
             var sent = await client.SendInvoiceAsync(session, xml, ct);
             doc.KsefReferenceNumber = sent.ReferenceNumber;
             doc.KsefStatus = KsefStatus.Wyslana;
