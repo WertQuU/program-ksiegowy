@@ -25,6 +25,7 @@
       <Button Content="Anuluj dokument…" Command="{Binding CancelDocumentCommand}" />
       <Button Content="Dodaj załącznik…" Command="{Binding AddAttachmentCommand}" />
       <Button Content="Zapisz załącznik…" Command="{Binding SaveAttachmentCommand}" />
+      <Button Content="Archiwizuj wszystkie dowody do PDF…" Command="{Binding ArchiveAllPdfCommand}" ToolTip.Tip="Wszystkie dokumenty jednostki, niezależnie od filtrów; osobny PDF dla każdego dowodu i indeks SHA-256." />
     </WrapPanel>
     <Border DockPanel.Dock="Top" Classes="panel" IsVisible="{Binding EditorVisible}">
       <StackPanel>
