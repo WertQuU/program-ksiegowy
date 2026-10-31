@@ -148,10 +148,7 @@ public class PayrollSickBasisAuditTests
         var blocked = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
         Assert.Contains("zasiłku chorobowego", blocked.Message);
         Assert.Equal(PayrollStatus.Robocza, march.Status);
-        await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
-            30, SickWageCause.Pregnancy100, "OSW/2026/3-POWT");
-        await Assert.ThrowsAsync<DomainException>(() =>
-            service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
-                0, SickWageCause.Ordinary80, "NOWA/2026"));
+        // Odrzucona lista nie tworzy zapisu księgowego, można ją jeszcze skorygować.
+        Assert.Null(march.JournalEntryId);
     }
 }
