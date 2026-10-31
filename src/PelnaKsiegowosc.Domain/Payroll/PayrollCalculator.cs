@@ -48,7 +48,8 @@ public sealed record PayrollRules(
 /// podstawy (wynagrodzenie pomniejszone o 13,71% składek) / 30 za dzień; nieobecność nieodpłatna — potrącenie proporcjonalne
 /// do dni roboczych miesiąca.
 /// </summary>
-public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m);
+public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m,
+    int? CalendarDaysInMonth = null);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
 /// <param name="AuthorCosts">Koszty 50% (art. 22 ust. 9 pkt 1–3 ustawy o PIT) uwzględnione od początku roku — limit roczny.</param>
@@ -86,9 +87,14 @@ public static class PayrollCalculator
         var salary = gross;
         if (absence is { } a && t == ContractType.UmowaOPrace && (a.SickDays > 0 || a.UnpaidWorkingDays > 0))
         {
-            if (a.SickDays is < 0 or > 31 || a.UnpaidWorkingDays < 0 || a.WorkingDaysInMonth <= 0 || a.UnpaidWorkingDays > a.WorkingDaysInMonth)
+            if (a.SickDays is < 0 or > 31 || a.UnpaidWorkingDays < 0 || a.WorkingDaysInMonth <= 0 || a.UnpaidWorkingDays > a.WorkingDaysInMonth
+                || (a.CalendarDaysInMonth is { } days && (days is < 28 or > 31 || a.SickDays > days)))
                 throw new Common.DomainException("Nieprawidłowa liczba dni nieobecności.");
-            var sickDeduction = a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
+            // Par. 11 rozporządzenia z 29 maja 1996 r.: potrącenie 1/30 dotyczy wynagrodzenia
+            // za przepracowaną część miesiąca. Przy chorobie przez CAŁY miesiąc (także
+            // 28- lub 29-dniowy luty) nie ma żadnego wynagrodzenia za pracę.
+            var wholeMonthSick = a.CalendarDaysInMonth is { } monthDays && a.SickDays == monthDays;
+            var sickDeduction = wholeMonthSick || a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
             var sickBasis = (a.SickBasis ?? gross) * (1 - 0.1371m);
