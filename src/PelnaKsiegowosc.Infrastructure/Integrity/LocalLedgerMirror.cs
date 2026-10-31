@@ -24,12 +24,14 @@ public sealed class LocalLedgerMirror
     private sealed record Snapshot(string EntryId, string FiscalYearId, long Sequence, string Digest);
 
     private readonly string _path;
+    private readonly Guid _companyId;
 
     public LocalLedgerMirror(string dataDirectory, DatabaseProfile profile, Guid companyId)
     {
         if (profile.Engine != DatabaseEngine.PostgreSql || companyId == Guid.Empty ||
             string.IsNullOrWhiteSpace(profile.Host) || string.IsNullOrWhiteSpace(profile.Database))
             throw new InvalidOperationException("Rejestr kontrolny wymaga aktywnej firmy, hosta i nazwy zewnętrznej bazy PostgreSQL.");
+        _companyId = companyId;
         // Bez danych logowania: oddzielny rejestr na każdą instancję serwera/bazy i firmę.
         var identity = $"{profile.Host.Trim().ToLowerInvariant()}:{profile.Port}/{profile.Database.Trim()}/{companyId:N}";
         var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
@@ -47,9 +49,15 @@ public sealed class LocalLedgerMirror
     public async Task<Result> CompareAsync(KsiegiDbContext db, Guid companyId,
         CancellationToken ct = default)
     {
+        if (companyId != _companyId)
+            throw new InvalidOperationException("Nie można użyć lokalnego punktu odniesienia innej firmy.");
         if (db.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) != true)
             throw new InvalidOperationException("Główne księgi muszą być prowadzone w zewnętrznym PostgreSQL.");
         await using var pg = await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct);
+        if (!await db.Companies.AsNoTracking().AnyAsync(c => c.Id == companyId, ct))
+            return new Result(MirrorStatus.Divergence,
+                "Wybrana firma nie istnieje w centralnej bazie PostgreSQL — nie można potwierdzić integralności ksiąg.",
+                0, 0, ["Brak firmy w PostgreSQL lub brak uprawnień do jej odczytu."]);
         var years = await db.FiscalYears.AsNoTracking()
             .Where(y => y.CompanyId == companyId).OrderBy(y => y.StartDate).ToListAsync(ct);
         var journal = await db.JournalEntries.AsNoTracking().Include(e => e.Lines)
