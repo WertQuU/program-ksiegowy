@@ -1,3 +1,4 @@
+using System.Data;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -95,6 +96,13 @@ public sealed class BackupService
                 IncludesAttachments = options.IncludeAttachments,
                 Reason = options.Reason
             };
+            // PostgreSQL: jeden spójny snapshot dla każdej tabeli, sum kontrolnych i metadanych
+            // załączników. Domyślny READ COMMITTED mógłby odczytać różne stany między zapytaniami.
+            if (profile.Engine == DatabaseEngine.PostgreSql && db.Database.CurrentTransaction is not null)
+                throw new InvalidOperationException("Kopię PostgreSQL należy uruchomić bez istniejącej transakcji, aby wymusić spójny snapshot.");
+            await using var snapshot = profile.Engine == DatabaseEngine.PostgreSql
+                ? await db.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead, ct)
+                : null;
             var company = await db.Companies.AsNoTracking().FirstOrDefaultAsync(ct);
             manifest.CompanyName = company?.FullName;
             manifest.CompanyNip = company?.Nip;
@@ -112,11 +120,19 @@ public sealed class BackupService
             }
             manifest.Tables = await DataDump.ExportAsync(db, Path.Combine(staging, "dane"), ct);
             manifest.ControlSums = await DataDump.ControlSumsAsync(db, ct);
+            // Pobierz metadane plików z tego samego snapshotu co księgi.
+            // Pliki później porównujemy z tymi wersjami SHA-256: równoległa zmiana
+            // dowodu nie może przejść do backupu jako rzekomo spójna kopia.
+            var snapshotAttachments = options.IncludeAttachments
+                ? await db.Attachments.AsNoTracking().ToListAsync(ct)
+                : new();
+            if (snapshot is not null)
+                await snapshot.CommitAsync(ct);
 
             if (options.IncludeAttachments)
             {
                 var attDir = Path.Combine(staging, "zalaczniki");
-                foreach (var a in await db.Attachments.AsNoTracking().ToListAsync(ct))
+                foreach (var a in snapshotAttachments)
                 {
                     if (!await attachments.ExistsAsync(a.StoragePath, ct)) { manifest.Warnings.Add($"Brak pliku załącznika {a.FileName} ({a.StoragePath})."); continue; }
                     var dest = Path.Combine(attDir, a.StoragePath.Replace('/', Path.DirectorySeparatorChar));
