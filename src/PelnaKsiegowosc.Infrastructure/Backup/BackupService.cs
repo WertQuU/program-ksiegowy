@@ -330,6 +330,8 @@ public sealed class BackupService
                 long total = 0;
                 var count = 0;
                 var buffer = new byte[81920];
+                var extracted = new HashSet<string>(OperatingSystem.IsWindows()
+                    ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
                 foreach (var entry in zip.Entries)
                 {
                     if (++count > MaxArchiveEntries) throw new InvalidDataException($"Archiwum zawiera ponad {MaxArchiveEntries} plików — odtwarzanie przerwane.");
@@ -337,6 +339,8 @@ public sealed class BackupService
                     if (!IsPathInsideBackupRoot(content, entry.FullName))
                         throw new InvalidDataException($"Niedozwolona ścieżka w archiwum: {entry.FullName}");
                     var target = Path.GetFullPath(Path.Combine(content, entry.FullName));
+                    if (!extracted.Add(target))
+                        throw new InvalidDataException("Archiwum zawiera powtarzającą się ścieżkę docelową: " + entry.FullName);
                     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                     await using var es = entry.Open();
                     await using var fs = File.Create(target);
@@ -388,8 +392,18 @@ public sealed class BackupService
     {
         var content = Path.Combine(dir, "zawartosc");
         var problems = new List<string>();
+        if (manifest.FormatVersion != 1)
+            return new List<string> { "Nieobsługiwana wersja manifestu kopii zapasowej." };
+        if (manifest.Files is null || manifest.Tables is null || manifest.ControlSums is null)
+            return new List<string> { "Manifest kopii jest niekompletny: brak wykazu plików, tabel lub sum kontrolnych." };
+        var expectedPaths = new HashSet<string>(StringComparer.Ordinal);
         foreach (var f in manifest.Files)
         {
+            if (string.IsNullOrWhiteSpace(f.Path) || !expectedPaths.Add(f.Path))
+            {
+                problems.Add("Manifest zawiera pustą lub powtórzoną ścieżkę pliku.");
+                continue;
+            }
             if (!IsPathInsideBackupRoot(content, f.Path))
             {
                 problems.Add($"Niedozwolona ścieżka w archiwum: {f.Path}");
@@ -397,9 +411,18 @@ public sealed class BackupService
             }
             var full = Path.GetFullPath(Path.Combine(content, f.Path));
             if (!File.Exists(full)) { problems.Add($"Brak pliku {f.Path}."); continue; }
+            if (new FileInfo(full).Length != f.Size) problems.Add($"Plik {f.Path}: niezgodny rozmiar.");
             if (await DataDump.Sha256FileAsync(full, ct) != f.Sha256) problems.Add($"Plik {f.Path}: niezgodna suma SHA-256.");
         }
-        var listed = manifest.Files.Select(f => f.Path).ToHashSet();
+        var listed = manifest.Files.Select(f => f.Path).ToHashSet(StringComparer.Ordinal);
+        if (manifest.Tables.Count == 0)
+            problems.Add("Manifest nie zawiera wykazu tabel danych.");
+        foreach (var t in manifest.Tables)
+        {
+            var dataName = "dane/" + t.Table + ".jsonl";
+            if (!listed.Contains(dataName))
+                problems.Add($"Brak zrzutu tabeli {t.Table} w wykazie plików manifestu.");
+        }
         foreach (var extra in Directory.EnumerateFiles(content, "*", SearchOption.AllDirectories).Select(f => Path.GetRelativePath(content, f).Replace('\\', '/')))
             if (extra != "manifest.json" && !listed.Contains(extra)) problems.Add($"Plik spoza manifestu: {extra}.");
         return problems;
