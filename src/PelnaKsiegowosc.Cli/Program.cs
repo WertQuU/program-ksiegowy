@@ -165,7 +165,7 @@ public static class Program
     {
         await OpenAsync(session);
         await using var db = session.OpenDb();
-        var r = await new IntegrityService(db, session.Clock).FullCheckAsync(session.CompanyId);
+        var r = await new IntegrityService(db, session.Clock).FullCheckAsync(session.CompanyId, attachments: session.Attachments);
         foreach (var (area, ok, details) in r.Results) Console.WriteLine($"{(ok ? "OK   " : "BŁĄD ")} {area}: {details}");
         return r.AllOk ? 0 : 1;
     }

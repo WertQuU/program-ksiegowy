@@ -28,14 +28,21 @@ public static class JpkExport
             if (p is not null) owner = new(p.FirstName, p.LastName, Domain.Validation.Identifiers.BirthDateFromPesel(p.Pesel)!.Value);
         }
         var r = JpkV7Builder.Build(company, period, sales, purchases, decl, monthControl, correction, session.Clock.UtcNow, session.Validator, owner);
-        var target = await dialogs.SaveFileAsync($"Zapisz {kind}", $"{kind}-{period:yyyy-MM}{(correction ? "-korekta" : "")}.xml", new FileFilter("XML", "*.xml"));
+        // plik niezgodny z oficjalnym schematem XSD — wyłącznie roboczy: oznaczona nazwa, okres nie jest uznawany za przygotowany do wysyłki
+        var valid = r.Validation.IsValid;
+        var target = await dialogs.SaveFileAsync(valid ? $"Zapisz {kind}" : $"Zapisz ROBOCZY {kind} (niezgodny ze schematem — nie do wysyłki)",
+            $"{kind}-{period:yyyy-MM}{(correction ? "-korekta" : "")}{(valid ? "" : "-ROBOCZY-NIE-WYSYLAC")}.xml", new FileFilter("XML", "*.xml"));
         if (target is null) return false;
         r.Document.Save(target);
-        var settings = new SettingsService(db, session.Clock);
-        await settings.SetAsync<DateTime?>(session.CompanyId, $"jpk.wygenerowano.{period:yyyy-MM}", session.Clock.UtcNow);
-        await db.SaveChangesAsync();
-        await session.AuditAsync("JPK_WYGENEROWANY", "JPK", null, $"{period:yyyy-MM}; {(correction ? "korekta" : "złożenie")}; {r.Status}");
-        await dialogs.ShowTextAsync(kind, $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}" +
+        if (valid)
+        {
+            var settings = new SettingsService(db, session.Clock);
+            await settings.SetAsync<DateTime?>(session.CompanyId, $"jpk.wygenerowano.{period:yyyy-MM}", session.Clock.UtcNow);
+            await db.SaveChangesAsync();
+        }
+        await session.AuditAsync(valid ? "JPK_WYGENEROWANY" : "JPK_ROBOCZY", "JPK", null, $"{period:yyyy-MM}; {(correction ? "korekta" : "złożenie")}; {r.Status}");
+        await dialogs.ShowTextAsync(kind, (valid ? "" : "PLIK ROBOCZY — nie przeszedł walidacji schematem XSD MF; nie wysyłaj go. Okres nie został oznaczony jako przygotowany." + Environment.NewLine) +
+            $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}" +
             (decl is null ? "Plik zawiera wyłącznie ewidencję (deklaracja kwartalna w ostatnim miesiącu kwartału)." : $"{(decl.Quarterly ? $"Deklaracja za {decl.Quarter} kwartał. " : "")}Do zapłaty: {decl.Payable:N0} zł; nadwyżka do przeniesienia: {decl.Surplus:N0} zł") +
             $"{Environment.NewLine}{Environment.NewLine}" +
             string.Join(Environment.NewLine, r.Warnings.Concat(r.Validation.Errors.Take(30))) +

@@ -59,7 +59,7 @@ public sealed partial class HelpViewModel : SectionViewModel
     private Task RunIntegrityCheckAsync() => RunAsync(async () =>
     {
         await using var db = Session.OpenDb();
-        var r = await new IntegrityService(db, Session.Clock).FullCheckAsync(Session.CompanyId);
+        var r = await new IntegrityService(db, Session.Clock).FullCheckAsync(Session.CompanyId, attachments: Session.Attachments);
         var t = new TableData(new TableColumn("Obszar", Width: 1.5), new TableColumn("Wynik", Width: 0.5), new TableColumn("Szczegóły", Width: 4));
         foreach (var (area, ok, details) in r.Results) t.Add(null, area, ok ? "✔" : "✖", details);
         Integrity = t;

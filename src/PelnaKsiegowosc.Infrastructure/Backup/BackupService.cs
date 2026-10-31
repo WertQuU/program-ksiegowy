@@ -299,14 +299,32 @@ public sealed class BackupService
             using (var zip = new ZipArchive(zipIn, ZipArchiveMode.Read))
             {
                 var root = Path.GetFullPath(content) + Path.DirectorySeparatorChar;
+                // limity rozpakowania (archiwum nietypowe lub spreparowane): liczba plików, łączny rozmiar po dekompresji
+                // (wielokrotność rozmiaru archiwum, nie więcej niż wolne miejsce na dysku z zapasem) — liczone z faktycznie zapisanych bajtów
+                var archiveSize = new FileInfo(archivePath).Length;
+                var free = TryFreeSpace(content);
+                var maxTotal = Math.Max(MaxExpansionFloor, archiveSize * MaxExpansionRatio);
+                if (free is { } f && f - DiskReserve < maxTotal) maxTotal = Math.Max(0, f - DiskReserve);
+                long total = 0;
+                var count = 0;
+                var buffer = new byte[81920];
                 foreach (var entry in zip.Entries)
                 {
+                    if (++count > MaxArchiveEntries) throw new InvalidDataException($"Archiwum zawiera ponad {MaxArchiveEntries} plików — odtwarzanie przerwane.");
+                    if (entry.FullName.EndsWith('/')) continue;
                     var target = Path.GetFullPath(Path.Combine(content, entry.FullName));
                     if (!target.StartsWith(root, StringComparison.Ordinal)) throw new InvalidDataException($"Niedozwolona ścieżka w archiwum: {entry.FullName}");
                     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                     await using var es = entry.Open();
                     await using var fs = File.Create(target);
-                    await es.CopyToAsync(fs, ct);
+                    int n;
+                    while ((n = await es.ReadAsync(buffer, ct)) > 0)
+                    {
+                        total += n;
+                        if (total > maxTotal)
+                            throw new InvalidDataException($"Rozpakowana zawartość archiwum przekracza dopuszczalny rozmiar ({maxTotal / (1024 * 1024)} MiB) lub wolne miejsce na dysku — odtwarzanie przerwane, pliki tymczasowe usunięte.");
+                        await fs.WriteAsync(buffer.AsMemory(0, n), ct);
+                    }
                 }
             }
         }
@@ -319,6 +337,19 @@ public sealed class BackupService
         var manifestPath = Path.Combine(content, "manifest.json");
         if (!File.Exists(manifestPath)) throw new InvalidDataException("Archiwum nie zawiera manifestu.");
         return JsonSerializer.Deserialize<BackupManifest>(await File.ReadAllTextAsync(manifestPath, ct))!;
+    }
+
+    /// <summary>Maksymalna liczba plików w archiwum kopii.</summary>
+    public int MaxArchiveEntries { get; init; } = 500_000;
+    /// <summary>Maksymalny rozmiar po rozpakowaniu jako wielokrotność rozmiaru archiwum (nie mniej niż <see cref="MaxExpansionFloor"/>).</summary>
+    public long MaxExpansionRatio { get; init; } = 200;
+    public long MaxExpansionFloor { get; init; } = 1L << 30;
+    public const long DiskReserve = 512L << 20;
+
+    private static long? TryFreeSpace(string path)
+    {
+        try { return new DriveInfo(Path.GetPathRoot(Path.GetFullPath(path))!).AvailableFreeSpace; }
+        catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException) { return null; }
     }
 
     private static async Task<List<string>> CheckFilesAsync(string dir, BackupManifest manifest, CancellationToken ct)

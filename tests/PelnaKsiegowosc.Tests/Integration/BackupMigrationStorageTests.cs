@@ -22,7 +22,7 @@ public class BackupTests
     private static readonly BackupKey Pass = new BackupKey.Passphrase("Bardzo-Tajne-Haslo-Kopii-2026");
     private static readonly byte[] AttKey = RandomNumberGenerator.GetBytes(32);
 
-    private static async Task<(TestBooks t, LocalFileStore store)> BooksWithAttachmentAsync()
+    internal static async Task<(TestBooks t, LocalFileStore store)> BooksWithAttachmentAsync()
     {
         var t = await FullYearScenarioTests.BuildFullYearAsync(closeYear: false);
         var store = new LocalFileStore(Path.Combine(t.Directory, "Zalaczniki"));
@@ -464,6 +464,39 @@ public class AttachmentEncryptionTests
             Assert.Contains("z/obcy.bin", check.Unreadable);
         }
         finally { try { Directory.Delete(dir, true); } catch { } }
+    }
+}
+
+public class BackupExtractionLimitTests
+{
+    [Fact]
+    public async Task Restore_stops_when_expanded_size_exceeds_limit_and_leaves_no_temporary_data()
+    {
+        var (t, store) = await BackupTests.BooksWithAttachmentAsync();
+        await using var _ = t;
+        var tmp = Path.Combine(t.Directory, "tmp");
+        var svc = new BackupService(t.Clock, tmp);
+        var key = new BackupKey.Passphrase("Bardzo-Tajne-Haslo-Kopii-2026");
+        var res = await svc.CreateAsync(t.Db, new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(t.Directory, "ksiegi.db") }, store, null, new BackupOptions(key, Path.Combine(t.Directory, "kopie")));
+        var limited = new BackupService(t.Clock, tmp) { MaxExpansionFloor = 1024, MaxExpansionRatio = 1 };
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() => limited.RestoreToSqliteAsync(res.FilePath, key, Path.Combine(t.Directory, "x"), SqliteEncryption.NewKey(), RandomNumberGenerator.GetBytes(32)));
+        Assert.Contains("przekracza dopuszczalny rozmiar", ex.Message);
+        Assert.Empty(Directory.EnumerateFileSystemEntries(tmp));
+        var fewFiles = new BackupService(t.Clock, tmp) { MaxArchiveEntries = 1 };
+        var v = await fewFiles.VerifyAsync(res.FilePath, key);
+        Assert.False(v.Ok);
+        Assert.Contains(v.Problems, p => p.Contains("plików"));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(tmp));
+
+        // pełna kontrola integralności: brakujący i zmieniony załącznik są wykazywane
+        var report = await new IntegrityService(t.Db, t.Clock).FullCheckAsync(t.Company.Id, attachments: store);
+        Assert.True(report.Results.Single(r => r.Area.StartsWith("Załączniki")).Ok);
+        var att = await t.Db.Attachments.SingleAsync();
+        File.Delete(Path.Combine(store.RootPath, att.StoragePath));
+        report = await new IntegrityService(t.Db, t.Clock).FullCheckAsync(t.Company.Id, attachments: store);
+        var row = report.Results.Single(r => r.Area.StartsWith("Załączniki"));
+        Assert.False(row.Ok);
+        Assert.Contains("brak pliku", row.Details);
     }
 }
 

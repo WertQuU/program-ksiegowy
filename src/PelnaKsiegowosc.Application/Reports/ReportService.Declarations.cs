@@ -51,7 +51,23 @@ public sealed partial class ReportService
         r.Add("G.2", "Podatek należny", rec.Computation.Tax);
         r.Add("G.3", "Zaliczki należne za rok (zatwierdzone w programie)", paid);
         var diff = rec.Computation.Tax - paid;
-        r.AddRow(new ReportRow("G.4", diff >= 0 ? "Różnica do zapłaty" : "Nadpłata", Math.Abs(diff)) { IsTotal = true });
+        // różnica między podatkiem a zaliczkami NALEŻNYMI — nie jest nadpłatą, dopóki nie potwierdzi się faktycznych wpłat
+        r.AddRow(new ReportRow("G.4", diff >= 0 ? "Podatek należny ponad zaliczki należne — do zapłaty" : "Zaliczki należne przewyższają podatek należny", Math.Abs(diff)) { IsTotal = true });
+        // faktyczne wpłaty wg ksiąg: obciążenia konta rozrachunków z US (CIT) w korespondencji ze środkami pieniężnymi (zespół 1)
+        var cash = await (from l in _db.JournalLines.AsNoTracking()
+                          join e in _db.JournalEntries.AsNoTracking() on l.EntryId equals e.Id
+                          where e.FiscalYearId == fiscalYearId && e.Status == Domain.Ledger.EntryStatus.Zaksiegowany && l.AccountNumber == "220-01" && l.Debit != 0
+                                && _db.JournalLines.Any(o => o.EntryId == e.Id && o.Credit != 0 && (o.AccountNumber.StartsWith("10") || o.AccountNumber.StartsWith("13")))
+                          select l.Debit).ToListAsync(ct);
+        var paidCash = cash.Sum();
+        r.Add("G.5", "Wpłaty na rachunek urzędu skarbowego w roku wg ksiąg (Wn 220-01 / środki pieniężne)", paidCash);
+        var tb = await new Ledger.LedgerQueries(_db).TrialBalanceAsync(fiscalYearId, fy.StartDate, fy.EndDate, ct: ct);
+        var balance = tb.Where(t => t.Account.Number == "220-01").Sum(t => t.Balance);
+        r.Add("G.6", balance <= 0 ? "Saldo rozrachunku CIT na koniec roku — zobowiązanie (Ma)" : "Saldo rozrachunku CIT na koniec roku — należność (Wn)", Math.Abs(balance));
+        if (paidCash < paid)
+            r.Notes.Add($"Wpłaty wg ksiąg ({Money.Format(paidCash)} zł) są niższe od zaliczek należnych ({Money.Format(paid)} zł) — zaległe zaliczki podlegają zapłacie z odsetkami za zwłokę; nadpłata powstaje tylko z faktycznych wpłat ponad podatek (art. 72 Ordynacji podatkowej).");
+        if (diff < 0 && paidCash > rec.Computation.Tax)
+            r.Notes.Add($"Możliwa nadpłata: wpłacono {Money.Format(paidCash)} zł przy podatku {Money.Format(rec.Computation.Tax)} zł — potwierdź na podstawie wyciągów i stanu konta w e-Urzędzie Skarbowym (wpłaty po dniu bilansowym nie są tu uwzględnione).");
         r.AddRow(new ReportRow("CIT-8/O", "Odliczenia od dochodu i podstawy opodatkowania", null) { IsHeader = true });
         foreach (var d in deductions) r.Add(null, $"{d.Description}{(d.LegalBasis is null ? "" : $" ({d.LegalBasis})")}", d.Amount);
         if (deductions.Count == 0) r.Add(null, "Brak odliczeń", 0m);

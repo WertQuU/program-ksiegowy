@@ -103,7 +103,9 @@ public sealed class IntegrityService
         return new(byItem, byAcc, unlinked);
     }
 
-    public async Task<IntegrityReport> FullCheckAsync(Guid companyId, CancellationToken ct = default)
+    /// <param name="attachments">Magazyn załączników — gdy podany, sprawdzana jest obecność, możliwość odszyfrowania, rozmiar
+    /// i suma SHA-256 każdego dokumentu źródłowego jednostki.</param>
+    public async Task<IntegrityReport> FullCheckAsync(Guid companyId, CancellationToken ct = default, Abstractions.IFileStore? attachments = null)
     {
         var results = new List<(string, bool, string)>();
         var years = await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == companyId).OrderBy(f => f.StartDate).ToListAsync(ct);
@@ -146,8 +148,34 @@ public sealed class IntegrityService
         var audit = await new AuditService(_db, _clock).VerifyChainAsync(ct);
         results.Add(("Dziennik audytowy", audit.Count == 0, audit.Count == 0 ? "OK" : string.Join(" | ", audit.Take(10))));
 
-        var attachments = await _db.Attachments.AsNoTracking().CountAsync(ct);
-        results.Add(("Załączniki (liczba w bazie)", true, attachments.ToString()));
+        var list = await _db.Attachments.AsNoTracking().Where(a => a.CompanyId == companyId).ToListAsync(ct);
+        if (attachments is null)
+            results.Add(("Załączniki", true, $"{list.Count} w bazie — zawartość plików nie była sprawdzana w tym przebiegu"));
+        else
+        {
+            var problems = new List<string>();
+            foreach (var a in list)
+            {
+                try
+                {
+                    if (!await attachments.ExistsAsync(a.StoragePath, ct)) { problems.Add($"{a.FileName}: brak pliku"); continue; }
+                    await using var s = await attachments.OpenAsync(a.StoragePath, ct);
+                    using var sha = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+                    var buf = new byte[81920];
+                    long size = 0;
+                    int n;
+                    while ((n = await s.ReadAsync(buf, ct)) > 0) { sha.AppendData(buf, 0, n); size += n; }
+                    var hash = Convert.ToHexString(sha.GetHashAndReset());
+                    if (!hash.Equals(a.Sha256, StringComparison.OrdinalIgnoreCase)) problems.Add($"{a.FileName}: suma SHA-256 niezgodna");
+                    else if (size != a.SizeBytes) problems.Add($"{a.FileName}: rozmiar niezgodny");
+                }
+                catch (Exception e) when (e is DomainException or System.Security.Cryptography.CryptographicException or IOException)
+                {
+                    problems.Add($"{a.FileName}: {e.Message}");
+                }
+            }
+            results.Add(($"Załączniki: obecność, odszyfrowanie i SHA-256 ({list.Count})", problems.Count == 0, problems.Count == 0 ? "OK" : string.Join(" | ", problems.Take(10))));
+        }
         return new IntegrityReport(_clock.UtcNow, results);
     }
 }
