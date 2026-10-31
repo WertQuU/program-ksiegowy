@@ -295,6 +295,33 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Whole_february_sickness_has_no_salary_for_work_in_28_or_29_day_month()
+    {
+        var employee = new Employee
+        {
+            FirstName = "Anna", LastName = "Nowak", ContractType = ContractType.UmowaOPrace
+        };
+        // Przy pełnym miesiącu choroby 1/30 jest stawką świadczenia chorobowego,
+        // ale nie pozostawia wynagrodzenia zasadniczego za nieprzepracowany luty.
+        foreach (var days in new[] { 28, 29 })
+        {
+            var item = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+                new PayrollAbsence(days, 0, 20, CalendarDaysInMonth: days));
+            Assert.Equal(0m, item.SocialBasis);
+            Assert.Equal(0m, item.PensionEmployee);
+            Assert.Equal(0m, item.DisabilityEmployee);
+            Assert.Equal(0m, item.SicknessEmployee);
+            Assert.Equal(item.SickPay, item.Gross);
+            Assert.Equal(days, item.SickDaysEmployer);
+        }
+
+        // Zwolnienie obejmujące tylko część lutego nadal oblicza potrącenie 1/30.
+        var part = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            new PayrollAbsence(27, 0, 20, CalendarDaysInMonth: 28));
+        Assert.Equal(600m, part.SocialBasis);
+    }
+
+    [Fact]
     public void Employer_sick_pay_is_limited_to_33_or_14_days_and_rules_exist_only_for_verified_years()
     {
         var young = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace, BirthDate = new DateOnly(1990, 1, 1) };
