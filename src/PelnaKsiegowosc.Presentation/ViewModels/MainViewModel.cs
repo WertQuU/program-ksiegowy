@@ -1,4 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Data;
 using CommunityToolkit.Mvvm.Input;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
@@ -84,6 +86,9 @@ public sealed partial class MainViewModel : ViewModelBase
     [ObservableProperty] private string _companyLine = "";
     [ObservableProperty] private string _footer = "";
     [ObservableProperty] private string? _warning;
+    [ObservableProperty] private string? _sharedChangesNotice;
+    private long? _lastSeenSharedSequence;
+    private bool _pollingSharedChanges;
     [ObservableProperty] private List<Choice<Guid>> _years = new();
     [ObservableProperty] private Choice<Guid>? _selectedYear;
     private bool _updatingYears;
@@ -138,11 +143,50 @@ public sealed partial class MainViewModel : ViewModelBase
             : Session.StoredBackupKey() is null ? "Brak klucza kopii zapasowych na tym stanowisku — kopie automatyczne są wyłączone (sekcja „Backupy”)." : null;
     }
 
+    private async Task<long> ReadSharedSequenceAsync(CancellationToken ct = default)
+    {
+        await using var db = Session.OpenDb();
+        return await db.AuditEvents.AsNoTracking()
+            .Where(a => a.CompanyId == Session.CompanyId || a.CompanyId == null)
+            .MaxAsync(a => (long?)a.Sequence, ct) ?? 0L;
+    }
+
+    /// <summary>
+    /// Kilka instalacji korzysta z jednej bazy serwerowej, nie wymienia lokalnych baz.
+    /// Monitor zmian sygnalizuje nowsze zapisy innych operatorów. Nie przeładowuje
+    /// automatycznie edytowanych formularzy, aby nie utracić niezapisanej pracy.
+    /// </summary>
+    public async Task CheckSharedChangesAsync(CancellationToken ct = default)
+    {
+        if (_pollingSharedChanges || Session.Profile.Engine != DatabaseEngine.PostgreSql || Session.Company is null) return;
+        _pollingSharedChanges = true;
+        try
+        {
+            var current = await ReadSharedSequenceAsync(ct);
+            if (_lastSeenSharedSequence is { } last && current > last)
+                SharedChangesNotice = "Wspólna baza została zaktualizowana. Kliknij „Odśwież”, aby pobrać aktualne dane; sprawdź niezapisane zmiany przed odświeżeniem.";
+            else if (_lastSeenSharedSequence is null)
+                _lastSeenSharedSequence = current;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // Błąd sieci nie powoduje przełączenia na lokalną kopię ani utraty edytowanych danych.
+            SharedChangesNotice = "Nie udało się sprawdzić zmian wspólnej bazy. Sprawdź połączenie przed zapisem.";
+            ErrorLog.Write(ex);
+        }
+        finally { _pollingSharedChanges = false; }
+    }
+
     [RelayCommand]
     private Task RefreshAsync() => RunAsync(async () =>
     {
         await Session.RefreshAsync();
         if (SelectedSection is not null) await SelectedSection.LoadAsync();
+        if (Session.Profile.Engine == DatabaseEngine.PostgreSql)
+        {
+            _lastSeenSharedSequence = await ReadSharedSequenceAsync();
+            SharedChangesNotice = null;
+        }
     });
 
     /// <summary>Kopia automatyczna (wywoływana cyklicznie przez aplikację) — błędy zapisywane w konfiguracji i logu, bez okien.</summary>
