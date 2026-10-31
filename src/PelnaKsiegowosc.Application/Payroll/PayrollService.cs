@@ -540,6 +540,23 @@ public sealed class PayrollService
                 $"późniejszej listy {futureSickness.Number} ({futureSickness.Month:MM.yyyy}, {futureSickness.EmployeeName}). " +
                 "Limit 33/14 dni stosuje się w kolejności okresów choroby; nie można przeliczyć wyłącznie wcześniejszej listy.");
 
+        // Art. 80 KP i stanowisko GIP GPP-87-4560-64/09/PE/RP:
+        // 30 dni choroby w 31-dniowym miesiącu pozostawia jeden dzień,
+        // za który może należeć się zapłata za rzeczywiście wykonaną pracę.
+        // Bez grafiku i liczby przepracowanych godzin pomniejszenie 30/30
+        // mogłoby niezgodnie z prawem dać wynagrodzenie za pracę równe 0 zł.
+        var oneDayRemaining = list.Items.Where(i =>
+            i.ContractType == ContractType.UmowaOPrace && i.SickDays == 30 &&
+            DateTime.DaysInMonth(list.Month.Year, list.Month.Month) == 31)
+            .Select(i => i.EmployeeName).Distinct().ToList();
+        if (oneDayRemaining.Count > 0)
+            throw new DomainException(
+                "Nie można automatycznie zaksięgować listy z 30 dniami choroby w miesiącu 31-dniowym (" +
+                string.Join(", ", oneDayRemaining) + "). Pozostały dzień mógł być przepracowany. " +
+                "Zgodnie z art. 80 KP wymaga to weryfikacji grafiku i wynagrodzenia za faktycznie " +
+                "przepracowane godziny (§ 4 ust. 2 pkt 1 rozporządzenia z 29.05.1996). " +
+                "Program nie obsługuje jeszcze takiej korekty; nie księguj automatycznego wyniku 0 zł.");
+
         foreach (var item in list.Items.Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
         {
             var employee = employees[item.EmployeeId];
