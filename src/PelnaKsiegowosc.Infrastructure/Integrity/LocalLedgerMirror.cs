@@ -27,8 +27,9 @@ public sealed class LocalLedgerMirror
 
     public LocalLedgerMirror(string dataDirectory, DatabaseProfile profile, Guid companyId)
     {
-        if (profile.Engine != DatabaseEngine.PostgreSql || companyId == Guid.Empty)
-            throw new InvalidOperationException("Rejestr kontrolny wymaga aktywnej firmy na zewnętrznym PostgreSQL.");
+        if (profile.Engine != DatabaseEngine.PostgreSql || companyId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(profile.Host) || string.IsNullOrWhiteSpace(profile.Database))
+            throw new InvalidOperationException("Rejestr kontrolny wymaga aktywnej firmy, hosta i nazwy zewnętrznej bazy PostgreSQL.");
         // Bez danych logowania: oddzielny rejestr na każdą instancję serwera/bazy i firmę.
         var identity = $"{profile.Host.Trim().ToLowerInvariant()}:{profile.Port}/{profile.Database.Trim()}/{companyId:N}";
         var id = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)));
