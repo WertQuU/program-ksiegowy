@@ -33,7 +33,10 @@
             <TextBlock Grid.Row="5" Grid.Column="2" Text="Badania lekarskie do" /><TextBox Grid.Row="5" Grid.Column="3" Text="{Binding MedicalExamUntil}" />
             <TextBlock Grid.Row="5" Grid.Column="4" Text="Szkolenie BHP do" /><TextBox Grid.Row="5" Grid.Column="5" Text="{Binding BhpTrainingUntil}" />
             <WrapPanel Grid.Row="6" Grid.ColumnSpan="6" Classes="toolbar">
-              <CheckBox Content="Złożył PIT-2 (kwota zmniejszająca 300 zł)" IsChecked="{Binding Pit2}" />
+              <ComboBox ItemsSource="{Binding Pit2Options}" SelectedItem="{Binding Pit2Option}" MinWidth="170" ToolTip.Tip="Oświadczenie PIT-2: kwota zmniejszająca zaliczkę 1/12, 1/24 lub 1/36 z 3600 zł — stosowana raz w miesiącu dla osoby, łącznie dla wszystkich jej umów i list" />
+              <ComboBox ItemsSource="{Binding ExternalTitleOptions}" SelectedItem="{Binding ExternalTitles}" MinWidth="230" ToolTip.Tip="Zlecenie: inne tytuły do ubezpieczeń poza naszą firmą (art. 9 ustawy o sus) — bez ustalenia listy nie można zaksięgować" />
+              <TextBox Text="{Binding ExternalTitlesBasis}" Watermark="podstawa z innego tytułu (mies.)" MinWidth="190" ToolTip.Tip="Miesięczna podstawa składek z etatu u innego pracodawcy / wcześniejszego zlecenia — porównywana z minimalnym wynagrodzeniem" />
+              <CheckBox Content="Dobrowolne emerytalne i rentowe (zlecenie)" IsChecked="{Binding VoluntaryPension}" />
               <CheckBox Content="Ulga dla młodych (do 26 lat)" IsChecked="{Binding YouthRelief}" />
               <CheckBox Content="Uczeń/student do 26 lat (zlecenie bez ZUS)" IsChecked="{Binding Student}" />
               <CheckBox Content="Dobrowolne chorobowe (zlecenie)" IsChecked="{Binding VoluntarySickness}" />
@@ -61,14 +64,17 @@
             <TextBlock Text="Data wypłaty:" /><TextBox Text="{Binding PaymentDate}" MinWidth="100" />
             <Button Content="Utwórz listę płac" Command="{Binding CreateListCommand}" Classes="accent" />
             <Button Content="Zaksięguj zaznaczoną" Command="{Binding PostListCommand}" />
+            <Button Content="Przelicz listę" Command="{Binding RecalculateListCommand}" ToolTip.Tip="Ponowne wyliczenie wszystkich pozycji z aktualnych danych osób, limitów i innych list (wymagane, gdy dane zmieniły się po utworzeniu listy)" />
             <Button Content="Usuń roboczą" Command="{Binding DeleteListCommand}" />
+            <TextBox Text="{Binding PpkTransferDate}" Watermark="data przekazania PPK" MinWidth="130" />
+            <Button Content="Zarejestruj przekazanie PPK" Command="{Binding RecordPpkTransferCommand}" ToolTip.Tip="Dla zaksięgowanej listy: dzień przekazania wpłat do instytucji finansowej — od tego dnia wpłata pracodawcy jest przychodem pracownika" />
             <Button Content="Wydruk listy" Command="{Binding PrintListCommand}" />
           </WrapPanel>
           <c:TableView DockPanel.Dock="Top" Table="{Binding Lists}" SelectedRow="{Binding SelectedList}" MaxHeight="200" />
           <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
             <TextBlock Text="Zaznaczona osoba — brutto za pełny miesiąc:" /><TextBox Text="{Binding NewGross}" Watermark="(z umowy)" MinWidth="100" />
-            <TextBlock Text="dni choroby:" /><TextBox Text="{Binding SickDays}" MinWidth="50" />
-            <TextBlock Text="dni urlopu bezpłatnego (robocze):" /><TextBox Text="{Binding UnpaidDays}" MinWidth="50" />
+            <TextBlock Text="dni choroby:" /><TextBox Text="{Binding SickDays}" Watermark="(bez zmian)" MinWidth="50" />
+            <TextBlock Text="dni urlopu bezpłatnego (robocze):" /><TextBox Text="{Binding UnpaidDays}" Watermark="(bez zmian)" MinWidth="50" />
             <Button Content="Przelicz" Command="{Binding ChangeGrossCommand}" />
           </WrapPanel>
           <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />

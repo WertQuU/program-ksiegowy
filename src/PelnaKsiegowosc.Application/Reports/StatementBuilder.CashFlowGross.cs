@@ -177,8 +177,27 @@ public sealed partial class StatementBuilder
             var realIn = Math.Min(inflow, creditTotal);
             var realOut = Math.Min(outflow, debitTotal);
             g.InternalTransfers += inflow - realIn;
-            if (realIn > 0) foreach (var l in counterCredits) Allocate(l, realIn * l.Credit / creditTotal, true);
-            if (realOut > 0) foreach (var l in counterDebits) Allocate(l, realOut * l.Debit / debitTotal, false);
+            // KSR nr 1: zrealizowane różnice kursowe przy rozliczeniu pozycji inwestycyjnej lub finansowej (np. spłata kredytu walutowego)
+            // — wpływ/wydatek w faktycznej kwocie w działalności inwestycyjnej/finansowej, a różnica kursowa (ujęta w wyniku) korygowana
+            // w A.II.2; przy rozrachunkach operacyjnych różnica pozostaje częścią przepływu operacyjnego
+            void Spread(List<JournalLine> counters, decimal real, bool isInflow)
+            {
+                if (real <= 0) return;
+                decimal Amt(JournalLine l) => isInflow ? l.Credit : l.Debit;
+                var total = counters.Sum(Amt);
+                var fxLines = counters.Where(l => fxAccounts.Contains(l.AccountId)).ToList();
+                var main = counters.Where(l => !fxAccounts.Contains(l.AccountId)).ToList();
+                if (fxLines.Count > 0 && main.Count > 0 && main.All(l => CategoryOf(byId[l.AccountId]) != CashFlowCategory.Operacyjna))
+                {
+                    var mainTotal = main.Sum(Amt);
+                    foreach (var l in main) Allocate(l, real * Amt(l) / mainTotal, isInflow);
+                    g.NonOperatingFx += fxLines.Sum(l => l.Credit - l.Debit);
+                    return;
+                }
+                foreach (var l in counters) Allocate(l, real * Amt(l) / total, isInflow);
+            }
+            Spread(counterCredits, realIn, true);
+            Spread(counterDebits, realOut, false);
         }
         return g;
     }

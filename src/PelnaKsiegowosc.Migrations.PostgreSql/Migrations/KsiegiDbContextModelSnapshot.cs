@@ -170,6 +170,7 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Value")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(2147483647)
                         .HasColumnType("text");
@@ -1343,6 +1344,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<DateOnly?>("IdentityValidFrom")
+                        .HasColumnType("date");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -1409,6 +1413,39 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .IsUnique();
 
                     b.ToTable("Counterparties");
+                });
+
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Counterparties.CounterpartyIdentityChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CounterpartyId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Nip")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateOnly>("ValidUntil")
+                        .HasColumnType("date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CounterpartyId", "ValidUntil");
+
+                    b.ToTable("CounterpartyIdentityChanges");
                 });
 
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.Attachment", b =>
@@ -2537,6 +2574,15 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<bool>("ExemptFromFp")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("ExternalTitles")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<decimal?>("ExternalTitlesBasis")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -2573,8 +2619,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<bool>("Pit2")
-                        .HasColumnType("boolean");
+                    b.Property<decimal>("Pit2Reduction")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("PostalCode")
                         .HasMaxLength(1000)
@@ -2609,6 +2656,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<bool>("VoluntaryPension")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("VoluntarySickness")
                         .HasColumnType("boolean");
 
@@ -2642,7 +2692,7 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<decimal>("BaseGross")
+                    b.Property<decimal?>("BaseGross")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -2694,6 +2744,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<bool>("InsuranceUndetermined")
+                        .HasColumnType("boolean");
+
                     b.Property<decimal>("LaborFund")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -2725,6 +2778,13 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
+                    b.Property<decimal>("PpkEmployerTaxed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<Guid?>("PpkTaxedInListId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("SickDays")
                         .HasColumnType("integer");
 
@@ -2748,6 +2808,10 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("TaxBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("TaxReduction")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
@@ -2789,6 +2853,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasColumnType("character varying(1000)");
 
                     b.Property<DateOnly>("PaymentDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly?>("PpkTransferredOn")
                         .HasColumnType("date");
 
                     b.Property<string>("RulesVersion")

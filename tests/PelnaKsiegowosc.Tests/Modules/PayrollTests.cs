@@ -204,7 +204,9 @@ public class PayrollTests
         var young = new Employee { FirstName = "M", LastName = "A", ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, ContractTotalAmount = 100000m,
             Costs = CostsOfIncome.Autorskie50, AuthorCostsBasis = "Umowa z prawami autorskimi" };
         var y = PayrollCalculator.Compute(young, 100000m, new PayrollYearToDate(YouthExemptRevenue: 80000m), R, 1.67m);
-        Assert.True(y.AuthorCosts <= 85528m - 80000m - y.ExemptRevenue);
+        Assert.True(y.AuthorCosts <= 120000m - 80000m - y.ExemptRevenue);                  // łączny limit 120 000 zł (art. 22 ust. 9aa)
+        Assert.Equal(34472m, y.AuthorCosts);                                                   // 120 000 − 80 000 − 5 528 zwolnione w tej wypłacie
+        Assert.Equal(34472m + R2((94472m - 2 * 34472m) * 0.2m), y.CostsOfIncome);           // nadwyżka ponad limit — koszty 20%
     }
 
     [Fact]
@@ -273,10 +275,14 @@ public class PayrollTests
         var p = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m);
         Assert.Equal(120m, p.PpkEmployee);
         Assert.Equal(90m, p.PpkEmployer);
-        Assert.Equal(5017m, p.TaxBase); // przychód obejmuje wpłatę PPK pracodawcy
-        Assert.Equal(302m, p.TaxAdvance);
+        Assert.Equal(4927m, p.TaxBase); // wpłata PPK pracodawcy jest przychodem dopiero po przekazaniu do instytucji finansowej
+        Assert.Equal(291m, p.TaxAdvance);
         Assert.Equal(465.97m, p.Health); // wpłata pracodawcy nie zwiększa podstawy zdrowotnej
-        Assert.Equal(4289.43m, p.Net);
+        Assert.Equal(4300.43m, p.Net);
+        var transferred = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m, ppkEmployerTaxable: 90m);
+        Assert.Equal(5017m, transferred.TaxBase);
+        Assert.Equal(302m, transferred.TaxAdvance);
+        Assert.Equal(4289.43m, transferred.Net);
 
         var sick = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21));
         Assert.Equal(4000m, sick.SocialBasis);

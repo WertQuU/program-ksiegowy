@@ -112,6 +112,8 @@ public sealed class PersonalDataService
         cp.Nip = cp.Regon = cp.Pesel = cp.Street = cp.BuildingNumber = cp.ApartmentNumber = cp.PostalCode = cp.City = null;
         cp.Email = cp.Phone = cp.BankAccountIban = cp.Notes = cp.VatEuNumber = cp.WhiteListRequestId = null;
         cp.IsActive = false;
+        // historia danych identyfikacyjnych (poprzednie NIP) — także usuwana
+        _db.CounterpartyIdentityChanges.RemoveRange(await _db.CounterpartyIdentityChanges.Where(h => h.CounterpartyId == counterpartyId).ToListAsync(ct));
         var docs = await _db.Documents.Where(d => d.CounterpartyId == counterpartyId && d.CompanyId == _user.CompanyId).ToListAsync(ct);
         foreach (var d in docs)
         {

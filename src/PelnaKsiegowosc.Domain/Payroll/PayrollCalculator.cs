@@ -69,9 +69,15 @@ public static class PayrollCalculator
     /// i umowa zlecenia) — obowiązek opłacania Funduszu Pracy ustala się od łącznej podstawy.</param>
     /// <param name="ownEmployee">Zleceniobiorca / wykonawca dzieła jest jednocześnie pracownikiem płatnika (umowa o pracę) — ryczałt
     /// z art. 30 ust. 1 pkt 5a nie ma zastosowania.</param>
+    /// <param name="civilMandatory">Umowa zlecenia: czy podlega obowiązkowo ubezpieczeniom emerytalnemu i rentowym (ustalone przez
+    /// <see cref="CivilMandatory"/> z uwzględnieniem innych umów u płatnika); null — ustalenie tylko z danych osoby.</param>
+    /// <param name="taxReductionAvailable">Kwota zmniejszająca (PIT-2) pozostała do wykorzystania w miesiącu wypłaty dla tej osoby u płatnika
+    /// (po innych pozycjach i listach); null — kwota z oświadczenia osoby.</param>
+    /// <param name="ppkEmployerTaxable">Wpłaty PPK pracodawcy przekazane do instytucji finansowej, które stają się przychodem w tej wypłacie.</param>
     public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null,
-        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false)
+        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false, bool? civilMandatory = null, decimal? taxReductionAvailable = null, decimal ppkEmployerTaxable = 0m)
     {
+        if (ppkEmployerTaxable < 0) throw new Common.DomainException("Kwota wpłat PPK do opodatkowania nie może być ujemna.");
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
         var fullMonthGross = gross;
         var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType, BaseGross = gross };
@@ -106,8 +112,28 @@ public static class PayrollCalculator
         // chorobowa obowiązkowa, wypadkowa, FP/FGŚP, zdrowotna), bez zwolnienia studenta do 26 lat; podstawa łączna z wynagrodzeniem
         var employeeLike = t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && (ownEmployee || e.WorkForOwnEmployer);
         if (employeeLike) notes.Add("art. 8 ust. 2a ustawy o sus — umowa z własnym pracownikiem / na rzecz pracodawcy: składki jak od stosunku pracy");
-        var social = t == ContractType.UmowaOPrace || employeeLike || (t == ContractType.UmowaZlecenie && !e.StudentUnder26);
-        var healthDue = social || t == ContractType.Powolanie;
+        // zbieg tytułów (art. 9 ustawy o sus): zlecenie podlega obowiązkowo emerytalnemu i rentowym albo — gdy z innego tytułu
+        // podstawa osiąga minimalne wynagrodzenie — tylko dobrowolnie (na wniosek); wtedy wypadkowe obowiązkowo przy dobrowolnych
+        // emerytalnym i rentowych, bez FP, FGŚP i PPK; składka zdrowotna ze zlecenia — zawsze (poza uczniem/studentem do 26 lat)
+        var independentCivil = t == ContractType.UmowaZlecenie && !employeeLike && !e.StudentUnder26;
+        var mandatory = true;
+        if (independentCivil)
+        {
+            var m = civilMandatory ?? CivilMandatory(e, null, rules);
+            if (m is null)
+            {
+                it.InsuranceUndetermined = true;
+                notes.Add("ZBIEG TYTUŁÓW DO UBEZPIECZEŃ NIEUSTALONY (art. 9 ustawy o sus) — uzupełnij w danych osoby inne tytuły (etat, inne zlecenia, działalność) i ich podstawę; wyliczono jak dla ubezpieczeń obowiązkowych, listy nie można zaksięgować");
+            }
+            else mandatory = m.Value;
+            if (!mandatory)
+                notes.Add(e.VoluntaryPension
+                    ? "zbieg tytułów: emerytalne i rentowe ze zlecenia DOBROWOLNIE (na wniosek), wypadkowe obowiązkowo; bez FP, FGŚP i PPK"
+                    : "zbieg tytułów: ze zlecenia tylko składka zdrowotna (emerytalne i rentowe nieobowiązkowe, brak wniosku o dobrowolne)");
+        }
+        var social = t == ContractType.UmowaOPrace || employeeLike || (independentCivil && (mandatory || e.VoluntaryPension));
+        var mandatorySocial = social && (!independentCivil || mandatory);
+        var healthDue = t is ContractType.UmowaOPrace or ContractType.Powolanie || employeeLike || independentCivil;
         var basis = social ? salary : 0m;
         it.SocialBasis = basis;
         var cappedBasis = Math.Min(basis, Math.Max(0, rules.AnnualPensionCap - ytd.PensionBasis));
@@ -132,22 +158,28 @@ public static class PayrollCalculator
             notes.Add("umowa z własnym pracownikiem — ryczałt z art. 30 ust. 1 pkt 5a nie ma zastosowania (zaliczka na zasadach ogólnych)");
             flatRate = false;
         }
+        // PPK (ustawa o PPK): wpłaty od wynagrodzenia osoby zatrudnionej (obowiązkowo ubezpieczonej) niezależnie od sposobu
+        // opodatkowania; wpłata pracodawcy jest przychodem pracownika dopiero w dniu przekazania do instytucji finansowej
+        // (art. 11 ust. 1 ustawy o PIT) — opodatkowana w wypłacie, w której przekazano ją do instytucji (parametr ppkEmployerTaxable)
+        if (e.Ppk && mandatorySocial)
+        {
+            it.PpkEmployee = Pct(basis, e.PpkEmployeeRate);
+            it.PpkEmployer = Pct(basis, e.PpkEmployerRate);
+        }
+        else if (e.Ppk) notes.Add("PPK: osoba nie podlega obowiązkowo ubezpieczeniom emerytalnemu i rentowym z tej umowy — bez wpłat PPK");
+        it.PpkEmployerTaxed = ppkEmployerTaxable;
+        if (ppkEmployerTaxable > 0) notes.Add($"przychód z wpłat PPK pracodawcy przekazanych do instytucji finansowej: {ppkEmployerTaxable:N2} zł");
         if (flatRate)
         {
             it.FlatRateTax = true;
-            it.TaxBase = R0(gross);
+            it.TaxBase = R0(gross + ppkEmployerTaxable);
+            if (ppkEmployerTaxable > 0) notes.Add("wpłata PPK pracodawcy opodatkowana jak przychód z umowy (ryczałt) — zweryfikuj");
             it.TaxAdvance = R0(it.TaxBase * rules.FlatRate / 100m);
             notes.Add("podatek zryczałtowany (umowa do 200 zł) — PIT-8AR");
         }
         else
         {
-            // PPK: wpłata podstawowa pracodawcy jest przychodem pracownika (art. 12 ust. 1 ustawy o PIT)
-            if (e.Ppk && social)
-            {
-                it.PpkEmployee = Pct(basis, e.PpkEmployeeRate);
-                it.PpkEmployer = Pct(basis, e.PpkEmployerRate);
-            }
-            var taxableGross = gross + it.PpkEmployer;
+            var taxableGross = gross + ppkEmployerTaxable;
             if (e.YouthRelief && t is ContractType.UmowaOPrace or ContractType.UmowaZlecenie)
             {
                 var exempt = Math.Min(taxableGross, Math.Max(0, rules.YouthReliefLimit - ytd.YouthExemptRevenue));
@@ -155,7 +187,7 @@ public static class PayrollCalculator
                 it.ExemptRevenue = exempt;
                 if (exempt > 0) notes.Add($"ulga dla młodych: zwolnione {exempt:N2} zł");
             }
-            var share = gross + it.PpkEmployer == 0 ? 0 : taxableGross / (gross + it.PpkEmployer);
+            var share = gross + ppkEmployerTaxable == 0 ? 0 : taxableGross / (gross + ppkEmployerTaxable);
             var socialDeductible = R2(it.SocialEmployee * share);
             decimal Regular(decimal basePart) => t is ContractType.UmowaZlecenie or ContractType.UmowaODzielo ? R2(basePart * 0.2m)
                 : e.Costs == CostsOfIncome.Podwyzszone ? rules.CostsIncreased : rules.CostsStandard;
@@ -163,18 +195,17 @@ public static class PayrollCalculator
             else if (e.Costs == CostsOfIncome.Autorskie50)
             {
                 // koszty 50% tylko od części wynagrodzenia za korzystanie z praw autorskich / rozporządzanie nimi (udział z umowy);
-                // limit roczny 120 000 zł (art. 22 ust. 9a); przy uldze dla młodych suma kosztów 50% i przychodów zwolnionych nie
-                // przekracza limitu zwolnienia (art. 22 ust. 9aa); pozostała część — koszty zwykłe
+                // art. 22 ust. 9a–9aa: koszty 50% ŁĄCZNIE z przychodami zwolnionymi (ulga dla młodych, art. 21 ust. 1 pkt 148)
+                // nie mogą przekroczyć w roku 120 000 zł (górna granica pierwszego przedziału skali); pozostała część — koszty zwykłe
                 var authorShare = Math.Clamp(e.AuthorSharePercent, 0m, 100m) / 100m;
                 var costBasis = taxableGross - socialDeductible;
                 var authorPart = R2(costBasis * authorShare);
-                var available = Math.Max(0, rules.TaxThreshold - ytd.AuthorCosts);
-                if (it.ExemptRevenue > 0 || ytd.YouthExemptRevenue > 0)
-                    available = Math.Min(available, Math.Max(0, rules.YouthReliefLimit - ytd.AuthorCosts - ytd.YouthExemptRevenue - it.ExemptRevenue));
+                var available = Math.Max(0, rules.TaxThreshold - ytd.AuthorCosts - ytd.YouthExemptRevenue - it.ExemptRevenue);
                 var author = Math.Min(R2(authorPart * 0.5m), available);
                 if (author < R2(authorPart * 0.5m)) notes.Add($"limit kosztów 50% (art. 22 ust. 9a–9aa ustawy o PIT) — uwzględniono {author:N2} zł");
                 it.AuthorCosts = author;
-                it.CostsOfIncome = author + (authorShare < 1m || author < R2(authorPart * 0.5m) ? Regular(costBasis - authorPart) : 0m);
+                // część nieobjęta kosztami 50% (udział nieautorski oraz nadwyżka ponad limit) — koszty zwykłe
+                it.CostsOfIncome = author + (authorShare < 1m || author < R2(authorPart * 0.5m) ? Regular(costBasis - Math.Min(authorPart, author * 2m)) : 0m);
             }
             else it.CostsOfIncome = Regular(taxableGross - socialDeductible);
             var income = Math.Max(0, taxableGross - it.CostsOfIncome);
@@ -184,7 +215,16 @@ public static class PayrollCalculator
             var lowPart = t == ContractType.UmowaOPrace ? Math.Max(0, Math.Min(it.TaxBase, rules.TaxThreshold - ytd.TaxBase)) : it.TaxBase;
             var tax = lowPart * rules.TaxRate1 / 100m + (it.TaxBase - lowPart) * rules.TaxRate2 / 100m;
             if (it.TaxBase - lowPart > 0) notes.Add("przekroczony próg 120 000 zł — stawka 32%");
-            if (e.Pit2 && it.TaxBase > 0) tax -= rules.MonthlyTaxReduction;
+            // kwota zmniejszająca (PIT-2): raz w miesiącu na osobę u płatnika — wykorzystana część zmniejsza pulę dla kolejnych
+            // pozycji i list z wypłatą w tym samym miesiącu (pulę wylicza serwis list płac)
+            var reductionPool = Math.Min(taxReductionAvailable ?? e.Pit2Reduction, rules.MonthlyTaxReduction);
+            if (e.Pit2Reduction > 0 && reductionPool > 0 && it.TaxBase > 0)
+            {
+                it.TaxReduction = R2(Math.Min(reductionPool, Math.Max(0, tax)));
+                tax -= it.TaxReduction;
+            }
+            else if (e.Pit2Reduction > 0 && reductionPool <= 0)
+                notes.Add("PIT-2: kwota zmniejszająca wykorzystana już w tym miesiącu (inna umowa lub lista płac)");
             it.TaxAdvance = Math.Max(0, R0(tax));
         }
         it.Net = R2(gross - it.SocialEmployee - it.Health - it.TaxAdvance - it.PpkEmployee);
@@ -196,14 +236,42 @@ public static class PayrollCalculator
         // PEŁNEMU minimalnemu wynagrodzeniu — próg nie jest proporcjonalny do wymiaru etatu; przy nieobecności (choroba, urlop
         // bezpłatny) porównuje się wynagrodzenie za pełny miesiąc
         var fpComparison = (t == ContractType.UmowaOPrace && absence is { } ab && (ab.SickDays > 0 || ab.UnpaidWorkingDays > 0) ? fullMonthGross : basis) + otherTitlesFpBasis;
-        var fpDue = social && !e.ExemptFromFp && fpComparison >= rules.MinimumWage;
+        var fpDue = mandatorySocial && !e.ExemptFromFp && fpComparison >= rules.MinimumWage;
         it.LaborFund = fpDue ? Pct(basis, rules.LaborFund) : 0;
-        if (social && !e.ExemptFromFp && !fpDue)
+        if (mandatorySocial && !e.ExemptFromFp && !fpDue)
             notes.Add($"bez Funduszu Pracy — podstawa {fpComparison:N2} zł (z innymi tytułami, w przeliczeniu na miesiąc) poniżej minimalnego wynagrodzenia {rules.MinimumWage:N2} zł");
-        it.Fgsp = social && !e.ExemptFromFp ? Pct(basis, rules.Fgsp) : 0;
+        it.Fgsp = mandatorySocial && !e.ExemptFromFp ? Pct(basis, rules.Fgsp) : 0;
         if (t == ContractType.UmowaOPrace && absence is null or { SickDays: 0, UnpaidWorkingDays: 0 } && salary < rules.MinimumWage * e.WorkTimeFraction)
             notes.Add($"wynagrodzenie poniżej minimalnego ({rules.MinimumWage:N2} zł × etat) — sprawdź (np. niepełny miesiąc)");
         it.Notes = notes.Count == 0 ? null : string.Join("; ", notes);
         return it;
+    }
+
+    /// <summary>
+    /// Czy umowa zlecenia (bez art. 8 ust. 2a, nie student) podlega obowiązkowo ubezpieczeniom emerytalnemu i rentowym (art. 9 ust. 1c,
+    /// 2, 2a–2b ustawy o sus): tak — gdy osoba nie ma innych tytułów; przy etacie u innego pracodawcy albo wcześniejszych zleceniach —
+    /// tylko gdy łączna podstawa z tamtych tytułów (i wcześniejszych obowiązkowych zleceń u tego płatnika) w przeliczeniu na miesiąc
+    /// jest niższa od minimalnego wynagrodzenia. null — nieustalone (brak danych).
+    /// </summary>
+    /// <param name="earlierMandatoryBasisAtPayer">Podstawa z wcześniej zawartych, obowiązkowo oskładkowanych zleceń tej osoby u płatnika
+    /// w tym miesiącu; null — to pierwsza umowa zlecenia osoby u płatnika.</param>
+    public static bool? CivilMandatory(Employee e, decimal? earlierMandatoryBasisAtPayer, PayrollRules rules)
+    {
+        decimal external;
+        switch (e.ExternalTitles)
+        {
+            case ExternalInsuranceTitle.Nieustalone: return null;
+            case ExternalInsuranceTitle.ObowiazkoweWgUstalenia: return true;
+            case ExternalInsuranceTitle.DobrowolneWgUstalenia: return false;
+            case ExternalInsuranceTitle.Brak:
+                if (earlierMandatoryBasisAtPayer is null) return true;
+                external = 0m;
+                break;
+            default:
+                if (e.ExternalTitlesBasis is not { } b || b < 0) return null;
+                external = b;
+                break;
+        }
+        return external + (earlierMandatoryBasisAtPayer ?? 0m) < rules.MinimumWage;
     }
 }

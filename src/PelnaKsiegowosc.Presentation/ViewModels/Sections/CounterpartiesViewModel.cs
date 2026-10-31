@@ -26,6 +26,8 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
     [ObservableProperty] private string _name = "";
     [ObservableProperty] private Choice<CounterpartyKind> _kind = KindChoices[0];
     [ObservableProperty] private string _nip = "";
+    /// <summary>Przy zmianie NIP/kraju: data, od której obowiązują nowe dane (poprzednie trafiają do historii — JPK_KR_PD).</summary>
+    [ObservableProperty] private string _identityValidFrom = "";
     [ObservableProperty] private string _vatEu = "";
     [ObservableProperty] private string _country = "PL";
     [ObservableProperty] private string _regon = "";
@@ -224,7 +226,7 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var count = await db.Counterparties.CountAsync(c => c.CompanyId == Session.CompanyId);
         Code = (count + 1).ToString("0000");
-        Name = Nip = VatEu = Regon = Street = Building = Apartment = PostalCode = City = Email = Phone = Iban = Notes = "";
+        Name = Nip = IdentityValidFrom = VatEu = Regon = Street = Building = Apartment = PostalCode = City = Email = Phone = Iban = Notes = "";
         Country = "PL"; PaymentDays = "14"; RelatedParty = false; Active = true; Kind = Kinds[0];
     }
 
@@ -237,7 +239,7 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
             var c = await db.Counterparties.AsNoTracking().FirstAsync(x => x.Id == id);
             _editedId = c.Id;
             FormHeader = $"Edycja: {c.Code} {c.Name}";
-            Code = c.Code; Name = c.Name; Kind = Kinds.First(k => k.Value == c.Kind); Nip = c.Nip ?? ""; VatEu = c.VatEuNumber ?? ""; Country = c.CountryCode;
+            Code = c.Code; Name = c.Name; IdentityValidFrom = ""; Kind = Kinds.First(k => k.Value == c.Kind); Nip = c.Nip ?? ""; VatEu = c.VatEuNumber ?? ""; Country = c.CountryCode;
             Regon = c.Regon ?? ""; Street = c.Street ?? ""; Building = c.BuildingNumber ?? ""; Apartment = c.ApartmentNumber ?? ""; PostalCode = c.PostalCode ?? "";
             City = c.City ?? ""; Email = c.Email ?? ""; Phone = c.Phone ?? ""; Iban = c.BankAccountIban ?? ""; PaymentDays = c.DefaultPaymentDays.ToString();
             RelatedParty = c.IsRelatedParty; Active = c.IsActive; Notes = c.Notes ?? "";
@@ -253,6 +255,7 @@ public sealed partial class CounterpartiesViewModel : SectionViewModel
         c.Code = Code.Trim(); c.Name = Name.Trim(); c.Kind = Kind.Value;
         c.CountryCode = Country.Trim().ToUpperInvariant();
         c.Nip = Parse.Trim(Nip) is { } n && c.CountryCode == "PL" ? Identifiers.NormalizeNip(n) : Parse.Trim(Nip);
+        if (Parse.OptionalDate(IdentityValidFrom, "NIP obowiązuje od") is { } validFrom) c.IdentityValidFrom = validFrom;
         c.VatEuNumber = Parse.Trim(VatEu); c.Regon = Parse.Trim(Regon);
         c.Street = Parse.Trim(Street); c.BuildingNumber = Parse.Trim(Building); c.ApartmentNumber = Parse.Trim(Apartment); c.PostalCode = Parse.Trim(PostalCode); c.City = Parse.Trim(City);
         c.Email = Parse.Trim(Email); c.Phone = Parse.Trim(Phone); c.BankAccountIban = Parse.Trim(Iban)?.Replace(" ", "");

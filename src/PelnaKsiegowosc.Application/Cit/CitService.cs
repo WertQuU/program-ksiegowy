@@ -868,7 +868,7 @@ public sealed class CitService
         await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey, history, ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_WPLATA_ZARACHOWANA", "FiscalYear", fy.Id.ToString(),
             $"wpłata {payment.Date.ToPl()} ({payment.Document}): {Money.Xml(amount)} → rok {fy.Name}, {(advancePeriod is { } p ? $"zaliczka za okres {p}" : annualTax ? "podatek roczny" : "inne zobowiązanie")}; oświadczenie operatora, źródło: {source.Trim()}", ct);
-        await _db.SaveChangesAsync(ct);
+        await SaveAllocationsAsync(ct);
         return record;
     }
 
@@ -884,7 +884,24 @@ public sealed class CitService
         await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, PaymentAllocationsKey, history, ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_WPLATA_ZARACHOWANIE_KOREKTA", "AppSetting", PaymentAllocationsKey,
             $"anulowano {history[i].PaymentDate.ToPl()} {Money.Xml(history[i].Amount)} (rok {history[i].Year}): {reason.Trim()}", ct);
-        await _db.SaveChangesAsync(ct);
+        await SaveAllocationsAsync(ct);
+    }
+
+    /// <summary>
+    /// Zapis rejestru zarachowań z kontrolą współbieżności: jeżeli inny operator zmienił rejestr po jego odczycie (np. zarachował tę
+    /// samą wpłatę), zapis jest odrzucany — bez utraty cudzego zapisu i bez podwójnego zarachowania.
+    /// </summary>
+    private async Task SaveAllocationsAsync(CancellationToken ct)
+    {
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException) // DbUpdateConcurrencyException (zmieniony rejestr) albo równoległe utworzenie rejestru (unikalny klucz)
+        {
+            foreach (var entry in _db.ChangeTracker.Entries().ToList()) entry.State = EntityState.Detached;
+            throw new DomainException("Rejestr zarachowań wpłat CIT został w międzyczasie zmieniony przez innego operatora — zapis odrzucono. Odśwież dane i sprawdź niezarachowaną kwotę wpłaty.");
+        }
     }
 
     private async Task EnsureEvidenceAsync(Guid? attachmentId, CancellationToken ct)

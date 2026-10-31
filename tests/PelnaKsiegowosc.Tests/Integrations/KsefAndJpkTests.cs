@@ -338,6 +338,41 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Jpk_cit_assigns_identity_valid_on_operation_date_to_manual_entries_after_nip_change()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var cp = await t.AddCounterpartyAsync("KRE", "Kontrahent ręczny", "7740001454");
+        // zapis ręczny (bez dokumentu) w lutym — przy starym NIP
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 2, 10), "PK/1", new("130-01", 100m, 0), new("200", 0, 100m, cp.Id)));
+        await t.Db.SaveChangesAsync();
+        cp.Nip = "5260250274";
+        cp.IdentityValidFrom = new DateOnly(2026, 5, 1);                                        // nowy NIP od 1 maja
+        await t.Db.SaveChangesAsync();
+        Assert.Equal(new DateOnly(2026, 4, 30), (await t.Db.CounterpartyIdentityChanges.AsNoTracking().SingleAsync()).ValidUntil);
+        // zapisy ręczne: kwietniowy wprowadzony po zmianie (dane sprzed zmiany) i czerwcowy (nowe dane)
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 4, 20), "PK/2", new("130-01", 50m, 0), new("200", 0, 50m, cp.Id)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 6, 10), "PK/3", new("130-01", 70m, 0), new("200", 0, 70m, cp.Id)));
+        await t.Db.SaveChangesAsync();
+        t.Company.Voivodeship = "mazowieckie"; t.Company.County = "Warszawa"; t.Company.Commune = "Warszawa"; t.Company.TaxOfficeCode = "1471";
+        var rec = await new PelnaKsiegowosc.Application.Cit.CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        var r = await JpkKrPdBuilder.BuildAsync(t.Db, t.Company, t.Year, rec.Rpd, false, t.Clock.UtcNow, Validator());
+        Assert.True(r.Validation.IsValid, string.Join(Environment.NewLine, r.Validation.Errors.Take(10)));
+        var ns = JpkKrPdBuilder.Ns;
+        var sets = r.Document.Descendants(ns + "Kontrahent").ToDictionary(k => k.Element(ns + "T_1")!.Value, k => k.Element(ns + "T_3")!.Value);
+        Assert.Equal("7740001454", sets["KRE"]);
+        Assert.Equal("5260250274", sets["KRE/2"]);
+        string? RefOf(string doc) => r.Document.Descendants(ns + "Dziennik").First(x => x.Elements().Any(el => el.Value == doc)).Element(ns + "D_3")?.Value;
+        Assert.Equal("KRE", RefOf("PK/1"));
+        Assert.Equal("KRE", RefOf("PK/2"));
+        Assert.Equal("KRE/2", RefOf("PK/3"));
+        // kolejna zmiana bez podanej daty — poprzednia data obowiązywania nie jest ponownie użyta
+        cp.Nip = "7740001454";
+        await t.Db.SaveChangesAsync();
+        Assert.Equal(2, await t.Db.CounterpartyIdentityChanges.CountAsync());
+        Assert.NotEqual(new DateOnly(2026, 5, 1), cp.IdentityValidFrom);
+    }
+
+    [Fact]
     public async Task Jpk_cit_lists_only_counterparties_with_tax_id()
     {
         await using var t = await TestBooks.CreateAsync();

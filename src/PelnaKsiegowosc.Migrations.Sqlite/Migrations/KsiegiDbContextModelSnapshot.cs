@@ -165,6 +165,7 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(2147483647)
                         .HasColumnType("TEXT");
@@ -1338,6 +1339,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<DateOnly?>("IdentityValidFrom")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("INTEGER");
 
@@ -1404,6 +1408,39 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .IsUnique();
 
                     b.ToTable("Counterparties");
+                });
+
+            modelBuilder.Entity("PelnaKsiegowosc.Domain.Counterparties.CounterpartyIdentityChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ChangedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CounterpartyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CountryCode")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Nip")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly>("ValidUntil")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CounterpartyId", "ValidUntil");
+
+                    b.ToTable("CounterpartyIdentityChanges");
                 });
 
             modelBuilder.Entity("PelnaKsiegowosc.Domain.Documents.Attachment", b =>
@@ -2532,6 +2569,15 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                     b.Property<bool>("ExemptFromFp")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ExternalTitles")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal?>("ExternalTitlesBasis")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -2568,8 +2614,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
-                    b.Property<bool>("Pit2")
-                        .HasColumnType("INTEGER");
+                    b.Property<decimal>("Pit2Reduction")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("PostalCode")
                         .HasMaxLength(1000)
@@ -2604,6 +2651,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("VoluntaryPension")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("VoluntarySickness")
                         .HasColumnType("INTEGER");
 
@@ -2637,7 +2687,7 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal>("BaseGross")
+                    b.Property<decimal?>("BaseGross")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -2689,6 +2739,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("InsuranceUndetermined")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("LaborFund")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
@@ -2720,6 +2773,13 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("PpkEmployerTaxed")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PpkTaxedInListId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("SickDays")
                         .HasColumnType("INTEGER");
 
@@ -2743,6 +2803,10 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<decimal>("TaxBase")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("TaxReduction")
                         .HasPrecision(18, 2)
                         .HasColumnType("TEXT");
 
@@ -2784,6 +2848,9 @@ namespace PelnaKsiegowosc.Migrations.Sqlite.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateOnly>("PaymentDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateOnly?>("PpkTransferredOn")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("RulesVersion")

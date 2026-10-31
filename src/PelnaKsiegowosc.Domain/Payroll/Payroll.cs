@@ -22,6 +22,26 @@ public enum CostsOfIncome
     Brak
 }
 
+/// <summary>
+/// Tytuły do ubezpieczeń społecznych osoby POZA tym płatnikiem — do ustalenia, czy umowa zlecenia podlega obowiązkowo
+/// ubezpieczeniom emerytalnemu i rentowym (art. 9 ust. 1c, 2, 2a–2b ustawy o systemie ubezpieczeń społecznych).
+/// </summary>
+public enum ExternalInsuranceTitle
+{
+    /// <summary>Nie ustalono (brak oświadczenia zleceniobiorcy) — listy z taką umową nie można zaksięgować.</summary>
+    Nieustalone,
+    /// <summary>Brak innych tytułów poza tym płatnikiem (także emeryt/rencista bez innych umów) — zlecenie obowiązkowo.</summary>
+    Brak,
+    /// <summary>Umowa o pracę u innego pracodawcy — obowiązkowo ze zlecenia tylko, gdy podstawa z etatu &lt; minimalne wynagrodzenie.</summary>
+    EtatUInnegoPracodawcy,
+    /// <summary>Wcześniej zawarta umowa zlecenia u innego zleceniodawcy — obowiązkowo, gdy podstawa z niej &lt; minimalne wynagrodzenie.</summary>
+    ZlecenieUInnegoZleceniodawcy,
+    /// <summary>Inny zbieg (np. działalność gospodarcza) ustalony przez płatnika: zlecenie podlega obowiązkowo.</summary>
+    ObowiazkoweWgUstalenia,
+    /// <summary>Inny zbieg (np. działalność gospodarcza) ustalony przez płatnika: ze zlecenia emerytalne i rentowe nie są obowiązkowe.</summary>
+    DobrowolneWgUstalenia
+}
+
 /// <summary>Osoba zatrudniona (pracownik, zleceniobiorca, wykonawca dzieła, członek zarządu). Rozrachunki — przez powiązanego kontrahenta.</summary>
 public class Employee : CompanyEntity
 {
@@ -60,8 +80,25 @@ public class Employee : CompanyEntity
     public string? AuthorCostsBasis { get; set; }
     public decimal WorkTimeFraction { get; set; } = 1m;
     public CostsOfIncome Costs { get; set; } = CostsOfIncome.Standardowe;
-    /// <summary>Złożony PIT-2 — płatnik stosuje kwotę zmniejszającą podatek (1/12 z 3600 zł).</summary>
-    public bool Pit2 { get; set; }
+    /// <summary>
+    /// PIT-2 (art. 31a / art. 32 ust. 3 ustawy o PIT): miesięczna kwota zmniejszająca zaliczkę stosowana przez tego płatnika —
+    /// 0 (brak oświadczenia), 100 zł (1/36), 150 zł (1/24) albo 300 zł (1/12 z 3600 zł). Stosowana raz w miesiącu na osobę, łącznie
+    /// dla wszystkich jej umów i list płac z wypłatą w tym miesiącu.
+    /// </summary>
+    public decimal Pit2Reduction { get; set; }
+    /// <summary>Zgodność wsteczna: PIT-2 złożony (true ustawia 1/12 = 300 zł, jeśli nie wybrano innej kwoty).</summary>
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool Pit2
+    {
+        get => Pit2Reduction > 0;
+        set => Pit2Reduction = value ? (Pit2Reduction > 0 ? Pit2Reduction : 300m) : 0m;
+    }
+    /// <summary>Umowa zlecenia: tytuły do ubezpieczeń poza tym płatnikiem (zbieg tytułów).</summary>
+    public ExternalInsuranceTitle ExternalTitles { get; set; }
+    /// <summary>Miesięczna podstawa składek z tytułu poza płatnikiem (etat u innego pracodawcy / wcześniejsze zlecenie).</summary>
+    public decimal? ExternalTitlesBasis { get; set; }
+    /// <summary>Zlecenie niepodlegające obowiązkowo — wniosek o dobrowolne ubezpieczenia emerytalne i rentowe (wtedy także wypadkowe).</summary>
+    public bool VoluntaryPension { get; set; }
     /// <summary>Ulga dla młodych (do 26 lat, art. 21 ust. 1 pkt 148 ustawy o PIT) — przychody zwolnione do 85 528 zł rocznie.</summary>
     public bool YouthRelief { get; set; }
     /// <summary>Uczeń / student do 26 lat — umowa zlecenia bez składek ZUS (art. 6 ust. 4 ustawy o sus).</summary>
@@ -103,6 +140,8 @@ public class PayrollList : CompanyEntity
     public string Description { get; set; } = "";
     public PayrollStatus Status { get; set; } = PayrollStatus.Robocza;
     public Guid? JournalEntryId { get; set; }
+    /// <summary>Data przekazania wpłat PPK z tej listy do instytucji finansowej — wpłata pracodawcy staje się wtedy przychodem pracownika.</summary>
+    public DateOnly? PpkTransferredOn { get; set; }
     public string RulesVersion { get; set; } = "";
     public DateTime CreatedAtUtc { get; set; }
     public List<PayrollItem> Items { get; set; } = new();
@@ -124,13 +163,21 @@ public class PayrollItem : Entity
     public int UnpaidDays { get; set; }
     /// <summary>Wynagrodzenie chorobowe (bez składek społecznych; zdrowotna i PIT — tak).</summary>
     public decimal SickPay { get; set; }
-    /// <summary>Wynagrodzenie zasadnicze za pełny miesiąc przyjęte do wyliczenia (do ponownego przeliczenia pozycji).</summary>
-    public decimal BaseGross { get; set; }
+    /// <summary>Wynagrodzenie zasadnicze za pełny miesiąc przyjęte do wyliczenia (do ponownego przeliczenia pozycji); null — kwota z ewidencji osoby, 0 — świadomie zero.</summary>
+    public decimal? BaseGross { get; set; }
     /// <summary>Koszty 50% (prawa autorskie) w tej pozycji — do limitu rocznego.</summary>
     public decimal AuthorCosts { get; set; }
     public decimal PpkEmployee { get; set; }
-    /// <summary>Wpłata PPK pracodawcy — przychód pracownika (PIT), koszt pracodawcy.</summary>
+    /// <summary>Wpłata PPK pracodawcy naliczona na tej liście — koszt pracodawcy; przychodem pracownika staje się w dniu przekazania do instytucji finansowej.</summary>
     public decimal PpkEmployer { get; set; }
+    /// <summary>Wpłaty PPK pracodawcy z wcześniejszych list, przekazane do instytucji finansowej — opodatkowane w tej pozycji (przychód pracownika).</summary>
+    public decimal PpkEmployerTaxed { get; set; }
+    /// <summary>Lista płac, w której opodatkowano wpłatę PPK pracodawcy z tej pozycji (po zaksięgowaniu tamtej listy).</summary>
+    public Guid? PpkTaxedInListId { get; set; }
+    /// <summary>Kwota zmniejszająca zaliczkę (PIT-2) zastosowana w tej pozycji.</summary>
+    public decimal TaxReduction { get; set; }
+    /// <summary>Umowa zlecenia z nieustalonym zbiegiem tytułów do ubezpieczeń — listy nie można zaksięgować.</summary>
+    public bool InsuranceUndetermined { get; set; }
     /// <summary>Przychód zwolniony (ulga dla młodych).</summary>
     public decimal ExemptRevenue { get; set; }
     public decimal PensionEmployee { get; set; }

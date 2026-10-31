@@ -40,7 +40,12 @@ public sealed partial class ReportService
             list.Items.Sum(i => i.Health), list.Items.Sum(i => i.CostsOfIncome), list.Items.Sum(i => i.TaxBase), list.Items.Sum(i => i.TaxAdvance), list.Items.Sum(i => i.Net), list.Items.Sum(i => i.EmployerCost)) { IsTotal = true });
         foreach (var i in list.Items.Where(i => i.Notes is not null)) r.Notes.Add($"{i.EmployeeName}: {i.Notes}");
         if (list.Items.Any(i => i.PpkEmployee + i.PpkEmployer != 0))
-            r.Notes.Add($"PPK: wpłaty pracowników {Money.Format(list.Items.Sum(i => i.PpkEmployee))} zł (potrącone z netto), pracodawcy {Money.Format(list.Items.Sum(i => i.PpkEmployer))} zł (przychód pracownika, koszt 405) — przelew do instytucji finansowej do 15. dnia następnego miesiąca.");
+            r.Notes.Add($"PPK: wpłaty pracowników {Money.Format(list.Items.Sum(i => i.PpkEmployee))} zł (potrącone z netto), pracodawcy {Money.Format(list.Items.Sum(i => i.PpkEmployer))} zł (koszt 405; przychód pracownika w dniu przekazania do instytucji finansowej — opodatkowany w liście z wypłatą po przekazaniu) — przelew do 15. dnia następnego miesiąca" +
+                        (list.PpkTransferredOn is { } ppkDate ? $"; przekazano {ppkDate.ToPl()}." : "; data przekazania nie została jeszcze zarejestrowana."));
+        if (list.Items.Sum(i => i.PpkEmployerTaxed) is var ppkTaxed and > 0)
+            r.Notes.Add($"Opodatkowane w tej liście wpłaty PPK pracodawcy przekazane wcześniej do instytucji finansowej: {Money.Format(ppkTaxed)} zł.");
+        if (list.Items.Sum(i => i.TaxReduction) is var reduction and > 0)
+            r.Notes.Add($"Kwota zmniejszająca zaliczki (PIT-2) zastosowana w tej liście: {Money.Format(reduction)} zł.");
         r.Notes.Add($"Parametry: {list.RulesVersion}. Składki pracodawcy (emerytalna, rentowa, wypadkowa, FP, FGŚP) w kolumnie „Koszt pracodawcy”.");
         return r;
     }
@@ -119,7 +124,7 @@ public sealed partial class ReportService
                          _ => "działalność wykonywana osobiście"
                      }))
             {
-                var revenue = src.Sum(i => i.Gross + i.PpkEmployer - i.ExemptRevenue);
+                var revenue = src.Sum(i => i.Gross + i.PpkEmployerTaxed - i.ExemptRevenue);
                 var costs = src.Sum(i => i.CostsOfIncome);
                 r.Add(g.First().EmployeeName, e?.Pesel, src.Key, revenue, costs, Math.Max(0, revenue - costs), src.Sum(i => i.TaxAdvance),
                     src.Sum(i => i.SocialEmployee), src.Sum(i => i.Health), src.Sum(i => i.ExemptRevenue));
@@ -152,7 +157,7 @@ public sealed partial class ReportService
             var sources = g.GroupBy(i => i.ContractType == ContractType.UmowaOPrace ? ContractType.UmowaOPrace : ContractType.UmowaZlecenie)
                 .Select(s =>
                 {
-                    var revenue = s.Sum(i => i.Gross + i.PpkEmployer - i.ExemptRevenue);
+                    var revenue = s.Sum(i => i.Gross + i.PpkEmployerTaxed - i.ExemptRevenue);
                     var costs = s.Sum(i => i.CostsOfIncome);
                     return new Pit11Source(s.Key, author, revenue, costs, s.Sum(i => i.TaxAdvance), author ? revenue : 0m, author ? costs : 0m);
                 }).ToList();

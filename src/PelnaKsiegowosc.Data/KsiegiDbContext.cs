@@ -37,8 +37,36 @@ public class KsiegiDbContext : DbContext
     internal bool CompanyScopeSet => CompanyScope.HasValue;
     internal Guid CompanyScopeValue => CompanyScope ?? Guid.Empty;
 
+    /// <summary>
+    /// Zmiana NIP lub kraju kontrahenta (dowolną ścieżką) — zapis poprzednich danych identyfikacyjnych do historii z datą obowiązywania
+    /// do dnia poprzedzającego <see cref="Counterparty.IdentityValidFrom"/> (albo dzień zmiany).
+    /// </summary>
+    private void TrackCounterpartyIdentity()
+    {
+        foreach (var e in ChangeTracker.Entries<Counterparty>().Where(x => x.State == EntityState.Modified).ToList())
+        {
+            var oldNip = e.OriginalValues.GetValue<string?>(nameof(Counterparty.Nip));
+            var oldCountry = e.OriginalValues.GetValue<string>(nameof(Counterparty.CountryCode));
+            static string N(string? v) => (v ?? "").Replace("-", "").Replace(" ", "").Trim().ToUpperInvariant();
+            if (N(oldNip) == N(e.Entity.Nip) && N(oldCountry) == N(e.Entity.CountryCode)) continue;
+            // uzupełnienie brakującego NIP — brak poprzedniego zestawu; usunięcie NIP (np. anonimizacja RODO) — bez kopiowania danych do historii
+            if (string.IsNullOrWhiteSpace(oldNip) || string.IsNullOrWhiteSpace(e.Entity.Nip)) continue;
+            // data obowiązywania nowych danych — tylko podana przy tej zmianie (pozostawiona data z poprzedniej zmiany nie jest brana)
+            var given = e.Entity.IdentityValidFrom;
+            if (given == e.OriginalValues.GetValue<DateOnly?>(nameof(Counterparty.IdentityValidFrom))) given = null;
+            var from = given ?? DateOnly.FromDateTime(DateTime.Now);
+            e.Entity.IdentityValidFrom = from;
+            CounterpartyIdentityChanges.Add(new CounterpartyIdentityChange
+            {
+                CompanyId = e.Entity.CompanyId, CounterpartyId = e.Entity.Id, CountryCode = oldCountry, Nip = oldNip,
+                ValidUntil = from.AddDays(-1), ChangedAtUtc = DateTime.UtcNow
+            });
+        }
+    }
+
     private void EnforceCompanyScope()
     {
+        TrackCounterpartyIdentity();
         if (CompanyScope is not { } scope) return;
         foreach (var e in ChangeTracker.Entries<Domain.Common.CompanyEntity>())
             if (e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted && e.Entity.CompanyId != scope)
@@ -57,6 +85,7 @@ public class KsiegiDbContext : DbContext
     public DbSet<JournalEntry> JournalEntries => Set<JournalEntry>();
     public DbSet<JournalLine> JournalLines => Set<JournalLine>();
     public DbSet<Counterparty> Counterparties => Set<Counterparty>();
+    public DbSet<CounterpartyIdentityChange> CounterpartyIdentityChanges => Set<CounterpartyIdentityChange>();
     public DbSet<Document> Documents => Set<Document>();
     public DbSet<DocumentLine> DocumentLines => Set<DocumentLine>();
     public DbSet<DocumentVatLine> DocumentVatLines => Set<DocumentVatLine>();
@@ -341,7 +370,10 @@ public class KsiegiDbContext : DbContext
             e.HasIndex(x => x.AtUtc);
             e.Property(x => x.Details).HasMaxLength(int.MaxValue);
         });
-        m.Entity<AppSetting>(e => { e.HasIndex(x => new { x.CompanyId, x.Key }).IsUnique(); e.Property(x => x.Value).HasMaxLength(int.MaxValue); });
+        // wartość ustawienia jako token współbieżności: zapis zmian dokonanych równolegle przez innego operatora (np. rejestr
+        // zarachowań wpłat CIT) kończy się błędem zamiast cichego nadpisania (utraty zapisu)
+        m.Entity<AppSetting>(e => { e.HasIndex(x => new { x.CompanyId, x.Key }).IsUnique(); e.Property(x => x.Value).HasMaxLength(int.MaxValue).IsConcurrencyToken(); });
+        m.Entity<CounterpartyIdentityChange>(e => e.HasIndex(x => new { x.CounterpartyId, x.ValidUntil }));
         m.Entity<BackupRecord>(e => e.HasIndex(x => x.CreatedAtUtc));
         m.Entity<IntegrationLog>(e => { e.HasIndex(x => x.AtUtc); e.Property(x => x.Message).HasMaxLength(int.MaxValue); });
     }

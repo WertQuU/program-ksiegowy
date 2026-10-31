@@ -439,4 +439,38 @@ public class CashFlowGrossTests
         Assert.Single(await approvals.CashFlowVerificationsAsync("2026"));
         Assert.Equal(700m, withAdjustment.Get("A.II.10"));
     }
+
+    [Fact]
+    public async Task Realized_exchange_differences_on_settlement_and_foreign_loan_repayment_are_presented_per_ksr1()
+    {
+        await using var t = await PelnaKsiegowosc.Tests.Infrastructure.TestBooks.CreateAsync();
+        var chart = new PelnaKsiegowosc.Application.Ledger.ChartService(t.Db, t.User, t.Clock);
+        await chart.AddAccountAsync(t.Chart.Id, "134", "Kredyty bankowe", Domain.Accounts.AccountType.Pasywne, balanceCreditLine: "P.B.III.3.a");
+        var cp = await t.AddCounterpartyAsync("ODB", "Odbiorca zagraniczny");
+        async Task Post(DateOnly d, string no, params PelnaKsiegowosc.Application.Ledger.LineInput[] lines)
+        {
+            await t.Ledger().CreateAndPostAsync(PelnaKsiegowosc.Tests.Infrastructure.TestBooks.Entry(d, no, lines));
+            await t.Db.SaveChangesAsync();
+        }
+        await Post(new DateOnly(2026, 3, 1), "PK/K", new("130-01", 50000m, 0), new("801", 0, 50000m));
+        await Post(new DateOnly(2026, 3, 2), "FV/1", new("200", 4300m, 0, cp.Id), new("700-01", 0, 4300m));       // 1000 EUR × 4,30
+        // zapłata 1000 EUR × 4,40: zrealizowana dodatnia różnica kursowa 100 — przepływ operacyjny w kwocie faktycznie otrzymanej
+        await Post(new DateOnly(2026, 4, 2), "WB/1", new("130-01", 4400m, 0), new("200", 0, 4300m, cp.Id), new("750-02", 0, 100m));
+        // kredyt walutowy 10 000 EUR × 4,00 i spłata po 4,10 — zrealizowana ujemna różnica 1 000
+        await Post(new DateOnly(2026, 4, 3), "WB/2", new("130-01", 40000m, 0), new("134", 0, 40000m));
+        await Post(new DateOnly(2026, 9, 3), "WB/3", new("134", 40000m, 0), new("751-02", 1000m, 0), new("130-01", 0, 41000m));
+        var cf = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Equal(0m, cf.Unreconciled);
+        Assert.Equal(0m, cf.Get("E.1"));                                                        // brak wyceny środków pieniężnych
+        Assert.Equal(40000m, cf.Get("C.I.2"));
+        Assert.Equal(cf.Get("D"), cf.Get("E"));
+        Assert.Equal(41000m, cf.Get("C.II.4"));                                                 // spłata w faktycznie zapłaconej kwocie
+        Assert.Equal(1000m, cf.Get("A.II.2"));                                                  // zrealizowana strata kursowa z działalności finansowej
+        Assert.Equal(50000m + 4400m + 40000m - 41000m, cf.Get("G"));                            // stan bilansowy środków
+        Assert.Equal(cf.Get("F") + cf.Get("E"), cf.Get("G"));
+        Assert.Equal(cf.Get("A.III") + cf.Get("B.III") + cf.Get("C.III"), cf.Get("D"));
+        // operacyjne = rzeczywisty wpływ od odbiorcy (4 400), finansowe = faktycznie zapłacona kwota spłaty
+        Assert.Equal(4400m, cf.Get("A.III"));
+        Assert.Equal(40000m + 50000m - 41000m, cf.Get("C.III"));
+    }
 }

@@ -99,19 +99,14 @@ public sealed class PayrollService
         await _db.SaveChangesAsync(ct);
     }
 
-    /// <summary>Wartości narastające danej osoby z list zaksięgowanych w roku wypłaty, wypłaconych przed wskazaną datą.</summary>
     /// <summary>
     /// Wartości narastające od początku roku dla OSOBY (wszystkie umowy u płatnika z tym samym PESEL): podstawa emerytalno-rentowa
     /// (limit 30-krotności — łącznie ze wszystkich tytułów), przychód zwolniony z ulgi dla młodych (limit roczny na osobę),
     /// podstawa opodatkowania i dni chorobowe płatne przez pracodawcę — wyłącznie ze stosunku pracy (próg skali przy zaliczkach, art. 92 KP).
     /// </summary>
-    private async Task<PayrollYearToDate> YearToDateAsync(Guid employeeId, DateOnly paymentDate, Guid? excludeList, CancellationToken ct)
+    private async Task<PayrollYearToDate> YearToDateAsync(IReadOnlyCollection<Guid> ids, DateOnly paymentDate, Guid? excludeList, CancellationToken ct)
     {
         var yearStart = new DateOnly(paymentDate.Year, 1, 1);
-        var pesel = await _db.Employees.AsNoTracking().Where(e => e.Id == employeeId).Select(e => e.Pesel).FirstOrDefaultAsync(ct);
-        var ids = string.IsNullOrWhiteSpace(pesel)
-            ? new List<Guid> { employeeId }
-            : await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId && e.Pesel == pesel).Select(e => e.Id).ToListAsync(ct);
         var items = await (from i in _db.PayrollItems.AsNoTracking()
                            join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
                            where ids.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
@@ -120,6 +115,90 @@ public sealed class PayrollService
         var employment = items.Where(i => i.ContractType == ContractType.UmowaOPrace).ToList();
         return new PayrollYearToDate(items.Sum(i => i.SocialBasis), employment.Where(i => !i.FlatRateTax).Sum(i => i.TaxBase), items.Sum(i => i.ExemptRevenue),
             employment.Sum(i => i.SickDaysEmployer), items.Sum(i => i.AuthorCosts));
+    }
+
+    /// <summary>Dane wejściowe pozycji listy: wynagrodzenie zasadnicze za pełny miesiąc i dni nieobecności.</summary>
+    private sealed record ItemInput(Guid ItemId, Guid EmployeeId, decimal Gross, int SickDays, int UnpaidDays);
+
+    private static string PersonKey(Employee e) => string.IsNullOrWhiteSpace(e.Pesel) ? e.Id.ToString() : e.Pesel.Trim();
+
+    /// <summary>
+    /// Wylicza wszystkie pozycje listy (bez zapisu) — osobno dla każdej osoby (PESEL), w kolejności: umowa o pracę, powołanie, umowy
+    /// cywilnoprawne wg daty zawarcia. Uwzględnia: limity roczne narastająco (także z innych umów osoby na liście), Fundusz Pracy od
+    /// łącznej podstawy, zbieg tytułów zleceń, kwotę zmniejszającą PIT-2 raz w miesiącu wypłaty (łącznie z innymi zaksięgowanymi
+    /// listami), wpłaty PPK pracodawcy przekazane do instytucji finansowej (przychód w wypłacie po przekazaniu).
+    /// </summary>
+    private async Task<Dictionary<Guid, PayrollItem>> ComputeItemsAsync(PayrollList list, IReadOnlyList<ItemInput> inputs, CancellationToken ct)
+    {
+        var employees = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, ct);
+        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
+        var sameMonth = employees.Values.Where(x => x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToList();
+        var rules = PayrollRules.For(list.PaymentDate.Year);
+        var accident = await AccidentRateAsync(ct);
+        var workingDays = Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month);
+        var payMonthStart = new DateOnly(list.PaymentDate.Year, list.PaymentDate.Month, 1);
+        var payMonthEnd = payMonthStart.AddMonths(1).AddDays(-1);
+        var result = new Dictionary<Guid, PayrollItem>();
+        foreach (var group in inputs.GroupBy(i => PersonKey(employees[i.EmployeeId])))
+        {
+            int Rank(Employee e) => e.ContractType switch { ContractType.UmowaOPrace => 0, ContractType.Powolanie => 1, _ => 2 };
+            var ordered = group.OrderBy(i => Rank(employees[i.EmployeeId])).ThenBy(i => employees[i.EmployeeId].StartDate)
+                .ThenBy(i => employees[i.EmployeeId].CreatedAtUtc).ToList();
+            var personIds = employees.Values.Where(x => PersonKey(x) == group.Key).Select(x => x.Id).ToList();
+            var baseYtd = await YearToDateAsync(personIds, list.PaymentDate, list.Id, ct);
+            // PIT-2: kwota zmniejszająca wykorzystana już w miesiącu wypłaty na innych zaksięgowanych listach tej osoby
+            var reductionLimit = ordered.Select(i => employees[i.EmployeeId].Pit2Reduction).DefaultIfEmpty(0m).Max();
+            var reductionUsed = await (from i in _db.PayrollItems.AsNoTracking()
+                                       join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                                       where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                                             l.Id != list.Id && l.PaymentDate >= payMonthStart && l.PaymentDate <= payMonthEnd
+                                       select i.TaxReduction).ToListAsync(ct);
+            // PPK: wpłaty pracodawcy z zaksięgowanych list, przekazane do instytucji finansowej do dnia wypłaty (w roku wypłaty),
+            // jeszcze nieopodatkowane (albo opodatkowane w tej liście przy ponownym przeliczeniu)
+            var ppkSources = await (from i in _db.PayrollItems.AsNoTracking()
+                                    join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                                    where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana &&
+                                          l.Id != list.Id && l.PpkTransferredOn != null && l.PpkTransferredOn <= list.PaymentDate &&
+                                          l.PpkTransferredOn >= new DateOnly(list.PaymentDate.Year, 1, 1) && i.PpkEmployer > 0 &&
+                                          (i.PpkTaxedInListId == null || i.PpkTaxedInListId == list.Id)
+                                    select new { i.EmployeeId, i.PpkEmployer }).ToListAsync(ct);
+            var bases = new Dictionary<Guid, decimal>();
+            for (var pass = 0; pass < 2; pass++)
+            {
+                decimal pension = 0, youth = 0, employmentTax = 0, author = 0;
+                var reductionLeft = Math.Max(0, reductionLimit - reductionUsed.Sum());
+                decimal? civilMandatoryBasis = null;
+                var ppkLeft = ppkSources.GroupBy(x => x.EmployeeId).ToDictionary(g => g.Key, g => g.Sum(x => x.PpkEmployer));
+                foreach (var input in ordered)
+                {
+                    var e = employees[input.EmployeeId];
+                    var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
+                        ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays) : null;
+                    var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
+                        TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author };
+                    var others = pass == 0 ? 0m : bases.Where(b => b.Key != input.ItemId).Sum(b => b.Value);
+                    var own = IsOwnEmployee(e, sameMonth);
+                    bool? civil = null;
+                    var independentCivil = e.ContractType == ContractType.UmowaZlecenie && !own && !e.WorkForOwnEmployer && !e.StudentUnder26;
+                    if (independentCivil) civil = PayrollCalculator.CivilMandatory(e, civilMandatoryBasis, rules);
+                    var ppkTaxable = ppkLeft.Remove(e.Id, out var p) ? p : 0m;
+                    var fresh = PayrollCalculator.Compute(e, input.Gross, ytd, rules, accident, absence, others, own, civil,
+                        e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable);
+                    fresh.BaseGross = input.Gross;
+                    if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
+                    reductionLeft -= fresh.TaxReduction;
+                    bases[input.ItemId] = fresh.SocialBasis;
+                    pension += fresh.SocialBasis;
+                    youth += fresh.ExemptRevenue;
+                    author += fresh.AuthorCosts;
+                    if (e.ContractType == ContractType.UmowaOPrace && !fresh.FlatRateTax) employmentTax += fresh.TaxBase;
+                    fresh.Id = input.ItemId;
+                    fresh.PayrollListId = list.Id;
+                    result[input.ItemId] = fresh;
+                }
+            }
+        }
+        return result;
     }
 
     /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>
@@ -138,120 +217,87 @@ public sealed class PayrollService
             CompanyId = _user.CompanyId, Month = m, PaymentDate = paymentDate, Number = $"LP/{count + 1}/{paymentDate.Year}",
             Description = description ?? $"Lista płac za {m:MM.yyyy}", RulesVersion = PayrollRules.Version, CreatedAtUtc = _clock.UtcNow
         };
-        var rules = PayrollRules.For(paymentDate.Year);
-        var accident = await AccidentRateAsync(ct);
         var hr = new HrService(_db, _user, _clock);
-        var workingDays = Domain.Cit.PolishHolidays.WorkingDays(m.Year, m.Month);
-        var inputs = new Dictionary<PayrollItem, (Employee Employee, PayrollAbsence? Absence)>();
+        var inputs = new List<ItemInput>();
         foreach (var e in employees)
         {
             // nieobecności z ewidencji kadrowej (choroba, urlop bezpłatny) — tylko umowa o pracę
-            PayrollAbsence? absence = null;
-            if (e.ContractType == ContractType.UmowaOPrace)
-            {
-                var (sick, unpaid) = await hr.MonthAbsencesAsync(e.Id, m, ct);
-                if (sick > 0 || unpaid > 0) absence = new PayrollAbsence(sick, unpaid, workingDays);
-            }
-            var it = PayrollCalculator.Compute(e, e.Gross, await YearToDateAsync(e.Id, paymentDate, null, ct), rules, accident, absence,
-                ownEmployee: IsOwnEmployee(e, employees));
-            it.PayrollListId = list.Id;
-            list.Items.Add(it);
-            inputs[it] = (e, absence);
+            var (sick, unpaid) = e.ContractType == ContractType.UmowaOPrace ? await hr.MonthAbsencesAsync(e.Id, m, ct) : (0, 0);
+            inputs.Add(new ItemInput(Guid.CreateVersion7(), e.Id, e.Gross, sick, unpaid));
         }
-        // osoba z kilkoma umowami u płatnika (ten sam PESEL): Fundusz Pracy od łącznej podstawy; limity roczne (30-krotność,
-        // ulga dla młodych, próg skali) — narastająco także z wcześniejszych pozycji tej osoby na tej samej liście (najpierw umowa o pracę)
-        foreach (var group in inputs.Where(x => !string.IsNullOrWhiteSpace(x.Value.Employee.Pesel)).GroupBy(x => x.Value.Employee.Pesel!.Trim()).Where(g => g.Count() > 1))
-        {
-            var ordered = group.OrderBy(x => x.Value.Employee.ContractType == ContractType.UmowaOPrace ? 0 : 1).ToList();
-            decimal pension = 0, youth = 0, employmentTax = 0, authorSum = 0;
-            foreach (var (item, (emp, abs)) in ordered)
-            {
-                var others = group.Where(x => x.Key != item).Sum(x => x.Key.SocialBasis);
-                var ytd = await YearToDateAsync(emp.Id, paymentDate, null, ct);
-                ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax, AuthorCosts = ytd.AuthorCosts + authorSum };
-                var fresh = PayrollCalculator.Compute(emp, emp.Gross, ytd, rules, accident, abs, others, IsOwnEmployee(emp, employees));
-                authorSum += fresh.AuthorCosts;
-                fresh.Id = item.Id;
-                fresh.PayrollListId = list.Id;
-                list.Items[list.Items.IndexOf(item)] = fresh;
-                pension += fresh.SocialBasis;
-                youth += fresh.ExemptRevenue;
-                if (emp.ContractType == ContractType.UmowaOPrace && !fresh.FlatRateTax) employmentTax += fresh.TaxBase;
-            }
-        }
+        var computed = await ComputeItemsAsync(list, inputs, ct);
+        foreach (var input in inputs) list.Items.Add(computed[input.ItemId]);
         _db.PayrollLists.Add(list);
         await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_UTWORZONA", "PayrollList", list.Id.ToString(), $"{list.Number}; {list.Items.Count} os.", ct);
         await _db.SaveChangesAsync(ct);
         return list;
     }
 
-    /// <summary>Ta sama osoba (PESEL) ma w miesiącu umowę o pracę z płatnikiem.</summary>
     /// <summary>Ta sama osoba (PESEL) ma w miesiącu umowę o pracę z płatnikiem (art. 8 ust. 2a ustawy o sus; art. 30 ust. 1 pkt 5a ustawy o PIT).</summary>
     private static bool IsOwnEmployee(Employee e, IEnumerable<Employee> active) =>
         e.ContractType is ContractType.UmowaZlecenie or ContractType.UmowaODzielo && !string.IsNullOrWhiteSpace(e.Pesel)
         && active.Any(x => x.Id != e.Id && x.ContractType == ContractType.UmowaOPrace && x.Pesel == e.Pesel);
 
-    public Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default) => ChangeAsync(itemId, gross, 0, 0, ct);
+    /// <summary>Zmienia wynagrodzenie zasadnicze pozycji — dni choroby i nieobecności nieodpłatnej pozostają bez zmian.</summary>
+    public Task<PayrollItem> ChangeGrossAsync(Guid itemId, decimal gross, CancellationToken ct = default) => ChangeAsync(itemId, gross, null, null, ct);
 
-    /// <summary>Przelicza pozycję: wynagrodzenie zasadnicze za pełny miesiąc oraz dni choroby i nieobecności nieodpłatnej (umowa o pracę).</summary>
-    public async Task<PayrollItem> ChangeAsync(Guid itemId, decimal gross, int sickDays, int unpaidWorkingDays, CancellationToken ct = default)
+    /// <summary>
+    /// Przelicza pozycję: wynagrodzenie zasadnicze za pełny miesiąc oraz dni choroby i nieobecności nieodpłatnej (umowa o pracę).
+    /// Wartość null — bez zmiany (zachowane dotychczasowe dane pozycji).
+    /// </summary>
+    public async Task<PayrollItem> ChangeAsync(Guid itemId, decimal? gross, int? sickDays, int? unpaidWorkingDays, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
         var it = await _db.PayrollItems.FirstAsync(i => i.Id == itemId, ct);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
-        await RecomputeAsync(list, new Dictionary<Guid, (decimal, int, int)> { [it.Id] = (gross, sickDays, unpaidWorkingDays) }, ct);
+        var inputs = await StoredInputsAsync(list, ct);
+        var i = inputs.FindIndex(x => x.ItemId == itemId);
+        inputs[i] = inputs[i] with { Gross = gross ?? inputs[i].Gross, SickDays = sickDays ?? inputs[i].SickDays, UnpaidDays = unpaidWorkingDays ?? inputs[i].UnpaidDays };
+        if (inputs[i].Gross < 0) throw new DomainException("Kwota wynagrodzenia nie może być ujemna.");
+        await ApplyAsync(list, await ComputeItemsAsync(list, inputs, ct));
+        await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_POZYCJA_ZMIENIONA", "PayrollItem", it.Id.ToString(),
+            $"{list.Number}; {it.EmployeeName}; brutto {inputs[i].Gross:N2}; choroba {inputs[i].SickDays} dni; nieodpłatna {inputs[i].UnpaidDays} dni", ct);
         await _db.SaveChangesAsync(ct);
         return it;
     }
 
-    /// <summary>
-    /// Ponowne przeliczenie pozycji listy (zmieniona pozycja i — dla tej samej osoby — wszystkie jej pozostałe umowy na liście)
-    /// w kolejności: umowa o pracę, pozostałe; limity roczne narastająco, Fundusz Pracy od łącznej podstawy.
-    /// </summary>
-    private async Task RecomputeAsync(PayrollList list, IReadOnlyDictionary<Guid, (decimal Gross, int Sick, int Unpaid)> changes, CancellationToken ct)
+    /// <summary>Przelicza całą roboczą listę według aktualnych danych osób, limitów i innych zaksięgowanych list (kwoty i dni pozycji bez zmian).</summary>
+    public async Task<PayrollList> RecalculateAsync(Guid listId, CancellationToken ct = default)
     {
-        var employees = await _db.Employees.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, ct);
-        var monthEnd = list.Month.AddMonths(1).AddDays(-1);
-        var sameMonth = employees.Values.Where(x => x.StartDate <= monthEnd && (x.EndDate == null || x.EndDate >= list.Month)).ToList();
-        var rules = PayrollRules.For(list.PaymentDate.Year);
-        var accident = await AccidentRateAsync(ct);
-        var workingDays = Domain.Cit.PolishHolidays.WorkingDays(list.Month.Year, list.Month.Month);
-        string Person(PayrollItem i) => employees.TryGetValue(i.EmployeeId, out var e) && !string.IsNullOrWhiteSpace(e.Pesel) ? e.Pesel!.Trim() : i.EmployeeId.ToString();
-        var affected = changes.Keys.Select(id => list.Items.First(i => i.Id == id)).Select(Person).ToHashSet();
-        foreach (var group in list.Items.Where(i => affected.Contains(Person(i))).GroupBy(Person))
-        {
-            var ordered = group.OrderBy(i => i.ContractType == ContractType.UmowaOPrace ? 0 : 1).ToList();
-            var inputs = ordered.ToDictionary(i => i.Id, i => changes.TryGetValue(i.Id, out var c) ? c : (i.BaseGross != 0 ? i.BaseGross : employees[i.EmployeeId].Gross, i.SickDays, i.UnpaidDays));
-            // pierwszy przebieg — podstawy do Funduszu Pracy; drugi — wynik z narastającymi limitami i łączną podstawą FP
-            var bases = new Dictionary<Guid, decimal>();
-            for (var pass = 0; pass < 2; pass++)
-            {
-                decimal pension = 0, youth = 0, employmentTax = 0, author = 0;
-                foreach (var item in ordered)
-                {
-                    var e = employees[item.EmployeeId];
-                    var (gross, sick, unpaid) = inputs[item.Id];
-                    var absence = e.ContractType == ContractType.UmowaOPrace && (sick > 0 || unpaid > 0) ? new PayrollAbsence(sick, unpaid, workingDays) : null;
-                    var ytd = await YearToDateAsync(e.Id, list.PaymentDate, list.Id, ct);
-                    ytd = ytd with { PensionBasis = ytd.PensionBasis + pension, YouthExemptRevenue = ytd.YouthExemptRevenue + youth, TaxBase = ytd.TaxBase + employmentTax, AuthorCosts = ytd.AuthorCosts + author };
-                    var others = pass == 0 ? 0m : bases.Where(b => b.Key != item.Id).Sum(b => b.Value);
-                    var fresh = PayrollCalculator.Compute(e, gross, ytd, rules, accident, absence, others, IsOwnEmployee(e, sameMonth));
-                    bases[item.Id] = fresh.SocialBasis;
-                    pension += fresh.SocialBasis;
-                    youth += fresh.ExemptRevenue;
-                    author += fresh.AuthorCosts;
-                    if (e.ContractType == ContractType.UmowaOPrace && !fresh.FlatRateTax) employmentTax += fresh.TaxBase;
-                    if (pass == 1)
-                    {
-                        fresh.Id = item.Id;
-                        fresh.PayrollListId = list.Id;
-                        _db.Entry(item).CurrentValues.SetValues(fresh);
-                    }
-                }
-            }
-        }
+        _user.Require(Permission.PostEntries);
+        var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
+        await ApplyAsync(list, await ComputeItemsAsync(list, await StoredInputsAsync(list, ct), ct));
+        await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_PRZELICZONA", "PayrollList", list.Id.ToString(), list.Number, ct);
+        await _db.SaveChangesAsync(ct);
+        return list;
     }
+
+    /// <summary>Dane wejściowe zapisanych pozycji: wynagrodzenie bazowe (null — z ewidencji osoby; 0 — świadomie zero) i dni nieobecności.</summary>
+    private async Task<List<ItemInput>> StoredInputsAsync(PayrollList list, CancellationToken ct)
+    {
+        var ids = list.Items.Select(i => i.EmployeeId).Distinct().ToList();
+        var gross = await _db.Employees.AsNoTracking().Where(e => ids.Contains(e.Id)).ToDictionaryAsync(e => e.Id, e => e.Gross, ct);
+        return list.Items.Select(i => new ItemInput(i.Id, i.EmployeeId, i.BaseGross ?? gross[i.EmployeeId], i.SickDays, i.UnpaidDays)).ToList();
+    }
+
+    private Task ApplyAsync(PayrollList list, IReadOnlyDictionary<Guid, PayrollItem> computed)
+    {
+        foreach (var item in list.Items)
+        {
+            var fresh = computed[item.Id];
+            fresh.PpkTaxedInListId = item.PpkTaxedInListId;
+            _db.Entry(item).CurrentValues.SetValues(fresh);
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Kwoty pozycji istotne dla księgowania i deklaracji — porównywane przed zaksięgowaniem z ponownym wyliczeniem.</summary>
+    private static string Fingerprint(PayrollItem i) => string.Join("|", i.Gross, i.SocialBasis, i.PensionEmployee, i.DisabilityEmployee, i.SicknessEmployee,
+        i.HealthBase, i.Health, i.CostsOfIncome, i.AuthorCosts, i.ExemptRevenue, i.TaxBase, i.TaxReduction, i.TaxAdvance, i.FlatRateTax, i.Net,
+        i.PpkEmployee, i.PpkEmployer, i.PpkEmployerTaxed, i.PensionEmployer, i.DisabilityEmployer, i.Accident, i.LaborFund, i.Fgsp, i.SickPay,
+        i.SickDaysEmployer, i.InsuranceUndetermined, i.ContractType);
 
     public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)
     {
@@ -280,6 +326,17 @@ public sealed class PayrollService
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
         if (list.Items.Count == 0) throw new DomainException("Lista płac jest pusta.");
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
+        // aktualność wyliczenia: dane osób (kwota z umowy, PIT-2, zbieg tytułów, PPK…), limity roczne i inne zaksięgowane listy
+        // mogły zmienić się po wyliczeniu — lista musi odpowiadać ponownemu wyliczeniu z bieżących danych
+        var fresh = await ComputeItemsAsync(list, await StoredInputsAsync(list, ct), ct);
+        var stale = list.Items.Where(i => Fingerprint(i) != Fingerprint(fresh[i.Id])).Select(i => i.EmployeeName).ToList();
+        if (stale.Count > 0)
+            throw new DomainException("Lista płac jest nieaktualna — od wyliczenia zmieniły się dane osób, limity roczne lub inne listy płac (" +
+                                      string.Join(", ", stale) + "). Użyj „Przelicz listę”, sprawdź kwoty i zaksięguj ponownie.");
+        var undetermined = list.Items.Where(i => i.InsuranceUndetermined).Select(i => i.EmployeeName).ToList();
+        if (undetermined.Count > 0)
+            throw new DomainException("Nie ustalono zbiegu tytułów do ubezpieczeń (art. 9 ustawy o sus) dla umów zlecenia: " + string.Join(", ", undetermined) +
+                                      " — uzupełnij w danych osoby inne tytuły (etat, inne zlecenia, działalność) i ich podstawę, potem przelicz listę.");
         // umowy cywilnoprawne bez kwoty należności z umowy — sposób opodatkowania (art. 30 ust. 1 pkt 5a) nieustalony
         var missingAmount = list.Items.Where(i => employees.TryGetValue(i.EmployeeId, out var emp) && emp.ContractType is ContractType.UmowaZlecenie or ContractType.UmowaODzielo
                                                   && emp.ContractTotalAmount is null).Select(i => i.EmployeeName).ToList();
@@ -315,10 +372,40 @@ public sealed class PayrollService
             $"{list.Description} ({list.Number})", "LP", list.Number, lines), ct);
         list.Status = PayrollStatus.Zaksiegowana;
         list.JournalEntryId = entry.Id;
+        // wpłaty PPK pracodawcy opodatkowane w tej liście — oznaczenie źródłowych pozycji (nie zostaną opodatkowane ponownie)
+        if (list.Items.Any(i => i.PpkEmployerTaxed > 0))
+        {
+            var personIds = list.Items.Where(i => i.PpkEmployerTaxed > 0).Select(i => i.EmployeeId).ToList();
+            var sources = await (from i in _db.PayrollItems
+                                 join l in _db.PayrollLists on i.PayrollListId equals l.Id
+                                 where personIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId && l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
+                                       l.PpkTransferredOn != null && l.PpkTransferredOn <= list.PaymentDate && l.PpkTransferredOn >= new DateOnly(list.PaymentDate.Year, 1, 1) &&
+                                       i.PpkEmployer > 0 && i.PpkTaxedInListId == null
+                                 select i).ToListAsync(ct);
+            foreach (var src in sources) src.PpkTaxedInListId = list.Id;
+        }
         foreach (var item in await _db.OpenItems.Where(o => o.JournalEntryId == entry.Id).ToListAsync(ct)) item.DueDate = list.PaymentDate;
         foreach (var item in _db.OpenItems.Local.Where(o => o.JournalEntryId == entry.Id)) item.DueDate = list.PaymentDate;
         await new AuditService(_db, _clock).AddAsync(_user, "LISTA_PLAC_ZAKSIEGOWANA", "PayrollList", list.Id.ToString(), $"{list.Number}; zapis {entry.JournalNumber}", ct);
         await _db.SaveChangesAsync(ct);
         return list;
+    }
+
+    /// <summary>
+    /// Rejestruje datę przekazania wpłat PPK z zaksięgowanej listy do instytucji finansowej. Od tego dnia wpłata pracodawcy jest
+    /// przychodem pracownika (art. 11 ust. 1 ustawy o PIT) — zostanie opodatkowana w najbliższej liście płac z wypłatą w tym dniu lub później.
+    /// </summary>
+    public async Task RecordPpkTransferAsync(Guid listId, DateOnly transferredOn, CancellationToken ct = default)
+    {
+        _user.Require(Permission.PostEntries);
+        var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Zaksiegowana) throw new DomainException("Datę przekazania wpłat PPK rejestruje się dla zaksięgowanej listy płac.");
+        if (list.Items.Sum(i => i.PpkEmployer + i.PpkEmployee) == 0) throw new DomainException("Lista płac nie zawiera wpłat PPK.");
+        if (transferredOn < list.Month) throw new DomainException("Data przekazania wpłat PPK nie może być wcześniejsza niż miesiąc listy płac.");
+        if (list.Items.Any(i => i.PpkTaxedInListId != null))
+            throw new DomainException("Wpłaty PPK pracodawcy z tej listy zostały już opodatkowane w innej liście płac — zmiana daty przekazania wymaga korekty tamtej listy.");
+        list.PpkTransferredOn = transferredOn;
+        await new AuditService(_db, _clock).AddAsync(_user, "PPK_PRZEKAZANO", "PayrollList", list.Id.ToString(), $"{list.Number}; {transferredOn:yyyy-MM-dd}", ct);
+        await _db.SaveChangesAsync(ct);
     }
 }

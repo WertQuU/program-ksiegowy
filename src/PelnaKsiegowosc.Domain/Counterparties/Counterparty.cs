@@ -25,6 +25,11 @@ public class Counterparty : CompanyEntity
     /// <summary>Numer VAT UE / zagraniczny identyfikator podatkowy.</summary>
     public string? VatEuNumber { get; set; }
     public string CountryCode { get; set; } = "PL";
+    /// <summary>
+    /// Data, od której obowiązują bieżące dane identyfikacyjne (kraj, NIP) — przy zmianie identyfikatora poprzednie dane trafiają
+    /// do historii (<see cref="CounterpartyIdentityChange"/>) z datą obowiązywania do dnia poprzedniego. Brak — dzień zapisu zmiany.
+    /// </summary>
+    public DateOnly? IdentityValidFrom { get; set; }
     public string? Regon { get; set; }
     public string? Pesel { get; set; }
     public string? Street { get; set; }
@@ -67,4 +72,17 @@ public class Counterparty : CompanyEntity
         if (DefaultPaymentDays is < 0 or > 365) r.Error("Domyślny termin płatności: 0–365 dni.");
         return r;
     }
+}
+
+/// <summary>
+/// Historia danych identyfikacyjnych kontrahenta: poprzedni kraj i NIP obowiązujące do <see cref="ValidUntil"/> (włącznie). Zapisywana
+/// automatycznie przy zmianie NIP lub kraju — JPK_KR_PD przypisuje zapisom bez dokumentu źródłowego dane obowiązujące w dniu operacji.
+/// </summary>
+public class CounterpartyIdentityChange : CompanyEntity
+{
+    public Guid CounterpartyId { get; set; }
+    public string CountryCode { get; set; } = "PL";
+    public string? Nip { get; set; }
+    public DateOnly ValidUntil { get; set; }
+    public DateTime ChangedAtUtc { get; set; }
 }

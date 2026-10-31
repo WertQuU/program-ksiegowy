@@ -118,6 +118,9 @@ public static class JpkKrPdBuilder
         // zapis nie ma dokumentu — dane z kartoteki; kontrahent, któremu w roku zmienił się identyfikator, ma kilka zestawów danych
         var docSnapshots = await db.Documents.AsNoTracking().Where(d => docIds.Contains(d.Id) && d.CounterpartyId != null && d.CounterpartyNip != null)
             .Select(d => new { d.Id, d.CounterpartyId, d.CounterpartyNip, d.CounterpartyCountry }).ToDictionaryAsync(d => d.Id, ct);
+        // historia danych identyfikacyjnych (zmiana NIP / kraju) — dla zapisów bez dokumentu źródłowego
+        var identityHistory = (await db.CounterpartyIdentityChanges.AsNoTracking().Where(h => cpIds.Contains(h.CounterpartyId)).ToListAsync(ct))
+            .GroupBy(h => h.CounterpartyId).ToDictionary(g => g.Key, g => g.OrderBy(h => h.ValidUntil).ToList());
         var users = await db.Users.AsNoTracking().ToDictionaryAsync(u => u.Id, u => string.IsNullOrWhiteSpace(u.DisplayName) ? u.Login : u.DisplayName, ct);
         if (fy.Status != FiscalYearStatus.Zamkniety) warnings.Add($"Rok {fy.Name} nie jest zamknięty — JPK_CIT składa się za zamknięty rok podatkowy.");
 
@@ -148,6 +151,9 @@ public static class JpkKrPdBuilder
         {
             if (e.SourceDocumentId is { } sd && docSnapshots.TryGetValue(sd, out var snap) && snap.CounterpartyId == cpId)
                 return NormalizeIdentity(snap.CounterpartyCountry, snap.CounterpartyNip);
+            // zapis bez dokumentu (np. ręczny): dane obowiązujące w dniu operacji wg historii zmian identyfikatora
+            if (identityHistory.TryGetValue(cpId, out var hist) && hist.FirstOrDefault(h => h.ValidUntil >= e.OperationDate) is { } past)
+                return string.IsNullOrWhiteSpace(past.Nip) ? null : NormalizeIdentity(past.CountryCode, past.Nip);
             var c = counterparties[cpId];
             return string.IsNullOrWhiteSpace(c.Nip) ? null : NormalizeIdentity(c.CountryCode, c.Nip);
         }
