@@ -60,4 +60,23 @@ public sealed class DataDumpRestoreSafetyTests
         Assert.Empty(target.ChangeTracker.Entries());
     }
 
+    [Fact]
+    public async Task Incomplete_table_dump_is_rejected_without_importing_any_entity()
+    {
+        await using var source = await TestBooks.CreateAsync();
+        var dump = Path.Combine(source.Directory, "truncated-dump");
+        await DataDump.ExportAsync(source.Db, dump);
+        var missing = DataDump.OrderedEntityTypes(source.Db).First().GetTableName()!;
+        File.Delete(Path.Combine(dump, missing + ".jsonl"));
+
+        await using var target = TestBooks.Open(Path.Combine(source.Directory, "partial-target.db"));
+        await target.Database.MigrateAsync();
+        var before = await DataDump.CountsAsync(target);
+        var ex = await Assert.ThrowsAsync<InvalidDataException>(() =>
+            DataDump.ImportAsync(target, dump));
+        Assert.Contains("Brak pliku zrzutu", ex.Message);
+        Assert.Equal(before.OrderBy(x => x.Key),
+            (await DataDump.CountsAsync(target)).OrderBy(x => x.Key));
+    }
+
 }
