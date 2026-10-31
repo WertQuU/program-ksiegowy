@@ -1,6 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
+using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Security;
 
 namespace PelnaKsiegowosc.Presentation.Services;
@@ -16,6 +16,24 @@ public static class OperatorIdentity
     public static IReadOnlyList<Role> FounderRoles => Application.Security.OperatorAccessService.FounderRoles;
 
     public static string Login => $"{Environment.UserName}@{Environment.MachineName}";
+
+    /// <summary>
+    /// W PostgreSQL tożsamość aplikacyjna wynika z indywidualnego loginu DB
+    /// faktycznie używanego do uwierzytelnienia na serwerze (NIE z nazwy komputera).
+    /// W SQLite zachowujemy dotychczasową tożsamość lokalną.
+    /// </summary>
+    public static string LoginFor(DatabaseProfile profile) =>
+        profile.Engine == DatabaseEngine.PostgreSql
+            ? "db:" + (string.IsNullOrWhiteSpace(profile.Username)
+                ? throw new DomainException("Połączenie serwerowe wymaga indywidualnego loginu bazy danych.")
+                : profile.Username.Trim().ToLowerInvariant())
+            : Login;
+
+    public static CurrentUser For(Guid companyId, DatabaseProfile profile) =>
+        new(IdFor(LoginFor(profile)), LoginFor(profile), companyId, FounderRoles);
+
+    public static CurrentUser For(Guid companyId, DatabaseProfile profile, IEnumerable<Role> roles) =>
+        new(IdFor(LoginFor(profile)), LoginFor(profile), companyId, roles);
 
     public static Guid IdFor(string login) => Application.Security.OperatorAccessService.IdFor(login);
 
