@@ -35,6 +35,7 @@ internal sealed class FakeKsef : HttpMessageHandler
     public string? AuthNip { get; private set; }
     public List<string> Calls { get; } = new();
     public int RejectWithCode { get; set; }
+    public bool LoseInvoiceResponseAfterAccept { get; set; }
 
     public FakeKsef()
     {
@@ -93,6 +94,8 @@ internal sealed class FakeKsef : HttpMessageHandler
                 if (Convert.ToBase64String(SHA256.HashData(xml)) != r.InvoiceHash || xml.Length != r.InvoiceSize ||
                     Convert.ToBase64String(SHA256.HashData(enc)) != r.EncryptedInvoiceHash) return new HttpResponseMessage(HttpStatusCode.BadRequest);
                 ReceivedXml = Encoding.UTF8.GetString(xml);
+                if (LoseInvoiceResponseAfterAccept)
+                    throw new HttpRequestException("Symulacja utraty odpowiedzi po odebraniu faktury przez serwer KSeF.");
                 return Json(new KsefDto.SendInvoiceResponse("INV-REF"), HttpStatusCode.Accepted);
             }
             case ("GET", "sessions/SES-1/invoices/INV-REF"):
@@ -198,6 +201,29 @@ public class KsefAndJpkTests
         Assert.Contains("UNRESOLVED-REF", ex.Message);
         Assert.Empty(fake.Calls);
         Assert.Equal(KsefStatus.Wyslana, inv.KsefStatus);
+    }
+
+    [Fact]
+    public async Task Ksef_lost_response_after_receipt_does_not_retry_or_resubmit_invoice()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var invoice = await ApprovedSaleAsync(t);
+        var fake = new FakeKsef { LoseInvoiceResponseAfterAccept = true };
+        using var http = new HttpClient(fake) { BaseAddress = new Uri("https://ksef.test/v2/") };
+        var service = new KsefService(t.Db, t.User, t.Clock, Validator());
+        var client = new KsefClient(http, pollDelay: TimeSpan.Zero);
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => service.SendAsync(invoice.Id, client, FakeKsef.Token));
+        Assert.Equal(1, fake.Calls.Count(x => x == "POST sessions/online/SES-1/invoices"));
+        var pending = await t.Db.Documents.AsNoTracking().FirstAsync(d => d.Id == invoice.Id);
+        Assert.Equal(KsefStatus.Wyslana, pending.KsefStatus);
+        Assert.Null(pending.KsefReferenceNumber);
+        Assert.Contains(await t.Db.DocumentHistory.ToListAsync(),
+            h => h.DocumentId == invoice.Id && h.Action == "KSEF_PROBA_WYSLANIA" && h.Details.Contains("SHA256="));
+
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.SendAsync(invoice.Id, client, FakeKsef.Token));
+        Assert.Contains("nierozstrzygniętą wysyłkę", ex.Message);
+        Assert.Equal(1, fake.Calls.Count(x => x == "POST sessions/online/SES-1/invoices"));
     }
 
     [Fact]
