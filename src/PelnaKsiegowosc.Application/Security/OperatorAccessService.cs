@@ -12,8 +12,8 @@ namespace PelnaKsiegowosc.Application.Security;
 public sealed record OperatorInfo(Guid Id, string Login, IReadOnlyList<Role> Roles, bool IsActive, DateTime? LastSeenUtc, DateTime CreatedAtUtc);
 
 /// <summary>
-/// Uprawnienia operatorów stanowisk. Program identyfikuje operatora za pomocą konta OS (login@komputer)
-/// i oddzielnie uwierzytelnia połączenie w PostgreSQL. W bazie zapisane są role aplikacyjne.
+/// Uprawnienia operatorów. W trybie centralnym tożsamością jest indywidualny login PostgreSQL
+/// rzeczywiście używany do uwierzytelnienia. Role aplikacyjne zapisane są w bazie.
 /// Administrator powstaje TYLKO podczas zakładania nowych ksiąg; samo pierwsze połączenie
 /// do istniejącej bazy NIE przyznaje praw. Pozostałych operatorów dodaje administrator.
 /// WAŻNE: identyfikator OS nie jest kryptograficznym uwierzytelnieniem użytkownika w serwerze;
@@ -26,10 +26,10 @@ public sealed class OperatorAccessService
     public const string SystemAccount = "SYSTEM";
     public static readonly Role[] FounderRoles = { Role.Administrator, Role.GlownyKsiegowy, Role.Zarzad };
 
-    /// <summary>Identyfikator operatora/stanowiska zgodny z wcześniejszymi instalacjami.</summary>
+    /// <summary>Stały identyfikator operatora wynikający z loginu.</summary>
     public static Guid IdFor(string login)
     {
-        if (string.IsNullOrWhiteSpace(login)) throw new DomainException("Podaj użytkownik@komputer.");
+        if (string.IsNullOrWhiteSpace(login)) throw new DomainException("Podaj login operatora.");
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes("PelnaKsiegowosc.Operator|" + login.ToLowerInvariant()));
         return new Guid(hash.AsSpan(0, 16));
     }
@@ -43,27 +43,18 @@ public sealed class OperatorAccessService
         _clock = clock;
     }
 
-    /// <summary>Role operatora (zarejestrowanie przy pierwszym wejściu). Operator nieaktywny albo bez nadanych ról nie ma uprawnień.</summary>
+    /// <summary>
+    /// Odmowa dostępu dla nieprzydzielonego loginu bazy.
+    /// Nie tworzymy kont przy logowaniu ani nie aktualizujemy tabeli Users —
+    /// operatorzy z ograniczonymi uprawnieniami SQL nie potrzebują DML do tabeli z rolami.
+    /// </summary>
     public async Task<IReadOnlyList<Role>> ResolveAsync(Guid operatorId, string login, Guid companyId, CancellationToken ct = default)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == operatorId, ct);
-        if (user is null)
-        {
-            user = new User
-            {
-                Id = operatorId, Login = login, DisplayName = login, PasswordAlgorithm = SystemAccount, IsActive = true, CreatedAtUtc = _clock.UtcNow
-            };
-            // Nigdy nie nadawaj automatycznie admina pierwszemu klientowi istniejącej bazy.
-            // Pierwszy administrator jest zapisywany w momencie tworzenia nowych ksiąg.
-            user.SetRoles(Array.Empty<Role>());
-            _db.Users.Add(user);
-            var actor = new CurrentUser(operatorId, login, companyId, user.Roles);
-            await new AuditService(_db, _clock).AddAsync(actor, "OPERATOR_NOWY_BEZ_UPRAWNIEN",
-                "User", operatorId.ToString(), $"{login}: oczekuje na nadanie ról przez administratora", ct);
-        }
-        user.LastLoginAtUtc = _clock.UtcNow;
-        await _db.SaveChangesAsync(ct);
-        return user.IsActive ? user.Roles : Array.Empty<Role>();
+        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == operatorId, ct);
+        if (user is null || !string.Equals(user.Login, login, StringComparison.Ordinal) ||
+            user.PasswordAlgorithm != SystemAccount || !user.IsActive || user.Roles.Count == 0)
+            throw new DomainException("Login PostgreSQL nie został dopuszczony do ksiąg albo został zablokowany. Poproś administratora o dodanie loginu i nadanie uprawnień.");
+        return user.Roles;
     }
 
     public async Task<List<OperatorInfo>> ListAsync(ICurrentUser actor, CancellationToken ct = default)
@@ -81,12 +72,9 @@ public sealed class OperatorAccessService
         // Połączenie do współdzielonego PostgreSQL: każdy operator ma osobny login DB
         // reprezentowany przez db:<login>. Dla lokalnego SQLite zachowujemy OS user@host.
         var serverUser = login.StartsWith("db:", StringComparison.OrdinalIgnoreCase);
-        var parts = login.Split('@');
-        var valid = serverUser
-            ? login.Length > 3 && login[3..].All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.')
-            : parts.Length == 2 && parts.All(p => !string.IsNullOrWhiteSpace(p));
+        var valid = serverUser && login.Length > 3 && login[3..].All(c => char.IsAsciiLetterOrDigit(c) || c is '_' or '-' or '.');
         if (login.Length > 256 || !valid || login.Any(char.IsControl))
-            throw new DomainException("Podaj login serwera jako db:nazwa_uzytkownika (PostgreSQL) albo użytkownik@komputer (lokalny SQLite).");
+            throw new DomainException("Podaj login PostgreSQL w formacie db:nazwa_uzytkownika.");
         if (serverUser) login = "db:" + login[3..].ToLowerInvariant();
         var id = IdFor(login);
         if (await _db.Users.AnyAsync(u => u.Id == id || u.Login == login, ct))
