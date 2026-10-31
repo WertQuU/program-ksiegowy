@@ -882,6 +882,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
+                    b.Property<Guid?>("DeductibleUntilEvidenceId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Note")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
@@ -970,6 +973,9 @@ namespace PelnaKsiegowosc.Migrations.PostgreSql.Migrations
                     b.Property<string>("DeductibleUntilBasis")
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid?>("DeductibleUntilEvidenceId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Note")
                         .HasMaxLength(1000)

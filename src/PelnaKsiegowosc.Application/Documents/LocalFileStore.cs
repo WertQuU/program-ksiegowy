@@ -10,9 +10,12 @@ namespace PelnaKsiegowosc.Application.Documents;
 /// Z kluczem — treść szyfrowana AES-256-GCM (<see cref="AttachmentCrypto"/>); suma SHA-256 dotyczy treści jawnej, więc kontrola
 /// integralności załączników działa bez zmian. Pliki zapisane wcześniej jawnie są odczytywane i mogą zostać zaszyfrowane
 /// (<see cref="EncryptLegacyFilesAsync"/>). Katalog magazynu — dostęp tylko dla właściciela (Linux 0700).
+/// Znacznik formatu katalogu (<c>.szyfrowanie</c>) zapisuje, że wszystkie pliki magazynu są zaszyfrowane — plik bez nagłówka
+/// szyfrowania jest wtedy uszkodzony (a nie „jawny”). Zapis, odczyt i kontrola są strumieniowe (porcje 1 MiB).
 /// </summary>
 public sealed class LocalFileStore : IFileStore
 {
+    private const string FormatMarker = ".szyfrowanie";
     private readonly byte[]? _key;
     private readonly bool _keyRequired;
 
@@ -26,10 +29,18 @@ public sealed class LocalFileStore : IFileStore
         else Directory.CreateDirectory(RootPath, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
         if (key is not null && key.Length != 32) throw new ArgumentException("Klucz załączników musi mieć 256 bitów.", nameof(key));
         _key = key;
+        // nowy (pusty) magazyn z kluczem — od początku wyłącznie pliki zaszyfrowane
+        if (key is not null && !EncryptedOnly(RootPath) && !Directory.EnumerateFiles(RootPath, "*.bin", SearchOption.AllDirectories).Any())
+            MarkEncryptedOnly();
     }
 
     public string RootPath { get; }
     public bool Encrypted => _key is not null;
+
+    /// <summary>Katalog oznaczony jako zawierający wyłącznie pliki zaszyfrowane.</summary>
+    public static bool EncryptedOnly(string rootPath) => File.Exists(Path.Combine(rootPath, FormatMarker));
+
+    private void MarkEncryptedOnly() => File.WriteAllText(Path.Combine(RootPath, FormatMarker), "PKZ1");
 
     public async Task<(string storagePath, string sha256, long size)> SaveAsync(Stream content, string suggestedName, CancellationToken ct = default)
     {
@@ -39,57 +50,101 @@ public sealed class LocalFileStore : IFileStore
         return (rel, sha, size);
     }
 
-    /// <summary>Zapis pod wskazaną ścieżką magazynu (odtwarzanie kopii, migracja baz) — z szyfrowaniem, jeśli magazyn ma klucz.</summary>
+    /// <summary>Zapis pod wskazaną ścieżką magazynu (odtwarzanie kopii, migracja baz) — strumieniowo, z szyfrowaniem, jeśli magazyn ma klucz.</summary>
     public async Task<(string sha256, long size)> SaveAtAsync(string storagePath, Stream content, CancellationToken ct = default)
     {
         var full = Resolve(storagePath);
-        if (_key is null && _keyRequired)
+        if (_key is null && (_keyRequired || EncryptedOnly(RootPath)))
             throw new DomainException("Na tym stanowisku brak klucza załączników pasującego do plików w katalogu załączników — zaimportuj klucz (Ustawienia → klucz załączników).");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-        var plain = new MemoryStream();
-        await content.CopyToAsync(plain, ct);
-        var bytes = plain.ToArray();
-        var sha = Convert.ToHexString(SHA256.HashData(bytes));
         var tmp = full + ".tmp";
-        await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+        (string, long) result;
+        try
         {
-            if (_key is null) await fs.WriteAsync(bytes, ct);
-            else await AttachmentCrypto.EncryptAsync(bytes, fs, _key, ct);
-            await fs.FlushAsync(ct);
+            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                result = _key is null ? await AttachmentCrypto.CopyWithHashAsync(content, fs, ct) : await AttachmentCrypto.EncryptStreamAsync(content, fs, _key, ct);
+                await fs.FlushAsync(ct);
+            }
+            File.Move(tmp, full, overwrite: true);
         }
-        File.Move(tmp, full, overwrite: true);
-        return (sha, bytes.LongLength);
+        catch
+        {
+            if (File.Exists(tmp)) File.Delete(tmp);
+            throw;
+        }
+        return result;
     }
 
+    /// <summary>
+    /// Odczyt strumieniowy: plik zaszyfrowany jest najpierw w całości uwierzytelniany (przebieg bez zapisu treści), a dopiero potem
+    /// udostępniany do odczytu porcjami — zmieniony lub obcięty plik nie zostanie częściowo wydany. Pamięć: jedna porcja (1 MiB).
+    /// </summary>
     public async Task<Stream> OpenAsync(string storagePath, CancellationToken ct = default)
     {
         var full = Resolve(storagePath);
-        var data = await File.ReadAllBytesAsync(full, ct);
-        if (!AttachmentCrypto.IsEncrypted(data)) return new MemoryStream(data, writable: false);
-        if (_key is null) throw new DomainException("Załącznik jest zaszyfrowany, a na tym stanowisku brak klucza załączników.");
-        return new MemoryStream(AttachmentCrypto.Decrypt(data, _key), writable: false);
+        if (_key is not null && HasEncryptedHeader(full))
+            await using (var verify = new AttachmentCrypto.DecryptingStream(new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true), _key))
+                await verify.CopyToAsync(Stream.Null, ct);
+        return OpenUnverified(full, storagePath);
+    }
+
+    private Stream OpenUnverified(string full, string storagePath)
+    {
+        var fs = new FileStream(full, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true);
+        try
+        {
+            var head = new byte[4];
+            var n = fs.ReadAtLeast(head, 4, throwOnEndOfStream: false);
+            fs.Position = 0;
+            if (n == 4 && AttachmentCrypto.IsEncrypted(head))
+            {
+                if (_key is null) throw new DomainException("Załącznik jest zaszyfrowany, a na tym stanowisku brak klucza załączników.");
+                return new AttachmentCrypto.DecryptingStream(fs, _key);
+            }
+            if (EncryptedOnly(RootPath))
+                throw new DomainException($"Załącznik {storagePath} jest uszkodzony — brak nagłówka szyfrowania w magazynie zawierającym wyłącznie pliki zaszyfrowane.");
+            return fs;
+        }
+        catch
+        {
+            fs.Dispose();
+            throw;
+        }
     }
 
     public Task<bool> ExistsAsync(string storagePath, CancellationToken ct = default) => Task.FromResult(File.Exists(Resolve(storagePath)));
 
-    /// <summary>Szyfruje pliki zapisane wcześniej jawnie (zachowując ścieżki i sumy SHA-256 treści). Zwraca liczbę zaszyfrowanych plików.</summary>
+    /// <summary>
+    /// Szyfruje pliki zapisane wcześniej jawnie (zachowując ścieżki i sumy SHA-256 treści), po czym oznacza katalog jako
+    /// zawierający wyłącznie pliki zaszyfrowane. Gdy katalog jest już oznaczony — nic nie robi (plik bez nagłówka jest wtedy
+    /// uszkodzony i nie może zostać „zaszyfrowany” jako jawny). Zwraca liczbę zaszyfrowanych plików.
+    /// </summary>
     public async Task<int> EncryptLegacyFilesAsync(CancellationToken ct = default)
     {
-        if (_key is null || !Directory.Exists(RootPath)) return 0;
-        var tmpLeft = Directory.EnumerateFiles(RootPath, "*.bin.tmp", SearchOption.AllDirectories).ToList();
-        foreach (var t in tmpLeft) File.Delete(t); // niedokończony zapis — oryginał pozostał nienaruszony
+        if (_key is null || !Directory.Exists(RootPath) || EncryptedOnly(RootPath)) return 0;
+        foreach (var t in Directory.EnumerateFiles(RootPath, "*.bin.tmp", SearchOption.AllDirectories).ToList())
+            File.Delete(t); // niedokończony zapis — oryginał pozostał nienaruszony
         var n = 0;
-        foreach (var f in Directory.EnumerateFiles(RootPath, "*.bin", SearchOption.AllDirectories))
+        foreach (var f in Directory.EnumerateFiles(RootPath, "*.bin", SearchOption.AllDirectories).ToList())
         {
-            var data = await File.ReadAllBytesAsync(f, ct);
-            if (AttachmentCrypto.IsEncrypted(data)) continue;
+            if (HasEncryptedHeader(f)) continue;
             var tmp = f + ".tmp";
-            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
-                await AttachmentCrypto.EncryptAsync(data, fs, _key, ct);
+            await using (var src = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.Read, 81920, true))
+            await using (var fs = new FileStream(tmp, FileMode.Create, FileAccess.Write, FileShare.None, 81920, true))
+                await AttachmentCrypto.EncryptStreamAsync(src, fs, _key, ct);
             File.Move(tmp, f, overwrite: true);
             n++;
         }
+        MarkEncryptedOnly();
         return n;
+    }
+
+    private static bool HasEncryptedHeader(string file)
+    {
+        using var fs = File.OpenRead(file);
+        var head = new byte[4];
+        return fs.ReadAtLeast(head, 4, throwOnEndOfStream: false) == 4 && AttachmentCrypto.IsEncrypted(head);
     }
 
     /// <summary>Wynik kontroli magazynu: pliki otwierane kluczem, pliki jawne (do zaszyfrowania), pliki nieczytelne (inny klucz lub uszkodzenie).</summary>
@@ -99,21 +154,32 @@ public sealed class LocalFileStore : IFileStore
     }
 
     /// <summary>
-    /// Pełna kontrola magazynu: każdy zaszyfrowany załącznik musi dać się odszyfrować i uwierzytelnić podanym kluczem
-    /// (wykrywa pliki zaszyfrowane różnymi kluczami oraz pliki obcięte lub zmienione).
+    /// Pełna, strumieniowa kontrola magazynu: każdy zaszyfrowany załącznik musi dać się odszyfrować i uwierzytelnić podanym kluczem
+    /// (pliki zaszyfrowane innym kluczem, obcięte lub zmienione); w katalogu oznaczonym jako zaszyfrowany plik bez nagłówka
+    /// szyfrowania jest uszkodzony.
     /// </summary>
     public static StoreCheck CheckStore(string rootPath, byte[] key)
     {
         var unreadable = new List<string>();
         int enc = 0, plain = 0;
-        if (Directory.Exists(rootPath))
-            foreach (var f in Directory.EnumerateFiles(rootPath, "*.bin", SearchOption.AllDirectories))
+        if (!Directory.Exists(rootPath)) return new StoreCheck(0, 0, unreadable);
+        var encryptedOnly = EncryptedOnly(rootPath);
+        foreach (var f in Directory.EnumerateFiles(rootPath, "*.bin", SearchOption.AllDirectories))
+        {
+            var rel = Path.GetRelativePath(rootPath, f).Replace('\\', '/');
+            if (!HasEncryptedHeader(f))
             {
-                var data = File.ReadAllBytes(f);
-                if (!AttachmentCrypto.IsEncrypted(data)) { plain++; continue; }
-                try { AttachmentCrypto.Decrypt(data, key); enc++; }
-                catch (Exception e) when (e is CryptographicException or DomainException) { unreadable.Add(Path.GetRelativePath(rootPath, f).Replace('\\', '/')); }
+                if (encryptedOnly) unreadable.Add(rel); else plain++;
+                continue;
             }
+            try
+            {
+                using var ds = new AttachmentCrypto.DecryptingStream(File.OpenRead(f), key);
+                ds.CopyTo(Stream.Null);
+                enc++;
+            }
+            catch (Exception e) when (e is CryptographicException or DomainException) { unreadable.Add(rel); }
+        }
         return new StoreCheck(enc, plain, unreadable);
     }
 
@@ -139,62 +205,159 @@ public sealed class LocalFileStore : IFileStore
 
 /// <summary>
 /// Szyfrowanie załączników: nagłówek „PKZ1”, losowy nonce bazowy, porcje po 1 MiB szyfrowane AES-256-GCM (nonce = bazowy ⊕ numer
-/// porcji; dane dodatkowe: numer porcji i znacznik ostatniej porcji — wykrycie zamiany kolejności i obcięcia pliku).
+/// porcji; dane dodatkowe: numer porcji i znacznik ostatniej porcji — wykrycie zamiany kolejności i obcięcia pliku). Porcje
+/// pośrednie są zawsze pełne; plik musi zawierać co najmniej jedną porcję (pusty załącznik — jedna porcja o długości 0).
 /// </summary>
 public static class AttachmentCrypto
 {
     private static readonly byte[] Magic = "PKZ1"u8.ToArray();
-    private const int Chunk = 1024 * 1024;
+    internal const int Chunk = 1024 * 1024;
+    private const int HeaderLength = 16;
 
     public static bool IsEncrypted(ReadOnlySpan<byte> data) => data.Length >= 4 && data[..4].SequenceEqual(Magic);
 
-    public static async Task EncryptAsync(byte[] plain, Stream output, byte[] key, CancellationToken ct = default)
+    /// <summary>Kopia strumienia z sumą SHA-256 (magazyn bez klucza).</summary>
+    public static async Task<(string sha256, long size)> CopyWithHashAsync(Stream input, Stream output, CancellationToken ct = default)
+    {
+        using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buf = new byte[81920];
+        long size = 0;
+        int n;
+        while ((n = await input.ReadAsync(buf, ct)) > 0)
+        {
+            sha.AppendData(buf, 0, n);
+            await output.WriteAsync(buf.AsMemory(0, n), ct);
+            size += n;
+        }
+        return (Convert.ToHexString(sha.GetHashAndReset()), size);
+    }
+
+    /// <summary>Szyfrowanie strumieniowe (pamięć: dwie porcje) z sumą SHA-256 treści jawnej.</summary>
+    public static async Task<(string sha256, long size)> EncryptStreamAsync(Stream input, Stream output, byte[] key, CancellationToken ct = default)
     {
         var baseNonce = RandomNumberGenerator.GetBytes(12);
         await output.WriteAsync(Magic, ct);
         await output.WriteAsync(baseNonce, ct);
         using var gcm = new AesGcm(key, 16);
-        var count = Math.Max(1, (plain.Length + Chunk - 1) / Chunk);
-        for (var i = 0; i < count; i++)
+        using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var current = new byte[Chunk];
+        var next = new byte[Chunk];
+        var cipher = new byte[Chunk];
+        var tag = new byte[16];
+        var curLen = await input.ReadAtLeastAsync(current, Chunk, throwOnEndOfStream: false, ct);
+        long size = 0;
+        for (var i = 0; ; i++)
         {
-            var start = i * Chunk;
-            var len = Math.Min(Chunk, plain.Length - start);
-            var cipher = new byte[len];
-            var tag = new byte[16];
-            gcm.Encrypt(Nonce(baseNonce, i), plain.AsSpan(start, len), cipher, tag, Aad(i, i == count - 1));
-            await output.WriteAsync(BitConverter.GetBytes(len), ct);
-            await output.WriteAsync(cipher, ct);
+            // odczyt z wyprzedzeniem — porcja jest ostatnia, gdy po niej nie ma już danych
+            var nextLen = curLen == Chunk ? await input.ReadAtLeastAsync(next, Chunk, throwOnEndOfStream: false, ct) : 0;
+            var last = nextLen == 0;
+            sha.AppendData(current, 0, curLen);
+            size += curLen;
+            gcm.Encrypt(Nonce(baseNonce, i), current.AsSpan(0, curLen), cipher.AsSpan(0, curLen), tag, Aad(i, last));
+            await output.WriteAsync(BitConverter.GetBytes(curLen), ct);
+            await output.WriteAsync(cipher.AsMemory(0, curLen), ct);
             await output.WriteAsync(tag, ct);
+            if (last) break;
+            (current, next) = (next, current);
+            curLen = nextLen;
         }
+        return (Convert.ToHexString(sha.GetHashAndReset()), size);
     }
+
+    public static async Task EncryptAsync(byte[] plain, Stream output, byte[] key, CancellationToken ct = default) =>
+        await EncryptStreamAsync(new MemoryStream(plain, writable: false), output, key, ct);
 
     public static byte[] Decrypt(byte[] data, byte[] key)
     {
-        if (!IsEncrypted(data) || data.Length < 16) throw new DomainException("Nieprawidłowy format zaszyfrowanego załącznika.");
-        var baseNonce = data.AsSpan(4, 12).ToArray();
-        using var gcm = new AesGcm(key, 16);
+        using var ds = new DecryptingStream(new MemoryStream(data, writable: false), key);
         using var plain = new MemoryStream();
-        var pos = 16;
-        var i = 0;
-        while (pos < data.Length)
-        {
-            if (pos + 4 > data.Length) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (obcięty).");
-            var len = BitConverter.ToInt32(data, pos);
-            pos += 4;
-            if (len < 0 || len > Chunk || pos + len + 16 > data.Length) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
-            var last = pos + len + 16 == data.Length;
-            // porcje pośrednie zawsze pełne (1 MiB); porcja pusta tylko jako jedyna (pusty załącznik)
-            if (!last && len != Chunk || len == 0 && i > 0) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
-            var buf = new byte[len];
-            try { gcm.Decrypt(Nonce(baseNonce, i), data.AsSpan(pos, len), data.AsSpan(pos + len, 16), buf, Aad(i, last)); }
-            catch (CryptographicException) { throw new DomainException("Nie można odszyfrować załącznika — nieprawidłowy klucz albo plik zmieniony."); }
-            plain.Write(buf);
-            pos += len + 16;
-            i++;
-        }
-        // co najmniej jedna uwierzytelniona porcja z oznaczeniem ostatniej — sam nagłówek nie jest poprawnym plikiem
-        if (i == 0) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (brak treści).");
+        ds.CopyTo(plain);
         return plain.ToArray();
+    }
+
+    /// <summary>Strumień odszyfrowujący i uwierzytelniający kolejne porcje (wymaga strumienia źródłowego z możliwością ustalenia długości).</summary>
+    public sealed class DecryptingStream : Stream
+    {
+        private readonly Stream _source;
+        private readonly AesGcm _gcm;
+        private readonly byte[] _baseNonce = new byte[12];
+        private readonly long _length;
+        private byte[] _buffer = [];
+        private int _bufferPos, _bufferLen, _index;
+        private bool _finished;
+
+        public DecryptingStream(Stream source, byte[] key)
+        {
+            _source = source;
+            _length = source.Length;
+            var head = new byte[HeaderLength];
+            if (source.ReadAtLeast(head, HeaderLength, throwOnEndOfStream: false) < HeaderLength || !IsEncrypted(head))
+            {
+                source.Dispose();
+                throw new DomainException("Nieprawidłowy format zaszyfrowanego załącznika.");
+            }
+            Array.Copy(head, 4, _baseNonce, 0, 12);
+            _gcm = new AesGcm(key, 16);
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => Read(buffer.AsSpan(offset, count));
+
+        public override int Read(Span<byte> destination)
+        {
+            if (_bufferPos == _bufferLen && !NextChunk()) return 0;
+            var n = Math.Min(destination.Length, _bufferLen - _bufferPos);
+            _buffer.AsSpan(_bufferPos, n).CopyTo(destination);
+            _bufferPos += n;
+            return n;
+        }
+
+        private bool NextChunk()
+        {
+            if (_finished) return false;
+            var pos = _source.Position;
+            if (pos == _length)
+            {
+                // koniec bez porcji oznaczonej jako ostatnia (np. sam nagłówek)
+                throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (brak treści).");
+            }
+            var lenBytes = new byte[4];
+            if (pos + 4 > _length || _source.ReadAtLeast(lenBytes, 4, throwOnEndOfStream: false) < 4)
+                throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (obcięty).");
+            var len = BitConverter.ToInt32(lenBytes);
+            pos += 4;
+            if (len < 0 || len > Chunk || pos + len + 16 > _length) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
+            var last = pos + len + 16 == _length;
+            if (!last && len != Chunk || len == 0 && _index > 0) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony.");
+            var data = new byte[len + 16];
+            if (_source.ReadAtLeast(data, len + 16, throwOnEndOfStream: false) < len + 16) throw new DomainException("Załącznik zaszyfrowany jest uszkodzony (obcięty).");
+            if (_buffer.Length < len) _buffer = new byte[Chunk];
+            try { _gcm.Decrypt(Nonce(_baseNonce, _index), data.AsSpan(0, len), data.AsSpan(len, 16), _buffer.AsSpan(0, len), Aad(_index, last)); }
+            catch (CryptographicException) { throw new DomainException("Nie można odszyfrować załącznika — nieprawidłowy klucz albo plik zmieniony."); }
+            _bufferPos = 0;
+            _bufferLen = len;
+            _index++;
+            _finished = last;
+            if (len == 0) return NextChunkAfterEmpty();
+            return true;
+        }
+
+        private bool NextChunkAfterEmpty() => !_finished && NextChunk();
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) { _source.Dispose(); _gcm.Dispose(); }
+            base.Dispose(disposing);
+        }
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() { }
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     private static byte[] Nonce(byte[] baseNonce, int index)

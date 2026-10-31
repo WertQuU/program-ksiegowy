@@ -346,10 +346,11 @@ public sealed class DeferredTaxService
         }
 
         // odpisy aktualizujące należności i rezerwy (NKUP do czasu realizacji): każda pozycja osobno. Bez udokumentowanej
-        // kwalifikacji przyjmuje się odwrócenie w najbliższym roku podatkowym tylko dla rezerw urlopowych i na koszty (rozliczanych
-        // zwykle w kolejnym roku); pozostałe (odpisy na należności — warunki art. 16 ust. 1 pkt 25–26, rezerwy emerytalne,
+        // kwalifikacji przyjmuje się odwrócenie w najbliższym roku podatkowym tylko dla nieistotnych (podatek ≤ próg istotności)
+        // rezerw urlopowych i na koszty (rozliczanych zwykle w kolejnym roku); istotne — zawsze do kwalifikacji; pozostałe (odpisy na należności — warunki art. 16 ust. 1 pkt 25–26, rezerwy emerytalne,
         // gwarancyjne, na sprawy sporne i kary — możliwa różnica trwała lub odwrócenie po latach) — do kwalifikacji (niezatwierdzone).
         // Różnica trwała — bez podatku odroczonego.
+        var materiality = await settings.GetAsync<decimal?>(fy.CompanyId, MaterialityKey, () => null, ct) ?? 0m;
         async Task ValuationDifferenceAsync(Guid id, string item, string basis, decimal amount, bool defaultConfirmed)
         {
             if (amount == 0) return;
@@ -357,7 +358,7 @@ public sealed class DeferredTaxService
             if (q is { Temporary: false }) return;
             var start = q?.ReversalTaxYearStart is { } rs && rs > first.Start ? rs : first.Start;
             var d = await DifferenceAsync(item + (q is null ? "" : $" (kwalifikacja z {q.QualifiedOn.ToPl()})"), q is null ? basis : $"{basis}; {q.Justification}", -amount, 0m, -amount, start, false);
-            if (q is null && !defaultConfirmed)
+            if (q is null && (!defaultConfirmed || d.Tax > materiality))
             {
                 d = d with { Unconfirmed = true };
                 warnings.Add($"{item}: brak kwalifikacji (różnica przejściowa czy trwała, rok odwrócenia) — przyjęto odwrócenie w najbliższym roku; zakwalifikuj przed księgowaniem (art. 37 ust. 1 i 4 UoR).");

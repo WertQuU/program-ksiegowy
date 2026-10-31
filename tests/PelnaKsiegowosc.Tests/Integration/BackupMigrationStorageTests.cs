@@ -425,19 +425,37 @@ public class AttachmentEncryptionTests
             Assert.Contains("a/plik.bin", store.Check().Unreadable);                 // pełna kontrola magazynu wykrywa zmieniony plik
             File.Delete(Path.Combine(dir, "a", "plik.bin"));
 
-            // dotychczasowe jawne pliki są szyfrowane przy otwarciu firmy
-            await new LocalFileStore(dir).SaveAtAsync("b/stary.bin", new MemoryStream("jawny dokument"u8.ToArray()));
-            Assert.False(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
-            Assert.Equal(1, await store.EncryptLegacyFilesAsync());
-            Assert.True(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
-            await using (var r = await store.OpenAsync("b/stary.bin"))
-                Assert.Equal("jawny dokument", await new StreamReader(r).ReadToEndAsync());
-
-            // magazyn programu bez klucza nie zapisuje (brak plików jawnych ani zaszyfrowanych innym kluczem)
+            // magazyn zaszyfrowany od początku: bez klucza nie zapisuje; plik z uszkodzonym nagłówkiem — uszkodzony, nie „jawny”
+            Assert.True(LocalFileStore.EncryptedOnly(dir));
+            await Assert.ThrowsAsync<DomainException>(() => new LocalFileStore(dir).SaveAtAsync("c/nowy.bin", new MemoryStream(new byte[] { 1 })));
+            await store.SaveAtAsync("c/dobry.bin", new MemoryStream("dokument"u8.ToArray()));
+            var damaged = await File.ReadAllBytesAsync(Path.Combine(dir, "c", "dobry.bin"));
+            damaged[0] = (byte)'X';
+            await File.WriteAllBytesAsync(Path.Combine(dir, "c", "zly.bin"), damaged);
+            await Assert.ThrowsAsync<DomainException>(() => store.OpenAsync("c/zly.bin"));
+            Assert.Contains("c/zly.bin", store.Check().Unreadable);
+            Assert.Equal(0, await store.EncryptLegacyFilesAsync());                                  // uszkodzony plik nie jest „szyfrowany jako jawny”
+            File.Delete(Path.Combine(dir, "c", "zly.bin"));
             Assert.True(LocalFileStore.KeyMatches(dir, key));
             Assert.False(LocalFileStore.KeyMatches(dir, RandomNumberGenerator.GetBytes(32)));
             Assert.True(LocalFileStore.KeyMatches(Path.Combine(dir, "brak"), RandomNumberGenerator.GetBytes(32)));
             await Assert.ThrowsAsync<DomainException>(() => new LocalFileStore(dir, null, keyRequired: true).SaveAtAsync("c/nowy.bin", new MemoryStream(new byte[] { 1 })));
+
+            // dotychczasowe jawne pliki (katalog z wcześniejszej wersji) są szyfrowane przy otwarciu firmy, po czym katalog jest oznaczany
+            var legacyDir = Path.Combine(dir, "..", Path.GetFileName(dir) + "-stary");
+            try
+            {
+                await new LocalFileStore(legacyDir).SaveAtAsync("b/stary.bin", new MemoryStream("jawny dokument"u8.ToArray()));
+                var legacy = new LocalFileStore(legacyDir, key);
+                Assert.False(LocalFileStore.EncryptedOnly(legacyDir));
+                Assert.Equal(1, await legacy.EncryptLegacyFilesAsync());
+                Assert.True(LocalFileStore.EncryptedOnly(legacyDir));
+                Assert.True(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(legacyDir, "b", "stary.bin"))));
+                await using var r = await legacy.OpenAsync("b/stary.bin");
+                Assert.Equal("jawny dokument", await new StreamReader(r).ReadToEndAsync());
+            }
+            finally { try { Directory.Delete(legacyDir, true); } catch { } }
+
             // plik zaszyfrowany innym kluczem w tym samym katalogu — wykrywany przez pełną kontrolę (nie tylko pierwszy plik)
             await new LocalFileStore(dir, RandomNumberGenerator.GetBytes(32)).SaveAtAsync("z/obcy.bin", new MemoryStream("inny klucz"u8.ToArray()));
             Assert.False(LocalFileStore.KeyMatches(dir, key));
@@ -451,6 +469,21 @@ public class AttachmentEncryptionTests
 
 public class AttachmentCryptoTamperTests
 {
+    [Fact]
+    public async Task Streaming_encryption_handles_chunk_boundaries_and_matches_hash()
+    {
+        var key = RandomNumberGenerator.GetBytes(32);
+        foreach (var len in new[] { 0, 1, 1024 * 1024 - 1, 1024 * 1024, 1024 * 1024 + 1, 2 * 1024 * 1024 })
+        {
+            var plain = RandomNumberGenerator.GetBytes(len);
+            using var enc = new MemoryStream();
+            var (sha, size) = await AttachmentCrypto.EncryptStreamAsync(new MemoryStream(plain), enc, key);
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(plain)), sha);
+            Assert.Equal(len, size);
+            Assert.Equal(plain, AttachmentCrypto.Decrypt(enc.ToArray(), key));
+        }
+    }
+
     [Fact]
     public async Task Header_only_truncated_reordered_and_forged_files_are_rejected()
     {

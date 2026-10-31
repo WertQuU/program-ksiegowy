@@ -659,10 +659,11 @@ public sealed class CitService
     // ---- straty podatkowe (art. 7 ust. 5) ----
 
     public async Task<TaxLoss> AddLossAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note, CancellationToken ct = default,
-        DateOnly? deductibleUntil = null, string? deductibleUntilBasis = null)
+        DateOnly? deductibleUntil = null, string? deductibleUntilBasis = null, Guid? deductibleUntilEvidenceId = null)
     {
         _user.Require(Permission.ManageCit);
         if (deductibleUntil is { } du) TaxLossRules.ValidateConfirmedEnd(yearEnd, du, deductibleUntilBasis, await TaxYearsAsync(ct));
+        await EnsureEvidenceAsync(deductibleUntilEvidenceId, ct);
         if (amount <= 0) throw new DomainException("Kwota straty musi być dodatnia.");
         if (string.IsNullOrWhiteSpace(yearLabel)) throw new DomainException("Podaj rok podatkowy straty.");
         if (await _db.TaxLosses.AnyAsync(l => l.CompanyId == _user.CompanyId && l.YearEnd == yearEnd && l.CapitalGains == capitalGains, ct))
@@ -670,7 +671,8 @@ public sealed class CitService
         var loss = new TaxLoss
         {
             CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
-            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(), UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(),
+            DeductibleUntilEvidenceId = deductibleUntil is null ? null : deductibleUntilEvidenceId, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         _db.TaxLosses.Add(loss);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_ZAREJESTROWANA", "TaxLoss", loss.Id.ToString(),
@@ -720,7 +722,7 @@ public sealed class CitService
 
     /// <summary>Rejestracja nadwyżki kosztów finansowania dłużnego z lat sprzed prowadzenia ksiąg w programie (z CIT-8 / ewidencji).</summary>
     public async Task<DebtFinancingCarryforward> AddDebtFinancingCarryforwardAsync(string yearLabel, DateOnly yearEnd, bool capitalGains, decimal amount, string? note,
-        DateOnly? deductibleUntil = null, CancellationToken ct = default, string? deductibleUntilBasis = null)
+        DateOnly? deductibleUntil = null, CancellationToken ct = default, string? deductibleUntilBasis = null, Guid? deductibleUntilEvidenceId = null)
     {
         _user.Require(Permission.ManageCit);
         if (amount <= 0) throw new DomainException("Kwota nadwyżki musi być dodatnia.");
@@ -728,12 +730,14 @@ public sealed class CitService
         if (string.IsNullOrWhiteSpace(note))
             throw new DomainException("Wskaż źródło kwoty (np. CIT-8 za dany rok, wyliczenie limitu art. 15c) — kwota musi wynikać z dokumentacji podatnika.");
         if (deductibleUntil is { } du) TaxLossRules.ValidateConfirmedEnd(yearEnd, du, deductibleUntilBasis, await TaxYearsAsync(ct));
+        await EnsureEvidenceAsync(deductibleUntilEvidenceId, ct);
         if (await _db.DebtFinancingCarryforwards.AnyAsync(c => c.CompanyId == _user.CompanyId && c.YearEnd == yearEnd && c.CapitalGains == capitalGains, ct))
             throw new DomainException("Nadwyżka z tego roku i źródła jest już zarejestrowana.");
         var c = new DebtFinancingCarryforward
         {
             CompanyId = _user.CompanyId, YearLabel = yearLabel.Trim(), YearEnd = yearEnd, CapitalGains = capitalGains, Amount = Money.Round(amount),
-            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(), UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            Note = note, DeductibleUntil = deductibleUntil, DeductibleUntilBasis = deductibleUntil is null ? null : deductibleUntilBasis!.Trim(),
+            DeductibleUntilEvidenceId = deductibleUntil is null ? null : deductibleUntilEvidenceId, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         _db.DebtFinancingCarryforwards.Add(c);
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_15C_NADWYZKA", "DebtFinancingCarryforward", c.Id.ToString(),
@@ -802,6 +806,12 @@ public sealed class CitService
         return use;
     }
 
+    private async Task EnsureEvidenceAsync(Guid? attachmentId, CancellationToken ct)
+    {
+        if (attachmentId is { } id && !await _db.Attachments.AnyAsync(a => a.Id == id && a.CompanyId == _user.CompanyId, ct))
+            throw new DomainException("Nie znaleziono dokumentu potwierdzającego w magazynie załączników.");
+    }
+
     private async Task<List<(DateOnly Start, DateOnly End)>> TaxYearsAsync(CancellationToken ct) =>
         (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
         .Select(y => (y.StartDate, y.EndDate)).OrderBy(y => y.StartDate).ToList();
@@ -836,13 +846,15 @@ public sealed class CitService
     }
 
     /// <summary>Potwierdzenie końca okresu odliczenia straty (gdy lat podatkowych po stracie nie ma w programie).</summary>
-    public async Task ConfirmLossWindowAsync(Guid lossId, DateOnly deductibleUntil, string basis, CancellationToken ct = default)
+    public async Task ConfirmLossWindowAsync(Guid lossId, DateOnly deductibleUntil, string basis, CancellationToken ct = default, Guid? evidenceId = null)
     {
         _user.Require(Permission.ManageCit);
         var loss = await _db.TaxLosses.FirstAsync(l => l.Id == lossId && l.CompanyId == _user.CompanyId, ct);
         TaxLossRules.ValidateConfirmedEnd(loss.YearEnd, deductibleUntil, basis, await TaxYearsAsync(ct));
+        await EnsureEvidenceAsync(evidenceId, ct);
         loss.DeductibleUntil = deductibleUntil;
         loss.DeductibleUntilBasis = basis.Trim();
+        loss.DeductibleUntilEvidenceId = evidenceId;
         await new AuditService(_db, _clock).AddAsync(_user, "CIT_STRATA_OKRES", "TaxLoss", loss.Id.ToString(),
             $"{loss.YearLabel}: odliczenie do {deductibleUntil.ToPl()} — potwierdzone przez operatora na podstawie: {basis.Trim()}", ct);
         await _db.SaveChangesAsync(ct);

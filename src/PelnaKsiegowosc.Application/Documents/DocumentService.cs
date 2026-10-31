@@ -859,6 +859,30 @@ public sealed class DocumentService
         return att;
     }
 
+    /// <summary>
+    /// Dokument potwierdzający niezwiązany z dowodem księgowym (np. skan zeznań CIT-8 lub uchwały o zmianie roku podatkowego) —
+    /// przechowywany w zaszyfrowanym magazynie załączników, z sumą kontrolną i zapisem w dzienniku zdarzeń.
+    /// </summary>
+    public async Task<Attachment> AddEvidenceAttachmentAsync(IFileStore store, string fileName, Stream content, string description, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ViewData);
+        var ms = new MemoryStream();
+        await content.CopyToAsync(ms, ct);
+        var header = ms.GetBuffer().AsSpan(0, (int)Math.Min(16, ms.Length));
+        var contentType = AttachmentPolicy.Validate(fileName, header, ms.Length);
+        ms.Position = 0;
+        var (path, sha, size) = await store.SaveAsync(ms, fileName, ct);
+        var att = new Attachment
+        {
+            CompanyId = _user.CompanyId, DocumentId = null, FileName = Path.GetFileName(fileName), ContentType = contentType, SizeBytes = size,
+            Sha256 = sha, StoragePath = path, CreatedAtUtc = _clock.UtcNow, CreatedByUserId = _user.UserId, Description = description
+        };
+        _db.Attachments.Add(att);
+        await _audit.AddAsync(_user, "DOKUMENT_POTWIERDZAJACY_DODANY", "Attachment", att.Id.ToString(), $"{att.FileName}: {description}; {sha}", ct);
+        await _db.SaveChangesAsync(ct);
+        return att;
+    }
+
     /// <summary>Odczyt załącznika z weryfikacją sumy kontrolnej.</summary>
     public async Task<byte[]> ReadAttachmentAsync(Guid attachmentId, IFileStore store, CancellationToken ct = default)
     {

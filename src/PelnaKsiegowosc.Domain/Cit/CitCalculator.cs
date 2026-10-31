@@ -85,6 +85,8 @@ public class TaxLoss : CompanyEntity
     public DateOnly? DeductibleUntil { get; set; }
     /// <summary>Udokumentowana podstawa potwierdzonego końca okresu (np. zeznania CIT-8 lat pośrednich, uchwała o zmianie roku podatkowego).</summary>
     public string? DeductibleUntilBasis { get; set; }
+    /// <summary>Załącznik z dokumentem potwierdzającym historię lat podatkowych (skan CIT-8, uchwała) — opcjonalny.</summary>
+    public Guid? DeductibleUntilEvidenceId { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }
@@ -118,6 +120,8 @@ public class DebtFinancingCarryforward : CompanyEntity
     /// <summary>Ostatni dzień 5. roku podatkowego po roku nadwyżki — wymagany, gdy tych lat nie ma w programie.</summary>
     public DateOnly? DeductibleUntil { get; set; }
     public string? DeductibleUntilBasis { get; set; }
+    /// <summary>Załącznik z dokumentem potwierdzającym historię lat podatkowych (skan CIT-8, uchwała) — opcjonalny.</summary>
+    public Guid? DeductibleUntilEvidenceId { get; set; }
     public Guid UserId { get; set; }
     public DateTime CreatedAtUtc { get; set; }
 }

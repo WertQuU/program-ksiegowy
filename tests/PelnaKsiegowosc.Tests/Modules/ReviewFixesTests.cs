@@ -852,3 +852,55 @@ public class ConfirmedPeriodEndTests
         TaxLossRules.ValidateConfirmedEnd(new DateOnly(2020, 12, 31), new DateOnly(2025, 12, 31), "CIT-8", five);
     }
 }
+
+public class DebtFinancingControlCalculationTests
+{
+    /// <summary>
+    /// Wyliczenie kontrolne (niezależne, ręczne): przychody 10 000 000 zł, odsetki 1 000 000 zł → limit max(3 mln; 30% × 10 mln) = 3 mln,
+    /// wolny limit 2 000 000 zł. Koszty wyłączone w latach ubiegłych: 2022 „inne” 500 000, 2023 „zyski kapitałowe” 700 000,
+    /// 2024 „inne” 1 000 000. Zaliczenie: 500 000 + 700 000 + 800 000 = 2 000 000 (cały wolny limit).
+    /// KUP „inne” = 1 000 000 + 500 000 + 800 000 = 2 300 000; KUP „zyski kapitałowe” = 700 000 (strata w tym źródle 700 000).
+    /// Po korekcie (dodatkowe odsetki 1 500 000) wolny limit = 3 mln − 2,5 mln = 500 000 → uwzględnia się tylko 500 000 (najstarsza: 2022).
+    /// </summary>
+    [Fact]
+    public async Task Several_prior_year_amounts_from_two_sources_match_hand_calculation_and_later_correction_caps_them()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var acc = await t.Db.Accounts.FirstAsync(a => a.Number == "751-01");
+        acc.CitClassification = CitClassification.KosztPodatkowy;
+        await t.Db.SaveChangesAsync();
+        var d = new DateOnly(2026, 3, 31);
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 1_000_000m, 0), new("130-01", 0, 1_000_000m)));
+        await t.Db.SaveChangesAsync();
+        var cit = new CitService(t.Db, t.User, t.Clock);
+        const string Stmt = "koszty własne spółki; brak przekształceń, połączeń, podziałów i PGK (KRS)";
+        var c22 = await cit.AddDebtFinancingCarryforwardAsync("2022", new DateOnly(2022, 12, 31), false, 500_000m, "CIT-8 za 2022", new DateOnly(2027, 12, 31), deductibleUntilBasis: "CIT-8 2023–2025");
+        var c23 = await cit.AddDebtFinancingCarryforwardAsync("2023", new DateOnly(2023, 12, 31), true, 700_000m, "CIT-8 za 2023", new DateOnly(2028, 12, 31), deductibleUntilBasis: "CIT-8 2024–2025");
+        var c24 = await cit.AddDebtFinancingCarryforwardAsync("2024", new DateOnly(2024, 12, 31), false, 1_000_000m, "CIT-8 za 2024", new DateOnly(2029, 12, 31), deductibleUntilBasis: "CIT-8 za 2025");
+        Assert.Equal(2_000_000m, (await cit.ReconcileAsync(t.Year.Id, 12)).DebtFinancingHeadroom);
+        await cit.UseDebtFinancingCarryforwardAsync(c22.Id, t.Year.Id, 500_000m, Stmt);
+        await cit.UseDebtFinancingCarryforwardAsync(c23.Id, t.Year.Id, 700_000m, Stmt);
+        await cit.UseDebtFinancingCarryforwardAsync(c24.Id, t.Year.Id, 800_000m, Stmt);
+        await Assert.ThrowsAsync<DomainException>(() => cit.UseDebtFinancingCarryforwardAsync(c24.Id, t.Year.Id, 1m, Stmt));
+
+        var rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(2_300_000m, rec.Operating.TaxCosts);
+        Assert.Equal(700_000m, rec.CapitalGains.TaxCosts);
+        Assert.Equal(7_700_000m, rec.Operating.Income);
+        Assert.Equal(700_000m, rec.CapitalGains.Loss);
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+        Assert.Equal(200_000m, (await cit.DebtFinancingCarryforwardsAsync()).Single(x => x.Item.Id == c24.Id) is var r24 ? r24.Item.Amount - r24.Used : -1);
+
+        // późniejsza korekta kosztów finansowania roku zmniejsza wolny limit — uwzględnia się tylko część mieszczącą się w limicie
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 12, 31), "PK/3", new("751-01", 1_500_000m, 0), new("130-01", 0, 1_500_000m)));
+        await t.Db.SaveChangesAsync();
+        rec = await cit.ReconcileAsync(t.Year.Id, 12);
+        Assert.Equal(500_000m, rec.DebtFinancingHeadroom);
+        Assert.Equal(2_500_000m + 500_000m, rec.Operating.TaxCosts);                    // tylko 2022 (500 000) — najstarsza
+        Assert.Equal(0m, rec.CapitalGains.TaxCosts);
+        Assert.Contains(rec.Warnings, w => w.Contains("przekracza wolny limit") && w.Contains("2023"));
+        Assert.Contains(rec.Warnings, w => w.Contains("przekracza wolny limit") && w.Contains("2024"));
+        Assert.Equal(rec.TaxRevenue - rec.TaxCosts, rec.Rpd.TaxIncomeFrom(rec.BookResultBeforeTax));
+    }
+}

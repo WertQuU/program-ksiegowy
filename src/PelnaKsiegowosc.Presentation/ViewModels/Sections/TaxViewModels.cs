@@ -320,6 +320,18 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task<string?> PeriodBasisAsync() => Dialogs.PromptAsync("Potwierdzenie końca okresu",
         "Lat podatkowych nie ma w programie. Wskaż dokumenty, z których wynika koniec 5. roku podatkowego (np. CIT-8 za lata pośrednie, uchwała o zmianie roku podatkowego). Potwierdzenie zostanie zapisane w dzienniku zdarzeń z Twoim nazwiskiem:", "");
 
+    /// <summary>Opcjonalny skan dokumentu potwierdzającego historię lat podatkowych — w zaszyfrowanym magazynie załączników.</summary>
+    private async Task<Guid?> PeriodEvidenceAsync(string basis)
+    {
+        if (!await Dialogs.ConfirmAsync("Dokument potwierdzający", "Dołączyć skan dokumentu potwierdzającego (np. zeznania CIT-8, uchwały o zmianie roku podatkowego)?")) return null;
+        var file = await Dialogs.OpenFileAsync("Dokument potwierdzający", new FileFilter("Dokumenty", "*.pdf", "*.jpg", "*.jpeg", "*.png", "*.tif", "*.tiff", "*.xml"));
+        if (file is null) return null;
+        await using var db = Session.OpenDb();
+        await using var fs = File.OpenRead(file);
+        return (await new Application.Documents.DocumentService(db, Session.User, Session.Clock)
+            .AddEvidenceAttachmentAsync(Session.Attachments, file, fs, "Potwierdzenie końca okresu rozliczenia: " + basis)).Id;
+    }
+
     /// <summary>Koszty finansowania dłużnego wyłączone w latach sprzed prowadzenia ksiąg w programie (z CIT-8).</summary>
     [RelayCommand]
     private Task AddDebtExcessAsync() => ChangeAsync(async () =>
@@ -329,9 +341,10 @@ public sealed partial class CitViewModel : SectionViewModel
         if (string.IsNullOrWhiteSpace(source)) return;
         var basis = until is null ? null : await PeriodBasisAsync();
         if (until is not null && basis is null) return;
+        var evidence = basis is null ? null : await PeriodEvidenceAsync(basis);
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).AddDebtFinancingCarryforwardAsync(DebtExcessYear, Parse.Date(DebtExcessYearEnd, "Koniec roku nadwyżki"), DebtExcessCapital,
-            Parse.Amount(DebtExcessAmount, "Nadwyżka"), source, until, deductibleUntilBasis: basis);
+            Parse.Amount(DebtExcessAmount, "Nadwyżka"), source, until, deductibleUntilBasis: basis, deductibleUntilEvidenceId: evidence);
         DebtExcessYear = DebtExcessYearEnd = DebtExcessAmount = DebtExcessUntil = "";
     }, "Zarejestrowano nadwyżkę kosztów finansowania dłużnego.");
 
@@ -411,9 +424,10 @@ public sealed partial class CitViewModel : SectionViewModel
         var until = Parse.OptionalDate(LossUntil, "Koniec okresu odliczenia");
         var basis = until is null ? null : await PeriodBasisAsync();
         if (until is not null && basis is null) return;
+        var evidence = basis is null ? null : await PeriodEvidenceAsync(basis);
         await using var db = Session.OpenDb();
         await new CitService(db, Session.User, Session.Clock).AddLossAsync(LossYear, Parse.Date(LossYearEnd, "Koniec roku straty"), LossCapital, Parse.Amount(LossAmount, "Strata"), "wprowadzona ręcznie (zeznanie CIT-8)",
-            deductibleUntil: until, deductibleUntilBasis: basis);
+            deductibleUntil: until, deductibleUntilBasis: basis, deductibleUntilEvidenceId: evidence);
         LossYear = LossYearEnd = LossAmount = "";
     }, "Zarejestrowano stratę podatkową.");
 
@@ -445,7 +459,8 @@ public sealed partial class CitViewModel : SectionViewModel
         await using var db = Session.OpenDb();
         var until = Parse.Date(LossUntil, "Koniec okresu odliczenia");
         if (await PeriodBasisAsync() is not { } basis) return;
-        await new CitService(db, Session.User, Session.Clock).ConfirmLossWindowAsync(id, until, basis);
+        var evidence = await PeriodEvidenceAsync(basis);
+        await new CitService(db, Session.User, Session.Clock).ConfirmLossWindowAsync(id, until, basis, evidenceId: evidence);
     }, "Zapisano koniec okresu odliczenia straty.");
 
     [RelayCommand]

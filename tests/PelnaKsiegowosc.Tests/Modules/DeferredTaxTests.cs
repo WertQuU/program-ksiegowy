@@ -33,8 +33,11 @@ public class DeferredTaxTests
         await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31))); // granice 2027 r. nadal niepotwierdzone
         await svc.ConfirmTaxYearCalendarAsync(new DateOnly(2035, 12, 31), "Rok podatkowy = kalendarzowy, brak planowanej zmiany (umowa spółki)");
         c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
-        Assert.Equal(Money.Round(615m * 19m / 100m), c.UnconfirmedTax);                // odpis na należność — bez kwalifikacji
+        // odpis na należność i istotna rezerwa na koszty (950 zł podatku > próg 0 zł) — bez kwalifikacji
+        Assert.Equal(Money.Round(5615m * 19m / 100m), c.UnconfirmedTax);
         Assert.Contains(c.Warnings!, w => w.Contains("Odpis aktualizujący należność") && w.Contains("brak kwalifikacji"));
+        Assert.Contains(c.Warnings!, w => w.Contains("Badanie sprawozdania") && w.Contains("brak kwalifikacji"));
+        await svc.QualifyDifferenceAsync((await val.ProvisionsAsync()).Single().Id, true, null, "Umowa z biegłym — zapłata w I kwartale 2027 r., koszt podatkowy w dniu poniesienia");
         var item = (await t.Db.ReceivableAllowances.FirstAsync()).OpenItemId;
         await svc.QualifyDifferenceAsync(item, true, null, "Dłużnik w restrukturyzacji — nieściągalność zostanie udokumentowana w 2027 r. (art. 16 ust. 1 pkt 25)");
         c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
@@ -66,7 +69,10 @@ public class DeferredTaxTests
         foreach (var y in new[] { 2027, 2031 }) await svc.SetExpectedRateAsync(new DateOnly(y, 1, 1), 19m, "Przychody powyżej limitu 2 mln euro");
         var c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
         Assert.Equal(3, c.Differences.Count);
-        Assert.Equal(Money.Round(30000m * 0.19m), c.UnconfirmedTax);                    // kara i odprawy — do kwalifikacji; urlopowa — domyślnie
+        Assert.Equal(Money.Round(33000m * 0.19m), c.UnconfirmedTax);                    // wszystkie istotne (próg 0 zł) — do kwalifikacji
+        await svc.SetMaterialityAsync(600m, "Polityka rachunkowości: próg istotności 600 zł podatku");
+        c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(Money.Round(30000m * 0.19m), c.UnconfirmedTax);                    // urlopowa 570 zł ≤ próg — domyślnie; kara i odprawy — zawsze
         await Assert.ThrowsAsync<DomainException>(() => svc.QualifyDifferenceAsync(penalty.Id, false, null, ""));
         await svc.QualifyDifferenceAsync(penalty.Id, false, null, "Kara umowna za zwłokę w dostawie — art. 16 ust. 1 pkt 22 ustawy o CIT, nigdy KUP");
         await svc.QualifyDifferenceAsync(pension.Id, true, new DateOnly(2031, 1, 1), "Przejście pracownika na emeryturę w 2031 r.");
