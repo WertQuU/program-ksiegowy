@@ -76,7 +76,8 @@ public static class PayrollCalculator
     /// (po innych pozycjach i listach); null — kwota z oświadczenia osoby.</param>
     /// <param name="ppkEmployerTaxable">Wpłaty PPK pracodawcy przekazane do instytucji finansowej, które stają się przychodem w tej wypłacie.</param>
     public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null,
-        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false, bool? civilMandatory = null, decimal? taxReductionAvailable = null, decimal ppkEmployerTaxable = 0m)
+        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false, bool? civilMandatory = null, decimal? taxReductionAvailable = null, decimal ppkEmployerTaxable = 0m,
+        DateOnly? paymentDate = null)
     {
         if (ppkEmployerTaxable < 0) throw new Common.DomainException("Kwota wpłat PPK do opodatkowania nie może być ujemna.");
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
@@ -186,7 +187,14 @@ public static class PayrollCalculator
         else
         {
             var taxableGross = gross + ppkEmployerTaxable;
-            if (e.YouthRelief && t is ContractType.UmowaOPrace or ContractType.UmowaZlecenie)
+            // MF: ulga dla młodych obowiązuje do dnia 26. urodzin włącznie,
+            // oceniana na moment otrzymania przychodu (data wypłaty, nie miesiąc pracy).
+            // Dla wywołań bez daty zachowujemy kompatybilność kalkulatora.
+            var birthDate = e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel);
+            var eligibleByAge = paymentDate is not { } paid || birthDate is not { } born || paid <= born.AddYears(26);
+            if (e.YouthRelief && !eligibleByAge)
+                notes.Add("Ulga dla młodych wyłączona — wypłata po dniu 26. urodzin.");
+            if (e.YouthRelief && eligibleByAge && (t is ContractType.UmowaOPrace or ContractType.UmowaZlecenie))
             {
                 var exempt = Math.Min(taxableGross, Math.Max(0, rules.YouthReliefLimit - ytd.YouthExemptRevenue));
                 taxableGross -= exempt;
