@@ -46,6 +46,8 @@ public class HrTests
         await payroll.PostAsync(february.Id);
 
         var march = await payroll.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+        await payroll.RecordSickWageAssessmentAsync(e.Id, march.Month, 0, SickWageCause.Ordinary80, "OSW/2026/3");
+        await payroll.RecalculateAsync(march.Id);
         var item = Assert.Single(march.Items);
         Assert.Equal(10, item.SickDays);
         Assert.Equal(1380.64m, item.SickPay);
