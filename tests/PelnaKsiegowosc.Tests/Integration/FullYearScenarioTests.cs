@@ -94,7 +94,11 @@ public class FullYearScenarioTests
 
         var periods = new PeriodService(t.Db, t.User, t.Clock);
         foreach (var p in t.Year.Periods.OrderBy(p => p.Number)) await periods.ClosePeriodAsync(p.Id, "Kontrola okresu wykonana — test scenariuszowy");
-        if (closeYear) await periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "Wyliczenia CIT zweryfikowane w uzgodnieniu wyniku");
+        if (closeYear)
+        {
+            await new FinancialStatementApprovals(t.Db, t.User, t.Clock).RecordApprovalAsync("2026", t.Clock.Today, "Zwyczajne Walne Zgromadzenie", "Uchwała nr 1/2027");
+            await periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "Wyliczenia CIT zweryfikowane w uzgodnieniu wyniku");
+        }
         return t;
     }
 
@@ -128,6 +132,11 @@ public class FullYearScenarioTests
         // zamknięcie roku
         var periods = new PeriodService(t.Db, t.User, t.Clock);
         await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "zamknij", "x"));
+        // ostateczne zamknięcie bez zatwierdzenia sprawozdania — zablokowane (art. 12 ust. 4 UoR); wyjątek tylko z udokumentowaną decyzją
+        var blocked = await Assert.ThrowsAsync<DomainException>(() => periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "CIT zweryfikowany"));
+        Assert.Contains("zatwierdzone", blocked.Message);
+        await Assert.ThrowsAsync<DomainException>(() => periods.RecordFinalCloseExceptionAsync(t.Year.Id, "krótko"));
+        await new FinancialStatementApprovals(t.Db, t.User, t.Clock).RecordApprovalAsync("2026", t.Clock.Today, "Zwyczajne Walne Zgromadzenie", "Uchwała nr 1/2027");
         var next = await periods.CloseYearAsync(t.Year.Id, "ZAMKNIJ 2026", "CIT zweryfikowany");
         t.Db.ChangeTracker.Clear();
         var closed = await t.Db.FiscalYears.SingleAsync(f => f.Id == t.Year.Id);

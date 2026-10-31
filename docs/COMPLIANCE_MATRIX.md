@@ -104,3 +104,14 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | PK-15 rozliczenia wielowalutowe | Ograniczenie: ręcznie (program blokuje automatyczne rozliczenie). |
 | PK-16 integralność załączników | Poprawione: pełna kontrola obecności, odszyfrowania, rozmiaru i SHA-256. |
 | PK-17 limity archiwum | Poprawione: limity liczby plików i rozmiaru po dekompresji, sprzątanie plików tymczasowych. |
+
+
+## Audyt 31.10.2026 (commit a8e0f61) — rozstrzygnięcia
+
+| Ustalenie | Stan |
+|---|---|
+| PK-01 JPK_KR_PD — konta syntetyczne | Poprawione (wcześniejsze rozstrzygnięcie było błędne): ZOiS obejmuje wszystkie konta z obrotami lub saldami — syntetyczne (S_1 = S_3), pośrednie i analityczne (S_3 = konto nadrzędne), zgodnie z wyjaśnieniami MF; znacznik syntetyki = wspólny znacznik analityk albo INNE. |
+| PK-02 RPP | Poprawione: wpływy i wydatki inwestycyjne i finansowe brutto z operacji pieniężnych (konto przeciwstawne, treść dokumentu rozliczanego płatnością); jawna korekta uzgadniająca A.II.10. |
+| PK-03 ryczałt do 200 zł | Poprawione: kwota należności z umowy (pole „kwota z umowy”), nie dla umów z własnym pracownikiem; ulga dla młodych — przychód zwolniony. |
+| PK-04 wpłaty CIT | Poprawione: wpłaty do terminu zeznania (także w kolejnym roku, bez zaliczek kolejnego roku) przypisane do terminów zaliczek; zaległości, wpłaty po terminie, możliwa nadpłata — do potwierdzenia w e-US. |
+| PK-05 ostateczne zamknięcie | Poprawione: blokada bez zarejestrowanego zatwierdzenia sprawozdania; wyjątek tylko po odrębnej, udokumentowanej decyzji zapisanej w dzienniku. |

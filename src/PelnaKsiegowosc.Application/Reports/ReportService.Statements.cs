@@ -140,8 +140,9 @@ public sealed partial class ReportService
             r.AddRow(new ReportRow(l.Code, l.Label, header ? null : l.Amount, header ? null : prev?.Get(l.Code) ?? 0m) { Level = l.Level, IsHeader = header, IsTotal = l.IsTotal });
         }
         r.Notes.AddRange(cur.Warnings);
-        r.Notes.Add("Metoda pośrednia: wynik netto skorygowany o amortyzację i zmiany pozycji bilansu (BO → stan na dzień). Pozycje inwestycyjne i finansowe prezentowane per saldo — " +
-                    "jeżeli jednostka podlega badaniu (art. 64 UoR), rozdziel wpływy i wydatki zgodnie z załącznikiem nr 1 do UoR. Jednostki małe/mikro mogą nie sporządzać RPP (art. 50 ust. 3, art. 48b UoR).");
+        r.Notes.Add("Działalność operacyjna — metoda pośrednia (wynik netto skorygowany o amortyzację i zmiany pozycji bilansu); działalność inwestycyjna i finansowa — wpływy i wydatki brutto " +
+                    "z rzeczywistych operacji na rachunkach i w kasie, klasyfikowane według konta przeciwstawnego i treści dokumentu rozliczanego płatnością (zał. nr 1 do UoR). " +
+                    "Korekta uzgadniająca (A.II.10) obejmuje różnice kursowe od środków pieniężnych i operacje niepieniężne — zweryfikuj ją. Jednostki małe/mikro mogą nie sporządzać RPP (art. 50 ust. 3, art. 48b UoR).");
         r.ControlsPassed = cur.Warnings.Count == 0;
         return r;
     }

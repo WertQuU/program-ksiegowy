@@ -104,6 +104,7 @@
             <Button Content="Zamknij okres" Command="{Binding ClosePeriodCommand}" />
             <Button Content="Otwórz ponownie…" Command="{Binding ReopenPeriodCommand}" />
             <Button Content="Podgląd zamknięcia roku" Command="{Binding PreviewYearCloseCommand}" />
+            <Button Content="Zamknięcie bez zatwierdzenia SF (wyjątek)…" Command="{Binding FinalCloseExceptionCommand}" />
             <Button Content="Zamknij rok obrotowy…" Command="{Binding CloseYearCommand}" />
           </WrapPanel>
           <Grid ColumnDefinitions="*,12,1.4*">

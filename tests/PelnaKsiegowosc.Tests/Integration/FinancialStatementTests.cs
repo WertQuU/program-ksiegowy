@@ -49,8 +49,11 @@ public class FinancialStatementTests
         Assert.Equal(4277m, cf.Get("A.I"));
         Assert.Equal(3300m, cf.Get("A.II.1"));
         Assert.Equal(9540m, cf.Get("A.III"));
-        Assert.Equal(-12000m, cf.Get("B.IV"));
-        Assert.Equal(10000m, cf.Get("C.IV"));
+        // wydatki brutto: zapłata faktury za środek trwały 14 760 zł — 12 000 zł inwestycyjnie (wartość netto), VAT — operacyjnie
+        Assert.Equal(12000m, cf.Get("B.II.1"));
+        Assert.Equal(-12000m, cf.Get("B.III"));
+        Assert.Equal(10000m, cf.Get("C.I.1"));                                           // wpłata na kapitał
+        Assert.Equal(10000m, cf.Get("C.III"));
         Assert.Equal(7540m, cf.Get("D"));
         Assert.Equal(7540m, cf.Get("E"));
         Assert.Equal(7540m, cf.Get("G"));
@@ -338,5 +341,28 @@ public class FinancialStatementTests
         var cash = await rs.CashCountAsync(t.Year.Id, t.Year.EndDate, "130-01", 7500m);
         Assert.False(cash.ControlsPassed);
         Assert.Equal(40m, cash.Rows.Single(r => (string?)r.Cells[0] == "3").Cells[2]);
+    }
+}
+
+public class CashFlowGrossTests
+{
+    [Fact]
+    public async Task Investing_purchase_and_sale_are_presented_separately_not_net()
+    {
+        await using var t = await PelnaKsiegowosc.Tests.Infrastructure.TestBooks.CreateAsync();
+        var d = new DateOnly(2026, 4, 10);
+        await t.Ledger().CreateAndPostAsync(PelnaKsiegowosc.Tests.Infrastructure.TestBooks.Entry(d, "PK/K", new("130-01", 200000m, 0), new("801", 0, 200000m)));
+        // zakup środka trwałego za 100 000 zł (zapłata z rachunku) i sprzedaż innego za 80 000 zł (wpływ, przychód ze zbycia)
+        await t.Ledger().CreateAndPostAsync(PelnaKsiegowosc.Tests.Infrastructure.TestBooks.Entry(d, "WB/1", new("010-03", 100000m, 0), new("130-01", 0, 100000m)));
+        await t.Ledger().CreateAndPostAsync(PelnaKsiegowosc.Tests.Infrastructure.TestBooks.Entry(d, "WB/2", new("130-01", 80000m, 0), new("760-01", 0, 80000m)));
+        await t.Db.SaveChangesAsync();
+        var cf = await new StatementBuilder(t.Db).CashFlowAsync(t.Year.Id, t.Year.EndDate);
+        Assert.Equal(80000m, cf.Get("B.I.1"));
+        Assert.Equal(80000m, cf.Get("B.I"));
+        Assert.Equal(100000m, cf.Get("B.II.1"));
+        Assert.Equal(100000m, cf.Get("B.II"));
+        Assert.Equal(-20000m, cf.Get("B.III"));
+        Assert.Equal(200000m, cf.Get("C.I.1"));
+        Assert.Equal(cf.Get("E"), cf.Get("D"));
     }
 }

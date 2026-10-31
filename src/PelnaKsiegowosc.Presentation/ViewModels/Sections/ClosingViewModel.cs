@@ -97,6 +97,18 @@ public sealed partial class ClosingViewModel : SectionViewModel
             string.Join(Environment.NewLine, p.ClosingLines.Select(l => $"  {l.AccountNumber,-12} Wn {Money.Format(l.Debit),14}  Ma {Money.Format(l.Credit),14}  {l.Description}")));
     });
 
+    /// <summary>Sytuacja wyjątkowa: udokumentowana decyzja o ostatecznym zamknięciu bez zarejestrowanego zatwierdzenia sprawozdania.</summary>
+    [RelayCommand]
+    private Task FinalCloseExceptionAsync() => ChangeAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        var reason = await Dialogs.PromptAsync("Zamknięcie bez zatwierdzenia sprawozdania",
+            "Ostateczne zamknięcie ksiąg następuje po zatwierdzeniu sprawozdania (art. 12 ust. 4 UoR). Opisz wyjątkową podstawę zamknięcia bez zarejestrowanej uchwały (np. likwidacja, brak zatwierdzenia w terminie) — decyzja zostanie zapisana w dzienniku zdarzeń:", "");
+        if (string.IsNullOrWhiteSpace(reason)) return;
+        await using var db = Session.OpenDb();
+        await new PeriodService(db, Session.User, Session.Clock).RecordFinalCloseExceptionAsync(y.Id, reason);
+    }, "Zapisano decyzję o zamknięciu bez zatwierdzenia sprawozdania.");
+
     [RelayCommand]
     private Task CloseYearAsync() => ChangeAsync(async () =>
     {

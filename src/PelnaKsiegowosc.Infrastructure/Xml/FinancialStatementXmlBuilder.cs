@@ -242,34 +242,34 @@ public static partial class FinancialStatementXmlBuilder
         decimal In(CashFlowStatement? s, string code) => Math.Max(0, G(s, code));
         decimal Out(CashFlowStatement? s, string code) => Math.Max(0, -G(s, code));
         var ops = new XElement(Jin + "A_II", Amounts(G(cf, "A.II"), G(prev, "A.II")));
-        for (var i = 1; i <= 9; i++) ops.Add(J($"A_II_{i}", G(cf, $"A.II.{i}"), G(prev, $"A.II.{i}")));
-        // działalność inwestycyjna i finansowa: pozycje „per saldo” rozdzielone na wpływy i wydatki
-        decimal InvIn(CashFlowStatement? s) => In(s, "B.I") + In(s, "B.II") + In(s, "B.III");
-        decimal InvOut(CashFlowStatement? s) => Out(s, "B.I") + Out(s, "B.II") + Out(s, "B.III");
-        decimal FinIn(CashFlowStatement? s) => In(s, "C.I") + In(s, "C.II");
-        decimal FinOut(CashFlowStatement? s) => Out(s, "C.I") + Out(s, "C.II") + Out(s, "C.III");
+        for (var i = 1; i <= 10; i++) ops.Add(J($"A_II_{i}", G(cf, $"A.II.{i}"), G(prev, $"A.II.{i}")));
+        // działalność inwestycyjna i finansowa: wpływy i wydatki brutto z operacji pieniężnych (StatementBuilder.CashFlowGrossAsync);
+        // aktywa finansowe i inne pozycje — w pozycjach „inne” (bez podziału na jednostki powiązane i pozostałe)
         return new XElement(container, new XElement(Jin + "PrzeplywyPosr",
             new XElement(Jin + "A",
                 J("A_I", G(cf, "A.I"), G(prev, "A.I")),
                 ops,
                 J("A_III", G(cf, "A.III"), G(prev, "A.III"))),
             new XElement(Jin + "B",
-                J("B_I", InvIn(cf), InvIn(prev),
-                    J("B_I_1", In(cf, "B.I"), In(prev, "B.I")),
-                    J("B_I_4", In(cf, "B.II") + In(cf, "B.III"), In(prev, "B.II") + In(prev, "B.III"))),
-                J("B_II", InvOut(cf), InvOut(prev),
-                    J("B_II_1", Out(cf, "B.I"), Out(prev, "B.I")),
-                    J("B_II_4", Out(cf, "B.II") + Out(cf, "B.III"), Out(prev, "B.II") + Out(prev, "B.III"))),
-                J("B_III", G(cf, "B.IV"), G(prev, "B.IV"))),
+                J("B_I", G(cf, "B.I"), G(prev, "B.I"),
+                    J("B_I_1", G(cf, "B.I.1"), G(prev, "B.I.1")),
+                    J("B_I_4", G(cf, "B.I.3") + G(cf, "B.I.4"), G(prev, "B.I.3") + G(prev, "B.I.4"))),
+                J("B_II", G(cf, "B.II"), G(prev, "B.II"),
+                    J("B_II_1", G(cf, "B.II.1"), G(prev, "B.II.1")),
+                    J("B_II_4", G(cf, "B.II.3") + G(cf, "B.II.4"), G(prev, "B.II.3") + G(prev, "B.II.4"))),
+                J("B_III", G(cf, "B.III"), G(prev, "B.III"))),
             new XElement(Jin + "C",
-                J("C_I", FinIn(cf), FinIn(prev),
-                    J("C_I_1", In(cf, "C.II"), In(prev, "C.II")),
-                    J("C_I_2", In(cf, "C.I"), In(prev, "C.I"))),
-                J("C_II", FinOut(cf), FinOut(prev),
-                    J("C_II_2", Out(cf, "C.II"), Out(prev, "C.II")),
-                    J("C_II_4", Out(cf, "C.I"), Out(prev, "C.I")),
-                    J("C_II_8", Out(cf, "C.III"), Out(prev, "C.III"))),
-                J("C_III", G(cf, "C.IV"), G(prev, "C.IV"))),
+                J("C_I", G(cf, "C.I"), G(prev, "C.I"),
+                    J("C_I_1", G(cf, "C.I.1"), G(prev, "C.I.1")),
+                    J("C_I_2", G(cf, "C.I.2"), G(prev, "C.I.2")),
+                    J("C_I_4", G(cf, "C.I.4"), G(prev, "C.I.4"))),
+                J("C_II", G(cf, "C.II"), G(prev, "C.II"),
+                    J("C_II_1", G(cf, "C.II.1"), G(prev, "C.II.1")),
+                    J("C_II_2", G(cf, "C.II.2"), G(prev, "C.II.2")),
+                    J("C_II_4", G(cf, "C.II.4"), G(prev, "C.II.4")),
+                    J("C_II_8", G(cf, "C.II.8"), G(prev, "C.II.8")),
+                    J("C_II_9", G(cf, "C.II.9"), G(prev, "C.II.9"))),
+                J("C_III", G(cf, "C.III"), G(prev, "C.III"))),
             J("D", G(cf, "D"), G(prev, "D")),
             J("E", G(cf, "E"), G(prev, "E")),
             J("F", G(cf, "F"), G(prev, "F")),

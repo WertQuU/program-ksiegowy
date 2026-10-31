@@ -254,14 +254,37 @@ public sealed class PeriodService
         var form = await _db.Companies.Where(x => x.Id == fy.CompanyId).Select(x => x.LegalForm).FirstAsync(ct);
         if (LegalForms.IsCitTaxpayer(form)) c.Items.Add(new("CIT", "Wyliczenia CIT za rok", taxAdvanceInfo, CheckSeverity.WymagaPotwierdzenia,
             taxAdvanceInfo ? "OK" : "Brak zapisanych wyliczeń CIT — sprawdź ujęcie podatku dochodowego (konto 870) przed zamknięciem."));
-        // ostateczne zamknięcie ksiąg: po zatwierdzeniu sprawozdania, w ciągu 15 dni (art. 12 ust. 4 UoR); wcześniejsze
-        // zamknięcie uniemożliwia korekty roku wykryte przy sporządzaniu lub badaniu sprawozdania
-        var approval = await new SettingsService(_db, _clock).GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct);
-        c.Items.Add(new("SF_ZATWIERDZONE", "Sprawozdanie finansowe zatwierdzone (ostateczne zamknięcie ksiąg — art. 12 ust. 4 UoR)", approval is not null, CheckSeverity.WymagaPotwierdzenia,
+        // ostateczne zamknięcie ksiąg: po zatwierdzeniu sprawozdania, w ciągu 15 dni (art. 12 ust. 4 UoR). Bez zarejestrowanego
+        // zatwierdzenia — blokada; wyjątek tylko na podstawie odrębnej, udokumentowanej decyzji kierownika jednostki (np. likwidacja,
+        // brak zatwierdzenia w terminie ustawowym) zapisanej w dzienniku zdarzeń przed zamknięciem
+        var settings = new SettingsService(_db, _clock);
+        var approval = await settings.GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct);
+        var exception = await settings.GetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), () => null, ct);
+        c.Items.Add(new("SF_ZATWIERDZONE", "Sprawozdanie finansowe zatwierdzone (ostateczne zamknięcie ksiąg — art. 12 ust. 4 UoR)", approval is not null || exception is not null, CheckSeverity.Blokujace,
             approval is { } a
                 ? $"Zatwierdzone {a.ApprovedOn.ToPl()} ({a.Body}, {a.Reference}); termin ostatecznego zamknięcia: {a.ApprovedOn.AddDays(15).ToPl()}" + (_clock.Today > a.ApprovedOn.AddDays(15) ? " — PRZEKROCZONY" : "")
-                : "Brak zapisu zatwierdzenia sprawozdania. Zamknięcie ksiąg na dzień bilansowy (zamknięte okresy) wystarcza do sporządzenia sprawozdania; ostateczne zamknięcie przed zatwierdzeniem uniemożliwi korekty tego roku (np. po badaniu). Kontynuuj tylko ze świadomym uzasadnieniem."));
+                : exception is { } x
+                    ? $"Bez zatwierdzenia — decyzja z {x.DecidedOn.ToPl()} ({x.DecidedBy}): {x.Reason}"
+                    : "Brak zapisu zatwierdzenia sprawozdania. Sprawozdanie sporządza się po zamknięciu ksiąg na dzień bilansowy (zamknięte okresy); ostateczne zamknięcie następuje po zatwierdzeniu. Zarejestruj uchwałę (Raporty) albo — w sytuacji wyjątkowej — udokumentowaną decyzję o zamknięciu bez zatwierdzenia."));
         return new YearClosePreview(c, resultCredit, lines);
+    }
+
+    public sealed record FinalCloseException(string Reason, DateOnly DecidedOn, string DecidedBy);
+    public static string FinalCloseExceptionKey(string year) => $"rok.zamkniecie.bezZatwierdzenia.{year}";
+
+    /// <summary>
+    /// Udokumentowana decyzja o ostatecznym zamknięciu ksiąg bez zarejestrowanego zatwierdzenia sprawozdania (sytuacje wyjątkowe,
+    /// np. likwidacja, niezatwierdzenie sprawozdania w terminie). Wymaga uprawnienia do zamknięcia roku i uzasadnienia; zapis w dzienniku.
+    /// </summary>
+    public async Task RecordFinalCloseExceptionAsync(Guid fiscalYearId, string reason, CancellationToken ct = default)
+    {
+        _user.Require(Permission.CloseYear);
+        var fy = await _db.FiscalYears.FirstAsync(f => f.Id == fiscalYearId && f.CompanyId == _user.CompanyId, ct);
+        if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < 20)
+            throw new DomainException("Opisz szczegółowo przyczynę ostatecznego zamknięcia bez zatwierdzenia sprawozdania (podstawa prawna, okoliczności) — co najmniej 20 znaków.");
+        await new SettingsService(_db, _clock).SetAsync<FinalCloseException?>(fy.CompanyId, FinalCloseExceptionKey(fy.Name), new FinalCloseException(reason.Trim(), _clock.Today, _user.Login), ct);
+        await _audit.AddAsync(_user, "ROK_ZAMKNIECIE_BEZ_ZATWIERDZENIA", "FiscalYear", fy.Id.ToString(), reason.Trim(), ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>
