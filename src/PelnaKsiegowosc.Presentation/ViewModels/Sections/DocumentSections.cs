@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
+using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Reports;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Documents;
@@ -235,6 +236,59 @@ public abstract partial class DocumentListBase : SectionViewModel
 /// <summary>Wszystkie dokumenty księgowe oraz dokumenty z ręczną dekretacją (PK, NK, DW, dowody zastępcze).</summary>
 public sealed partial class DocumentsViewModel : DocumentListBase
 {
+    /// <summary>Pełny eksport wszystkich dowodów jednostki, niezależnie od filtrów listy i limitu podglądu.</summary>
+    [RelayCommand]
+    private Task ArchiveAllPdfAsync() => RunAsync(async () =>
+    {
+        Session.User.Require(Domain.Security.Permission.ExportData);
+        var parent = await Dialogs.PickFolderAsync("Folder docelowy archiwum PDF — wszystkie dokumenty");
+        if (parent is null) return;
+        var label = "Archiwum-PDF-" + Session.Clock.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8];
+        var staging = Path.Combine(parent, "." + label + ".tmp");
+        var destination = Path.Combine(parent, label);
+        Directory.CreateDirectory(staging);
+        try
+        {
+            var hashes = new List<(string File, string Sha256)>();
+            await using var db = Session.OpenDb();
+            var company = await db.Companies.AsNoTracking().SingleAsync(c => c.Id == Session.CompanyId);
+            var total = await db.Documents.AsNoTracking().CountAsync(d => d.CompanyId == Session.CompanyId);
+            var accountNumbers = await db.Accounts.AsNoTracking().ToDictionaryAsync(a => a.Id, a => a.Number);
+            var generatedAt = Session.Clock.UtcNow;
+            for (var offset = 0; offset < total; offset += 100)
+            {
+                var docs = await db.Documents.AsNoTracking().AsSplitQuery()
+                    .Include(d => d.Lines).Include(d => d.VatLines).Include(d => d.PostingLines)
+                    .Where(d => d.CompanyId == Session.CompanyId)
+                    .OrderBy(d => d.IssueDate).ThenBy(d => d.Id).Skip(offset).Take(100).ToListAsync();
+                var ids = docs.Select(d => d.Id).ToArray();
+                var attachments = await db.Attachments.AsNoTracking().Where(a => a.DocumentId.HasValue && ids.Contains(a.DocumentId.Value)).ToListAsync();
+                var history = await db.DocumentHistory.AsNoTracking().Where(h => ids.Contains(h.DocumentId)).ToListAsync();
+                foreach (var d in docs)
+                {
+                    var file = $"dowod-{d.IssueDate:yyyyMMdd}-{d.Id:N}.pdf";
+                    var bytes = Infrastructure.Export.PaperArchivePdf.Build(d, company, Session.User.Login, generatedAt,
+                        attachments.Where(a => a.DocumentId == d.Id).ToList(),
+                        history.Where(h => h.DocumentId == d.Id).ToList(), accountNumbers);
+                    await File.WriteAllBytesAsync(Path.Combine(staging, file), bytes);
+                    hashes.Add((file, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes))));
+                }
+            }
+            var index = Infrastructure.Export.PaperArchivePdf.Index(company, Session.User.Login, generatedAt, hashes);
+            await File.WriteAllBytesAsync(Path.Combine(staging, "indeks.pdf"), index);
+            // Przeniesienie katalogu do końcowej lokalizacji dopiero po poprawnym wygenerowaniu wszystkich plików.
+            Directory.Move(staging, destination);
+            StatusMessage = $"Eksport zakończony: {hashes.Count} dokumentów i indeks PDF.";
+            await Dialogs.InfoAsync("Archiwum PDF", $"Wygenerowano {hashes.Count} wydruków PDF i indeks z sumami SHA-256.{Environment.NewLine}" +
+                $"Katalog: {destination}{Environment.NewLine}UWAGA: eksport danych nie zastępuje oryginalnych faktur KSeF, XML ani załączników źródłowych.");
+        }
+        catch
+        {
+            // .tmp pozostaje jako sygnał niekompletnego eksportu — nigdy nie uznajemy go za poprawne archiwum.
+            throw;
+        }
+    });
+
     public DocumentsViewModel(AppSession s, IDialogService d) : base(s, d, "Dokumenty", "📄")
     {
         GeneralKind = GeneralKinds[0];

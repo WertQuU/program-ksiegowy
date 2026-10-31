@@ -44,6 +44,14 @@ public sealed class HrService
         return n;
     }
 
+    /// <summary>Dni szacunkowe w danym roku; ewidencja godzin pracy zmianowej wymaga grafiku.</summary>
+    public static int WorkingDaysInYear(DateOnly from, DateOnly to, int year)
+    {
+        var start = from > new DateOnly(year, 1, 1) ? from : new DateOnly(year, 1, 1);
+        var end = to < new DateOnly(year, 12, 31) ? to : new DateOnly(year, 12, 31);
+        return end < start ? 0 : WorkingDays(start, end);
+    }
+
     public async Task<Absence> AddAbsenceAsync(Guid employeeId, AbsenceKind kind, DateOnly from, DateOnly to, string? notes = null, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
@@ -54,10 +62,18 @@ public sealed class HrService
         if (kind is AbsenceKind.UrlopWypoczynkowy or AbsenceKind.UrlopNaZadanie)
         {
             if (e.ContractType != ContractType.UmowaOPrace) throw new DomainException("Urlop wypoczynkowy przysługuje pracownikom (umowa o pracę).");
-            var days = WorkingDays(from, to);
-            var bal = await LeaveBalanceAsync(employeeId, from.Year, ct);
-            if (days > bal.Remaining) throw new DomainException($"Urlop {days} dni przekracza pozostały wymiar ({bal.Remaining:0.##} dni).");
-            if (kind == AbsenceKind.UrlopNaZadanie && bal.OnDemandUsed + days > 4) throw new DomainException("Urlop na żądanie: najwyżej 4 dni w roku (art. 167² KP).");
+            // Bez grafiku ustawowego wymiaru godzin urlopu nie można wiarygodnie policzyć
+            // dla niepełnego etatu, pracy zmianowej ani pracy w nietypowym rozkładzie.
+            if (e.WorkTimeFraction != 1m)
+                throw new DomainException("Urlop niepełnoetatowca wymaga ewidencji harmonogramu i godzin (art. 154² KP); moduł nie obsługuje takiego grafiku. Wprowadź rozliczenie poza automatem.");
+            for (var year = from.Year; year <= to.Year; year++)
+            {
+                var days = WorkingDaysInYear(from, to, year);
+                var bal = await LeaveBalanceAsync(employeeId, year, ct);
+                if (days > bal.Remaining) throw new DomainException($"Urlop {days} dni w roku {year} przekracza pozostały wymiar ({bal.Remaining:0.##} dni).");
+                if (kind == AbsenceKind.UrlopNaZadanie && bal.OnDemandUsed + days > 4)
+                    throw new DomainException($"Urlop na żądanie w roku {year}: najwyżej 4 dni (art. 167² KP).");
+            }
         }
         var a = new Absence { CompanyId = _user.CompanyId, EmployeeId = employeeId, Kind = kind, From = from, To = to, Notes = notes?.Trim(), CreatedAtUtc = _clock.UtcNow };
         _db.Absences.Add(a);
@@ -96,10 +112,10 @@ public sealed class HrService
             .Where(a => a.EmployeeId == employeeId && (a.Kind == AbsenceKind.UrlopWypoczynkowy || a.Kind == AbsenceKind.UrlopNaZadanie)).ToListAsync(ct);
         decimal carried = e.LeaveCarriedOver;
         for (var y = e.StartDate.Year; y < year; y++)
-            carried = Entitlement(e, y) + carried - leaves.Where(a => a.From.Year == y).Sum(a => WorkingDays(a.From, a.To));
-        var thisYear = leaves.Where(a => a.From.Year == year).ToList();
+            carried = Entitlement(e, y) + carried - leaves.Sum(a => WorkingDaysInYear(a.From, a.To, y));
+        var thisYear = leaves.Where(a => a.From.Year <= year && a.To.Year >= year).ToList();
         return new LeaveBalance(e.Id, e.FullName, year, Entitlement(e, year), Math.Max(0, carried),
-            thisYear.Sum(a => WorkingDays(a.From, a.To)), thisYear.Where(a => a.Kind == AbsenceKind.UrlopNaZadanie).Sum(a => WorkingDays(a.From, a.To)));
+            thisYear.Sum(a => WorkingDaysInYear(a.From, a.To, year)), thisYear.Where(a => a.Kind == AbsenceKind.UrlopNaZadanie).Sum(a => WorkingDaysInYear(a.From, a.To, year)));
     }
 
     public async Task<List<LeaveBalance>> LeaveBalancesAsync(int year, CancellationToken ct = default)

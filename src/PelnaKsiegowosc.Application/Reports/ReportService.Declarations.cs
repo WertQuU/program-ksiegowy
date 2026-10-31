@@ -194,11 +194,11 @@ public sealed partial class ReportService
         var from = new DateOnly(year, 1, 1);
         var to = new DateOnly(year, 12, 1);
         var entries = await _db.VatRegister.AsNoTracking().Where(v => v.CompanyId == _user.CompanyId && v.Register == VatRegisterType.Zakup && v.Period >= from && v.Period <= to && v.CounterpartyCountry != "PL").ToListAsync(ct);
-        var r = await NewAsync("Wypłaty na rzecz podmiotów zagranicznych (IFT-2R / CIT-10Z)", $"rok {year}", true, ct);
+        var r = await NewAsync("Zagraniczne dokumenty zakupowe — przegląd do WHT, NIE ewidencja wypłat", $"rok {year}", true, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Kraj"), new ReportColumn("Kontrahent", ColumnKind.Text, 2), new ReportColumn("Numer identyfikacyjny", ColumnKind.Text, 1.4), new ReportColumn("Rodzaj"),
             new ReportColumn("Liczba dokumentów", ColumnKind.Integer), new ReportColumn("Wartość netto (zł)", ColumnKind.Money),
-            new ReportColumn("WHT 20% bez certyfikatu", ColumnKind.Money), new ReportColumn("WHT przy umowie (zwykle 0%)", ColumnKind.Money) });
-        decimal services = 0, wht = 0;
+            new ReportColumn("WHT do ustalenia z płatności", ColumnKind.Money), new ReportColumn("Stawka umowna do weryfikacji", ColumnKind.Money) });
+        decimal services = 0;
         foreach (var g in entries.GroupBy(e => (e.CounterpartyCountry, e.CounterpartyName, e.CounterpartyNip, e.TransactionType)).OrderBy(g => g.Key.CounterpartyCountry))
         {
             var kind = g.Key.TransactionType switch
@@ -208,14 +208,15 @@ public sealed partial class ReportService
                 _ => "inne"
             };
             var net = g.Sum(e => e.NetPln);
-            // art. 21 ust. 1 pkt 2a ustawy o CIT: usługi niematerialne 20%; podatek wyliczany od kwoty brutto należności, w pełnych złotych
-            var tax = kind == "usługi" ? Math.Round(net * 0.20m, 0, MidpointRounding.AwayFromZero) : 0m;
-            if (kind == "usługi") { services += net; wht += tax; }
-            r.Add(g.Key.CounterpartyCountry, g.Key.CounterpartyName, g.Key.CounterpartyNip, kind, g.Select(e => e.DocumentId).Distinct().Count(), net, tax, 0m);
+            // Faktura i import usług w VAT NIE dowodzą wypłaty, beneficjenta, umowy DTT
+            // ani rodzaju należności opodatkowanej w CIT. Nie pokazujemy fikcyjnego 20% do wpłaty.
+            if (kind == "usługi") services += net;
+            r.Add(g.Key.CounterpartyCountry, g.Key.CounterpartyName, g.Key.CounterpartyNip, kind, g.Select(e => e.DocumentId).Distinct().Count(), net, null, null);
         }
-        r.AddRow(new ReportRow("RAZEM usługi", null, null, null, null, services, wht, 0m) { IsTotal = true });
+        r.AddRow(new ReportRow("RAZEM usługi — faktury (nie płatności)", null, null, null, null, services, null, null) { IsTotal = true });
+        if (entries.Count > 0) r.ControlsPassed = false; // brak danych o płatnościach / certyfikatach nie pozwala potwierdzić WHT
         r.Notes.Add("Zestawienie pomocnicze: IFT-2R składa się dla należności z art. 21 ust. 1 i art. 22 ust. 1 ustawy o CIT (m.in. usługi doradcze, księgowe, reklamowe, przetwarzania danych, licencje, odsetki, dywidendy) — do końca 3. miesiąca roku następnego; CIT-10Z, gdy pobrano podatek u źródła.");
-        r.Notes.Add("Kolumna „WHT 20%” — podatek do pobrania, gdy brak certyfikatu rezydencji kontrahenta (art. 21 ust. 1 pkt 2a i art. 26 ustawy o CIT): wpłata do 7. dnia miesiąca następującego po wypłacie, CIT-10Z do końca 3. miesiąca roku następnego. Przy certyfikacie i umowie o unikaniu podwójnego opodatkowania zwykle 0% — wówczas tylko IFT-2R. Dla wypłat ponad 2 mln zł rocznie do jednego podmiotu sprawdź mechanizm „pay and refund”.");
+        r.Notes.Add("BRAK WYLICZENIA WHT: zestawienie bazuje na fakturach z rejestru VAT, nie na wypłatach. Obowiązek poboru podatku ustala się osobno dla rzeczywistej daty i wartości wypłaty oraz kategorii należności z art. 21–22 CIT, z uwzględnieniem rezydencji, umowy o unikaniu podwójnego opodatkowania, certyfikatu, rzeczywistego właściciela, należytej staranności i mechanizmu pay-and-refund. Kolumny WHT pozostają celowo puste; NIE używaj tego raportu do ustalenia kwoty do wpłaty ani sporządzenia CIT-10Z/IFT-2R.");
         r.Notes.Add("Zakupy towarów zwykle nie podlegają podatkowi u źródła. Ocenę, czy należność podlega WHT (certyfikat rezydencji, umowa o unikaniu podwójnego opodatkowania), wykonuje użytkownik.");
         return r;
     }

@@ -8,6 +8,7 @@ using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Application.Setup;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Periods;
@@ -17,7 +18,7 @@ namespace PelnaKsiegowosc.Presentation.ViewModels.Wizard;
 
 public enum WizardStep
 {
-    Warunki, Baza, Jednostka, RokObrotowy, PlanKont, Polityka, OsobaOdpowiedzialna, KopieZapasowe, Podsumowanie
+    Warunki, Baza, Jednostka, RokObrotowy, PlanKont, Polityka, OsobaOdpowiedzialna, KopieZapasowe, Ksef, Podsumowanie
 }
 
 /// <summary>
@@ -32,6 +33,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         Session = session;
         TermsText = Terms.Text;
         Database.SqlitePath = session.Paths.DefaultDatabaseFile;
+        // Nowa instalacja pracuje na wspólnym serwerze, po jednym koncie DB na operatora.
+        Database.UsePostgres = true;
+        LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
         YearEnd = new DateOnly(y, 12, 31).ToPl();
@@ -47,7 +51,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     public event EventHandler? Completed;
 
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(StepTitle), nameof(StepNumber), nameof(CanGoBack), nameof(IsLastStep))]
-    [NotifyPropertyChangedFor(nameof(IsTerms), nameof(IsDatabase), nameof(IsCompany), nameof(IsYear), nameof(IsChart), nameof(IsPolicy), nameof(IsPerson), nameof(IsBackup), nameof(IsSummary))]
+    [NotifyPropertyChangedFor(nameof(IsTerms), nameof(IsDatabase), nameof(IsCompany), nameof(IsYear), nameof(IsChart), nameof(IsPolicy), nameof(IsPerson), nameof(IsBackup), nameof(IsKsef), nameof(IsSummary))]
     private WizardStep _step = WizardStep.Warunki;
 
     public bool IsTerms => Step == WizardStep.Warunki;
@@ -58,6 +62,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     public bool IsPolicy => Step == WizardStep.Polityka;
     public bool IsPerson => Step == WizardStep.OsobaOdpowiedzialna;
     public bool IsBackup => Step == WizardStep.KopieZapasowe;
+    public bool IsKsef => Step == WizardStep.Ksef;
     public bool IsSummary => Step == WizardStep.Podsumowanie;
 
     public string StepNumber => $"Krok {(int)Step + 1} z {Enum.GetValues<WizardStep>().Length}";
@@ -71,6 +76,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         WizardStep.Polityka => "Polityka rachunkowości",
         WizardStep.OsobaOdpowiedzialna => "Kierownik jednostki",
         WizardStep.KopieZapasowe => "Kopie zapasowe",
+        WizardStep.Ksef => "KSeF — poświadczenia tego stanowiska",
         _ => "Utworzenie ksiąg"
     };
     public bool CanGoBack => Step > WizardStep.Warunki && !Finished;
@@ -100,6 +106,19 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private string _recoveryKey = "";
     [ObservableProperty] private bool _recoveryKeySaved;
     [ObservableProperty] private bool _skipBackupKey;
+    [ObservableProperty] private string _localBackupDirectory = "";
+    [ObservableProperty] private bool _configureS3;
+    [ObservableProperty] private string _s3Endpoint = "";
+    [ObservableProperty] private string _s3Region = "";
+    [ObservableProperty] private string _s3Bucket = "";
+    [ObservableProperty] private string _s3AccessKey = "";
+    [ObservableProperty] private string _s3SecretKey = "";
+
+    // Sekret KSeF podaje operator stanowiska; trafia WYŁĄCZNIE do lokalnego magazynu sekretów.
+    [ObservableProperty] private bool _configureKsef;
+    [ObservableProperty] private string _ksefToken = "";
+    [ObservableProperty] private Choice<KsefEnvironment> _ksefEnvironment = Choices.Of<KsefEnvironment>().First(x => x.Value == global::PelnaKsiegowosc.Infrastructure.Configuration.KsefEnvironment.Produkcja);
+    public List<Choice<KsefEnvironment>> KsefEnvironments { get; } = Choices.Of<KsefEnvironment>();
 
     [ObservableProperty] private string _summary = "";
     [ObservableProperty] private TableData _readiness = TableData.Empty;
@@ -158,9 +177,25 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                     throw new DomainException($"Podaj kierownika jednostki ({LegalForms.ManagementBody(Company.LegalForm.Value)}) — odpowiada za wykonywanie obowiązków w zakresie rachunkowości (art. 4 ust. 5 UoR).");
                 break;
             case WizardStep.KopieZapasowe:
+                if (string.IsNullOrWhiteSpace(LocalBackupDirectory))
+                    throw new DomainException("Wskaż katalog lokalnych zaszyfrowanych kopii zapasowych.");
+                if (ConfigureS3)
+                {
+                    if (!Uri.TryCreate(S3Endpoint.Trim(), UriKind.Absolute, out var endpoint) ||
+                        endpoint.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(S3Region) ||
+                        string.IsNullOrWhiteSpace(S3Bucket) ||
+                        string.IsNullOrWhiteSpace(S3AccessKey) || string.IsNullOrWhiteSpace(S3SecretKey))
+                        throw new DomainException("Kopie S3: podaj adres HTTPS endpointu, region, bucket oraz oba klucze dostępowe. Sekrety pozostaną w systemowym magazynie haseł tego komputera.");
+                    if (!S3Bucket.Trim().All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '.'))
+                        throw new DomainException("Nazwa bucketu S3 zawiera niedozwolone znaki.");
+                }
                 if (!SkipBackupKey && string.IsNullOrEmpty(RecoveryKey) && Session.StoredBackupKey() is null)
                     throw new DomainException("Wygeneruj klucz kopii zapasowych albo zaznacz, że skonfigurujesz kopie później.");
                 if (!string.IsNullOrEmpty(RecoveryKey) && !RecoveryKeySaved) throw new DomainException("Potwierdź, że zapisałeś klucz odzyskiwania poza komputerem.");
+                break;
+            case WizardStep.Ksef:
+                if (ConfigureKsef && string.IsNullOrWhiteSpace(KsefToken))
+                    throw new DomainException("Wpisz token KSeF tego stanowiska lub odznacz konfigurację i uzupełnij go później w Integracjach.");
                 Summary = BuildSummary();
                 break;
             case WizardStep.Podsumowanie:
@@ -172,20 +207,22 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private static string HelpVersion() => Sections.HelpViewModel.Version;
 
     private string BuildSummary() => ConnectToExisting
-        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile().SafeDescription}."
+        ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile().SafeDescription}.{Environment.NewLine}" +
+          $"KSeF na stanowisku: {(ConfigureKsef ? $"token zapisany lokalnie ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}. Kopie zapasowe: {(Session.StoredBackupKey() is null ? "do konfiguracji" : "klucz skonfigurowany")}."
         : $"Baza: {Database.ToProfile().SafeDescription}{Environment.NewLine}" +
           $"Jednostka: {Company.FullName} ({LegalForms.Name(Company.LegalForm.Value)}), NIP {Company.Nip}{Environment.NewLine}" +
           $"Rok obrotowy: {YearStart} – {YearEnd}{(IsFirstYear ? " (pierwszy rok działalności)" : "")}{Environment.NewLine}" +
           $"Plan kont: {ChartTemplate.Name}{(ApproveChart ? ", zatwierdzony" : ", do zatwierdzenia")}{Environment.NewLine}" +
           $"Polityka rachunkowości: {(ApprovePolicy ? $"zatwierdzona przez {PolicyApprovedBy}" : "do uzupełnienia i zatwierdzenia")}{Environment.NewLine}" +
           $"Kierownik jednostki: {ManagerFirstName} {ManagerLastName}{Environment.NewLine}" +
-          $"Kopie zapasowe: {(Session.StoredBackupKey() is null ? "nieskonfigurowane" : "klucz zapisany, po utworzeniu ksiąg zostanie wykonana i zweryfikowana pierwsza kopia")}";
+          $"Kopie zapasowe: {(Session.StoredBackupKey() is null ? "nieskonfigurowane" : "klucz zapisany, po utworzeniu ksiąg zostanie wykonana i zweryfikowana pierwsza kopia")}{Environment.NewLine}" +
+          $"KSeF: {(ConfigureKsef ? $"token na tym stanowisku ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}";
 
     private async Task CheckDatabaseAsync()
     {
         var p = Database.ToProfile();
-        if (p.Engine == DatabaseEngine.PostgreSql && !string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
-        if (p.Engine == DatabaseEngine.Sqlite) Directory.CreateDirectory(Path.GetDirectoryName(p.SqlitePath!)!);
+        if (p.Engine != DatabaseEngine.PostgreSql) throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
+        if (!string.IsNullOrEmpty(Database.Password)) Session.Connector.SavePassword(p, Database.Password);
         if (Session.Connector.SqliteKeyMissing(p))
         {
             var key = await Dialogs.PromptAsync("Klucz bazy", "Plik bazy jest zaszyfrowany (RODO). Wpisz klucz bazy — administrator wyświetli go na stanowisku, " +
@@ -236,19 +273,58 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     {
         if (Finished) { Completed?.Invoke(this, EventArgs.Empty); return; }
         var profile = Session.Config.ActiveDatabase;
+        await Session.AcquireOperatorSessionAsync();
         await using (var db = Session.OpenDb())
         {
-            await db.Database.MigrateAsync();
+            if (!ConnectToExisting)
+                await db.Database.MigrateAsync();
+            else
+            {
+                var id = await db.Companies.Select(c => c.Id).FirstOrDefaultAsync();
+                if (id == Guid.Empty)
+                    throw new DomainException("W bazie brakuje ksiąg. Sprawdź konfigurację serwera.");
+                var existingLogin = OperatorIdentity.LoginFor(profile);
+                await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+                    OperatorIdentity.IdFor(existingLogin), existingLogin, id);
+            }
             if (!ConnectToExisting)
             {
                 if (await db.Companies.AnyAsync()) throw new DomainException("Baza zawiera już księgi — wróć do kroku wyboru bazy.");
                 await CreateBooksAsync(db);
             }
-            var actor = OperatorIdentity.For(await db.Companies.Select(c => c.Id).FirstAsync());
+            var companyId = await db.Companies.Select(c => c.Id).FirstAsync();
+            var login = OperatorIdentity.LoginFor(Session.Profile);
+            var assignedRoles = await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+                OperatorIdentity.IdFor(login), login, companyId);
+            var actor = OperatorIdentity.For(companyId, Session.Profile, assignedRoles);
             var settings = new SettingsService(db, Session.Clock);
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
             await db.SaveChangesAsync();
+        }
+        // Lokalna/zdalna konfiguracja kopii tego stanowiska; sekrety S3 zostają w magazynie OS.
+        var backupDir = Path.GetFullPath(LocalBackupDirectory.Trim());
+        Directory.CreateDirectory(backupDir);
+        Session.Config.Backup.LocalDirectory = backupDir;
+        if (ConfigureS3)
+        {
+            var o = Session.Config.ObjectStorage;
+            o.Enabled = true;
+            o.Endpoint = S3Endpoint.Trim();
+            o.Region = S3Region.Trim();
+            o.Bucket = S3Bucket.Trim();
+            Session.Secrets.Set(o.AccessKeySecretName, S3AccessKey.Trim());
+            Session.Secrets.Set(o.SecretKeySecretName, S3SecretKey.Trim());
+            Session.Config.Backup.UploadToObjectStorage = true;
+            S3AccessKey = S3SecretKey = "";
+        }
+        // Poświadczenia KSeF są ustawieniem KOMPUTERA, a nie wspólnej bazy; nigdy nie trafiają do audytu, ksiąg ani JSON.
+        if (ConfigureKsef)
+        {
+            Session.Config.Ksef.Environment = KsefEnvironment.Value;
+            Session.Secrets.Set(Session.Config.Ksef.TokenSecretName, KsefToken.Trim());
+            Session.Config.Ksef.Enabled = true;
+            KsefToken = "";
         }
         Session.Config.TermsAcceptedVersion = Terms.Version;
         Session.Config.TermsAcceptedUtc = Session.Clock.UtcNow;
@@ -283,8 +359,21 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     private async Task CreateBooksAsync(KsiegiDbContext db)
     {
         var setup = new SetupService(db, Session.Clock);
-        var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty), Company.ToCompany());
-        var actor = OperatorIdentity.For(company.Id);
+        var company = await setup.CreateCompanyAsync(OperatorIdentity.For(Guid.Empty, Session.Profile), Company.ToCompany());
+        var actor = OperatorIdentity.For(company.Id, Session.Profile);
+        // Administrator powstaje TYLKO przy utworzeniu nowych ksiąg, nigdy przy pierwszym
+        // połączeniu z istniejącą bazą (zabezpieczenie przed przejęciem roli przez obcego klienta).
+        var founder = new Domain.Security.User
+        {
+            Id = actor.UserId, Login = actor.Login, DisplayName = actor.Login,
+            PasswordAlgorithm = Application.Security.OperatorAccessService.SystemAccount,
+            IsActive = true, CreatedAtUtc = Session.Clock.UtcNow
+        };
+        founder.SetRoles(Application.Security.OperatorAccessService.FounderRoles);
+        db.Users.Add(founder);
+        await new AuditService(db, Session.Clock).AddAsync(actor, "OPERATOR_ZALOZYCIEL", "User",
+            founder.Id.ToString(), $"{founder.Login}; role={founder.RolesCsv}");
+        await db.SaveChangesAsync();
         var year = await setup.CreateFiscalYearAsync(actor, company.Id, Parse.Date(YearStart, "Początek roku"), Parse.Date(YearEnd, "Koniec roku"), IsFirstYear);
         var chart = await new ChartService(db, actor, Session.Clock).CreateFromTemplateAsync(year.Id, ChartTemplate.Build(company.LegalForm, ChartOptions.ToOptions()));
         await ChartOptions.ApplyPostingSettingsAsync(db, company.Id, Session.Clock);

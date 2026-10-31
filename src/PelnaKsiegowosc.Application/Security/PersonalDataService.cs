@@ -15,7 +15,7 @@ public sealed record RetentionDecision(bool CanErase, DateOnly KeepUntil, string
 /// niezbędne do wypełnienia obowiązku prawnego (art. 17 ust. 3 lit. b): dowody księgowe przechowuje się 5 lat od początku
 /// roku następującego po roku obrotowym (art. 74 ust. 2 UoR), dokumentację podatkową — do upływu przedawnienia
 /// zobowiązania (art. 86 § 1 i art. 70 § 1 Ordynacji podatkowej: 5 lat od końca roku, w którym upłynął termin płatności
-/// podatku — za rok Y zwykle do końca roku Y+6), dokumentację pracowniczą i płacową — 10 lat od końca roku, w którym
+/// podatku — za rok Y zwykle do końca roku Y+6), dokumentację pracowniczą i płacową — zależnie od dat zatrudnienia 10 lub 50 lat (z uwzględnieniem ZUS RIA), nie zawsze 10 lat od końca roku, w którym
 /// ustał stosunek pracy (art. 94 pkt 9b i art. 51u Kodeksu pracy). Po upływie tych okresów dane osoby są anonimizowane
 /// w kartotece i na dokumentach; zapisy księgowe (kwoty, daty, numery) pozostają, a każde żądanie trafia do dziennika zdarzeń.
 /// </summary>
@@ -89,9 +89,16 @@ public sealed class PersonalDataService
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
         if (e.IsActive || e.EndDate is null)
             return new(false, DateOnly.MaxValue, "Zatrudnienie (umowa) trwa — dane są niezbędne do wykonania umowy i obowiązków pracodawcy.");
-        var keepUntil = new DateOnly(e.EndDate.Value.Year + 10, 12, 31);
+        // Przed 2019 r. zasadniczo obowiązuje okres 50 lat od ustania zatrudnienia.
+        // Skrócenie dla lat 1999–2018 wymaga potwierdzenia ZUS OSW/RIA; brak rejestru potwierdzeń
+        // oznacza, że program NIE może automatycznie skrócić retencji.
+        var legacy = e.StartDate < new DateOnly(2019, 1, 1);
+        var keepUntil = legacy ? e.EndDate.Value.AddYears(50) : new DateOnly(e.EndDate.Value.Year + 10, 12, 31);
+        var basis = legacy
+            ? "Dokumentacja zatrudnienia sprzed 2019 r.: domyślnie 50 lat od ustania zatrudnienia; możliwość skrócenia dla 1999–2018 po udokumentowaniu ZUS OSW/RIA nie jest obsługiwana automatycznie."
+            : "Dokumentacja zatrudnienia od 2019 r.: 10 lat od końca roku ustania zatrudnienia (art. 94 pkt 9b KP).";
         return new(_clock.Today > keepUntil, keepUntil,
-            $"Umowa zakończona {e.EndDate.Value.ToPl()}. Dokumentacja pracownicza i płacowa: 10 lat od końca roku ustania zatrudnienia (art. 94 pkt 9b, art. 51u KP) — do {keepUntil.ToPl()}.");
+            $"Umowa zakończona {e.EndDate.Value.ToPl()}. {basis} Zachowaj do {keepUntil.ToPl()}.");
     }
 
     /// <summary>Realizacja żądania usunięcia danych kontrahenta (osoby fizycznej): anonimizacja po upływie okresów przechowywania albo odmowa z podstawą prawną.</summary>

@@ -36,11 +36,7 @@
           <Button Content="Otwórz stronę MF zaznaczonego schematu" Command="{Binding OpenSchemaPageCommand}" />
         </WrapPanel>
         <TextBlock Text="Baza danych" Classes="h2" />
-                <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
-          <TextBlock Text="Plik bazy" /><TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />
-          <Button Grid.Column="2" Content="Wybierz…" Command="{Binding PickSqliteCommand}" />
-        </Grid>
-        <CheckBox Content="Serwer PostgreSQL (zamiast lokalnej bazy SQLite na tym komputerze)" IsChecked="{Binding Database.UsePostgres}" />
+        <TextBlock Classes="info" Text="Centralny PostgreSQL — jedna wspólna baza ksiąg. Osobny login SQL na operatora, jeden uruchomiony program na login. Nie tworzymy lokalnych baz do pracy." TextWrapping="Wrap" />
         <Grid Classes="form" ColumnDefinitions="200,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
           <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
           <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />

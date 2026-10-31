@@ -48,7 +48,8 @@ public sealed record PayrollRules(
 /// podstawy (wynagrodzenie pomniejszone o 13,71% składek) / 30 za dzień; nieobecność nieodpłatna — potrącenie proporcjonalne
 /// do dni roboczych miesiąca.
 /// </summary>
-public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m);
+public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m,
+    int? CalendarDaysInMonth = null, int? SickYear = null);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
 /// <param name="AuthorCosts">Koszty 50% (art. 22 ust. 9 pkt 1–3 ustawy o PIT) uwzględnione od początku roku — limit roczny.</param>
@@ -75,10 +76,22 @@ public static class PayrollCalculator
     /// (po innych pozycjach i listach); null — kwota z oświadczenia osoby.</param>
     /// <param name="ppkEmployerTaxable">Wpłaty PPK pracodawcy przekazane do instytucji finansowej, które stają się przychodem w tej wypłacie.</param>
     public static PayrollItem Compute(Employee e, decimal gross, PayrollYearToDate ytd, PayrollRules rules, decimal accidentRate, PayrollAbsence? absence = null,
-        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false, bool? civilMandatory = null, decimal? taxReductionAvailable = null, decimal ppkEmployerTaxable = 0m)
+        decimal otherTitlesFpBasis = 0m, bool ownEmployee = false, bool? civilMandatory = null, decimal? taxReductionAvailable = null, decimal ppkEmployerTaxable = 0m,
+        DateOnly? paymentDate = null)
     {
         if (ppkEmployerTaxable < 0) throw new Common.DomainException("Kwota wpłat PPK do opodatkowania nie może być ujemna.");
         if (gross < 0) throw new Common.DomainException("Kwota wynagrodzenia nie może być ujemna.");
+        // Kontrola wejścia musi nastąpić PRZED warunkiem obecności nieobecności.
+        // Dotychczas przy SickDays < 0 i UnpaidWorkingDays == 0 pomijano
+        // cały blok walidacji, co pozwalało zachować nieprawidłowe dane.
+        if (absence is { } given &&
+            (given.SickDays < 0 || given.SickDays > 31 ||
+             given.UnpaidWorkingDays < 0 || given.WorkingDaysInMonth <= 0 ||
+             given.UnpaidWorkingDays > given.WorkingDaysInMonth ||
+             (given.CalendarDaysInMonth is { } calendarDays &&
+              (calendarDays is < 28 or > 31 || given.SickDays > calendarDays)) ||
+             (given.SickDays > 0 && given.SickRatePercent is not (80m or 100m))))
+            throw new Common.DomainException("Nieprawidłowa liczba dni nieobecności lub stawka wynagrodzenia chorobowego.");
         var fullMonthGross = gross;
         var it = new PayrollItem { EmployeeId = e.Id, EmployeeName = e.FullName, ContractType = e.ContractType, BaseGross = gross };
         var notes = new List<string>();
@@ -86,14 +99,33 @@ public static class PayrollCalculator
         var salary = gross;
         if (absence is { } a && t == ContractType.UmowaOPrace && (a.SickDays > 0 || a.UnpaidWorkingDays > 0))
         {
-            if (a.SickDays is < 0 or > 31 || a.UnpaidWorkingDays < 0 || a.WorkingDaysInMonth <= 0 || a.UnpaidWorkingDays > a.WorkingDaysInMonth)
+            if (a.SickDays is < 0 or > 31 || a.UnpaidWorkingDays < 0 || a.WorkingDaysInMonth <= 0 || a.UnpaidWorkingDays > a.WorkingDaysInMonth
+                || (a.CalendarDaysInMonth is { } days && (days is < 28 or > 31 || a.SickDays > days)))
                 throw new Common.DomainException("Nieprawidłowa liczba dni nieobecności.");
-            var sickDeduction = a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
+            // Par. 11 rozporządzenia z 29 maja 1996 r.: potrącenie 1/30 dotyczy wynagrodzenia
+            // za przepracowaną część miesiąca. Przy chorobie przez CAŁY miesiąc (także
+            // 28- lub 29-dniowy luty) nie ma żadnego wynagrodzenia za pracę.
+            var wholeMonthSick = a.CalendarDaysInMonth is { } monthDays && a.SickDays == monthDays;
+            var sickDeduction = wholeMonthSick || a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
-            var sickBasis = (a.SickBasis ?? gross) * (1 - 0.1371m);
+            if (a.CalendarDaysInMonth == 31 && a.SickDays == 30)
+                notes.Add("WSTĘPNA: 30 dni choroby w 31-dniowym miesiącu — pozostały dzień może być dniem pracy; " +
+                          "0 zł za pracę nie jest potwierdzonym wynagrodzeniem. " +
+                          "Weryfikacja przepracowanych godzin i ręczne rozliczenie wymagane przed księgowaniem (art. 80 KP).");
+            // Art. 36–43 ustawy zasiłkowej: nie wolno przyjmować bieżącego gross
+            // jako podstawy chorobowego. Serwis płac przekazuje zweryfikowaną
+            // podstawę, a przy brakach — 0 z oznaczeniem listy jako wstępnej,
+            // której nie można zaksięgować. Bez jawnej podstawy kalkulator odmawia.
+            if (a.SickDays > 0 && a.SickBasis is null)
+                throw new Common.DomainException("Brak zweryfikowanej podstawy chorobowego — nie można domyślnie użyć bieżącego wynagrodzenia.");
+            if (a.SickBasis < 0)
+                throw new Common.DomainException("Podstawa chorobowego nie może być ujemna.");
+            var sickBasis = (a.SickBasis ?? 0m) * (1 - 0.1371m);
             // art. 92 KP: wynagrodzenie chorobowe płaci pracodawca do 33 dni w roku (14 dni — pracownik po 50. roku życia); dalej zasiłek ZUS
-            var limit = PayrollRules.EmployerSickDaysLimit(e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel), rules.Year);
+            // Art. 92 KP: limit dotyczy roku wystąpienia niezdolności, nie roku wypłaty
+            // (np. choroba w grudniu wypłacona w styczniu).
+            var limit = PayrollRules.EmployerSickDaysLimit(e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel), a.SickYear ?? rules.Year);
             var employerDays = Math.Clamp(limit - ytd.EmployerSickDays, 0, a.SickDays);
             it.SickPay = R2(sickBasis * a.SickRatePercent / 100m / 30m * employerDays);
             it.SickDays = a.SickDays;
@@ -180,7 +212,14 @@ public static class PayrollCalculator
         else
         {
             var taxableGross = gross + ppkEmployerTaxable;
-            if (e.YouthRelief && t is ContractType.UmowaOPrace or ContractType.UmowaZlecenie)
+            // MF: ulga dla młodych obowiązuje do dnia 26. urodzin włącznie,
+            // oceniana na moment otrzymania przychodu (data wypłaty, nie miesiąc pracy).
+            // Dla wywołań bez daty zachowujemy kompatybilność kalkulatora.
+            var birthDate = e.BirthDate ?? Validation.Identifiers.BirthDateFromPesel(e.Pesel);
+            var eligibleByAge = paymentDate is not { } paid || birthDate is not { } born || paid <= born.AddYears(26);
+            if (e.YouthRelief && !eligibleByAge)
+                notes.Add("Ulga dla młodych wyłączona — wypłata po dniu 26. urodzin.");
+            if (e.YouthRelief && eligibleByAge && (t is ContractType.UmowaOPrace or ContractType.UmowaZlecenie))
             {
                 var exempt = Math.Min(taxableGross, Math.Max(0, rules.YouthReliefLimit - ytd.YouthExemptRevenue));
                 taxableGross -= exempt;

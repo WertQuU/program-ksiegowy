@@ -14,6 +14,26 @@ public class PayrollAuditTests
     private const string Pesel = "90010112349";
     private static readonly DateOnly Start = new(2026, 1, 1);
 
+    [Fact]
+    public void Youth_relief_applies_through_26th_birthday_but_not_the_day_after()
+    {
+        var employee = new Employee
+        {
+            FirstName = "Ala", LastName = "Test",
+            ContractType = ContractType.UmowaOPrace,
+            BirthDate = new DateOnly(2000, 10, 31),
+            YouthRelief = true
+        };
+        var onBirthday = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            paymentDate: new DateOnly(2026, 10, 31));
+        var dayAfter = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            paymentDate: new DateOnly(2026, 11, 1));
+        Assert.True(onBirthday.ExemptRevenue > 0m);
+        Assert.Equal(0m, dayAfter.ExemptRevenue);
+        Assert.True(dayAfter.TaxAdvance > onBirthday.TaxAdvance);
+        Assert.Contains("Ulga dla młodych wyłączona", dayAfter.Notes);
+    }
+
     // ---------- PK-01: łączny limit 120 000 zł (art. 22 ust. 9aa) ----------
     [Fact]
     public void Author_costs_and_youth_exempt_revenue_share_120000_limit_not_85528()
@@ -224,6 +244,25 @@ public class PayrollAuditTests
         Assert.Equal(PayrollStatus.Zaksiegowana, list.Status);
     }
 
+    // ---------- P0: zaksięgowanie wsteczne nie może zmieniać limitów już zaksięgowanych wypłat ----------
+    [Fact]
+    public async Task Earlier_payment_is_blocked_after_later_payroll_for_same_person()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var svc = new PayrollService(t.Db, t.User, t.Clock);
+        await svc.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "Chronologia", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start
+        });
+        var later = await svc.CreateListAsync(new DateOnly(2026, 4, 1), new DateOnly(2026, 4, 10));
+        await svc.PostAsync(later.Id);
+        var earlier = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
+        var error = await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(earlier.Id));
+        Assert.Contains("późniejsza zaksięgowana wypłata", error.Message);
+        Assert.Equal(PayrollStatus.Robocza, earlier.Status);
+    }
+
     // ---------- PK-06: zmiana kwoty nie kasuje nieobecności ----------
     [Fact]
     public async Task Changing_gross_keeps_absence_days()
@@ -239,7 +278,12 @@ public class PayrollAuditTests
         await svc.ChangeGrossAsync(item.Id, 7000m);
         Assert.Equal(10, item.SickDays);                                                        // błąd: dni choroby były zerowane
         Assert.Equal(2, item.UnpaidDays);
-        Assert.True(item.SickPay > sickPay);
+        // Bez zaksięgowanej historii nie wolno zgadywać podstawy z nowego gross.
+        // Zmiana wynagrodzenia zachowuje dni nieobecności, ale robocze chorobowe
+        // pozostaje 0 zł z blokadą księgowania (art. 36–43).
+        Assert.Equal(0m, sickPay);
+        Assert.Equal(0m, item.SickPay);
+        Assert.Contains("WSTĘPNA", item.Notes);
         Assert.Equal(7000m, item.BaseGross);
         await svc.ChangeAsync(item.Id, null, 0, null);                                         // świadome usunięcie choroby
         Assert.Equal(0, item.SickDays);

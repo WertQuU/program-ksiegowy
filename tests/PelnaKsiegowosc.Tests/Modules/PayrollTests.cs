@@ -49,7 +49,7 @@ public class PayrollTests
         Assert.Equal(58.87m, PayrollCalculator.Compute(half, 2403m, new PayrollYearToDate(), R, 1.67m, otherTitlesFpBasis: 2403m).LaborFund);
         // choroba w miesiącu: pełny etat 4806 zł, po potrąceniu za 10 dni podstawa niższa — porównuje się wynagrodzenie za pełny miesiąc
         var full = new Employee { FirstName = "P", LastName = "E", ContractType = ContractType.UmowaOPrace };
-        var sick = PayrollCalculator.Compute(full, 4806m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        var sick = PayrollCalculator.Compute(full, 4806m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21, SickBasis: 4806m));
         Assert.True(sick.SocialBasis < 4806m);
         Assert.Equal(R2(sick.SocialBasis * 0.0245m), sick.LaborFund);
     }
@@ -162,7 +162,9 @@ public class PayrollTests
         await using var t = await TestBooks.CreateAsync();
         var svc = new PayrollService(t.Db, t.User, t.Clock);
         var start = new DateOnly(2026, 1, 1);
-        const string Pesel = "90010112349";
+        // 01.01.2001: w dniu wypłaty 10.03.2026 osoba ma 25 lat. Stary PESEL
+        // 90010112349 oznaczał rok 1990 i po poprawieniu kontroli wieku dawał 0 zł ulgi.
+        const string Pesel = "01210112341";
         await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
         await svc.AddEmployeeAsync(new Employee { FirstName = "Jan", LastName = "Młody", Pesel = Pesel, ContractType = ContractType.UmowaZlecenie, StudentUnder26 = true, YouthRelief = true, Gross = 50000m, ContractTotalAmount = 50000m, StartDate = start });
         var list = await svc.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 10));
@@ -284,7 +286,7 @@ public class PayrollTests
         Assert.Equal(302m, transferred.TaxAdvance);
         Assert.Equal(4289.43m, transferred.Net);
 
-        var sick = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        var sick = PayrollCalculator.Compute(e, 6000m, new PayrollYearToDate(), R, 1.67m, new PayrollAbsence(10, 0, 21, SickBasis: 6000m));
         Assert.Equal(4000m, sick.SocialBasis);
         Assert.Equal(1380.64m, sick.SickPay); // 6000 × 86,29% × 80% / 30 × 10
         Assert.Equal(5380.64m, sick.Gross);
@@ -295,15 +297,57 @@ public class PayrollTests
     }
 
     [Fact]
+    public void Sickness_calculator_does_not_guess_a_basis_from_current_gross()
+    {
+        var employee = new Employee { FirstName = "Anna", LastName = "Nowak", ContractType = ContractType.UmowaOPrace };
+        var error = Assert.Throws<DomainException>(() =>
+            PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+                new PayrollAbsence(10, 0, 21)));
+        Assert.Contains("Brak zweryfikowanej podstawy", error.Message);
+
+        var invalid = Assert.Throws<DomainException>(() =>
+            PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+                new PayrollAbsence(10, 0, 21, SickBasis: -1m)));
+        Assert.Contains("ujemna", invalid.Message);
+    }
+
+    [Fact]
+    public void Whole_february_sickness_has_no_salary_for_work_in_28_or_29_day_month()
+    {
+        var employee = new Employee
+        {
+            FirstName = "Anna", LastName = "Nowak", ContractType = ContractType.UmowaOPrace
+        };
+        // Przy pełnym miesiącu choroby 1/30 jest stawką świadczenia chorobowego,
+        // ale nie pozostawia wynagrodzenia zasadniczego za nieprzepracowany luty.
+        foreach (var days in new[] { 28, 29 })
+        {
+            var item = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+                new PayrollAbsence(days, 0, 20, SickBasis: 6000m, CalendarDaysInMonth: days));
+            Assert.Equal(0m, item.SocialBasis);
+            Assert.Equal(0m, item.PensionEmployee);
+            Assert.Equal(0m, item.DisabilityEmployee);
+            Assert.Equal(0m, item.SicknessEmployee);
+            Assert.Equal(item.SickPay, item.Gross);
+            Assert.Equal(days, item.SickDaysEmployer);
+        }
+
+        // Zwolnienie obejmujące tylko część lutego nadal oblicza potrącenie 1/30.
+        var part = PayrollCalculator.Compute(employee, 6000m, new PayrollYearToDate(), R, 1.67m,
+            new PayrollAbsence(27, 0, 20, SickBasis: 6000m, CalendarDaysInMonth: 28));
+        Assert.Equal(600m, part.SocialBasis);
+    }
+
+    [Fact]
     public void Employer_sick_pay_is_limited_to_33_or_14_days_and_rules_exist_only_for_verified_years()
     {
         var young = new Employee { FirstName = "A", LastName = "B", ContractType = ContractType.UmowaOPrace, BirthDate = new DateOnly(1990, 1, 1) };
         var old = new Employee { FirstName = "C", LastName = "D", ContractType = ContractType.UmowaOPrace, BirthDate = new DateOnly(1970, 1, 1) }; // 56 lat → 14 dni
-        var y = PayrollCalculator.Compute(young, 6000m, new PayrollYearToDate(EmployerSickDays: 30), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        var y = PayrollCalculator.Compute(young, 6000m, new PayrollYearToDate(EmployerSickDays: 30), R, 1.67m, new PayrollAbsence(10, 0, 21, SickBasis: 6000m));
         Assert.Equal(3, y.SickDaysEmployer);
         Assert.Equal(Math.Round(6000m * 0.8629m * 0.8m / 30m * 3, 2), y.SickPay);
         Assert.Contains("ZASIŁEK CHOROBOWY za 7 dni", y.Notes);
-        var o = PayrollCalculator.Compute(old, 6000m, new PayrollYearToDate(EmployerSickDays: 10), R, 1.67m, new PayrollAbsence(10, 0, 21));
+        var o = PayrollCalculator.Compute(old, 6000m, new PayrollYearToDate(EmployerSickDays: 10), R, 1.67m, new PayrollAbsence(10, 0, 21, SickBasis: 6000m));
         Assert.Equal(4, o.SickDaysEmployer);
         Assert.Equal(14, PayrollRules.EmployerSickDaysLimit(new DateOnly(1970, 6, 1), 2026));
         Assert.Equal(33, PayrollRules.EmployerSickDaysLimit(new DateOnly(1976, 6, 1), 2026)); // 50 lat w 2026 — limit 14 od 2027

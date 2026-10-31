@@ -35,13 +35,8 @@
       <!-- 2. Baza -->
       <ScrollViewer IsVisible="{Binding IsDatabase}">
         <StackPanel Spacing="6">
-          <TextBlock Classes="info" Text="Księgi mogą być przechowywane lokalnie (plik bazy na tym komputerze — praca bez internetu) albo na serwerze PostgreSQL (praca wielu stanowisk). Program nigdy nie przełącza się samoczynnie między bazami." />
-                    <Grid Classes="form" ColumnDefinitions="200,*,Auto" IsVisible="{Binding Database.UseSqlite}" Margin="24,0,0,0">
-            <TextBlock Text="Plik bazy" />
-            <TextBox Grid.Column="1" Text="{Binding Database.SqlitePath}" />
-            <Button Grid.Column="2" Content="Wybierz…" Command="{Binding PickSqliteCommand}" />
-          </Grid>
-          <CheckBox Content="Serwer PostgreSQL (zamiast lokalnej bazy SQLite na tym komputerze)" IsChecked="{Binding Database.UsePostgres}" />
+          <TextBlock Classes="info" Text="Podaj indywidualny login i hasło do wspólnej bazy PostgreSQL. Wiele komputerów pracuje na tych samych księgach bez kopiowania bazy. Każdy operator musi mieć osobne konto serwera. MySQL/MariaDB nie są jeszcze obsługiwane w tym wydaniu. Lokalne SQLite pozostaje technologią wewnętrzną/kopią awaryjną." />
+          <TextBlock Text="Serwer PostgreSQL — jedna wspólna baza, odrębne konto na operatora" Classes="h2" />
           <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
             <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
             <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />
@@ -52,7 +47,7 @@
             <TextBlock Grid.Row="6" Text="Certyfikat CA (opcjonalnie)" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Database.RootCertificate}" />
             <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
           </Grid>
-          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji." IsVisible="{Binding Database.UsePostgres}" />
+          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
           <Button Content="Sprawdź połączenie" Command="{Binding TestDatabaseCommand}" />
           <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
         </StackPanel>
@@ -134,6 +129,18 @@
       <!-- 8. Kopie -->
       <StackPanel IsVisible="{Binding IsBackup}" Spacing="8">
         <TextBlock Classes="info" Text="Kopie zapasowe są szyfrowane (AES-256-GCM). Klucz kopii jest przechowywany w magazynie haseł systemu, a klucz odzyskiwania musisz zapisać poza komputerem — bez niego nie odtworzysz kopii po awarii. Kopie w chmurze (OVHcloud Object Storage) skonfigurujesz w sekcji „Integracje”." />
+        <TextBlock Text="Katalog lokalnych kopii (na tym komputerze)" />
+        <TextBox Text="{Binding LocalBackupDirectory}" Watermark="Wskaż katalog kopii" />
+        <CheckBox Content="Skonfiguruj dodatkową kopię w magazynie S3 (np. OVHcloud Object Storage)"
+                  IsChecked="{Binding ConfigureS3}" />
+        <StackPanel Spacing="6" IsVisible="{Binding ConfigureS3}">
+          <TextBlock Text="Endpoint S3 (HTTPS)" /><TextBox Text="{Binding S3Endpoint}" Watermark="https://s3.region.example.com" />
+          <TextBlock Text="Region" /><TextBox Text="{Binding S3Region}" Watermark="np. gra" />
+          <TextBlock Text="Nazwa bucketu" /><TextBox Text="{Binding S3Bucket}" />
+          <TextBlock Text="S3 Access Key" /><TextBox Text="{Binding S3AccessKey}" PasswordChar="•" />
+          <TextBlock Text="S3 Secret Key" /><TextBox Text="{Binding S3SecretKey}" PasswordChar="•" />
+          <TextBlock Classes="info" Text="Klucze S3 zostaną zapisane wyłącznie w magazynie haseł systemu. Konfigurację sprawdzisz w Integracjach; samo zapisanie danych nie potwierdza, że kopia zdalna działa." TextWrapping="Wrap" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="8">
           <Button Content="Wygeneruj nowy klucz kopii" Command="{Binding GenerateKeyCommand}" />
           <Button Content="Mam już klucz odzyskiwania…" Command="{Binding EnterKeyCommand}" />
@@ -143,7 +150,21 @@
         <CheckBox Content="Skonfiguruję kopie zapasowe później (niezalecane)" IsChecked="{Binding SkipBackupKey}" />
       </StackPanel>
 
-      <!-- 9. Podsumowanie -->
+      <!-- 9. KSeF — poświadczenia konkretnej instalacji (opcjonalne) -->
+      <StackPanel IsVisible="{Binding IsKsef}" Spacing="10">
+        <TextBlock Classes="info" Text="Każdy komputer może korzystać z tej samej bazy księgowej, ale token KSeF zapisuje wyłącznie na swoim stanowisku w systemowym magazynie sekretów. Nie udostępniaj tokenu razem z danymi połączenia z bazą. Pobieranie faktur możesz też skonfigurować później w Integracjach." TextWrapping="Wrap" />
+        <CheckBox Content="Skonfiguruj teraz token KSeF do pobierania faktur na tym komputerze"
+                  IsChecked="{Binding ConfigureKsef}" />
+        <StackPanel Spacing="7" IsVisible="{Binding ConfigureKsef}">
+          <TextBlock Text="Środowisko KSeF" />
+          <ComboBox ItemsSource="{Binding KsefEnvironments}" SelectedItem="{Binding KsefEnvironment}" Width="260" HorizontalAlignment="Left" />
+          <TextBlock Text="Token uwierzytelniający KSeF" />
+          <TextBox Text="{Binding KsefToken}" PasswordChar="•" Watermark="Wprowadź token" />
+          <TextBlock Classes="info" Text="Token nie jest wyświetlany ponownie ani zapisywany w bazie danych. Uprawnienia i zakres pobierania faktur zależą od nadanych uprawnień w KSeF." TextWrapping="Wrap" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- 10. Podsumowanie -->
       <DockPanel IsVisible="{Binding IsSummary}">
         <SelectableTextBlock DockPanel.Dock="Top" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,10" />
         <c:TableView Table="{Binding Readiness}" />

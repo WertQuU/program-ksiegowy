@@ -1,6 +1,6 @@
-using System.Security.Cryptography;
-using System.Text;
+using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Security;
 
 namespace PelnaKsiegowosc.Presentation.Services;
@@ -17,11 +17,27 @@ public static class OperatorIdentity
 
     public static string Login => $"{Environment.UserName}@{Environment.MachineName}";
 
-    public static Guid IdFor(string login)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes("PelnaKsiegowosc.Operator|" + login.ToLowerInvariant()));
-        return new Guid(hash.AsSpan(0, 16));
-    }
+    /// <summary>
+    /// W PostgreSQL tożsamość aplikacyjna wynika z indywidualnego loginu DB
+    /// faktycznie używanego do uwierzytelnienia na serwerze (NIE z nazwy komputera).
+    /// W SQLite zachowujemy dotychczasową tożsamość lokalną.
+    /// </summary>
+    public static string LoginFor(DatabaseProfile profile) =>
+        profile.Engine == DatabaseEngine.PostgreSql
+            ? "db:" + (string.IsNullOrWhiteSpace(profile.Username)
+                ? throw new DomainException("Połączenie serwerowe wymaga indywidualnego loginu bazy danych.")
+                : PostgresLoginPolicy.IsValid(profile.Username)
+                    ? profile.Username
+                    : throw new DomainException("Login PostgreSQL musi być zapisany małymi literami (a-z, 0-9, _) i nie może przekraczać 63 znaków."))
+            : Login;
+
+    public static CurrentUser For(Guid companyId, DatabaseProfile profile) =>
+        new(IdFor(LoginFor(profile)), LoginFor(profile), companyId, FounderRoles);
+
+    public static CurrentUser For(Guid companyId, DatabaseProfile profile, IEnumerable<Role> roles) =>
+        new(IdFor(LoginFor(profile)), LoginFor(profile), companyId, roles);
+
+    public static Guid IdFor(string login) => Application.Security.OperatorAccessService.IdFor(login);
 
     /// <summary>Tożsamość przy zakładaniu ksiąg (kreator) — operator zakładający księgi jest ich pierwszym administratorem.</summary>
     public static CurrentUser For(Guid companyId) => new(IdFor(Login), Login, companyId, FounderRoles);

@@ -4,7 +4,7 @@ using PelnaKsiegowosc.Domain.Common;
 
 namespace PelnaKsiegowosc.Presentation.ViewModels;
 
-/// <summary>Formularz profilu bazy danych (SQLite lokalnie albo PostgreSQL) — wspólny dla kreatora i ustawień.</summary>
+/// <summary>Formularz aktywnej centralnej bazy PostgreSQL. SQLite obsługiwany wyłącznie przez narzędzia importu.</summary>
 public sealed partial class DatabaseForm : ObservableObject
 {
     [ObservableProperty] private bool _usePostgres;
@@ -42,10 +42,7 @@ public sealed partial class DatabaseForm : ObservableObject
     public DatabaseProfile ToProfile()
     {
         if (!UsePostgres)
-        {
-            if (string.IsNullOrWhiteSpace(SqlitePath)) throw new DomainException("Wskaż plik bazy danych.");
-            return new DatabaseProfile { Name = "Lokalna baza (SQLite)", Engine = DatabaseEngine.Sqlite, SqlitePath = Path.GetFullPath(SqlitePath.Trim()) };
-        }
+            throw new DomainException("Jedyną aktywną bazą ksiąg jest centralny PostgreSQL.");
         if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Database) || string.IsNullOrWhiteSpace(Username))
             throw new DomainException("Podaj adres serwera, nazwę bazy i użytkownika PostgreSQL.");
         return new DatabaseProfile

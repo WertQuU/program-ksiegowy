@@ -39,6 +39,35 @@ public sealed class AppSession
     public IClock Clock { get; }
     public DatabaseConnector Connector { get; }
     public CurrentUser User { get; private set; }
+    private ExclusivePostgresSession? _operatorSession;
+
+    /// <summary>Jedna aktywna instancja programu na login bazy (kilka połączeń SQL w tej instancji jest dozwolonych).</summary>
+    public async Task AcquireOperatorSessionAsync(CancellationToken ct = default)
+    {
+        if (Profile.Engine != DatabaseEngine.PostgreSql)
+            throw new DomainException("Aktywne księgi wymagają centralnej bazy PostgreSQL. Lokalny SQLite pozostaje narzędziem migracji i odzyskiwania.");
+        if (_operatorSession is { } current)
+        {
+            if (current.Identity != ExclusivePostgresSession.ProfileIdentity(Profile))
+                throw new DomainException("Zmiana serwera lub loginu wymaga ponownego uruchomienia programu.");
+            if (!current.IsHealthy)
+                throw new DomainException("Utracono blokadę sesji PostgreSQL. Zamknij program i uruchom go ponownie.");
+            return;
+        }
+        _operatorSession = await ExclusivePostgresSession.AcquireAsync(Profile, Connector.ConnectionString(Profile), ct);
+    }
+
+    /// <summary>Wyłączna blokada na czas administracyjnej aktualizacji schematu (brak innych aktywnych klientów).</summary>
+    public Task EnterMaintenanceAsync(CancellationToken ct = default) =>
+        _operatorSession is { IsHealthy: true } active
+            ? active.EnterMaintenanceAsync(ct)
+            : throw new DomainException("Najpierw uwierzytelnij się do centralnego PostgreSQL.");
+
+    public void ReleaseOperatorSession()
+    {
+        _operatorSession?.Dispose();
+        _operatorSession = null;
+    }
 
     public Company? Company { get; private set; }
     public IReadOnlyList<FiscalYear> Years { get; private set; } = Array.Empty<FiscalYear>();
@@ -70,6 +99,9 @@ public sealed class AppSession
     /// <summary>Kontekst bazy ograniczony do jednostki sesji (gdy wybrana) — dane innych jednostek są niewidoczne i niezmienialne.</summary>
     public KsiegiDbContext OpenDb()
     {
+        if (Profile.Engine != DatabaseEngine.PostgreSql || _operatorSession is not { IsHealthy: true } active ||
+            active.Identity != ExclusivePostgresSession.ProfileIdentity(Profile))
+            throw new DomainException("Brak aktywnej, wyłącznej sesji PostgreSQL. Operacje księgowe są zablokowane.");
         var db = Connector.CreateContext(Profile);
         if (Company is { } c) db.CompanyScope = c.Id;
         return db;
@@ -146,16 +178,21 @@ public sealed class AppSession
     /// <summary>Otwarcie aktywnej bazy: test połączenia, kopia przed migracją schematu (gdy baza zawiera dane), migracje, odczyt kontekstu.</summary>
     public async Task<OpenResult> OpenAsync(CancellationToken ct = default)
     {
-        BackupService.CleanupStaleTemporaryData(Paths.TempDirectory); // pozostałości jawnych danych po przerwanej kopii / weryfikacji
+        BackupService.CleanupStaleTemporaryData(Paths.TempDirectory); // pozostałości po poprzednim uruchomieniu
+        try { await AcquireOperatorSessionAsync(ct); }
+        catch (Exception ex) when (ex is DomainException or Npgsql.NpgsqlException or InvalidOperationException or IOException or TimeoutException)
+        {
+            return new OpenResult(false, ex is DomainException ? ex.Message : DatabaseConnector.Describe(ex), null);
+        }
         var test = await Connector.TestAsync(Profile, ct);
         if (!test.Success)
             return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql
                 ? " Program nie przełącza się automatycznie na inną bazę." : ""), null);
         string? backup = null, recoveryKey = null;
-        if (test.PendingMigrations > 0 && !test.DatabaseEmpty)
-            (backup, recoveryKey) = await PreMigrationBackupAsync(ct);
-        await using (var db = OpenDb())
-            await db.Database.MigrateAsync(ct);
+        // Wiele stanowisk nie może równocześnie wykonywać migracji schematu.
+        // Uaktualnienia wymagają osobnej operacji administratora przy zatrzymanych klientach.
+        if (test.PendingMigrations > 0)
+            return new OpenResult(false, "Serwer ma nieaktualny schemat PostgreSQL. Administrator musi wykonać aktualizację z kopią bezpieczeństwa po zatrzymaniu innych stanowisk.", null);
         SaveConfig();
         await RefreshAsync(ct);
         await Attachments.EncryptLegacyFilesAsync(ct); // załączniki zapisane wcześniej jawnie — szyfrowane przy otwarciu
@@ -185,9 +222,12 @@ public sealed class AppSession
     {
         await using var db = OpenDb();
         Company = await db.Companies.AsNoTracking().OrderBy(c => c.CreatedAtUtc).FirstOrDefaultAsync(ct);
+        var authenticatedLogin = OperatorIdentity.LoginFor(Profile);
         User = Company is null
-            ? OperatorIdentity.For(Guid.Empty)
-            : OperatorIdentity.For(Company.Id, await new Application.Security.OperatorAccessService(db, Clock).ResolveAsync(OperatorIdentity.IdFor(OperatorIdentity.Login), OperatorIdentity.Login, Company.Id, ct));
+            ? OperatorIdentity.For(Guid.Empty, Profile)
+            : OperatorIdentity.For(Company.Id, Profile,
+                await new Application.Security.OperatorAccessService(db, Clock).ResolveAsync(
+                    OperatorIdentity.IdFor(authenticatedLogin), authenticatedLogin, Company.Id, ct));
         Years = Company is null
             ? Array.Empty<FiscalYear>()
             : await db.FiscalYears.AsNoTracking().Include(f => f.Periods).Where(f => f.CompanyId == Company.Id).OrderBy(f => f.StartDate).ToListAsync(ct);

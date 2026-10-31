@@ -97,7 +97,7 @@ public sealed class AppConfig
     private static readonly JsonSerializerOptions Json = new() { WriteIndented = true, Converters = { new JsonStringEnumConverter() } };
 
     public int Version { get; set; } = 1;
-    public DatabaseProfile ActiveDatabase { get; set; } = new();
+    public DatabaseProfile ActiveDatabase { get; set; } = new() { Engine = DatabaseEngine.PostgreSql, Name = "Centralny PostgreSQL" };
     /// <summary>Skonfigurowane, ale nieaktywne profile (np. serwer jako cel kopii).</summary>
     public List<DatabaseProfile> OtherProfiles { get; set; } = new();
     public BackupSettings Backup { get; set; } = new();
@@ -115,7 +115,7 @@ public sealed class AppConfig
     {
         if (File.Exists(paths.ConfigFile))
             return JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(paths.ConfigFile), Json) ?? new AppConfig();
-        var c = new AppConfig { ActiveDatabase = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = paths.DefaultDatabaseFile } };
+        var c = new AppConfig();
         return c;
     }
 

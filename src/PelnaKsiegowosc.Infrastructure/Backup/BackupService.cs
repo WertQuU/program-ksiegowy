@@ -127,6 +127,12 @@ public sealed class BackupService
                     var sha = await DataDump.Sha256FileAsync(dest, ct);
                     if (sha != a.Sha256) manifest.Warnings.Add($"Załącznik {a.FileName}: suma SHA-256 niezgodna z bazą (plik uszkodzony lub zmieniony).");
                 }
+                // Kopia „z załącznikami” musi zawierać komplet nieuszkodzonych dowodów.
+                // Samo poprawne odszyfrowanie ZIP i zweryfikowanie obecnych plików nie
+                // dowodzi kompletności archiwum względem bazy danych (art. 71 UoR).
+                if (manifest.Warnings.Count > 0)
+                    throw new InvalidDataException(
+                        "Nie można utworzyć kompletnej kopii z załącznikami: " + string.Join("; ", manifest.Warnings));
             }
             if (configJsonWithoutSecrets is not null)
             {
@@ -298,7 +304,7 @@ public sealed class BackupService
             await using (var zipIn = pipe.Reader.AsStream())
             using (var zip = new ZipArchive(zipIn, ZipArchiveMode.Read))
             {
-                var root = Path.GetFullPath(content) + Path.DirectorySeparatorChar;
+                // Akceptuj tylko ścieżki potomne katalogu roboczego (bez ../ ani absolutnych ścieżek).
                 // limity rozpakowania (archiwum nietypowe lub spreparowane): liczba plików, łączny rozmiar po dekompresji
                 // (wielokrotność rozmiaru archiwum, nie więcej niż wolne miejsce na dysku z zapasem) — liczone z faktycznie zapisanych bajtów
                 var archiveSize = new FileInfo(archivePath).Length;
@@ -312,8 +318,9 @@ public sealed class BackupService
                 {
                     if (++count > MaxArchiveEntries) throw new InvalidDataException($"Archiwum zawiera ponad {MaxArchiveEntries} plików — odtwarzanie przerwane.");
                     if (entry.FullName.EndsWith('/')) continue;
+                    if (!IsPathInsideBackupRoot(content, entry.FullName))
+                        throw new InvalidDataException($"Niedozwolona ścieżka w archiwum: {entry.FullName}");
                     var target = Path.GetFullPath(Path.Combine(content, entry.FullName));
-                    if (!target.StartsWith(root, StringComparison.Ordinal)) throw new InvalidDataException($"Niedozwolona ścieżka w archiwum: {entry.FullName}");
                     Directory.CreateDirectory(Path.GetDirectoryName(target)!);
                     await using var es = entry.Open();
                     await using var fs = File.Create(target);
@@ -352,14 +359,27 @@ public sealed class BackupService
         catch (Exception e) when (e is IOException or ArgumentException or UnauthorizedAccessException) { return null; }
     }
 
+    /// <summary>Sprawdza granicę katalogu, a nie sam wspólny prefiks nazwy (np. zawartosc i zawartosc-inne).</summary>
+    internal static bool IsPathInsideBackupRoot(string rootDirectory, string relativePath)
+    {
+        if (Path.IsPathFullyQualified(relativePath)) return false;
+        var root = Path.GetFullPath(rootDirectory) + Path.DirectorySeparatorChar;
+        var full = Path.GetFullPath(Path.Combine(rootDirectory, relativePath));
+        return full.StartsWith(root, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+    }
+
     private static async Task<List<string>> CheckFilesAsync(string dir, BackupManifest manifest, CancellationToken ct)
     {
         var content = Path.Combine(dir, "zawartosc");
         var problems = new List<string>();
         foreach (var f in manifest.Files)
         {
+            if (!IsPathInsideBackupRoot(content, f.Path))
+            {
+                problems.Add($"Niedozwolona ścieżka w archiwum: {f.Path}");
+                continue;
+            }
             var full = Path.GetFullPath(Path.Combine(content, f.Path));
-            if (!full.StartsWith(Path.GetFullPath(content), StringComparison.Ordinal)) { problems.Add($"Niedozwolona ścieżka w archiwum: {f.Path}"); continue; }
             if (!File.Exists(full)) { problems.Add($"Brak pliku {f.Path}."); continue; }
             if (await DataDump.Sha256FileAsync(full, ct) != f.Sha256) problems.Add($"Plik {f.Path}: niezgodna suma SHA-256.");
         }

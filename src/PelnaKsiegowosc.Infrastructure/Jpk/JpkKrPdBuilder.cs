@@ -160,8 +160,19 @@ public static class JpkKrPdBuilder
         var entryIdentity = new Dictionary<Guid, (Guid Cp, string Country, string TaxId)>();
         foreach (var e in entries)
         {
-            var cpLine = e.Lines.FirstOrDefault(l => l.CounterpartyId is { } id && counterparties.ContainsKey(id));
-            if (cpLine is not null && IdentityOf(e, cpLine.CounterpartyId!.Value) is { } idt) entryIdentity[e.Id] = (cpLine.CounterpartyId!.Value, idt.Country, idt.TaxId);
+            // D_3 identyfikuje pojedynczego kontrahenta. W jednym dekrecie może jednak
+            // wystąpić kilka analityk kontrahentów; FirstOrDefault() przypisywałby
+            // dowolnie pierwszego z nich, tworząc merytorycznie fałszywy JPK.
+            var identities = e.Lines.Where(l => l.CounterpartyId is { } id && counterparties.ContainsKey(id))
+                .Select(l => (Cp: l.CounterpartyId!.Value, Identity: IdentityOf(e, l.CounterpartyId!.Value)))
+                .Where(x => x.Identity is not null)
+                .Select(x => (x.Cp, x.Identity!.Value.Country, x.Identity!.Value.TaxId))
+                .Distinct().ToList();
+            if (identities.Count > 1)
+                throw new DomainException($"JPK_KR_PD: zapis {e.DocumentNumber} ma {identities.Count} różnych kontrahentów z identyfikatorem podatkowym. " +
+                    "Nie można przypisać przypadkowego kodu D_3 do całego zapisu. Zweryfikuj i rozdziel dekrety według kontrahenta " +
+                    "albo przygotuj prawidłowe raportowanie dokumentu zbiorczego zgodnie z wyjaśnieniami MF (wymaga zachowania identyfikowalności operacji jednostkowych).");
+            if (identities.Count == 1) entryIdentity[e.Id] = identities[0];
         }
         var identitySets = entryIdentity.Values.Distinct().GroupBy(x => x.Cp).ToList();
         var identityCode = new Dictionary<(Guid, string, string), string>();
