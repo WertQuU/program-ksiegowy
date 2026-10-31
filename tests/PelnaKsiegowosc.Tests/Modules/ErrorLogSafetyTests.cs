@@ -22,7 +22,7 @@ public sealed class ErrorLogSafetyTests
             {
                 Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(file));
                 Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute,
-                    Directory.GetUnixFileMode(root));
+                    File.GetUnixFileMode(root));
             }
         }
         finally
