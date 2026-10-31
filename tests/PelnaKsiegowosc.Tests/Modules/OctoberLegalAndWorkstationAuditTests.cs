@@ -6,6 +6,8 @@ using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Documents;
 using PelnaKsiegowosc.Domain.Payroll;
 using PelnaKsiegowosc.Domain.Security;
+using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Tests.Infrastructure;
 
 namespace PelnaKsiegowosc.Tests.Modules;
@@ -64,6 +66,31 @@ public class OctoberLegalAndWorkstationAuditTests
         var login = "newuser@NEWPC";
         var roles = await service.ResolveAsync(OperatorAccessService.IdFor(login), login, t.Company.Id);
         Assert.Empty(roles);
+    }
+
+    [Fact]
+    public void Postgres_identity_uses_database_login_not_os_user_or_machine()
+    {
+        var profile = new DatabaseProfile
+        {
+            Engine = DatabaseEngine.PostgreSql,
+            Host = "db.example.invalid", Database = "ksiegi", Username = "Ksiegowy_1"
+        };
+        Assert.Equal("db:ksiegowy_1", OperatorIdentity.LoginFor(profile));
+        Assert.Equal(OperatorAccessService.IdFor("db:ksiegowy_1"),
+            OperatorIdentity.For(Guid.NewGuid(), profile).UserId);
+    }
+
+    [Fact]
+    public async Task Administrator_can_pre_register_database_login_with_narrow_roles()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var service = new OperatorAccessService(t.Db, t.Clock);
+        var login = "db:kasia";
+        var registered = await service.RegisterAsync(t.User, login, new[] { Role.Ksiegowy });
+        Assert.Equal(OperatorAccessService.IdFor(login), registered.Id);
+        Assert.Equal(new[] { Role.Ksiegowy }, await service.ResolveAsync(registered.Id, login, t.Company.Id));
+        await Assert.ThrowsAsync<DomainException>(() => service.RegisterAsync(t.User, login, new[] { Role.Administrator }));
     }
 
     [Fact]
