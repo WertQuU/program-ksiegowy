@@ -770,7 +770,54 @@ public sealed class DocumentService
             throw new DomainException("Numer KSeF faktury sprzedaży zaczyna się NIP-em sprzedawcy (Twojej spółki).");
         doc.KsefNumber = number;
         doc.KsefStatus = KsefStatus.Przyjeta;
+        doc.JpkMarker = JpkKsefMarker.NrKSeF;
+        // Rejestr utworzono już przy księgowaniu: numer KSeF musi trafić
+        // do każdej pozycji JPK faktury, także w przypadku zapisów nabywcy.
+        var registerRows = await _db.VatRegister.Where(v =>
+            v.CompanyId == _user.CompanyId && v.DocumentId == doc.Id).ToListAsync(ct);
+        foreach (var row in registerRows)
+        {
+            row.KsefMarker = JpkKsefMarker.NrKSeF;
+            row.KsefNumber = number;
+        }
+        AddHistory(doc, "KSEF_NUMER", $"Ustalono numer KSeF {number}; zaktualizowano {registerRows.Count} pozycji VAT/JPK. " +
+            "Jeżeli okres już złożono, sprawdź obowiązek korekty JPK.");
         await _audit.AddAsync(_user, "KSEF_NUMER_WPISANY", "Document", doc.Id.ToString(), $"{doc.Number} → {number}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>
+    /// Kwalifikacja faktury poza KSeF do JPK_V7(3): wymaga świadomego wyboru
+    /// i wskazania dokumentu/uzasadnienia; brak wyboru pozostaje null.
+    /// Zmienia wyłącznie metadane JPK, nie dowód księgowy ani dekret.
+    /// </summary>
+    public async Task SetJpkClassificationAsync(Guid documentId, JpkKsefMarker marker,
+        string evidenceReference, CancellationToken ct = default)
+    {
+        _user.Require(Permission.EditDocuments);
+        if (marker is not (JpkKsefMarker.BFK or JpkKsefMarker.OFF or JpkKsefMarker.DI))
+            throw new DomainException("Numer KSeF przypisz przez „Numer KSeF”; inne oznaczenia JPK wymagają jawnej kwalifikacji BFK/OFF/DI.");
+        if (string.IsNullOrWhiteSpace(evidenceReference) ||
+            evidenceReference.Trim().Length < 5 || evidenceReference.Trim().Length > 160)
+            throw new DomainException("Podaj odnośnik do dowodu kwalifikacji KSeF (5–160 znaków).");
+        var doc = await _db.Documents.FirstAsync(d => d.Id == documentId && d.CompanyId == _user.CompanyId, ct);
+        if (!doc.IsInvoice || doc.Status == DocumentStatus.Anulowany)
+            throw new DomainException("Kwalifikację KSeF zmienia się tylko dla aktywnej faktury lub faktury korygującej.");
+        if (!string.IsNullOrWhiteSpace(doc.KsefNumber))
+            throw new DomainException("Dokument ma numer KSeF — nie można zastąpić NrKSeF oznaczeniem BFK/OFF/DI.");
+        var previous = doc.JpkMarker;
+        doc.JpkMarker = marker;
+        var rows = await _db.VatRegister.Where(v =>
+            v.CompanyId == _user.CompanyId && v.DocumentId == doc.Id).ToListAsync(ct);
+        foreach (var row in rows)
+        {
+            row.KsefMarker = marker;
+            row.KsefNumber = null;
+        }
+        AddHistory(doc, "KSEF_KWALIFIKACJA", $"JPK {previous?.ToString() ?? "brak"} → {marker}; dowód {evidenceReference.Trim()}");
+        await _audit.AddAsync(_user, "KSEF_KWALIFIKACJA", "Document", doc.Id.ToString(),
+            $"{doc.Number}; oznaczenie {marker}; dowód {evidenceReference.Trim()}; " +
+            "jeżeli okres już złożono, należy przygotować odpowiednią korektę JPK", ct);
         await _db.SaveChangesAsync(ct);
     }
 
