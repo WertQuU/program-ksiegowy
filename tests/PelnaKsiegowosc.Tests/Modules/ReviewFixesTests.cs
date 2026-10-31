@@ -959,3 +959,26 @@ public class CompanyIsolationTests
         t.Db.CompanyScope = null;
     }
 }
+
+public class FiledVatDeclarationTests
+{
+    [Fact]
+    public async Task Carried_forward_surplus_comes_from_latest_filed_declaration_including_corrections()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var vat = new VatService(t.Db, t.User, t.Clock);
+        var jan = new DateOnly(2026, 1, 1);
+        var feb = new DateOnly(2026, 2, 1);
+        Assert.Contains((await vat.ComputeDeclarationAsync(feb)).Warnings, w => w.Contains("brak zarejestrowanej złożonej deklaracji"));
+        await Assert.ThrowsAsync<DomainException>(() => vat.RecordFiledDeclarationAsync(jan, true, new DateOnly(2026, 2, 20), "UPO-K", 0, 100, 0)); // korekta bez pierwotnej
+        await vat.RecordFiledDeclarationAsync(jan, false, new DateOnly(2026, 2, 20), "UPO-1", 0, 1200, 0);
+        await Assert.ThrowsAsync<DomainException>(() => vat.RecordFiledDeclarationAsync(jan, false, new DateOnly(2026, 2, 21), "UPO-2", 0, 1, 0));
+        Assert.Equal(1200m, (await vat.ComputeDeclarationAsync(feb)).CarriedForwardFromPrevious);
+        // korekta deklaracji za styczeń zmienia nadwyżkę przenoszoną do lutego
+        await vat.RecordFiledDeclarationAsync(jan, true, new DateOnly(2026, 3, 5), "UPO-K1", 0, 900, 0);
+        var d = await vat.ComputeDeclarationAsync(feb);
+        Assert.Equal(900m, d.CarriedForwardFromPrevious);
+        Assert.Contains(d.Warnings, w => w.Contains("UPO-K1") && w.Contains("korekta"));
+        Assert.Equal(2, (await vat.FiledDeclarationsAsync(jan)).Count);
+    }
+}

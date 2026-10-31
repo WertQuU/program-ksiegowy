@@ -94,10 +94,49 @@ public sealed partial class ReportsViewModel : SectionViewModel
     private Task SaveCostKeyAsync() => RunAsync(async () =>
     {
         var key = new CostAllocationKey(Parse.Amount(KeyProduction, "Koszt wytworzenia %"), Parse.Amount(KeySelling, "Koszty sprzedaży %"), Parse.Amount(KeyAdmin, "Koszty zarządu %"));
+        var methodology = await Dialogs.PromptAsync("Metodologia podziału kosztów",
+            "Opisz, na jakiej podstawie ustalono klucz (np. ewidencja czasu pracy, powierzchnia, analiza faktur) — zatwierdzenie kierownika jednostki, zapisywane w dzienniku zdarzeń:", "");
+        if (string.IsNullOrWhiteSpace(methodology)) return;
         await using var db = Session.OpenDb();
-        await new ReportService(db, Session.User, Session.Clock).SaveCostAllocationKeyAsync(key);
-        await Session.AuditAsync("KLUCZ_PODZIALU_KOSZTOW", "Setting", null, key.ToString());
-        StatusMessage = $"Zapisano klucz podziału kosztów: {key}";
+        await new FinancialStatementApprovals(db, Session.User, Session.Clock).ApproveCostKeyAsync(key, methodology);
+        StatusMessage = $"Zatwierdzono klucz podziału kosztów: {key}";
+    });
+
+    /// <summary>Potwierdzenie zweryfikowanej treści informacji dodatkowej za wybrany rok (warunek wersji „gotowej do podpisu”).</summary>
+    [RelayCommand]
+    private Task ConfirmNotesAsync() => RunAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        await using var db = Session.OpenDb();
+        var texts = await new FinancialStatementNotes(new Application.Setup.SettingsService(db, Session.Clock), Session.CompanyId).GetAsync(y.Name);
+        if (!await Dialogs.ConfirmAsync("Informacja dodatkowa", $"Potwierdzasz, że każda sekcja informacji dodatkowej za {y.Name} (m.in. podmioty powiązane, zdarzenia po dniu bilansowym, zobowiązania warunkowe, zatrudnienie, organy) została sprawdzona i odpowiada stanowi faktycznemu? Zmiana tekstu unieważni potwierdzenie.")) return;
+        await new FinancialStatementApprovals(db, Session.User, Session.Clock).ConfirmNotesAsync(y.Name, texts);
+        StatusMessage = "Potwierdzono treść informacji dodatkowej.";
+    });
+
+    [RelayCommand]
+    private Task VerifyCashFlowAsync() => RunAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        var why = await Dialogs.PromptAsync("Rachunek przepływów pieniężnych", "Opisz weryfikację RPP: rozdzielenie wpływów i wydatków inwestycyjnych i finansowych, różnice kursowe, operacje niepieniężne (korekty wprowadzone w pliku lub potwierdzenie, że nie występują):", "");
+        if (string.IsNullOrWhiteSpace(why)) return;
+        await using var db = Session.OpenDb();
+        await new FinancialStatementApprovals(db, Session.User, Session.Clock).VerifyCashFlowAsync(y.Name, why);
+        StatusMessage = "Zapisano weryfikację rachunku przepływów pieniężnych.";
+    });
+
+    [RelayCommand]
+    private Task RecordStatementApprovalAsync() => RunAsync(async () =>
+    {
+        var y = Session.CurrentYear;
+        var date = await Dialogs.PromptAsync("Zatwierdzenie sprawozdania", "Data uchwały zatwierdzającej sprawozdanie (dd.mm.rrrr):", "");
+        if (string.IsNullOrWhiteSpace(date)) return;
+        var body = await Dialogs.PromptAsync("Zatwierdzenie sprawozdania", "Organ zatwierdzający (np. Zwyczajne Walne Zgromadzenie):", "Zwyczajne Walne Zgromadzenie");
+        var reference = await Dialogs.PromptAsync("Zatwierdzenie sprawozdania", "Numer uchwały:", "");
+        if (string.IsNullOrWhiteSpace(body) || string.IsNullOrWhiteSpace(reference)) return;
+        await using var db = Session.OpenDb();
+        await new FinancialStatementApprovals(db, Session.User, Session.Clock).RecordApprovalAsync(y.Name, Parse.Date(date, "Data zatwierdzenia"), body, reference);
+        StatusMessage = "Zapisano zatwierdzenie sprawozdania — ostateczne zamknięcie ksiąg w ciągu 15 dni (art. 12 ust. 4 UoR).";
     });
 
     [RelayCommand]
@@ -242,8 +281,13 @@ public sealed partial class ReportsViewModel : SectionViewModel
         var r = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, Session.Clock.Today, bs, bsPrev, pl, plPrev, Session.Validator, extras);
 
         // kompletność: plik „gotowy do podpisu” tylko bez braków; w przeciwnym razie wyłącznie wersja robocza
+        var approvals = new FinancialStatementApprovals(db, Session.User, Session.Clock);
+        var periodsClosed = await db.Periods.AsNoTracking().Where(p => p.FiscalYearId == y.Id).AllAsync(p => p.Status != Domain.Periods.PeriodStatus.Otwarty);
         var missing = FinancialStatementCompleteness.Check(bs, r, notesTexts.Values, notesTexts["kontynuacja"], notesTexts["zasady"],
-            y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany, AuditRequired, scope);
+            y.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany || periodsClosed, AuditRequired, scope,
+            notesConfirmed: await approvals.NotesConfirmedAsync(y.Name, notesTexts),
+            costKeyApproved: calc ? await approvals.CostKeyApprovalAsync(key) is not null : null,
+            cashFlowVerified: await approvals.CashFlowVerifiedAsync(y.Name) is not null);
         var draft = missing.Count > 0;
         if (AuditRequired && scope != StatementScope.Inna)
             await Dialogs.InfoAsync("Sprawozdanie podlega badaniu", "Jednostka mała/mikro podlegająca badaniu: struktura sprawozdania wynika z kategorii jednostki i polityki rachunkowości (zał. nr 4/5 UoR). Potwierdź z biegłym rewidentem zakres sprawozdania (zestawienie zmian w kapitale, rachunek przepływów) przed podpisaniem.");

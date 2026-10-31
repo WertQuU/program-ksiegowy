@@ -16,6 +16,7 @@
       <Button Content="Zaksięguj rozliczenie VAT" Command="{Binding PostSettlementCommand}" />
       <CheckBox Content="Korekta JPK" IsChecked="{Binding Correction}" />
       <Button Content="Generuj plik JPK (V7M)…" Command="{Binding GenerateJpkCommand}" />
+      <Button Content="Zarejestruj złożoną deklarację (UPO)…" Command="{Binding RecordFiledDeclarationCommand}" />
     </WrapPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" Classes="info" />
     <TabControl>

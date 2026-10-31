@@ -82,6 +82,10 @@ public class FinancialStatementTests
         Assert.Equal(70m, (await rs.CostAllocationKeyAsync()).ProductionPercent);
 
         var calc = await rs.ProfitAndLossCalculationAsync(y.Id, y.EndDate);
+        Assert.False(calc.ControlsPassed);                                                     // klucz bez zatwierdzenia z metodologią
+        Assert.Contains(calc.Notes, n => n.Contains("NIE jest zatwierdzony"));
+        await new FinancialStatementApprovals(t.Db, t.User, t.Clock).ApproveCostKeyAsync(new CostAllocationKey(70m, 10m, 20m), "Ewidencja czasu pracy i powierzchni");
+        calc = await rs.ProfitAndLossCalculationAsync(y.Id, y.EndDate);
         Assert.True(calc.ControlsPassed, string.Join("; ", calc.Notes));
         Assert.Contains(calc.Rows, r => (string?)r.Cells[0] == "O" && (decimal?)r.Cells[2] == 4277m);
         var eq = await rs.EquityChangesAsync(y.Id, y.EndDate);
@@ -136,7 +140,28 @@ public class FinancialStatementTests
         var gaps = FinancialStatementCompleteness.Check(bsCur, noNotes, texts.Values.Append("[DO UZUPEŁNIENIA — test]"), texts["kontynuacja"], texts["zasady"], yearClosed: false);
         Assert.Contains(gaps, g => g.Contains("Dodatkowe informacje"));
         Assert.Contains(gaps, g => g.Contains("DO UZUPEŁNIENIA"));
-        Assert.Contains(gaps, g => g.Contains("nie jest zamknięty"));
+        Assert.Contains(gaps, g => g.Contains("nie są zamknięte na dzień bilansowy"));
+        // niepotwierdzona informacja dodatkowa, niezatwierdzony klucz kosztów, niezweryfikowany RPP — wersja robocza
+        var approvalGaps = FinancialStatementCompleteness.Check(bsCur, x, texts.Values, texts["kontynuacja"], texts["zasady"], true, false, StatementScope.Inna,
+            notesConfirmed: false, costKeyApproved: false, cashFlowVerified: false);
+        Assert.Contains(approvalGaps, g => g.Contains("informacji dodatkowej") && g.Contains("potwierdzona"));
+        Assert.Contains(approvalGaps, g => g.Contains("klucz podziału kosztów"));
+        Assert.Contains(approvalGaps, g => g.Contains("Rachunek przepływów pieniężnych wyliczony metodą uproszczoną"));
+        Assert.DoesNotContain(FinancialStatementCompleteness.Check(bsCur, x, texts.Values, texts["kontynuacja"], texts["zasady"], true, false, StatementScope.Mala, cashFlowVerified: false),
+            g => g.Contains("Rachunek przepływów pieniężnych wyliczony"));
+
+        // potwierdzenie treści informacji dodatkowej — zmiana tekstu je unieważnia
+        var approvals = new FinancialStatementApprovals(t.Db, t.User, t.Clock);
+        await approvals.ConfirmNotesAsync(y.Name, texts);
+        Assert.True(await approvals.NotesConfirmedAsync(y.Name, texts));
+        var changed = new Dictionary<string, string>(texts) { ["powiazane"] = "Pożyczka od akcjonariusza na warunkach rynkowych." };
+        Assert.False(await approvals.NotesConfirmedAsync(y.Name, changed));
+        await Assert.ThrowsAsync<DomainException>(() => approvals.ConfirmNotesAsync(y.Name, new Dictionary<string, string>(texts) { ["inne"] = "[DO UZUPEŁNIENIA]" }));
+        // klucz podziału kosztów — tylko z metodologią; zmiana klucza wymaga ponownego zatwierdzenia
+        await Assert.ThrowsAsync<DomainException>(() => approvals.ApproveCostKeyAsync(new CostAllocationKey(70, 10, 20), " "));
+        await approvals.ApproveCostKeyAsync(new CostAllocationKey(70, 10, 20), "Ewidencja czasu pracy 2026");
+        Assert.NotNull(await approvals.CostKeyApprovalAsync(new CostAllocationKey(70, 10, 20)));
+        Assert.Null(await approvals.CostKeyApprovalAsync(CostAllocationKey.Default));
         // pełne sprawozdanie (jednostka inna niż mała/mikro) bez zestawienia zmian w kapitale i RPP — niekompletne nawet bez badania
         var noEquity = FinancialStatementXmlBuilder.Build(company, y.StartDate, y.EndDate, y.EndDate, bsCur, null, plCur, null, validator, extras with { Equity = null, CashFlow = null });
         var fullGaps = FinancialStatementCompleteness.Check(bsCur, noEquity, texts.Values, texts["kontynuacja"], texts["zasady"], true, auditRequired: false, StatementScope.Inna);

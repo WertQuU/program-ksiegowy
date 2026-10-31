@@ -103,7 +103,9 @@ public sealed class VatService
         foreach (var (k, v) in d.RegisterTotals) d.Fields["P_" + k[2..]] = Money.RoundToFullZloty(v);
         d.Fields["P_37"] = NetFieldsInTotal.Sum(f => d.Fields.GetValueOrDefault("P_" + f[2..]));
         d.Fields["P_38"] = TaxFieldsInTotal.Sum(f => d.Fields.GetValueOrDefault("P_" + f[2..]));
-        d.CarriedForwardFromPrevious = carriedForward ?? await PreviousSurplusAsync(p, quarterly, ct);
+        var previousPeriod = p.AddMonths(quarterly ? -3 : -1);
+        var filed = (await FiledDeclarationsAsync(previousPeriod, ct)).LastOrDefault();
+        d.CarriedForwardFromPrevious = carriedForward ?? filed?.CarriedForward ?? await PreviousSurplusAsync(p, quarterly, ct);
         d.Fields["P_39"] = Money.RoundToFullZloty(d.CarriedForwardFromPrevious);
         d.Fields["P_48"] = d.Fields["P_39"] + d.Fields.GetValueOrDefault("P_41") + d.Fields.GetValueOrDefault("P_43") + d.Fields.GetValueOrDefault("P_44") +
                            d.Fields.GetValueOrDefault("P_45") + d.Fields.GetValueOrDefault("P_46") + d.Fields.GetValueOrDefault("P_47");
@@ -124,7 +126,18 @@ public sealed class VatService
         }
         if (sales.Any(s => s.RulesVersion != VatRules.CurrentVersion) || purchases.Any(s => s.RulesVersion != VatRules.CurrentVersion))
             d.Warnings.Add("Część wpisów utworzono według wcześniejszej wersji reguł VAT — zweryfikuj klasyfikację.");
-        d.Warnings.Add("Pole P_39 (nadwyżka z poprzedniej deklaracji) przyjęto z zapisanego rozliczenia poprzedniego okresu — zweryfikuj z faktycznie złożoną deklaracją.");
+        if (carriedForward is null)
+        {
+            var internalSnapshot = await PreviousSurplusAsync(p, quarterly, ct);
+            if (filed is null)
+                d.Warnings.Add($"Pole P_39: brak zarejestrowanej złożonej deklaracji za {previousPeriod:MM.yyyy} — przyjęto nadwyżkę z wewnętrznego rozliczenia ({Money.Format(internalSnapshot)} zł). Zarejestruj złożoną deklarację (z numerem UPO), w tym korekty.");
+            else
+            {
+                d.Warnings.Add($"Pole P_39 przyjęto z deklaracji za {previousPeriod:MM.yyyy} złożonej {filed.FiledOn.ToPl()}{(filed.Correction ? " (korekta)" : "")}, UPO {filed.UpoReference}.");
+                if (filed.CarriedForward != internalSnapshot)
+                    d.Warnings.Add($"Nadwyżka z złożonej deklaracji ({Money.Format(filed.CarriedForward)} zł) różni się od wewnętrznego rozliczenia ({Money.Format(internalSnapshot)} zł) — sprawdź korekty i rozliczenie na koncie 221.");
+            }
+        }
         return d;
     }
 
@@ -133,6 +146,32 @@ public sealed class VatService
         // poprzednia deklaracja: miesiąc wcześniej, a przy kwartale — ostatni miesiąc poprzedniego kwartału
         var snap = await new SettingsService(_db, _clock).GetAsync<VatSettlementSnapshot?>(_user.CompanyId, $"vat.settlement.{period.AddMonths(quarterly ? -3 : -1):yyyy-MM}", () => null, ct);
         return snap is null ? 0 : snap.CarriedForward;
+    }
+
+    /// <summary>Deklaracja (JPK_V7) faktycznie złożona w urzędzie: kwota do zapłaty, nadwyżka do przeniesienia (P_62), zwrot, UPO.</summary>
+    public sealed record FiledDeclaration(DateOnly Period, bool Correction, DateOnly FiledOn, string UpoReference, decimal Payable, decimal CarriedForward, decimal Refund);
+
+    public static string FiledKey(DateOnly period) => $"vat.zlozone.{period:yyyy-MM}";
+
+    /// <summary>Historia złożonych deklaracji i korekt za okres (ostatnia — obowiązująca).</summary>
+    public async Task<List<FiledDeclaration>> FiledDeclarationsAsync(DateOnly period, CancellationToken ct = default) =>
+        await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, FiledKey(new DateOnly(period.Year, period.Month, 1)), () => new List<FiledDeclaration>(), ct);
+
+    /// <summary>Rejestracja złożonej deklaracji lub korekty (kwota przeniesienia do następnego okresu — z pola P_62 złożonego pliku).</summary>
+    public async Task RecordFiledDeclarationAsync(DateOnly period, bool correction, DateOnly filedOn, string upoReference, decimal payable, decimal carriedForward, decimal refund, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageVat);
+        if (string.IsNullOrWhiteSpace(upoReference)) throw new DomainException("Podaj numer referencyjny UPO złożonej deklaracji.");
+        if (payable < 0 || carriedForward < 0 || refund < 0) throw new DomainException("Kwoty deklaracji nie mogą być ujemne.");
+        var p = new DateOnly(period.Year, period.Month, 1);
+        var list = await FiledDeclarationsAsync(p, ct);
+        if (!correction && list.Count > 0) throw new DomainException("Deklaracja za ten okres jest już zarejestrowana — kolejną rejestruje się jako korektę.");
+        if (correction && list.Count == 0) throw new DomainException("Brak pierwotnej deklaracji za ten okres.");
+        list.Add(new FiledDeclaration(p, correction, filedOn, upoReference.Trim(), Money.RoundToFullZloty(payable), Money.RoundToFullZloty(carriedForward), Money.RoundToFullZloty(refund)));
+        await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, FiledKey(p), list, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, correction ? "VAT_KOREKTA_ZLOZONA" : "VAT_DEKLARACJA_ZLOZONA", "AppSetting", FiledKey(p),
+            $"{p:MM.yyyy}; UPO {upoReference.Trim()}; do zapłaty {Money.Xml(payable)}; do przeniesienia {Money.Xml(carriedForward)}; zwrot {Money.Xml(refund)}", ct);
+        await _db.SaveChangesAsync(ct);
     }
 
     public sealed record VatSettlementSnapshot(DateOnly Period, decimal Payable, decimal Surplus, decimal CarriedForward, decimal RefundRequested, Guid? JournalEntryId);

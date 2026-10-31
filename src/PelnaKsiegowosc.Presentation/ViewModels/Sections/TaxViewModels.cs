@@ -93,6 +93,21 @@ public sealed partial class VatViewModel : SectionViewModel
         if (await JpkExport.GenerateAsync(Session, Dialogs, PeriodDate, Parse.OptionalAmount(CarriedForward, "Nadwyżka z poprzedniej deklaracji"), Correction))
             StatusMessage = "Wygenerowano JPK_V7M.";
     });
+
+    /// <summary>Rejestracja faktycznie złożonej deklaracji / korekty — źródło nadwyżki przenoszonej do kolejnego okresu (P_39).</summary>
+    [RelayCommand]
+    private Task RecordFiledDeclarationAsync() => RunAsync(async () =>
+    {
+        var upo = await Dialogs.PromptAsync("Złożona deklaracja", $"Numer referencyjny UPO deklaracji za {PeriodDate:MM.yyyy}{(Correction ? " (korekta)" : "")}:", "");
+        if (string.IsNullOrWhiteSpace(upo)) return;
+        var filedOn = Parse.Date(await Dialogs.PromptAsync("Złożona deklaracja", "Data złożenia (dd.mm.rrrr):", Session.Clock.Today.ToPl()), "Data złożenia");
+        var payable = Parse.Amount(await Dialogs.PromptAsync("Złożona deklaracja", "Kwota do wpłaty (P_51):", "0"), "Do wpłaty");
+        var carried = Parse.Amount(await Dialogs.PromptAsync("Złożona deklaracja", "Nadwyżka do przeniesienia na następny okres (P_62):", "0"), "Do przeniesienia");
+        var refund = Parse.Amount(await Dialogs.PromptAsync("Złożona deklaracja", "Kwota do zwrotu (P_54):", "0"), "Zwrot");
+        await using var db = Session.OpenDb();
+        await new VatService(db, Session.User, Session.Clock).RecordFiledDeclarationAsync(PeriodDate, Correction, filedOn, upo, payable, carried, refund);
+        StatusMessage = "Zarejestrowano złożoną deklarację.";
+    });
 }
 
 /// <summary>CIT: uzgodnienie wyniku bilansowego z podatkowym, korekty, zaliczki narastająco.</summary>

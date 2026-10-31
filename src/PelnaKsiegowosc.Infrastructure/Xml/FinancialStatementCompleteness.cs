@@ -10,10 +10,17 @@ namespace PelnaKsiegowosc.Infrastructure.Xml;
 public static class FinancialStatementCompleteness
 {
     public static List<string> Check(StatementValues balanceSheet, FinancialStatementXmlBuilder.Result xml, IEnumerable<string> notesTexts,
-        string? goingConcern, string? policies, bool yearClosed, bool auditRequired = false, StatementScope scope = StatementScope.Inna)
+        string? goingConcern, string? policies, bool yearClosed, bool auditRequired = false, StatementScope scope = StatementScope.Inna,
+        bool notesConfirmed = true, bool? costKeyApproved = null, bool cashFlowVerified = true)
     {
         var missing = new List<string>();
-        if (!yearClosed) missing.Add("Rok obrotowy nie jest zamknięty — sprawozdanie sporządza się na dzień zamknięcia ksiąg (art. 45 ust. 1, art. 52 ust. 1 UoR).");
+        // księgi zamknięte na dzień bilansowy (wszystkie okresy zamknięte) wystarczają do sporządzenia sprawozdania;
+        // ostateczne zamknięcie ksiąg następuje po jego zatwierdzeniu (art. 12 ust. 4 UoR)
+        if (!yearClosed) missing.Add("Księgi nie są zamknięte na dzień bilansowy (otwarte okresy) — sprawozdanie sporządza się na dzień zamknięcia ksiąg (art. 45 ust. 1, art. 52 ust. 1 UoR).");
+        if (!notesConfirmed) missing.Add("Treść informacji dodatkowej i wprowadzenia nie została potwierdzona dla tego roku (każda deklaracja — np. brak transakcji z podmiotami powiązanymi, zdarzeń po dniu bilansowym, zobowiązań warunkowych — wymaga weryfikacji); zmiana tekstu unieważnia potwierdzenie.");
+        if (costKeyApproved == false) missing.Add("RZiS kalkulacyjny: klucz podziału kosztów nie jest zatwierdzony z opisem metodologii (domyślny podział procentowy nie dokumentuje przeznaczenia kosztów).");
+        if (scope == StatementScope.Inna && !cashFlowVerified)
+            missing.Add("Rachunek przepływów pieniężnych wyliczony metodą uproszczoną (zmiany sald, pozycje inwestycyjne i finansowe per saldo, różnice kursowe 0) — potwierdź weryfikację i rozdzielenie wpływów i wydatków (zał. nr 1 do UoR).");
         if (!xml.Validation.IsValid) missing.Add($"Plik nie przechodzi walidacji schematem XSD ({xml.Validation.Errors.Count} błędów).");
         // podpisy składa się poza programem (aplikacja e-Sprawozdania / e-KRS). Zestawienie zmian w kapitale i rachunek przepływów
         // zależą od kategorii jednostki (art. 45 ust. 3, art. 46 ust. 5, art. 48a–48b, art. 50 ust. 3 UoR): obowiązkowe przy pełnym

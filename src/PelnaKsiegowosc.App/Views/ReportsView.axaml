@@ -31,7 +31,7 @@
           <TextBlock Text="Koszt wytworzenia %:" /><TextBox Text="{Binding KeyProduction}" MinWidth="70" />
           <TextBlock Text="Koszty sprzedaży %:" /><TextBox Text="{Binding KeySelling}" MinWidth="70" />
           <TextBlock Text="Koszty zarządu %:" /><TextBox Text="{Binding KeyAdmin}" MinWidth="70" />
-          <Button Content="Zapisz klucz" Command="{Binding SaveCostKeyCommand}" />
+          <Button Content="Zatwierdź klucz (z metodologią)…" Command="{Binding SaveCostKeyCommand}" />
         </WrapPanel>
       </StackPanel>
     </Border>
@@ -42,6 +42,9 @@
         <ComboBox ItemsSource="{Binding NotesSections}" SelectedItem="{Binding NotesSection}" MinWidth="420" />
         <TextBox Text="{Binding NotesText}" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="80" MaxHeight="160" />
         <Button Content="Zapisz teksty" Command="{Binding SaveNotesCommand}" />
+        <Button Content="Potwierdź treść informacji dodatkowej…" Command="{Binding ConfirmNotesCommand}" />
+        <Button Content="Potwierdź weryfikację RPP…" Command="{Binding VerifyCashFlowCommand}" />
+        <Button Content="Zapisz zatwierdzenie sprawozdania…" Command="{Binding RecordStatementApprovalCommand}" />
       </StackPanel>
     </Border>
     <TextBlock DockPanel.Dock="Top" Text="{Binding ReportHeader}" Classes="h2" />

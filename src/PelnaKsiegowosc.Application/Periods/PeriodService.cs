@@ -254,6 +254,13 @@ public sealed class PeriodService
         var form = await _db.Companies.Where(x => x.Id == fy.CompanyId).Select(x => x.LegalForm).FirstAsync(ct);
         if (LegalForms.IsCitTaxpayer(form)) c.Items.Add(new("CIT", "Wyliczenia CIT za rok", taxAdvanceInfo, CheckSeverity.WymagaPotwierdzenia,
             taxAdvanceInfo ? "OK" : "Brak zapisanych wyliczeń CIT — sprawdź ujęcie podatku dochodowego (konto 870) przed zamknięciem."));
+        // ostateczne zamknięcie ksiąg: po zatwierdzeniu sprawozdania, w ciągu 15 dni (art. 12 ust. 4 UoR); wcześniejsze
+        // zamknięcie uniemożliwia korekty roku wykryte przy sporządzaniu lub badaniu sprawozdania
+        var approval = await new SettingsService(_db, _clock).GetAsync<Reports.FinancialStatementApprovals.StatementApproval?>(fy.CompanyId, Reports.FinancialStatementApprovals.ApprovalKey(fy.Name), () => null, ct);
+        c.Items.Add(new("SF_ZATWIERDZONE", "Sprawozdanie finansowe zatwierdzone (ostateczne zamknięcie ksiąg — art. 12 ust. 4 UoR)", approval is not null, CheckSeverity.WymagaPotwierdzenia,
+            approval is { } a
+                ? $"Zatwierdzone {a.ApprovedOn.ToPl()} ({a.Body}, {a.Reference}); termin ostatecznego zamknięcia: {a.ApprovedOn.AddDays(15).ToPl()}" + (_clock.Today > a.ApprovedOn.AddDays(15) ? " — PRZEKROCZONY" : "")
+                : "Brak zapisu zatwierdzenia sprawozdania. Zamknięcie ksiąg na dzień bilansowy (zamknięte okresy) wystarcza do sporządzenia sprawozdania; ostateczne zamknięcie przed zatwierdzeniem uniemożliwi korekty tego roku (np. po badaniu). Kontynuuj tylko ze świadomym uzasadnieniem."));
         return new YearClosePreview(c, resultCredit, lines);
     }
 

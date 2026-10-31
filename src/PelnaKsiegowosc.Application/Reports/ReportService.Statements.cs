@@ -89,9 +89,14 @@ public sealed partial class ReportService
         foreach (var l in FinancialStatementLayout.Flatten(FinancialStatementLayout.ProfitLossCalculation))
             r.AddRow(new ReportRow(Label(l.Code), l.Label, cur.Get(l.Code), prev?.Get(l.Code) ?? 0m) { Level = l.Depth, IsHeader = l.Children.Count > 0, IsTotal = l.Formula is not null });
         r.Notes.AddRange(cur.Warnings);
+        var approval = await new FinancialStatementApprovals(_db, _user, _clock).CostKeyApprovalAsync(key, ct);
+        if (approval is null)
+            r.Notes.Add($"UWAGA: klucz podziału kosztów ({key}) NIE jest zatwierdzony z opisem metodologii — pozycje kosztów (koszt wytworzenia, sprzedaży, zarządu) mają charakter szacunkowy i mogą być istotnie zniekształcone; sprawozdanie nie zostanie oznaczone jako gotowe do podpisu.");
+        else
+            r.Notes.Add($"Klucz zatwierdzony {approval.ApprovedOn.ToPl()} ({approval.ApprovedBy}); metodologia: {approval.Methodology}. Klucz weryfikuje się okresowo.");
         r.Notes.Add($"Koszty rodzajowe (zespół 4, bez wartości sprzedanych towarów) przypisano do kosztu wytworzenia, kosztów sprzedaży i ogólnego zarządu kluczem: {key}. " +
-                    "Klucz ustala kierownik jednostki w polityce rachunkowości; zmienisz go w Raporty → „Klucz podziału kosztów”.");
-        r.ControlsPassed = cur.Warnings.Count == 0;
+                    "Jeżeli jednostka prowadzi konta zespołu 5, rzeczywiste przeznaczenie kosztów wynika z tych kont.");
+        r.ControlsPassed = cur.Warnings.Count == 0 && approval is not null;
         return r;
     }
 
