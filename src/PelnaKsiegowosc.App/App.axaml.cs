@@ -20,6 +20,7 @@ public partial class App : Avalonia.Application
 {
     private DispatcherTimer? _backupTimer;
     private DispatcherTimer? _sharedChangesTimer;
+    private DispatcherTimer? _integrityTimer;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -99,6 +100,10 @@ public partial class App : Avalonia.Application
             _sharedChangesTimer.Tick += async (_, _) => await mainVm.CheckSharedChangesAsync();
             _sharedChangesTimer.Start();
             await mainVm.CheckSharedChangesAsync();
+            _integrityTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(5) };
+            _integrityTimer.Tick += async (_, _) => await mainVm.CheckLocalIntegrityAsync();
+            _integrityTimer.Start();
+            await mainVm.CheckLocalIntegrityAsync();
             await mainVm.AutomaticBackupAsync();
             _ = Task.Run(() => RegulationsCheck.RunDailyAsync(session));
             main.ClosingAccepted += async () => await mainVm.BackupOnExitAsync();
