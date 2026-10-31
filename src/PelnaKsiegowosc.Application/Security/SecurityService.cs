@@ -132,8 +132,16 @@ public sealed class SecurityService
             if (string.IsNullOrWhiteSpace(totpCode)) return new(false, null, true, "Wymagany kod z aplikacji uwierzytelniającej.");
             if (!VerifyMfa(user, totpCode))
             {
+                // Błędny drugi składnik musi podlegać takiej samej blokadzie jak błędne hasło.
+                // W przeciwnym razie po ujawnieniu hasła możliwe są nieograniczone próby TOTP.
                 user.FailedLoginCount++;
-                await _audit.AddAsync(null, "MFA_NIEUDANE", "User", user.Id.ToString(), null, ct);
+                if (user.FailedLoginCount >= MaxFailedAttempts)
+                {
+                    user.LockedUntilUtc = _clock.UtcNow.Add(LockoutDuration);
+                    user.FailedLoginCount = 0;
+                }
+                await _audit.AddAsync(null, "MFA_NIEUDANE", "User", user.Id.ToString(),
+                    user.LockedUntilUtc > _clock.UtcNow ? "Przekroczono limit prób MFA — konto tymczasowo zablokowane" : null, ct);
                 await _db.SaveChangesAsync(ct);
                 return new(false, null, true, "Nieprawidłowy kod MFA.");
             }
