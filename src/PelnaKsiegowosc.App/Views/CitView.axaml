@@ -26,10 +26,24 @@
         <Button Content="Potwierdź sprzedaż poprzedniego roku…" Command="{Binding ConfirmPreviousSalesCommand}" />
         <Button Content="Pobierz kursy z NBP" Command="{Binding FetchNbpRatesCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Spółka powstała z przekształcenia / połączenia / podziału / wniesienia przedsiębiorstwa (art. 19 ust. 1b–1c) — 9% wyłączone" IsChecked="{Binding ReducedRateExcluded}" />
-        <TextBlock Text="Prognoza stawki na kolejny rok (podatek odroczony, art. 37 ust. 6 UoR):" />
+        <TextBlock Text="Prognoza stawki na rok odwrócenia różnic (podatek odroczony, art. 37 ust. 6 UoR):" />
+        <TextBox Text="{Binding ExpectedRateYearStart}" Watermark="rok od (dd.mm.rrrr; puste — następny)" MinWidth="120" />
         <TextBox Text="{Binding ExpectedRate}" Watermark="9 albo 19" MinWidth="60" />
         <TextBox Text="{Binding ExpectedRateJustification}" Watermark="uzasadnienie prognozy" MinWidth="220" />
         <Button Content="Zapisz prognozę" Command="{Binding SaveExpectedRateCommand}" IsEnabled="{Binding IsApplicable}" />
+        <TextBlock Text="Lata podatkowe 12-miesięczne potwierdzone do:" />
+        <TextBox Text="{Binding CalendarConfirmedThrough}" Watermark="dd.mm.rrrr" MinWidth="100" />
+        <TextBox Text="{Binding CalendarJustification}" Watermark="podstawa (brak planowanej zmiany roku podatkowego)" MinWidth="220" />
+        <Button Content="Potwierdź kalendarz" Command="{Binding ConfirmTaxCalendarCommand}" IsEnabled="{Binding IsApplicable}" />
+        <TextBlock Text="Próg istotności niezatwierdzonych prognoz (zł):" />
+        <TextBox Text="{Binding DeferredMateriality}" Watermark="0" MinWidth="80" />
+        <TextBox Text="{Binding DeferredMaterialityJustification}" Watermark="podstawa (polityka rachunkowości)" MinWidth="200" />
+        <Button Content="Zapisz próg" Command="{Binding SaveDeferredMaterialityCommand}" IsEnabled="{Binding IsApplicable}" />
+        <TextBlock Text="Rok odwrócenia różnicy ŚT spoza planu amortyzacji:" />
+        <TextBox Text="{Binding ReversalAssetNumber}" Watermark="nr inwentarzowy" MinWidth="100" />
+        <TextBox Text="{Binding ReversalYearStart}" Watermark="rok podatkowy od (dd.mm.rrrr)" MinWidth="120" />
+        <TextBox Text="{Binding ReversalJustification}" Watermark="podstawa (np. planowana sprzedaż)" MinWidth="200" />
+        <Button Content="Zapisz rok odwrócenia" Command="{Binding SaveReversalYearCommand}" IsEnabled="{Binding IsApplicable}" />
         <CheckBox Content="Podatkowa grupa kapitałowa lub przychody ponad 50 mln euro (JPK_CIT od 2025 r.)" IsChecked="{Binding JpkCit2025}" />
         <Button Content="Zapisz" Command="{Binding SaveRateConditionsCommand}" IsEnabled="{Binding IsApplicable}" />
       </WrapPanel>

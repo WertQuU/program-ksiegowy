@@ -144,11 +144,12 @@ public sealed partial class CitViewModel : SectionViewModel
             var policy = await db.AccountingPolicies.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
             var svc = new DeferredTaxService(db, Session.User, Session.Clock);
             var c = await svc.ComputeAsync(y.Id, y.EndDate); // straty podatkowe — wyłącznie z rejestru strat (z oceną wykorzystania)
-            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} × {d.RatePercent:0}% (odwrócenie w roku od {d.ReversalPeriodStart.ToPl()}) = {Money.Format(d.Tax)} ({d.Basis})")) +
+            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} × {d.RatePercent:0}% ({(d.ReversalUnknown ? "rok odwrócenia nieustalony" : $"odwrócenie w roku od {d.ReversalPeriodStart.ToPl()}")}) = {Money.Format(d.Tax)}{(d.Unconfirmed ? " [niezatwierdzone]" : "")} ({d.Basis})")) +
                 $"{Environment.NewLine}{Environment.NewLine}" +
                 $"Dodatnie różnice przejściowe: {Money.Format(c.TaxableDifferences)} → rezerwa {Money.Format(c.Provision)} (zaksięgowano {Money.Format(c.BookedProvision)}){Environment.NewLine}" +
                 $"Ujemne różnice przejściowe: {Money.Format(c.DeductibleDifferences)} → aktywo {Money.Format(c.Asset)} (zaksięgowano {Money.Format(c.BookedAsset)}){Environment.NewLine}" +
                 $"Wpływ na wynik (podatek odroczony): {Money.Format(c.ResultCharge)}" +
+                (c.UnconfirmedTax > 0 ? $"{Environment.NewLine}W tym oparte na niezatwierdzonych prognozach: {Money.Format(c.UnconfirmedTax)} — powyżej progu istotności księgowanie jest zablokowane." : "") +
                 (c.Warnings is { Count: > 0 } w ? Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, w) : "") +
                 (policy is { IsMicroEntity: true } or { IsSmallEntity: true } ? $"{Environment.NewLine}{Environment.NewLine}Jednostka mała/mikro może nie ustalać podatku odroczonego (art. 37 ust. 10 UoR) — zgodnie z polityką rachunkowości." : "");
             if (c.ProvisionChange == 0 && c.AssetChange == 0) { await Dialogs.ShowTextAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Stan zaksięgowany jest aktualny."); return; }
@@ -160,13 +161,49 @@ public sealed partial class CitViewModel : SectionViewModel
 
     [ObservableProperty] private string _expectedRate = "19";
     [ObservableProperty] private string _expectedRateJustification = "";
+    /// <summary>Początek roku podatkowego, którego dotyczy prognoza (domyślnie rok następny).</summary>
+    [ObservableProperty] private string _expectedRateYearStart = "";
+    [ObservableProperty] private string _calendarConfirmedThrough = "";
+    [ObservableProperty] private string _calendarJustification = "";
+    [ObservableProperty] private string _deferredMateriality = "";
+    [ObservableProperty] private string _deferredMaterialityJustification = "";
+
+    /// <summary>Potwierdzenie granic przyszłych lat podatkowych (12 miesięcy, art. 8 ust. 1 ustawy o CIT) dla prognozy podatku odroczonego.</summary>
+    [RelayCommand]
+    private Task ConfirmTaxCalendarAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        await new DeferredTaxService(db, Session.User, Session.Clock).ConfirmTaxYearCalendarAsync(Parse.Date(CalendarConfirmedThrough, "Potwierdzone do"), CalendarJustification);
+    }, "Potwierdzono kalendarz lat podatkowych.");
+
+    [ObservableProperty] private string _reversalAssetNumber = "";
+    [ObservableProperty] private string _reversalYearStart = "";
+    [ObservableProperty] private string _reversalJustification = "";
+
+    /// <summary>Rok odwrócenia części różnicy środka trwałego, której nie odwracają plany amortyzacji (np. planowana sprzedaż).</summary>
+    [RelayCommand]
+    private Task SaveReversalYearAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        var number = ReversalAssetNumber.Trim();
+        var asset = await db.FixedAssets.AsNoTracking().FirstOrDefaultAsync(a => a.CompanyId == Session.CompanyId && a.InventoryNumber == number)
+                    ?? throw new DomainException($"Brak środka trwałego o numerze „{number}”.");
+        await new DeferredTaxService(db, Session.User, Session.Clock).SetReversalYearAsync(asset.Id, Parse.Date(ReversalYearStart, "Rok odwrócenia od"), ReversalJustification);
+    }, "Zapisano rok odwrócenia różnicy.");
+
+    [RelayCommand]
+    private Task SaveDeferredMaterialityAsync() => ChangeAsync(async () =>
+    {
+        await using var db = Session.OpenDb();
+        await new DeferredTaxService(db, Session.User, Session.Clock).SetMaterialityAsync(Parse.Amount(DeferredMateriality, "Próg"), DeferredMaterialityJustification);
+    }, "Zapisano próg istotności podatku odroczonego.");
 
     /// <summary>Prognoza stawki CIT na rok odwrócenia różnic przejściowych (art. 37 ust. 6 UoR).</summary>
     [RelayCommand]
     private Task SaveExpectedRateAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
-        await new DeferredTaxService(db, Session.User, Session.Clock).SetExpectedRateAsync(Session.CurrentYear.EndDate.AddDays(1), Parse.Amount(ExpectedRate, "Stawka"), ExpectedRateJustification);
+        await new DeferredTaxService(db, Session.User, Session.Clock).SetExpectedRateAsync(Parse.OptionalDate(ExpectedRateYearStart, "Rok od") ?? Session.CurrentYear.EndDate.AddDays(1), Parse.Amount(ExpectedRate, "Stawka"), ExpectedRateJustification);
     }, "Zapisano prognozę stawki dla podatku odroczonego.");
 
     protected override async Task LoadCoreAsync()

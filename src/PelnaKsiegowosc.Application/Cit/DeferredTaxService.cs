@@ -18,17 +18,21 @@ namespace PelnaKsiegowosc.Application.Cit;
 /// Stawka — przewidywana na rok odwrócenia różnicy (art. 37 ust. 6 UoR); źródło „zyski kapitałowe” zawsze 19%.
 /// </summary>
 public sealed record TemporaryDifference(string Item, string Basis, decimal BookValue, decimal TaxValue, decimal Difference,
-    DateOnly ReversalPeriodStart = default, bool CapitalGains = false, decimal RatePercent = 0m)
+    DateOnly ReversalPeriodStart = default, bool CapitalGains = false, decimal RatePercent = 0m, bool Unconfirmed = false)
 {
     public decimal Tax => Money.Round(Math.Abs(Difference) * RatePercent / 100m);
     /// <summary>Rok kalendarzowy początku roku podatkowego, w którym różnica się odwraca (do prezentacji).</summary>
     public int ReversalYear => ReversalPeriodStart.Year;
+    /// <summary>Rok odwrócenia nieustalony (niewyjaśniona część różnicy — do weryfikacji).</summary>
+    public bool ReversalUnknown => ReversalPeriodStart == default;
 }
 
 public sealed record DeferredTaxCalculation(DateOnly AsOf, decimal RatePercent, IReadOnlyList<TemporaryDifference> Differences,
     decimal TaxableDifferences, decimal DeductibleDifferences, decimal Provision, decimal Asset, decimal BookedProvision, decimal BookedAsset,
     IReadOnlyList<string>? Warnings = null)
 {
+    /// <summary>Podatek od różnic opartych na niepotwierdzonych założeniach (stawka, kalendarz lat podatkowych, rok odwrócenia).</summary>
+    public decimal UnconfirmedTax => Differences.Where(d => d.Unconfirmed).Sum(d => d.Tax);
     public decimal ProvisionChange => Provision - BookedProvision;
     public decimal AssetChange => Asset - BookedAsset;
     /// <summary>Obciążenie wyniku podatkiem odroczonym (dodatnie — koszt, ujemne — zmniejszenie obciążenia).</summary>
@@ -65,6 +69,51 @@ public sealed class DeferredTaxService
         await _db.SaveChangesAsync(ct);
     }
 
+    public const string CalendarKey = "cit.kalendarzLatPodatkowych";
+    public const string MaterialityKey = "cit.podatekOdroczony.progIstotnosci";
+    public static string ReversalKey(Guid fixedAssetId) => $"cit.odwrocenieRoznicy.{fixedAssetId}";
+
+    /// <summary>Potwierdzenie kalendarza lat podatkowych dla prognozy: kolejne lata to 12 miesięcy (art. 8 ust. 1 ustawy o CIT) do dnia <c>ConfirmedThrough</c>.</summary>
+    public sealed record TaxYearCalendar(DateOnly ConfirmedThrough, string Justification, DateOnly ConfirmedOn);
+    /// <summary>Udokumentowane ustalenie roku odwrócenia niewyjaśnionej części różnicy środka trwałego (np. planowana sprzedaż/likwidacja).</summary>
+    public sealed record ReversalDecision(DateOnly TaxYearStart, string Justification, DateOnly DecidedOn);
+
+    /// <summary>
+    /// Potwierdzenie, że do dnia <paramref name="confirmedThrough"/> nie planuje się zmiany roku podatkowego (lata 12-miesięczne
+    /// następujące po ostatnim roku założonym w programie). Planowaną zmianę roku podatkowego (art. 8 ust. 6–7) wprowadza się,
+    /// zakładając w programie rok obrotowy o zmienionych granicach.
+    /// </summary>
+    public async Task ConfirmTaxYearCalendarAsync(DateOnly confirmedThrough, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Uzasadnij potwierdzenie (np. brak planowanej zmiany roku podatkowego — uchwała / umowa spółki).");
+        await new Setup.SettingsService(_db, _clock).SetAsync<TaxYearCalendar?>(_user.CompanyId, CalendarKey, new TaxYearCalendar(confirmedThrough, justification.Trim(), _clock.Today), ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "CIT_KALENDARZ_LAT", "AppSetting", CalendarKey, $"lata 12-miesięczne do {confirmedThrough.ToPl()}: {justification.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Ustalenie roku odwrócenia części różnicy środka trwałego niewynikającej z planów amortyzacji (sprzedaż, likwidacja, nieruchomość niepodlegająca amortyzacji).</summary>
+    public async Task SetReversalYearAsync(Guid fixedAssetId, DateOnly taxYearStart, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Uzasadnij rok odwrócenia (np. planowana sprzedaż środka trwałego, decyzja o likwidacji).");
+        await _db.FixedAssets.FirstAsync(a => a.Id == fixedAssetId && a.CompanyId == _user.CompanyId, ct);
+        await new Setup.SettingsService(_db, _clock).SetAsync<ReversalDecision?>(_user.CompanyId, ReversalKey(fixedAssetId), new ReversalDecision(taxYearStart, justification.Trim(), _clock.Today), ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "POD_ODROCZONY_ROK_ODWROCENIA", "FixedAsset", fixedAssetId.ToString(), $"rok podatkowy od {taxYearStart.ToPl()}: {justification.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
+    /// <summary>Próg istotności (zł podatku) dla różnic opartych na niepotwierdzonych założeniach — powyżej progu księgowanie jest blokowane.</summary>
+    public async Task SetMaterialityAsync(decimal threshold, string justification, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ManageCit);
+        if (threshold < 0) throw new DomainException("Próg nie może być ujemny.");
+        if (string.IsNullOrWhiteSpace(justification)) throw new DomainException("Wskaż podstawę progu (polityka rachunkowości — zasada istotności, art. 4 ust. 4 UoR).");
+        await new Setup.SettingsService(_db, _clock).SetAsync<decimal?>(_user.CompanyId, MaterialityKey, threshold, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "POD_ODROCZONY_PROG", "AppSetting", MaterialityKey, $"{Money.Xml(threshold)} zł: {justification.Trim()}", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     public static string LossAssessmentKey(Guid lossId) => $"cit.aktywoStrata.{lossId}";
     public sealed record LossAssessment(bool Recoverable, decimal? RecoverableAmount, string Justification, DateOnly AssessedOn);
 
@@ -94,35 +143,49 @@ public sealed class DeferredTaxService
 
     /// <summary>
     /// Kolejne lata podatkowe od dnia bilansowego: bieżący (gdy <paramref name="asOf"/> jest przed jego końcem), lata już utworzone
-    /// w programie, dalej — o długości bieżącego roku (prognoza).
+    /// w programie (w tym rok zmieniony — art. 8 ust. 6–7 ustawy o CIT), dalej — 12 kolejnych miesięcy (art. 8 ust. 1), bez
+    /// przenoszenia długości bieżącego roku (pierwszy lub zmieniony rok może być krótszy albo dłuższy). <paramref name="projectedFrom"/>
+    /// — początek pierwszego roku, którego granice są wyłącznie prognozą (brak w programie i poza potwierdzonym kalendarzem).
     /// </summary>
-    public static List<(DateOnly Start, DateOnly End)> FuturePeriods(Domain.Periods.FiscalYear fy, DateOnly asOf, IReadOnlyList<(DateOnly Start, DateOnly End)> years)
+    public static List<(DateOnly Start, DateOnly End)> FuturePeriods(Domain.Periods.FiscalYear fy, DateOnly asOf, IReadOnlyList<(DateOnly Start, DateOnly End)> years,
+        out DateOnly? projectedFrom, DateOnly? calendarConfirmedThrough = null)
     {
+        projectedFrom = null;
         var periods = new List<(DateOnly Start, DateOnly End)>();
         if (asOf < fy.EndDate) periods.Add((fy.StartDate, fy.EndDate));
-        var months = Math.Max(1, (fy.EndDate.Year - fy.StartDate.Year) * 12 + fy.EndDate.Month - fy.StartDate.Month + 1);
         var next = fy.EndDate.AddDays(1);
         for (var i = 0; i < 60; i++)
         {
             var known = years.FirstOrDefault(y => y.Start == next);
-            var end = known != default ? known.End : next.AddMonths(months).AddDays(-1);
+            var end = known != default ? known.End : next.AddMonths(12).AddDays(-1);
+            if (known == default && projectedFrom is null && (calendarConfirmedThrough is not { } through || end > through)) projectedFrom = next;
             periods.Add((next, end));
             next = end.AddDays(1);
         }
         return periods;
     }
 
+    public static List<(DateOnly Start, DateOnly End)> FuturePeriods(Domain.Periods.FiscalYear fy, DateOnly asOf, IReadOnlyList<(DateOnly Start, DateOnly End)> years) =>
+        FuturePeriods(fy, asOf, years, out _);
+
     /// <summary>
     /// Odwrócenie istniejącej różnicy <paramref name="difference"/> w kolejnych latach na podstawie przyszłych zmian różnicy
     /// (odpis bilansowy − odpis podatkowy): różnica istniejąca odwraca się dopiero wtedy, gdy narastająco spada poniżej
     /// dotychczasowego minimum — nowe różnice powstające po dniu bilansowym (np. wyższa amortyzacja podatkowa) nie są
-    /// odwróceniem różnicy istniejącej. Część nieodwrócona w horyzoncie planu — w ostatnim roku z przepływem.
+    /// odwróceniem różnicy istniejącej. Część, której plany amortyzacji nie odwracają (np. sprzedaż, likwidacja, wartość
+    /// nieamortyzowana, rozbieżność planu z odpisami zaksięgowanymi), nie jest przypisywana do żadnego roku — zwracana jako
+    /// <c>Unexplained</c> do weryfikacji. Wyjątek: różnica zaokrągleń poniżej 1 zł — w ostatnim roku z przepływem.
     /// </summary>
     public static List<((DateOnly Start, DateOnly End) Period, decimal Amount)> ExistingDifferenceReversal(decimal difference,
-        IReadOnlyList<((DateOnly Start, DateOnly End) Period, decimal Reversal)> flows)
+        IReadOnlyList<((DateOnly Start, DateOnly End) Period, decimal Reversal)> flows) => ExistingDifferenceReversal(difference, flows, out _);
+
+    public static List<((DateOnly Start, DateOnly End) Period, decimal Amount)> ExistingDifferenceReversal(decimal difference,
+        IReadOnlyList<((DateOnly Start, DateOnly End) Period, decimal Reversal)> flows, out decimal unexplained)
     {
+        unexplained = 0m;
         var result = new List<((DateOnly, DateOnly), decimal)>();
-        if (difference == 0 || flows.Count == 0) return result;
+        if (difference == 0) return result;
+        if (flows.Count == 0) { unexplained = difference; return result; }
         var sign = Math.Sign(difference);
         var existing = Math.Abs(difference);
         var running = existing;
@@ -138,7 +201,13 @@ public sealed class DeferredTaxService
         if (existing > 0)
         {
             var last = flows.LastOrDefault(f => f.Reversal != 0);
-            result.Add((last == default ? flows[0].Period : last.Period, sign * existing));
+            if (existing < 1m && last != default)
+            {
+                var i = result.FindIndex(r => r.Item1 == last.Period);
+                if (i >= 0) result[i] = (result[i].Item1, result[i].Item2 + sign * existing);
+                else result.Add((last.Period, sign * existing));
+            }
+            else unexplained = sign * existing;
         }
         return result;
     }
@@ -153,39 +222,63 @@ public sealed class DeferredTaxService
         var settings = new Setup.SettingsService(_db, _clock);
         var years = (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == fy.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
             .Select(y => (y.StartDate, y.EndDate)).ToList();
-        var periods = FuturePeriods(fy, asOf, years);
+        var calendar = await settings.GetAsync<TaxYearCalendar?>(fy.CompanyId, CalendarKey, () => null, ct);
+        var periods = FuturePeriods(fy, asOf, years, out var projectedFrom, calendar?.ConfirmedThrough);
         var first = periods[0];
+        var projectedWarned = new HashSet<DateOnly>();
+        // rok odwrócenia poza latami w programie i poza potwierdzonym kalendarzem — granice roku są tylko prognozą
+        bool ProjectedYear(DateOnly start)
+        {
+            if (projectedFrom is not { } pf || start < pf) return false;
+            if (projectedWarned.Add(start))
+            {
+                var p = periods.First(x => x.Start == start);
+                warnings.Add($"Rok podatkowy {p.Start.ToPl()}–{p.End.ToPl()} przyjęto jako 12 kolejnych miesięcy (art. 8 ust. 1 ustawy o CIT) — nie jest założony w programie ani potwierdzony. Potwierdź kalendarz lat podatkowych albo załóż rok o zmienionych granicach.");
+            }
+            return true;
+        }
         // stawka bieżącego roku (wyliczenie CIT) — dla odwrócenia w bieżącym roku i jako punkt wyjścia, gdy brak prognozy
         decimal current;
+        var currentConfirmed = true;
         try
         {
             var fyFull = await _db.FiscalYears.AsNoTracking().Include(f => f.Periods).FirstAsync(f => f.Id == fiscalYearId, ct);
             var rec = await new CitService(_db, _user, _clock).ReconcileAsync(fiscalYearId, fyFull.Periods.Count, ct);
             current = rec.Rate.RateMissing ? CitCalculator.StandardRate : rec.Rate.RatePercent;
+            if (rec.Rate.RateMissing) currentConfirmed = false;
         }
-        catch (DomainException) { current = CitCalculator.StandardRate; }
-        var expectedCache = new Dictionary<DateOnly, decimal>();
-        async Task<decimal> RateForAsync(DateOnly periodStart, bool capital)
+        catch (DomainException) { current = CitCalculator.StandardRate; currentConfirmed = false; }
+        if (!currentConfirmed) warnings.Add($"Nie ustalono stawki CIT bieżącego roku (brak danych do limitu 2 mln euro) — przyjęto {current:0}%.");
+        var expectedCache = new Dictionary<DateOnly, (decimal Rate, bool Confirmed)>();
+        async Task<(decimal Rate, bool Confirmed)> RateForAsync(DateOnly periodStart, bool capital)
         {
-            if (capital) return CitCalculator.StandardRate;
-            if (periodStart == fy.StartDate) return current;
+            if (capital) return (CitCalculator.StandardRate, true);
+            if (periodStart == fy.StartDate) return (current, currentConfirmed);
             if (expectedCache.TryGetValue(periodStart, out var r)) return r;
             var expected = await settings.GetAsync<decimal?>(fy.CompanyId, ExpectedRateKey(periodStart), () => null, ct);
+            var confirmed = expected is not null;
             if (expected is null)
             {
-                var label = periods.First(p => p.Start == periodStart);
+                var label = periods.FirstOrDefault(p => p.Start == periodStart);
                 warnings.Add($"Brak prognozy stawki CIT na rok podatkowy {label.Start.ToPl()}–{label.End.ToPl()} (odwrócenie różnic) — przyjęto {current:0}% jak w bieżącym roku. Potwierdź prognozę (art. 37 ust. 6 UoR): 9% tylko przy spełnieniu warunków art. 19 w tym roku.");
                 expected = current;
             }
-            expectedCache[periodStart] = expected.Value;
-            return expected.Value;
+            expectedCache[periodStart] = (expected.Value, confirmed);
+            return expectedCache[periodStart];
         }
-        var rate = await RateForAsync(first.Start, false);
+        async Task<TemporaryDifference> DifferenceAsync(string item, string basis, decimal book, decimal tax, decimal amount, DateOnly reversalStart, bool capital)
+        {
+            var (r, ok) = await RateForAsync(reversalStart, capital);
+            var projected = !capital && ProjectedYear(reversalStart);
+            return new TemporaryDifference(item, basis, book, tax, amount, reversalStart, capital, r, !ok || projected);
+        }
+        var (rate, _) = await RateForAsync(first.Start, false);
         var diffs = new List<TemporaryDifference>();
 
         // środki trwałe: różnica = wartość bilansowa netto − podatkowa netto; odwraca się w latach, w których przyszłe odpisy
         // bilansowe i podatkowe (wg planów amortyzacji, z ulepszeniami i metodą degresywną) się różnią: odwrócenie w roku =
-        // odpis bilansowy − odpis podatkowy; reszta (różnice planu i odpisów zaksięgowanych) — w ostatnim roku harmonogramu
+        // odpis bilansowy − odpis podatkowy; część nieodwracana planami — w roku zbycia/likwidacji (zarejestrowanego albo
+        // udokumentowanej decyzji), a bez tego jako „niewyjaśniona — do weryfikacji” (bez przypisywania do ostatniego roku)
         var assets = await _db.FixedAssets.AsNoTracking().Include(a => a.Operations).Where(a => a.CompanyId == fy.CompanyId && a.PlacedInServiceDate <= asOf
                                                                      && (a.DisposalDate == null || a.DisposalDate > asOf)).ToListAsync(ct);
         var charges = (await _db.DepreciationCharges.AsNoTracking().Where(c => c.CompanyId == fy.CompanyId && c.JournalEntryId != null).ToListAsync(ct))
@@ -204,19 +297,37 @@ public sealed class DeferredTaxService
             decimal In(IEnumerable<Domain.FixedAssets.DepreciationPlanRow> rows, (DateOnly Start, DateOnly End) p) =>
                 rows.Where(r => new DateOnly(r.Year, r.Month, 1) >= new DateOnly(p.Start.Year, p.Start.Month, 1) && new DateOnly(r.Year, r.Month, 1) <= p.End).Sum(r => r.Amount);
             var flows = periods.Select(p => (Period: p, Reversal: Money.Round(In(bookPlan, p) - In(taxPlan, p)))).ToList();
-            foreach (var (p, part) in ExistingDifferenceReversal(total, flows))
-                diffs.Add(new TemporaryDifference($"Środek trwały {a.InventoryNumber} {a.Name} — odwrócenie w roku {p.Start.ToPl()}–{p.End.ToPl()}",
-                    "wartość bilansowa ≠ podatkowa (plan amortyzacji)", book, tax, part, p.Start, false, await RateForAsync(p.Start, false)));
+            var reversals = ExistingDifferenceReversal(total, flows, out var unexplained);
+            foreach (var (p, part) in reversals)
+                diffs.Add(await DifferenceAsync($"Środek trwały {a.InventoryNumber} {a.Name} — odwrócenie w roku {p.Start.ToPl()}–{p.End.ToPl()}",
+                    "wartość bilansowa ≠ podatkowa (plan amortyzacji)", book, tax, part, p.Start, false));
+            if (unexplained == 0) continue;
+            var decision = await settings.GetAsync<ReversalDecision?>(fy.CompanyId, ReversalKey(a.Id), () => null, ct);
+            // zbycie/likwidacja zarejestrowane z datą po dniu bilansowym (plany kończą się na zbyciu) — reszta odwraca się w roku zbycia
+            var disposalPeriod = a.DisposalDate is { } d2 ? periods.FirstOrDefault(p => p.Start <= d2 && d2 <= p.End) : default;
+            if (disposalPeriod != default)
+                diffs.Add(await DifferenceAsync($"Środek trwały {a.InventoryNumber} {a.Name} — odwrócenie przy zbyciu/likwidacji {a.DisposalDate!.Value.ToPl()}",
+                    "wartość bilansowa ≠ podatkowa (zbycie/likwidacja)", book, tax, unexplained, disposalPeriod.Start, false));
+            else if (decision is not null)
+                diffs.Add(await DifferenceAsync($"Środek trwały {a.InventoryNumber} {a.Name} — odwrócenie w roku od {decision.TaxYearStart.ToPl()} (ustalenie z {decision.DecidedOn.ToPl()})",
+                    $"wartość bilansowa ≠ podatkowa: {decision.Justification}", book, tax, unexplained, decision.TaxYearStart, false));
+            else
+            {
+                diffs.Add(new TemporaryDifference($"Środek trwały {a.InventoryNumber} {a.Name} — część niewyjaśniona planem amortyzacji (do weryfikacji)",
+                    "rok odwrócenia nieustalony — sprawdź: planowana sprzedaż/likwidacja, wartość nieamortyzowana, różnica trwała (np. limit dla samochodu), zgodność planu z odpisami",
+                    book, tax, unexplained, default, false, current, Unconfirmed: true));
+                warnings.Add($"Środek trwały {a.InventoryNumber} {a.Name}: {Money.Format(Math.Abs(unexplained))} zł różnicy nie odwraca się według planów amortyzacji — ustal rok odwrócenia (sprzedaż, likwidacja) albo ujmij jako różnicę trwałą. Do czasu ustalenia przyjęto stawkę bieżącą {current:0}%.");
+            }
         }
 
         // odpisy aktualizujące należności i rezerwy (NKUP) — odwrócenie w najbliższym roku podatkowym po dniu bilansowym
         var allowance = (await _db.ReceivableAllowances.AsNoTracking().Where(a => a.CompanyId == fy.CompanyId && a.Date <= asOf).Select(a => a.Amount).ToListAsync(ct)).Sum();
-        if (allowance != 0) diffs.Add(new TemporaryDifference("Odpisy aktualizujące należności", "art. 16 ust. 1 pkt 26a ustawy o CIT", -allowance, 0m, -allowance, first.Start, false, rate));
+        if (allowance != 0) diffs.Add(await DifferenceAsync("Odpisy aktualizujące należności", "art. 16 ust. 1 pkt 26a ustawy o CIT", -allowance, 0m, -allowance, first.Start, false));
         var provisions = await _db.Provisions.AsNoTracking().Where(p => p.CompanyId == fy.CompanyId && p.Date <= asOf).ToListAsync(ct);
         foreach (var g in provisions.GroupBy(p => p.Kind))
         {
             var remaining = g.Sum(p => p.Remaining);
-            if (remaining != 0) diffs.Add(new TemporaryDifference($"Rezerwy: {g.Key}", "art. 16 ust. 1 pkt 27 ustawy o CIT", -remaining, 0m, -remaining, first.Start, false, rate));
+            if (remaining != 0) diffs.Add(await DifferenceAsync($"Rezerwy: {g.Key}", "art. 16 ust. 1 pkt 27 ustawy o CIT", -remaining, 0m, -remaining, first.Start, false));
         }
 
         // straty podatkowe — wyłącznie z rejestru strat: okres odliczenia ze wspólnego mechanizmu lat podatkowych; aktywo tylko
@@ -236,9 +347,9 @@ public sealed class DeferredTaxService
             if (!assessment.Recoverable) continue;
             var amount = Math.Min(left, assessment.RecoverableAmount ?? left);
             if (amount <= 0) continue;
-            diffs.Add(new TemporaryDifference($"Strata podatkowa {l.YearLabel}{(l.CapitalGains ? " (zyski kapitałowe)" : "")}",
+            diffs.Add(await DifferenceAsync($"Strata podatkowa {l.YearLabel}{(l.CapitalGains ? " (zyski kapitałowe)" : "")}",
                 $"art. 7 ust. 5 ustawy o CIT; ocena z {assessment.AssessedOn.ToPl()}: {assessment.Justification}", 0m, amount, -amount,
-                first.Start, l.CapitalGains, await RateForAsync(first.Start, l.CapitalGains)));
+                first.Start, l.CapitalGains));
         }
 
         var taxable = diffs.Where(d => d.Difference > 0).Sum(d => d.Difference);
@@ -255,6 +366,11 @@ public sealed class DeferredTaxService
         _user.Require(Permission.PostEntries);
         var c = await ComputeAsync(fiscalYearId, asOf, ct);
         if (c.ProvisionChange == 0 && c.AssetChange == 0) throw new DomainException("Podatek odroczony jest już ujęty w aktualnej wysokości.");
+        // istotne kwoty oparte na niepotwierdzonych założeniach (stawka, granice roku podatkowego, rok odwrócenia) — bez księgowania
+        var threshold = await new Setup.SettingsService(_db, _clock).GetAsync<decimal?>(_user.CompanyId, MaterialityKey, () => null, ct) ?? 0m;
+        if (c.UnconfirmedTax > threshold)
+            throw new DomainException($"Podatek odroczony {Money.Format(c.UnconfirmedTax)} zł opiera się na niezatwierdzonych prognozach (próg istotności {Money.Format(threshold)} zł). " +
+                                      "Zatwierdź prognozy przed księgowaniem:" + Environment.NewLine + string.Join(Environment.NewLine, c.Warnings ?? []));
         await new ValuationService(_db, _user, _clock).EnsureAccountsAsync(asOf, ct, ProvisionAccount, AssetAccount, ExpenseAccount);
         var lines = new List<LineInput>();
         if (c.ProvisionChange > 0) lines.AddRange(new LineInput[] { new(ExpenseAccount, c.ProvisionChange, 0, Description: "Zwiększenie rezerwy z tytułu odroczonego podatku"), new(ProvisionAccount, 0, c.ProvisionChange) });

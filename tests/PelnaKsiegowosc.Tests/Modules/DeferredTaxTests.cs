@@ -24,6 +24,17 @@ public class DeferredTaxTests
         Assert.Equal(0m, c.TaxableDifferences);
         var expected = Money.Round(5615m * c.RatePercent / 100m);
         Assert.Equal(expected, c.Asset);
+        // odwrócenie w 2027 r. — bez zatwierdzonej prognozy stawki i granic roku istotna kwota nie jest księgowana
+        Assert.Equal(c.Asset, c.UnconfirmedTax);
+        var blocked = await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31)));
+        Assert.Contains("niezatwierdzonych prognozach", blocked.Message);
+        await svc.SetExpectedRateAsync(new DateOnly(2027, 1, 1), 19m, "Prognoza przychodów 2027 powyżej limitu");
+        await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31))); // granice 2027 r. nadal niepotwierdzone
+        await svc.ConfirmTaxYearCalendarAsync(new DateOnly(2035, 12, 31), "Rok podatkowy = kalendarzowy, brak planowanej zmiany (umowa spółki)");
+        c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(0m, c.UnconfirmedTax);
+        expected = Money.Round(5615m * 19m / 100m);
+        Assert.Equal(expected, c.Asset);
         await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31));
         Assert.Equal(expected, await t.BalanceAsync("842"));
         Assert.Equal(-expected, await t.BalanceAsync("872"));
@@ -33,7 +44,90 @@ public class DeferredTaxTests
         var p = (await val.ProvisionsAsync()).Single();
         await val.UseProvisionAsync(p.Id, 2000m, new DateOnly(2026, 12, 31), release: true);
         var c2 = await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31));
-        Assert.Equal(Money.Round(3615m * c2.RatePercent / 100m), await t.BalanceAsync("842"));
+        Assert.Equal(Money.Round(3615m * 19m / 100m), await t.BalanceAsync("842"));
+    }
+
+    [Fact]
+    public async Task Materiality_threshold_allows_posting_immaterial_unconfirmed_amounts()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var val = new ValuationService(t.Db, t.User, t.Clock);
+        await val.CreateProvisionAsync(ProvisionKind.NaKoszty, "Badanie sprawozdania", 1000m, new DateOnly(2026, 12, 31));
+        var svc = new DeferredTaxService(t.Db, t.User, t.Clock);
+        await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31)));
+        await Assert.ThrowsAsync<DomainException>(() => svc.SetMaterialityAsync(500m, " "));
+        await svc.SetMaterialityAsync(500m, "Polityka rachunkowości: próg istotności 500 zł podatku");
+        var c = await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31));   // 1000 × 19% (lub 9%) < 500 — dopuszczalne
+        Assert.True(c.UnconfirmedTax is > 0 and <= 500m);
+        Assert.Equal(1, await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(t.Db.AuditEvents, a => a.Action == "POD_ODROCZONY_PROG"));
+    }
+
+    [Fact]
+    public async Task Short_first_tax_year_does_not_shorten_forecast_years_and_unknown_years_are_flagged()
+    {
+        // pierwszy rok podatkowy 1.07–31.12.2026 (6 miesięcy): kolejne lata — 12 miesięcy, nie 6
+        var fy = new Domain.Periods.FiscalYear { StartDate = new DateOnly(2026, 7, 1), EndDate = new DateOnly(2026, 12, 31) };
+        var periods = DeferredTaxService.FuturePeriods(fy, fy.EndDate, new List<(DateOnly, DateOnly)> { (fy.StartDate, fy.EndDate) }, out var projected);
+        Assert.Equal((new DateOnly(2027, 1, 1), new DateOnly(2027, 12, 31)), periods[0]);
+        Assert.Equal((new DateOnly(2028, 1, 1), new DateOnly(2028, 12, 31)), periods[1]);
+        Assert.Equal(new DateOnly(2027, 1, 1), projected);
+        // rok zmieniony założony w programie (art. 8 ust. 6: 1.01.2027–30.06.2028) — przyjmowany dokładnie, kolejne od 1.07.2028
+        var known = new List<(DateOnly, DateOnly)> { (fy.StartDate, fy.EndDate), (new DateOnly(2027, 1, 1), new DateOnly(2028, 6, 30)) };
+        periods = DeferredTaxService.FuturePeriods(fy, fy.EndDate, known, out projected, calendarConfirmedThrough: new DateOnly(2029, 6, 30));
+        Assert.Equal((new DateOnly(2027, 1, 1), new DateOnly(2028, 6, 30)), periods[0]);
+        Assert.Equal((new DateOnly(2028, 7, 1), new DateOnly(2029, 6, 30)), periods[1]);
+        Assert.Equal(new DateOnly(2029, 7, 1), projected);   // dalej — niepotwierdzone
+    }
+
+    [Fact]
+    public void Unexplained_part_of_difference_is_not_forced_into_last_year()
+    {
+        var p1 = (new DateOnly(2027, 1, 1), new DateOnly(2027, 12, 31));
+        var p2 = (new DateOnly(2028, 1, 1), new DateOnly(2028, 12, 31));
+        var flows = new List<((DateOnly, DateOnly), decimal)> { (p1, 30m), (p2, 20m) };
+        var r = DeferredTaxService.ExistingDifferenceReversal(100m, flows, out var unexplained);
+        Assert.Equal(new[] { 30m, 20m }, r.Select(x => x.Amount));
+        Assert.Equal(50m, unexplained);                                       // nie trafia do 2028 r.
+        r = DeferredTaxService.ExistingDifferenceReversal(-50.4m, new List<((DateOnly, DateOnly), decimal)> { (p1, -50m) }, out unexplained);
+        Assert.Equal(-50.4m, r.Single().Amount);                               // zaokrąglenie < 1 zł — w ostatnim roku
+        Assert.Equal(0m, unexplained);
+        DeferredTaxService.ExistingDifferenceReversal(80m, new List<((DateOnly, DateOnly), decimal)>(), out unexplained);
+        Assert.Equal(80m, unexplained);
+    }
+
+    [Fact]
+    public async Task Fixed_asset_difference_outside_plan_requires_verification_or_disposal_year()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var fa = new Application.FixedAssets.FixedAssetService(t.Db, t.User, t.Clock);
+        // grunt niepodlegający amortyzacji podatkowej, a bilansowo wyceniany inaczej (np. inna wartość początkowa) — różnica nie odwraca się planem
+        var asset = await fa.RegisterAsync(new Domain.FixedAssets.FixedAsset
+        {
+            InventoryNumber = "GR/1", Name = "Działka", Category = Domain.FixedAssets.FixedAssetCategory.SrodekTrwaly, KstSymbol = "010",
+            AcquisitionDate = new DateOnly(2026, 1, 10), PlacedInServiceDate = new DateOnly(2026, 1, 10),
+            InitialValueBook = 100000m, InitialValueTax = 90000m, BookMethod = Domain.FixedAssets.DepreciationMethod.Brak, TaxMethod = Domain.FixedAssets.DepreciationMethod.Brak,
+            AssetAccountNumber = "010-03", AccumulatedDepreciationAccountNumber = "070-03", ExpenseAccountNumber = "400"
+        }, "080");
+        var svc = new DeferredTaxService(t.Db, t.User, t.Clock);
+        var c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        var item = c.Differences.Single(d => d.Item.Contains("GR/1"));
+        Assert.True(item.ReversalUnknown);
+        Assert.True(item.Unconfirmed);
+        Assert.Equal(10000m, item.Difference);
+        Assert.Contains(c.Warnings!, w => w.Contains("GR/1") && w.Contains("nie odwraca się"));
+        await Assert.ThrowsAsync<DomainException>(() => svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31)));
+
+        // udokumentowana decyzja o sprzedaży w 2029 r. → odwrócenie w tym roku, stawka wg prognozy na 2029 r.
+        await svc.SetReversalYearAsync(asset.Id, new DateOnly(2029, 1, 1), "Uchwała zarządu: sprzedaż działki w 2029 r.");
+        await svc.SetExpectedRateAsync(new DateOnly(2029, 1, 1), 19m, "Przychody 2029 powyżej limitu");
+        await svc.ConfirmTaxYearCalendarAsync(new DateOnly(2030, 12, 31), "Rok podatkowy = kalendarzowy");
+        c = await svc.ComputeAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        item = c.Differences.Single(d => d.Item.Contains("GR/1"));
+        Assert.Equal(new DateOnly(2029, 1, 1), item.ReversalPeriodStart);
+        Assert.False(item.Unconfirmed);
+        Assert.Equal(1900m, item.Tax);
+        await svc.PostAsync(t.Year.Id, new DateOnly(2026, 12, 31));
+        Assert.Equal(-1900m, await t.BalanceAsync("841"));
     }
 
     [Fact]
@@ -96,7 +190,7 @@ public class DeferredTaxTests
     {
         // rok podatkowy 1.07.2025–30.06.2026: odwrócenie od 1.07.2026 (nie od 2027 r.)
         var fy = new Domain.Periods.FiscalYear { StartDate = new DateOnly(2025, 7, 1), EndDate = new DateOnly(2026, 6, 30) };
-        var periods = DeferredTaxService.FuturePeriods(fy, fy.EndDate, new List<(DateOnly, DateOnly)> { (fy.StartDate, fy.EndDate) });
+        var periods = DeferredTaxService.FuturePeriods(fy, fy.EndDate, new List<(DateOnly, DateOnly)> { (fy.StartDate, fy.EndDate) }, out _);
         Assert.Equal((new DateOnly(2026, 7, 1), new DateOnly(2027, 6, 30)), periods[0]);
         Assert.Equal((new DateOnly(2027, 7, 1), new DateOnly(2028, 6, 30)), periods[1]);
         // przepływy: +60 (odwrócenie), −50 (nowa różnica), +100 (odwrócenie) przy istniejącej różnicy 100
