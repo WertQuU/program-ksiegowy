@@ -199,7 +199,8 @@ public sealed partial class StatementBuilder
         var g = await CashFlowGrossAsync(fiscalYearId, asOf, ct);
         // różnice kursowe niezrealizowane (KSR nr 1): wycena środków pieniężnych w walutach oraz pozycji inwestycyjnych
         // i finansowych jest w wyniku, ale nie jest przepływem — wyłączana w A.II.2 (zysk −, strata +). Wpływ wyceny środków
-        // pieniężnych wykazuje się w E.1 (bilansowa zmiana = przepływy netto D ± różnice kursowe), a stan końcowy G uzgadnia z bilansem.
+        // pieniężnych wykazuje się w E.1. Zgodnie z KSR nr 1 oraz zał. nr 1 UoR: G = F ± D;
+        // G może różnić się od salda bilansowego o niezrealizowane różnice kursowe (E.1).
         var fxIndex = ops.FindIndex(x => x.Item1 == "A.II.2");
         ops[fxIndex] = ("A.II.2", "Zyski (straty) z tytułu różnic kursowych", -(g.CashFx + g.NonOperatingFx));
         var invNet = g.InvestingIn - g.InvestingOut;
@@ -265,7 +266,7 @@ public sealed partial class StatementBuilder
         cf.Lines.Add(new CashFlowLine("E", "Bilansowa zmiana stanu środków pieniężnych, w tym:", cashClose - cashOpen, 0));
         cf.Lines.Add(new CashFlowLine("E.1", "– zmiana stanu środków pieniężnych z tytułu różnic kursowych", g.CashFx, 1));
         cf.Lines.Add(new CashFlowLine("F", "Środki pieniężne na początek okresu", cashOpen, 0));
-        cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D, z uwzględnieniem różnic kursowych z E.1)", cashOpen + total + g.CashFx, 0, true));
+        cf.Lines.Add(new CashFlowLine("G", "Środki pieniężne na koniec okresu (F ± D)", cashOpen + total, 0, true));
         // kontrola: rzeczywiste przepływy netto (D) = bilansowa zmiana (E) − różnice kursowe z wyceny środków pieniężnych (E.1)
         cf.Unreconciled = cashClose - cashOpen - g.CashFx - total;
         if (cf.Unreconciled != 0)
