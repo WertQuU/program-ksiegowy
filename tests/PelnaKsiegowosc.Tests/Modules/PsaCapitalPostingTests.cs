@@ -8,6 +8,29 @@ namespace PelnaKsiegowosc.Tests.Modules;
 
 public sealed class PsaCapitalPostingTests
 {
+    [Fact]
+    public async Task Psa_dividend_decision_requires_documented_distributable_amount_and_six_month_forecast()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var service = new CapitalService(t.Db, t.User, t.Clock);
+        var owner = await service.AddShareholderAsync("Akcjonariusz", null, false);
+        var ev = await service.CreateEventAsync(new CapitalEvent
+        {
+            Type = CapitalEventType.UchwalenieDywidendy,
+            EventDate = new DateOnly(2026, 1, 20),
+            TotalAmount = 200m,
+            ShareholderId = owner.Id,
+            ResolutionReference = "WZA/1/2026",
+            SolvencyTestConfirmed = true
+        });
+        var missing = await Assert.ThrowsAsync<DomainException>(() => service.ConfirmDocumentsAsync(ev.Id));
+        Assert.Contains("P.S.A.", missing.Message);
+        ev.SolvencyTestNotes = "Kontrola limitu dywidendy, kapitału i płynności na sześć miesięcy: analiza FIN/2026/1.";
+        await t.Db.SaveChangesAsync();
+        await service.ConfirmDocumentsAsync(ev.Id);
+        Assert.Equal(CapitalEventStatus.DokumentyPotwierdzone, ev.Status);
+    }
+
     [Theory]
     [InlineData("solvency")]
     [InlineData("resolution")]
@@ -22,7 +45,8 @@ public sealed class PsaCapitalPostingTests
             Type = CapitalEventType.ZaliczkaNaPoczetDywidendy,
             EventDate = new DateOnly(2026, 1, 20), TotalAmount = 500m,
             ShareholderId = shareholder.Id, ResolutionReference = "Uchwała 1/2026 i umowa spółki",
-            SolvencyTestConfirmed = true
+            SolvencyTestConfirmed = true,
+            SolvencyTestNotes = "Wyliczenie kwoty do podziału i prognoza wypłacalności: arkusz PSA/2026/01, okres 6 miesięcy."
         });
         await service.ConfirmDocumentsAsync(ev.Id);
         // Stare/importowane dane albo inna ścieżka edycji nie mogą ominąć kontroli księgowania.
