@@ -253,7 +253,7 @@ public class CommandLineTests
 public class DesktopAppStartupTests
 {
     [Fact]
-    public void Desktop_application_self_test_builds_every_screen_headless()
+    public async Task Desktop_application_self_test_builds_every_screen_headless()
     {
         var config = typeof(DesktopAppStartupTests).Assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration ?? "Debug";
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -268,7 +268,7 @@ public class DesktopAppStartupTests
         var stdout = p.StandardOutput.ReadToEndAsync();
         var stderr = p.StandardError.ReadToEndAsync();
         Assert.True(p.WaitForExit(240_000), "Przekroczono czas kontroli uruchomienia.");
-        var output = stdout.Result + stderr.Result;
+        var output = await stdout + await stderr;
         Assert.True(p.ExitCode == 0, output);
         Assert.Contains("KONTROLA URUCHOMIENIA: OK", output);
     }

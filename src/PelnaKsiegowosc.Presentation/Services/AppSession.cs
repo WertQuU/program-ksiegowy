@@ -70,7 +70,24 @@ public sealed class AppSession
     public KsiegiDbContext OpenDb() => Connector.CreateContext(Profile);
 
     public string AttachmentsRoot => Config.AttachmentsDirectory ?? Paths.AttachmentsDirectory;
-    public LocalFileStore Attachments => new(AttachmentsRoot);
+    public LocalFileStore Attachments => new(AttachmentsRoot, AttachmentsKeyFor(AttachmentsRoot));
+
+    /// <summary>
+    /// Klucz szyfrowania załączników dla katalogu magazynu (magazyn sekretów systemu). Przy bazie SQLite wyprowadzany z klucza bazy
+    /// (HKDF-SHA256) — przeniesienie klucza bazy na inne stanowisko daje dostęp także do załączników; przy PostgreSQL — losowy.
+    /// </summary>
+    public byte[] AttachmentsKeyFor(string attachmentsRoot, DatabaseProfile? profile = null)
+    {
+        var name = "PelnaKsiegowosc/zalaczniki/" + Path.GetFullPath(attachmentsRoot).ToLowerInvariant();
+        if (Secrets.Get(name) is { Length: > 0 } stored) return Convert.FromBase64String(stored);
+        var dbKey = Connector.ExportSqliteKey(profile ?? Profile);
+        var key = dbKey is { Length: 64 }
+            ? System.Security.Cryptography.HKDF.DeriveKey(System.Security.Cryptography.HashAlgorithmName.SHA256, Convert.FromHexString(dbKey), 32,
+                info: System.Text.Encoding.UTF8.GetBytes("PelnaKsiegowosc/zalaczniki"))
+            : System.Security.Cryptography.RandomNumberGenerator.GetBytes(32);
+        Secrets.Set(name, Convert.ToBase64String(key));
+        return key;
+    }
     /// <summary>Poświadczenia KSeF wg ustawień stanowiska: certyfikat .pfx (hasło z magazynu sekretów) albo token.</summary>
     public Infrastructure.Ksef.KsefCredentials KsefCredentials()
     {
@@ -113,6 +130,7 @@ public sealed class AppSession
             await db.Database.MigrateAsync(ct);
         SaveConfig();
         await RefreshAsync(ct);
+        await Attachments.EncryptLegacyFilesAsync(ct); // załączniki zapisane wcześniej jawnie — szyfrowane przy otwarciu
         return new OpenResult(true, null, backup, recoveryKey);
     }
 

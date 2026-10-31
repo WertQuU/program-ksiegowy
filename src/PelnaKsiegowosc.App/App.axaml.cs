@@ -133,7 +133,7 @@ public partial class App : Avalonia.Application
                 "Zmiany w kopii roboczej nie trafią automatycznie na serwer — wymagają późniejszego uzgodnienia (ponownego wprowadzenia dokumentów).")) return false;
         var profile = DatabaseConnector.EmergencyProfile(session.Paths, session.Clock.UtcNow);
         var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(latest.FullName, key, Path.GetDirectoryName(profile.SqlitePath!)!,
-            databaseKey: session.Connector.SqliteKeyForNewFile(profile));
+            session.Connector.SqliteKeyForNewFile(profile), session.AttachmentsKeyFor(Path.Combine(Path.GetDirectoryName(profile.SqlitePath!)!, "Zalaczniki"), profile));
         if (!r.Ok)
         {
             await dialogs.ShowTextAsync("Tryb awaryjny", "Odtworzenie kopii nie powiodło się:" + Environment.NewLine + string.Join(Environment.NewLine, r.Problems));

@@ -20,6 +20,7 @@ namespace PelnaKsiegowosc.Tests.Integration;
 public class BackupTests
 {
     private static readonly BackupKey Pass = new BackupKey.Passphrase("Bardzo-Tajne-Haslo-Kopii-2026");
+    private static readonly byte[] AttKey = RandomNumberGenerator.GetBytes(32);
 
     private static async Task<(TestBooks t, LocalFileStore store)> BooksWithAttachmentAsync()
     {
@@ -55,8 +56,8 @@ public class BackupTests
 
         var restoreDir = Path.Combine(t.Directory, "odtworzona");
         var dbKey = SqliteEncryption.NewKey();
-        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, "")); // bez klucza — odmowa
-        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey);
+        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, "", AttKey)); // bez klucza — odmowa
+        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey, AttKey);
         Assert.True(restored.Ok, string.Join("; ", restored.Problems));
         Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));
         await using var db2 = DbContextFactory.Create(DatabaseEngine.Sqlite,
@@ -67,11 +68,15 @@ public class BackupTests
         var integrity = await new IntegrityService(db2, t.Clock).FullCheckAsync(t.Company.Id);
         Assert.True(integrity.AllOk, string.Join("; ", integrity.Results.Where(r => !r.Ok).Select(r => r.Details)));
         var att = await db2.Attachments.SingleAsync();
-        var bytes = await new DocumentService(db2, t.User, t.Clock).ReadAttachmentAsync(att.Id, new LocalFileStore(restored.AttachmentsPath));
+        var bytes = await new DocumentService(db2, t.User, t.Clock).ReadAttachmentAsync(att.Id, new LocalFileStore(restored.AttachmentsPath, AttKey));
         Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes));
+        // odtworzone załączniki zapisane na dysku wyłącznie w postaci zaszyfrowanej
+        foreach (var f in Directory.EnumerateFiles(restored.AttachmentsPath, "*.bin", SearchOption.AllDirectories))
+            Assert.True(AttachmentCrypto.IsEncrypted(File.ReadAllBytes(f)));
+        await Assert.ThrowsAsync<DomainException>(() => new DocumentService(db2, t.User, t.Clock).ReadAttachmentAsync(att.Id, new LocalFileStore(restored.AttachmentsPath)));
 
         // ponowne odtworzenie do tego samego katalogu — odmowa (brak nadpisania)
-        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey));
+        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey, AttKey));
     }
 
     [Fact]
@@ -95,7 +100,7 @@ public class BackupTests
         var truncated = res.FilePath + ".obciety";
         File.WriteAllBytes(truncated, File.ReadAllBytes(res.FilePath)[..^100]);
         Assert.False((await svc.VerifyAsync(truncated, Pass)).Ok);
-        await Assert.ThrowsAnyAsync<Exception>(() => svc.RestoreToSqliteAsync(tampered, Pass, Path.Combine(t.Directory, "x"), SqliteEncryption.NewKey()));
+        await Assert.ThrowsAnyAsync<Exception>(() => svc.RestoreToSqliteAsync(tampered, Pass, Path.Combine(t.Directory, "x"), SqliteEncryption.NewKey(), AttKey));
         Assert.False(File.Exists(Path.Combine(t.Directory, "x", "ksiegi.db")));
     }
 
@@ -283,6 +288,56 @@ public class ObjectStorageTests
 public class DatabaseEncryptionTests
 {
     [Fact]
+    public void Encrypted_export_is_fully_verified_and_corruption_or_wrong_key_is_detected()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "pk-eksport-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var src = Path.Combine(dir, "jawna.db");
+            using (var c = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={src};Pooling=False"))
+            {
+                c.Open();
+                using var cmd = c.CreateCommand();
+                cmd.CommandText = "CREATE TABLE JournalEntries(Id TEXT PRIMARY KEY, Number TEXT, Amount TEXT); CREATE INDEX ix ON JournalEntries(Number);";
+                cmd.ExecuteNonQuery();
+                for (var i = 0; i < 2000; i++)
+                {
+                    cmd.CommandText = $"INSERT INTO JournalEntries VALUES('{Guid.NewGuid()}','PK/{i}','{i * 1.23m}')";
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            var key = SqliteEncryption.NewKey();
+            var enc = Path.Combine(dir, "zaszyfrowana.db");
+            SqliteEncryption.ExportEncrypted(src, enc, key);
+            Assert.True(SqliteEncryption.IsEncrypted(enc));
+            Assert.DoesNotContain("PK/1999", Encoding.UTF8.GetString(File.ReadAllBytes(enc)));
+            SqliteEncryption.VerifyEncryptedCopy(src, enc, key);                                   // ponowna weryfikacja — zgodna
+            Assert.ThrowsAny<Exception>(() => SqliteEncryption.VerifyEncryptedCopy(src, enc, SqliteEncryption.NewKey())); // inny klucz
+
+            // uszkodzenie jednej strony wykrywane przez HMAC SQLCipher
+            var bytes = File.ReadAllBytes(enc);
+            bytes[bytes.Length - 100] ^= 0x5A;
+            var broken = Path.Combine(dir, "uszkodzona.db");
+            File.WriteAllBytes(broken, bytes);
+            Assert.ThrowsAny<Exception>(() => SqliteEncryption.VerifyEncryptedCopy(src, broken, key));
+
+            // różnica treści względem źródła wykrywana (odcisk tabel)
+            using (var c = new Microsoft.Data.Sqlite.SqliteConnection($"Data Source={src};Pooling=False"))
+            {
+                c.Open();
+                using var cmd = c.CreateCommand();
+                cmd.CommandText = "UPDATE JournalEntries SET Amount='0' WHERE Number='PK/5'";
+                cmd.ExecuteNonQuery();
+            }
+            var ex = Assert.Throws<InvalidOperationException>(() => SqliteEncryption.VerifyEncryptedCopy(src, enc, key));
+            Assert.Contains("JournalEntries", ex.Message);
+            Assert.Throws<InvalidOperationException>(() => SqliteEncryption.ExportEncrypted(src, enc, key)); // brak nadpisania
+        }
+        finally { Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools(); try { Directory.Delete(dir, true); } catch { } }
+    }
+
+    [Fact]
     public async Task Sqlite_file_is_encrypted_at_rest_and_backup_restore_still_works()
     {
         await using var t = await TestBooks.CreateAsync();
@@ -320,7 +375,7 @@ public class DatabaseEncryptionTests
             archive = (await backup.CreateAsync(db, profile, store, null, new BackupOptions(new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "kopie")))).FilePath;
         var restoredProfile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(t.Directory, "odtworzona", "ksiegi.db") };
         var restored = await backup.RestoreToSqliteAsync(archive, new BackupKey.Passphrase("Haslo-Kopii-Testowej-1"), Path.Combine(t.Directory, "odtworzona"),
-            databaseKey: connector.SqliteKeyForNewFile(restoredProfile));
+            databaseKey: connector.SqliteKeyForNewFile(restoredProfile), attachmentsKey: RandomNumberGenerator.GetBytes(32));
         Assert.Empty(restored.Problems);
         Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));                 // zaszyfrowana od razu po odtworzeniu
         Assert.Empty(Directory.EnumerateFileSystemEntries(Path.Combine(t.Directory, "tmp")));   // brak jawnych plików roboczych
@@ -335,6 +390,48 @@ public class DatabaseEncryptionTests
         Assert.Throws<InvalidOperationException>(() => p.BuildConnectionString("x"));
         p.SslMode = PgSslMode.VerifyFull;
         Assert.Contains("db.firma.pl", p.BuildConnectionString("x"));
+    }
+}
+
+public class AttachmentEncryptionTests
+{
+    [Fact]
+    public async Task Attachments_are_encrypted_at_rest_and_legacy_files_are_converted()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "pk-zal-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var key = RandomNumberGenerator.GetBytes(32);
+            var store = new LocalFileStore(dir, key);
+            var plain = Encoding.UTF8.GetBytes("%PDF-1.7 Faktura VAT nr FV/1/2026 NIP 5260250274 " + new string('x', 3 * 1024 * 1024)); // wiele fragmentów
+            var (sha, size) = await store.SaveAtAsync("a/plik.bin", new MemoryStream(plain));
+            Assert.Equal(Convert.ToHexString(SHA256.HashData(plain)), sha, ignoreCase: true);
+            Assert.Equal(plain.Length, size);
+            var onDisk = await File.ReadAllBytesAsync(Path.Combine(dir, "a", "plik.bin"));
+            Assert.True(AttachmentCrypto.IsEncrypted(onDisk));
+            Assert.DoesNotContain("Faktura", Encoding.UTF8.GetString(onDisk));
+            await using (var s = await store.OpenAsync("a/plik.bin"))
+            {
+                using var ms = new MemoryStream(); await s.CopyToAsync(ms);
+                Assert.Equal(plain, ms.ToArray());
+            }
+            // bez klucza lub z innym kluczem — brak dostępu
+            await Assert.ThrowsAsync<DomainException>(() => new LocalFileStore(dir).OpenAsync("a/plik.bin"));
+            await Assert.ThrowsAnyAsync<Exception>(() => new LocalFileStore(dir, RandomNumberGenerator.GetBytes(32)).OpenAsync("a/plik.bin"));
+            // modyfikacja treści wykrywana (AES-GCM)
+            onDisk[onDisk.Length / 2] ^= 1;
+            await File.WriteAllBytesAsync(Path.Combine(dir, "a", "plik.bin"), onDisk);
+            await Assert.ThrowsAnyAsync<Exception>(() => store.OpenAsync("a/plik.bin"));
+
+            // dotychczasowe jawne pliki są szyfrowane przy otwarciu firmy
+            await new LocalFileStore(dir).SaveAtAsync("b/stary.bin", new MemoryStream("jawny dokument"u8.ToArray()));
+            Assert.False(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
+            Assert.Equal(1, await store.EncryptLegacyFilesAsync());
+            Assert.True(AttachmentCrypto.IsEncrypted(await File.ReadAllBytesAsync(Path.Combine(dir, "b", "stary.bin"))));
+            await using var r = await store.OpenAsync("b/stary.bin");
+            Assert.Equal("jawny dokument", await new StreamReader(r).ReadToEndAsync());
+        }
+        finally { try { Directory.Delete(dir, true); } catch { } }
     }
 }
 

@@ -185,7 +185,7 @@ public sealed partial class SettingsViewModel : SectionViewModel
         await using var source = Session.OpenDb();
         await using var dest = Session.Connector.CreateContext(target);
         var report = await new DatabaseMigrator(Session.Clock, Session.Paths.TempDirectory).MigrateAsync(source, Session.DatabaseDescription, Session.Attachments,
-            dest, target.SafeDescription, new LocalFileStore(Session.AttachmentsRoot), async () => (await Session.BackupAsync("przed migracją bazy", upload: true)).FilePath);
+            dest, target.SafeDescription, Session.Attachments, async () => (await Session.BackupAsync("przed migracją bazy", upload: true)).FilePath);
         var reportFile = Path.Combine(Session.Paths.LogsDirectory, $"migracja-{Session.Clock.UtcNow:yyyyMMdd-HHmmss}.txt");
         await File.WriteAllTextAsync(reportFile, report.ToText());
         await Session.AuditAsync(report.Success ? "MIGRACJA_ZAKONCZONA" : "MIGRACJA_NIEUDANA", "Database", null, $"{Session.DatabaseDescription} → {target.SafeDescription}");

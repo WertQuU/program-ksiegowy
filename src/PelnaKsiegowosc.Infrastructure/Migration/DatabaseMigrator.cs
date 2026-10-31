@@ -104,14 +104,9 @@ public sealed class DatabaseMigrator
             {
                 if (!await sourceAttachments.ExistsAsync(a.StoragePath, ct)) { report.Problems.Add($"Brak pliku załącznika {a.FileName}."); continue; }
                 await using var s = await sourceAttachments.OpenAsync(a.StoragePath, ct);
-                var dest = Path.Combine(targetAttachments.RootPath, a.StoragePath.Replace('/', Path.DirectorySeparatorChar));
-                Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-                if (!File.Exists(dest))
-                {
-                    await using var d = File.Create(dest);
-                    await s.CopyToAsync(d, ct);
-                }
-                if (await DataDump.Sha256FileAsync(dest, ct) != a.Sha256) report.Problems.Add($"Załącznik {a.FileName}: suma SHA-256 niezgodna po skopiowaniu.");
+                if (!await targetAttachments.ExistsAsync(a.StoragePath, ct)) await targetAttachments.SaveAtAsync(a.StoragePath, s, ct);
+                await using var check = await targetAttachments.OpenAsync(a.StoragePath, ct);
+                if (await Application.Documents.LocalFileStore.Sha256Async(check, ct) != a.Sha256) report.Problems.Add($"Załącznik {a.FileName}: suma SHA-256 niezgodna po skopiowaniu.");
                 else report.AttachmentsCopied++;
             }
             return report;

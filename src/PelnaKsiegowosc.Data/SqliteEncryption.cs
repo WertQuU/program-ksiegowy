@@ -90,7 +90,92 @@ public static class SqliteEncryption
             cmd.ExecuteNonQuery();
         }
         SqliteConnection.ClearAllPools();
-        if (!IsEncrypted(encryptedTarget)) throw new InvalidOperationException("Zapis zaszyfrowanej bazy nie powiódł się.");
+        try
+        {
+            VerifyEncryptedCopy(plainSource, encryptedTarget, hexKey);
+        }
+        catch
+        {
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(encryptedTarget)) File.Delete(encryptedTarget);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Pełna weryfikacja zaszyfrowanej kopii: plik nie jest jawny, otwiera się wyłącznie podanym kluczem, przechodzi kontrolę
+    /// HMAC stron SQLCipher (cipher_integrity_check) i strukturalną (integrity_check), a schemat i liczby wierszy każdej tabeli
+    /// oraz suma kontrolna dziennika są identyczne jak w źródle.
+    /// </summary>
+    public static void VerifyEncryptedCopy(string plainSource, string encryptedTarget, string hexKey)
+    {
+        if (!IsEncrypted(encryptedTarget)) throw new InvalidOperationException("Zapis zaszyfrowanej bazy nie powiódł się — plik nie jest zaszyfrowany.");
+        Dictionary<string, string> expected;
+        using (var a = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = plainSource, Pooling = false, Mode = SqliteOpenMode.ReadOnly }.ToString()))
+        {
+            a.Open();
+            expected = Fingerprint(a);
+        }
+        using (var b = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = encryptedTarget, Pooling = false, Mode = SqliteOpenMode.ReadOnly }.ToString()))
+        {
+            b.Open();
+            ApplyKey(b, hexKey);
+            using (var cmd = b.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA cipher_integrity_check";
+                using var r = cmd.ExecuteReader();
+                if (r.Read()) throw new InvalidOperationException("Kontrola integralności stron zaszyfrowanej bazy wykazała błąd: " + r.GetValue(0));
+            }
+            using (var cmd = b.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA integrity_check";
+                var res = Convert.ToString(cmd.ExecuteScalar());
+                if (res != "ok") throw new InvalidOperationException("Kontrola integralności zaszyfrowanej bazy: " + res);
+            }
+            var actual = Fingerprint(b);
+            var diff = expected.Where(kv => !actual.TryGetValue(kv.Key, out var v) || v != kv.Value).Select(kv => kv.Key)
+                .Concat(actual.Keys.Except(expected.Keys)).ToList();
+            if (diff.Count > 0) throw new InvalidOperationException("Zaszyfrowana kopia różni się od źródła: " + string.Join(", ", diff.Take(10)));
+        }
+        SqliteConnection.ClearAllPools();
+    }
+
+    /// <summary>Odcisk bazy: definicja każdego obiektu schematu, liczba wierszy każdej tabeli i skrót SHA-256 tabeli zapisów dziennika.</summary>
+    private static Dictionary<string, string> Fingerprint(DbConnection c)
+    {
+        var result = new Dictionary<string, string>(StringComparer.Ordinal);
+        var tables = new List<string>();
+        using (var cmd = c.CreateCommand())
+        {
+            cmd.CommandText = "SELECT type, name, coalesce(sql,'') FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name";
+            using var r = cmd.ExecuteReader();
+            while (r.Read())
+            {
+                result["schemat:" + r.GetString(0) + ":" + r.GetString(1)] = r.GetString(2);
+                if (r.GetString(0) == "table") tables.Add(r.GetString(1));
+            }
+        }
+        foreach (var t in tables)
+        {
+            using var cmd = c.CreateCommand();
+            cmd.CommandText = $"SELECT count(*) FROM \"{t.Replace("\"", "\"\"")}\"";
+            result["wiersze:" + t] = Convert.ToString(cmd.ExecuteScalar())!;
+        }
+        foreach (var t in new[] { "JournalEntries", "JournalLines" }.Where(tables.Contains))
+        {
+            using var cmd = c.CreateCommand();
+            cmd.CommandText = $"SELECT * FROM \"{t}\" ORDER BY rowid";
+            using var r = cmd.ExecuteReader();
+            using var sha = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            while (r.Read())
+                for (var i = 0; i < r.FieldCount; i++)
+                {
+                    var v = r.IsDBNull(i) ? "\u0000" : r.GetValue(i) is byte[] bytes ? Convert.ToHexString(bytes) : Convert.ToString(r.GetValue(i), System.Globalization.CultureInfo.InvariantCulture)!;
+                    sha.AppendData(System.Text.Encoding.UTF8.GetBytes(v + "\u001f"));
+                }
+            result["skrot:" + t] = Convert.ToHexString(sha.GetHashAndReset());
+        }
+        return result;
     }
 
     /// <summary>Eksport bieżącej bazy (zaszyfrowanej lub jawnej) do jawnego pliku — wyłącznie do archiwum kopii szyfrowanego kluczem kopii.</summary>

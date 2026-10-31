@@ -47,6 +47,8 @@ public interface IFileStore
     Task<(string storagePath, string sha256, long size)> SaveAsync(Stream content, string suggestedName, CancellationToken ct = default);
     Task<Stream> OpenAsync(string storagePath, CancellationToken ct = default);
     Task<bool> ExistsAsync(string storagePath, CancellationToken ct = default);
+    /// <summary>Zapis pod wskazaną ścieżką (odtwarzanie, migracja) — z ochroną właściwą dla magazynu (np. szyfrowaniem).</summary>
+    Task<(string sha256, long size)> SaveAtAsync(string storagePath, Stream content, CancellationToken ct = default);
     string RootPath { get; }
 }
 

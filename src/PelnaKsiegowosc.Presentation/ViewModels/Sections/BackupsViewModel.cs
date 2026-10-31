@@ -114,7 +114,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
         if (dir is null) return;
         var target = Path.Combine(dir, "odtworzona-" + Session.Clock.UtcNow.ToString("yyyyMMdd-HHmmss"));
         var r = await new BackupService(Session.Clock, Session.Paths.TempDirectory).RestoreToSqliteAsync(file, key, target,
-            databaseKey: Session.Connector.SqliteKeyForNewFile(new Data.DatabaseProfile { Engine = Data.DatabaseEngine.Sqlite, SqlitePath = Path.Combine(target, "ksiegi.db") }));
+            Session.Connector.SqliteKeyForNewFile(RestoredProfile(target)), Session.AttachmentsKeyFor(Path.Combine(target, "Zalaczniki"), RestoredProfile(target)));
         if (!r.Ok) { await Dialogs.ShowTextAsync("Odtwarzanie", "Odtwarzanie zakończone z błędami:" + Environment.NewLine + string.Join(Environment.NewLine, r.Problems)); return; }
         await Session.AuditAsync("KOPIA_ODTWORZONA", "Backup", r.Manifest.ArchiveId.ToString(), $"{Path.GetFileName(file)} → {target}");
         if (await Dialogs.ConfirmAsync("Odtwarzanie", $"Kopię odtworzono do:{Environment.NewLine}{r.DatabasePath}{Environment.NewLine}{Environment.NewLine}" +
@@ -167,4 +167,6 @@ public sealed partial class BackupsViewModel : SectionViewModel
         if (File.Exists(local)) throw new DomainException($"Plik {local} już istnieje.");
         await target.DownloadAsync(key, local);
     }, "Pobrano kopię do katalogu kopii lokalnych (suma SHA-256 zgodna).");
+
+    private static Data.DatabaseProfile RestoredProfile(string target) => new() { Engine = Data.DatabaseEngine.Sqlite, SqlitePath = Path.Combine(target, "ksiegi.db") };
 }

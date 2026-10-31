@@ -139,10 +139,17 @@ public static class Program
         return Fail("Kopia nie przeszła weryfikacji.");
     }
 
+    private static (string Db, byte[] Attachments) RestoreKeys(AppSession session, string directory)
+    {
+        var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(directory, "ksiegi.db") };
+        var db = session.Connector.SqliteKeyForNewFile(profile);
+        return (db, session.AttachmentsKeyFor(Path.Combine(directory, "Zalaczniki"), profile));
+    }
+
     private static async Task<int> RestoreAsync(AppSession session, string file, string directory)
     {
         var r = await new BackupService(session.Clock, session.Paths.TempDirectory).RestoreToSqliteAsync(file, Key(session), Path.GetFullPath(directory),
-            databaseKey: session.Connector.SqliteKeyForNewFile(new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.Combine(Path.GetFullPath(directory), "ksiegi.db") }));
+            RestoreKeys(session, Path.GetFullPath(directory)).Db, RestoreKeys(session, Path.GetFullPath(directory)).Attachments);
         if (!r.Ok)
         {
             foreach (var p in r.Problems) Console.Error.WriteLine("  " + p);
@@ -182,7 +189,7 @@ public static class Program
         await using var source = session.OpenDb();
         await using var dest = session.Connector.CreateContext(target);
         var report = await new DatabaseMigrator(session.Clock, session.Paths.TempDirectory).MigrateAsync(source, session.DatabaseDescription, session.Attachments,
-            dest, target.SafeDescription, new LocalFileStore(session.AttachmentsRoot), async () => (await session.BackupAsync("przed migracją bazy (CLI)", upload: true)).FilePath);
+            dest, target.SafeDescription, session.Attachments, async () => (await session.BackupAsync("przed migracją bazy (CLI)", upload: true)).FilePath);
         Console.WriteLine(report.ToText());
         await session.AuditAsync(report.Success ? "MIGRACJA_ZAKONCZONA" : "MIGRACJA_NIEUDANA", "Database", null, $"{session.DatabaseDescription} → {target.SafeDescription} (CLI)");
         if (report.Success && args.Contains("--przelacz"))

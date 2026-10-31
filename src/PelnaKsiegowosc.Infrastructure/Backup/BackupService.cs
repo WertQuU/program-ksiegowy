@@ -344,7 +344,8 @@ public sealed class BackupService
     /// </summary>
     /// <param name="databaseKey">Klucz SQLCipher dla odtworzonej bazy (64 znaki szesnastkowe) — obowiązkowy: baza trafia do katalogu
     /// docelowego wyłącznie w postaci zaszyfrowanej (jawna kopia robocza powstaje tylko w prywatnym katalogu tymczasowym i jest usuwana).</param>
-    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, string databaseKey, CancellationToken ct = default)
+    /// <param name="attachmentsKey">Klucz szyfrowania załączników magazynu docelowego (256 bitów).</param>
+    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, string databaseKey, byte[] attachmentsKey, CancellationToken ct = default)
     {
         if (databaseKey is not { Length: 64 } || !databaseKey.All(Uri.IsHexDigit))
             throw new DomainException("Odtwarzanie wymaga klucza szyfrowania bazy — odtworzona baza nie może zostać zapisana jawnie.");
@@ -359,8 +360,7 @@ public sealed class BackupService
             if (problems.Count > 0) throw new DomainException("Archiwum jest uszkodzone — odtwarzanie przerwane: " + string.Join("; ", problems));
             var content = Path.Combine(dir, "zawartosc");
             var attTarget = Path.Combine(targetDirectory, "Zalaczniki");
-            if (Directory.Exists(Path.Combine(content, "zalaczniki"))) CopyDirectory(Path.Combine(content, "zalaczniki"), attTarget);
-            else Directory.CreateDirectory(attTarget);
+            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), new Application.Documents.LocalFileStore(attTarget, attachmentsKey), ct);
 
             // praca na jawnej kopii w prywatnym katalogu roboczym: migracja schematu, import, kontrola kompletności
             var work = Path.Combine(dir, "odtwarzana.db");
@@ -384,7 +384,7 @@ public sealed class BackupService
     }
 
     /// <summary>Odtworzenie kopii do pustej bazy serwerowej (np. PostgreSQL) z przenośnego zrzutu danych.</summary>
-    public async Task<RestoreResult> RestoreToDatabaseAsync(string archivePath, BackupKey key, KsiegiDbContext target, string attachmentsTarget, CancellationToken ct = default)
+    public async Task<RestoreResult> RestoreToDatabaseAsync(string archivePath, BackupKey key, KsiegiDbContext target, IFileStore attachmentsTarget, CancellationToken ct = default)
     {
         var dir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
         try
@@ -395,9 +395,9 @@ public sealed class BackupService
             var content = Path.Combine(dir, "zawartosc");
             await target.Database.MigrateAsync(ct);
             await DataDump.ImportAsync(target, Path.Combine(content, "dane"), ct);
-            if (Directory.Exists(Path.Combine(content, "zalaczniki"))) CopyDirectory(Path.Combine(content, "zalaczniki"), attachmentsTarget);
+            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), attachmentsTarget, ct);
             problems.AddRange(await CompareAsync(target, manifest, ct));
-            return new RestoreResult("(serwer)", attachmentsTarget, manifest, problems);
+            return new RestoreResult("(serwer)", attachmentsTarget.RootPath, manifest, problems);
         }
         finally
         {
@@ -435,6 +435,17 @@ public sealed class BackupService
     private static void ApplyRetention(string directory, int keep)
     {
         foreach (var f in ListLocal(directory).Skip(keep)) f.Delete();
+    }
+
+    /// <summary>Załączniki z archiwum zapisywane przez magazyn docelowy (szyfrowanie) — bez jawnych kopii w katalogu docelowym.</summary>
+    private static async Task RestoreAttachmentsAsync(string from, IFileStore target, CancellationToken ct)
+    {
+        if (!Directory.Exists(from)) return;
+        foreach (var f in Directory.EnumerateFiles(from, "*", SearchOption.AllDirectories))
+        {
+            await using var s = File.OpenRead(f);
+            await target.SaveAtAsync(Path.GetRelativePath(from, f).Replace('\\', '/'), s, ct);
+        }
     }
 
     private static void CopyDirectory(string from, string to)
