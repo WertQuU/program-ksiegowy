@@ -86,12 +86,12 @@ public sealed partial class CompanyViewModel : SectionViewModel
         var me = $"Zalogowany operator: {Session.User.Login} — role: {(Session.User.Roles.Count == 0 ? "brak (poproś administratora o nadanie uprawnień)" : string.Join(", ", Session.User.Roles.Select(RolePermissions.Name)))}.";
         if (Session.User.Can(Permission.ManageUsers))
         {
-            var ops = new TableData(new TableColumn("Operator (konto systemu)", Width: 2), new TableColumn("Role", Width: 3), new TableColumn("Aktywny", Width: 0.6),
+            var ops = new TableData(new TableColumn("Login PostgreSQL", Width: 2), new TableColumn("Role", Width: 3), new TableColumn("Aktywny", Width: 0.6),
                 new TableColumn("Ostatnio", ColumnKind.Date));
             foreach (var o in await new OperatorAccessService(db, Session.Clock).ListAsync(Session.User))
                 ops.Add(o.Id, o.Login, string.Join(", ", o.Roles.Select(RolePermissions.Name)), o.IsActive, o.LastSeenUtc is { } ls ? DateOnly.FromDateTime(ls) : (DateOnly?)null);
             Operators = ops;
-            OperatorsInfo = me + " Dodaj wcześniej operatora jako użytkownik@komputer (np. jan@LAPTOP), wybierz jego role i zapisz. Nowe stanowisko może też samo zgłosić się po połączeniu — bez praw do momentu przyznania dostępu. Konto PostgreSQL i token KSeF są konfigurowane oddzielnie na komputerze.";
+            OperatorsInfo = me + " Administrator najpierw tworzy osobne konto LOGIN w PostgreSQL i nadaje mu ograniczone prawa SQL; tutaj rejestruje db:login i role aplikacji. Nieznane loginy są odrzucane. Jeden login może pracować na różnych urządzeniach, ale tylko w jednej aktywnej sesji programu naraz.";
         }
         else
         {
@@ -125,7 +125,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
     [RelayCommand]
     private Task AddOperatorAsync() => ChangeAsync(async () =>
     {
-        if (string.IsNullOrWhiteSpace(NewOperatorLogin)) throw new DomainException("Podaj użytkownik@komputer.");
+        if (string.IsNullOrWhiteSpace(NewOperatorLogin)) throw new DomainException("Podaj db:login użytkownika PostgreSQL.");
         await using var db = Session.OpenDb();
         await new OperatorAccessService(db, Session.Clock).RegisterAsync(Session.User, NewOperatorLogin, SelectedOperatorRoles());
         NewOperatorLogin = "";
