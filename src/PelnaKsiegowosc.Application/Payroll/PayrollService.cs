@@ -268,7 +268,7 @@ public sealed class PayrollService
                         e.Pit2Reduction > 0 ? reductionLeft : 0m, ppkTaxable, list.PaymentDate);
                     fresh.BaseGross = input.Gross;
                     if (input.SickDays > 0 && sickBasis is null)
-                        fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest NIEUSTALONA — kwota świadczenia = 0 WYŁĄCZNIE W ROBOCZEJ LIŚCIE; księgowanie WSTĘPNEJ listy zablokowane";
+                        fresh.Notes = (fresh.Notes ?? "") + "; UWAGA: podstawa chorobowego jest NIEUSTALONA — kwota świadczenia = 0 WYŁĄCZNIE W ROBOCZEJ LIŚCIE WSTĘPNA; księgowanie tej listy zablokowane";
                     if (independentCivil && civil != false) civilMandatoryBasis = (civilMandatoryBasis ?? 0m) + fresh.SocialBasis;
                     reductionLeft -= fresh.TaxReduction;
                     bases[input.ItemId] = fresh.SocialBasis;
