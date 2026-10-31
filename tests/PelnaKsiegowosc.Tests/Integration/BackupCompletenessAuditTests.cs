@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
@@ -137,6 +138,38 @@ public class BackupCompletenessAuditTests
         {
             var (_, size) = await inner.SaveAtAsync(storagePath, content, ct);
             return (new string('0', 64), size);
+        }
+    }
+
+    [Fact]
+    public async Task Encrypted_backup_with_duplicate_zip_entry_paths_is_rejected()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pk-zip-duplicates-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            using var zipBytes = new MemoryStream();
+            using (var zip = new ZipArchive(zipBytes, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                for (var i = 0; i < 2; i++)
+                {
+                    var entry = zip.CreateEntry("dane/Companies.jsonl");
+                    await using var entryOut = entry.Open();
+                    await entryOut.WriteAsync(new byte[] { (byte)('a' + i) });
+                }
+            }
+            zipBytes.Position = 0;
+            var encrypted = Path.Combine(root, "duplicated.pkbak");
+            await using (var output = File.Create(encrypted))
+                await ArchiveCrypto.EncryptAsync(zipBytes, output, Key, Guid.NewGuid(), DateTime.UtcNow);
+            var service = new BackupService(new FixedClock(DateTime.UtcNow), Path.Combine(root, "tmp"));
+            var verification = await service.VerifyAsync(encrypted, Key);
+            Assert.False(verification.Ok);
+            Assert.Contains(verification.Problems, p => p.Contains("powtarzającą", StringComparison.Ordinal));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, true);
         }
     }
 
