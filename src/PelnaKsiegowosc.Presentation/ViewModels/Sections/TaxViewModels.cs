@@ -143,9 +143,8 @@ public sealed partial class CitViewModel : SectionViewModel
             await using var db = Session.OpenDb();
             var policy = await db.AccountingPolicies.AsNoTracking().Where(p => p.CompanyId == Session.CompanyId).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
             var svc = new DeferredTaxService(db, Session.User, Session.Clock);
-            const decimal loss = 0m; // straty podatkowe — z rejestru strat (zakładka „Straty z lat ubiegłych”)
-            var c = await svc.ComputeAsync(y.Id, y.EndDate, loss);
-            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} × {d.RatePercent:0}% (rok odwrócenia {d.ReversalYear}) = {Money.Format(d.Tax)} ({d.Basis})")) +
+            var c = await svc.ComputeAsync(y.Id, y.EndDate); // straty podatkowe — wyłącznie z rejestru strat (z oceną wykorzystania)
+            var text = string.Join(Environment.NewLine, c.Differences.Select(d => $"{d.Item}: bilansowa {Money.Format(d.BookValue)}, podatkowa {Money.Format(d.TaxValue)}, różnica {Money.Format(d.Difference)} × {d.RatePercent:0}% (odwrócenie w roku od {d.ReversalPeriodStart.ToPl()}) = {Money.Format(d.Tax)} ({d.Basis})")) +
                 $"{Environment.NewLine}{Environment.NewLine}" +
                 $"Dodatnie różnice przejściowe: {Money.Format(c.TaxableDifferences)} → rezerwa {Money.Format(c.Provision)} (zaksięgowano {Money.Format(c.BookedProvision)}){Environment.NewLine}" +
                 $"Ujemne różnice przejściowe: {Money.Format(c.DeductibleDifferences)} → aktywo {Money.Format(c.Asset)} (zaksięgowano {Money.Format(c.BookedAsset)}){Environment.NewLine}" +
@@ -154,7 +153,7 @@ public sealed partial class CitViewModel : SectionViewModel
                 (policy is { IsMicroEntity: true } or { IsSmallEntity: true } ? $"{Environment.NewLine}{Environment.NewLine}Jednostka mała/mikro może nie ustalać podatku odroczonego (art. 37 ust. 10 UoR) — zgodnie z polityką rachunkowości." : "");
             if (c.ProvisionChange == 0 && c.AssetChange == 0) { await Dialogs.ShowTextAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Stan zaksięgowany jest aktualny."); return; }
             if (!await Dialogs.ConfirmAsync("Podatek odroczony", text + Environment.NewLine + Environment.NewLine + "Zaksięgować zmianę (841 / 842 / 872)?")) return;
-            await svc.PostAsync(y.Id, y.EndDate, loss);
+            await svc.PostAsync(y.Id, y.EndDate);
             StatusMessage = "Podatek odroczony zaksięgowany.";
         });
     }
@@ -167,7 +166,7 @@ public sealed partial class CitViewModel : SectionViewModel
     private Task SaveExpectedRateAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();
-        await new DeferredTaxService(db, Session.User, Session.Clock).SetExpectedRateAsync(Session.CurrentYear.EndDate.Year + 1, Parse.Amount(ExpectedRate, "Stawka"), ExpectedRateJustification);
+        await new DeferredTaxService(db, Session.User, Session.Clock).SetExpectedRateAsync(Session.CurrentYear.EndDate.AddDays(1), Parse.Amount(ExpectedRate, "Stawka"), ExpectedRateJustification);
     }, "Zapisano prognozę stawki dla podatku odroczonego.");
 
     protected override async Task LoadCoreAsync()
@@ -229,8 +228,9 @@ public sealed partial class CitViewModel : SectionViewModel
 
         var losses = new TableData(new TableColumn("Rok straty"), new TableColumn("Źródło", Width: 1.2), new TableColumn("Strata", ColumnKind.Money),
             new TableColumn("Odliczono", ColumnKind.Money), new TableColumn("Pozostało", ColumnKind.Money), new TableColumn("Odliczenie do"));
-        foreach (var (l, used, until) in await svc.LossesAsync())
-            losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used, until is { } u ? u.ToPl() : "do potwierdzenia");
+        foreach (var (l, used, until, projected) in await svc.LossesAsync())
+            losses.Add(l.Id, l.YearLabel, l.CapitalGains ? "zyski kapitałowe" : "inne źródła", l.Amount, used, l.Amount - used,
+                until is { } u ? u.ToPl() + (projected ? " (prognoza — przeliczana po utworzeniu kolejnych lat)" : "") : "do potwierdzenia");
         Losses = losses;
     }
 

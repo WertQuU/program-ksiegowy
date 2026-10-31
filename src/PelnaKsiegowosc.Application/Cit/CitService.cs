@@ -343,9 +343,18 @@ public sealed class CitService
             if (netFinancing > limit)
             {
                 var excess = Money.Round(netFinancing - limit);
-                taxCost -= excess;
+                // podział nadwyżki między źródła proporcjonalnie do kosztów finansowania zaliczonych do każdego z nich
+                var capitalInterest = tb.Where(t => t.IsLeaf && t.Account.Type == AccountType.WynikoweKosztowe && FinancingCost(t.Account)
+                                                    && t.Account.CitClassification == CitClassification.KosztZyskiKapitalowe).Sum(t => t.CumulativeDebit - t.CumulativeCredit);
+                var excessCapital = interestCosts == 0 ? 0m : Money.Round(excess * capitalInterest / interestCosts);
+                var excessOperating = excess - excessCapital;
+                taxCost -= excessOperating;
+                capCost -= excessCapital;
                 k5 += excess;
-                r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego ponad limit {Money.Format(limit)} zł", excess, "art. 15c ust. 1 i 1a ustawy o CIT"));
+                if (excessOperating != 0)
+                    r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego ponad limit {Money.Format(limit)} zł", excessOperating, "art. 15c ust. 1 i 1a ustawy o CIT"));
+                if (excessCapital != 0)
+                    r.Adjustments.Add(new($"Nadwyżka kosztów finansowania dłużnego ponad limit {Money.Format(limit)} zł — zyski kapitałowe", excessCapital, "art. 15c ust. 1 i 1a ustawy o CIT"));
                 r.Warnings.Add($"Art. 15c: wyłączono z KUP nadwyżkę kosztów finansowania dłużnego {Money.Format(excess)} zł (limit kwotowy {Money.Format(amountLimit)} zł, 30% EBITDA {Money.Format(Money.Round(0.3m * ebitda))} zł). Nadwyżkę zalicza się do KUP w 5 kolejnych latach w ramach limitu (korekta „dodatkowy KUP” z oznaczeniem lat ubiegłych). Koszty wyłączone z limitu oznacz na koncie (Plan kont → art. 15c: nie dotyczy).");
             }
         }
@@ -674,13 +683,17 @@ public sealed class CitService
     }
 
     /// <summary>Straty z kwotą odliczoną i końcem okresu odliczenia (wspólny mechanizm <see cref="TaxLossRules.WindowEnd"/>; null — do potwierdzenia).</summary>
-    public async Task<List<(TaxLoss Loss, decimal Used, DateOnly? DeductibleUntil)>> LossesAsync(CancellationToken ct = default)
+    public async Task<List<(TaxLoss Loss, decimal Used, DateOnly? DeductibleUntil, bool Projected)>> LossesAsync(CancellationToken ct = default)
     {
         var losses = await _db.TaxLosses.AsNoTracking().Where(l => l.CompanyId == _user.CompanyId).OrderBy(l => l.YearEnd).ToListAsync(ct);
         var used = (await _db.TaxLossDeductions.AsNoTracking().Where(d => d.CompanyId == _user.CompanyId).ToListAsync(ct)).GroupBy(d => d.TaxLossId).ToDictionary(g => g.Key, g => g.Sum(d => d.Amount));
         var years = (await _db.FiscalYears.AsNoTracking().Where(f => f.CompanyId == _user.CompanyId).Select(f => new { f.StartDate, f.EndDate }).ToListAsync(ct))
             .Select(y => (y.StartDate, y.EndDate)).OrderBy(y => y.StartDate).ToList();
-        return losses.Select(l => (l, used.GetValueOrDefault(l.Id), TaxLossRules.WindowEnd(l, years))).ToList();
+        return losses.Select(l =>
+        {
+            var (end, projected) = TaxLossRules.Window(l, years);
+            return (l, used.GetValueOrDefault(l.Id), end, projected);
+        }).ToList();
     }
 
     /// <summary>Potwierdzenie końca okresu odliczenia straty (gdy lat podatkowych po stracie nie ma w programie).</summary>

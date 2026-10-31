@@ -54,9 +54,13 @@ public class BackupTests
         Assert.Equal(1, await t.Db.BackupRecords.CountAsync(b => b.Verified && b.Status == "OK"));
 
         var restoreDir = Path.Combine(t.Directory, "odtworzona");
-        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir);
+        var dbKey = SqliteEncryption.NewKey();
+        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, "")); // bez klucza — odmowa
+        var restored = await svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey);
         Assert.True(restored.Ok, string.Join("; ", restored.Problems));
-        await using var db2 = TestBooks.Open(restored.DatabasePath);
+        Assert.True(SqliteEncryption.IsEncrypted(restored.DatabasePath));
+        await using var db2 = DbContextFactory.Create(DatabaseEngine.Sqlite,
+            new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = restored.DatabasePath }.BuildConnectionString(null, encrypted: true), dbKey);
         var tbOrig = await new LedgerQueries(t.Db).TrialBalanceAsync(t.Year.Id, t.Year.StartDate, t.Year.EndDate);
         var tbRest = await new LedgerQueries(db2).TrialBalanceAsync(t.Year.Id, t.Year.StartDate, t.Year.EndDate);
         Assert.Equal(tbOrig.Select(x => (x.Account.Number, x.Balance)), tbRest.Select(x => (x.Account.Number, x.Balance)));
@@ -67,7 +71,7 @@ public class BackupTests
         Assert.StartsWith("%PDF", Encoding.ASCII.GetString(bytes));
 
         // ponowne odtworzenie do tego samego katalogu — odmowa (brak nadpisania)
-        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir));
+        await Assert.ThrowsAsync<DomainException>(() => svc.RestoreToSqliteAsync(res.FilePath, Pass, restoreDir, dbKey));
     }
 
     [Fact]
@@ -91,7 +95,7 @@ public class BackupTests
         var truncated = res.FilePath + ".obciety";
         File.WriteAllBytes(truncated, File.ReadAllBytes(res.FilePath)[..^100]);
         Assert.False((await svc.VerifyAsync(truncated, Pass)).Ok);
-        await Assert.ThrowsAnyAsync<Exception>(() => svc.RestoreToSqliteAsync(tampered, Pass, Path.Combine(t.Directory, "x")));
+        await Assert.ThrowsAnyAsync<Exception>(() => svc.RestoreToSqliteAsync(tampered, Pass, Path.Combine(t.Directory, "x"), SqliteEncryption.NewKey()));
         Assert.False(File.Exists(Path.Combine(t.Directory, "x", "ksiegi.db")));
     }
 

@@ -130,12 +130,19 @@ public static class TaxLossRules
     /// z lat podatkowych w programie; lata przyszłe — jako 12-miesięczne (do aktualizacji po ich utworzeniu).
     /// Null — lata podatkowe po stracie nie są znane (strata sprzed prowadzenia ksiąg w programie bez potwierdzenia okresu).
     /// </summary>
-    public static DateOnly? WindowEnd(TaxLoss loss, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears)
+    public static DateOnly? WindowEnd(TaxLoss loss, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears) => Window(loss, taxYears).End;
+
+    /// <summary>
+    /// Okres odliczenia z oznaczeniem pewności: <c>Projected</c> = true, gdy koniec zależy od lat podatkowych jeszcze nieutworzonych
+    /// (przyjęte jako 12-miesięczne) — termin prognozowany, przeliczany po utworzeniu kolejnych lat; false — potwierdzony
+    /// przez użytkownika albo wynikający w całości z lat podatkowych w programie.
+    /// </summary>
+    public static (DateOnly? End, bool Projected) Window(TaxLoss loss, IReadOnlyList<(DateOnly Start, DateOnly End)> taxYears)
     {
-        if (loss.DeductibleUntil is { } confirmed) return confirmed;
+        if (loss.DeductibleUntil is { } confirmed) return (confirmed, false);
         var chain = Chain(loss.YearEnd, taxYears);
-        if (chain.Count == 0) return taxYears.Any(y => y.Start > loss.YearEnd) ? null : loss.YearEnd.AddYears(5);
-        return chain.Count >= 5 ? chain[4].End : chain[^1].End.AddYears(5 - chain.Count);
+        if (chain.Count == 0) return taxYears.Any(y => y.Start > loss.YearEnd) ? (null, false) : (loss.YearEnd.AddYears(5), true);
+        return chain.Count >= 5 ? (chain[4].End, false) : (chain[^1].End.AddYears(5 - chain.Count), true);
     }
 
     /// <summary>

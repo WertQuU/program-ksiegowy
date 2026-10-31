@@ -342,10 +342,12 @@ public sealed class BackupService
     /// Odtworzenie kopii do NOWEGO katalogu (baza SQLite + załączniki). Jeżeli katalog zawiera bazę, operacja jest odrzucana.
     /// Po odtworzeniu: migracje schematu, porównanie liczności tabel i sum kontrolnych ksiąg z manifestem.
     /// </summary>
-    /// <param name="databaseKey">Klucz SQLCipher dla odtworzonej bazy (64 znaki szesnastkowe). Podany — baza trafia do katalogu
+    /// <param name="databaseKey">Klucz SQLCipher dla odtworzonej bazy (64 znaki szesnastkowe) — obowiązkowy: baza trafia do katalogu
     /// docelowego wyłącznie w postaci zaszyfrowanej (jawna kopia robocza powstaje tylko w prywatnym katalogu tymczasowym i jest usuwana).</param>
-    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, CancellationToken ct = default, string? databaseKey = null)
+    public async Task<RestoreResult> RestoreToSqliteAsync(string archivePath, BackupKey key, string targetDirectory, string databaseKey, CancellationToken ct = default)
     {
+        if (databaseKey is not { Length: 64 } || !databaseKey.All(Uri.IsHexDigit))
+            throw new DomainException("Odtwarzanie wymaga klucza szyfrowania bazy — odtworzona baza nie może zostać zapisana jawnie.");
         var dbPath = Path.Combine(targetDirectory, "ksiegi.db");
         if (File.Exists(dbPath)) throw new DomainException($"W katalogu {targetDirectory} istnieje już baza — odtwarzanie nie nadpisuje danych. Wskaż pusty katalog.");
         CreatePrivateDirectory(targetDirectory);
@@ -372,8 +374,7 @@ public sealed class BackupService
                 problems.AddRange(await CompareAsync(db, manifest, ct));
             }
             SqliteConnection.ClearAllPools();
-            if (databaseKey is not null) SqliteEncryption.ExportEncrypted(work, dbPath, databaseKey);
-            else File.Copy(work, dbPath);
+            SqliteEncryption.ExportEncrypted(work, dbPath, databaseKey);
             return new RestoreResult(dbPath, attTarget, manifest, problems);
         }
         finally

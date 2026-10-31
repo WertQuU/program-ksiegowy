@@ -598,7 +598,8 @@ public class TaxLossTests
         Assert.Equal(0m, rec.CapitalGains.TaxBase);
         Assert.Contains(rec.Warnings, w => w.Contains("przekraczają dochód ze źródła")); // brak dochodu z zysków kapitałowych
         Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 7 ust. 5"));
-        var (_, used, until) = (await cit.LossesAsync()).Single(x => x.Loss.Id == loss.Id);
+        var (_, used, until, projected) = (await cit.LossesAsync()).Single(x => x.Loss.Id == loss.Id);
+        Assert.True(projected); // lata 2027–2030 jeszcze nie istnieją — termin prognozowany
         Assert.Equal(5000m, used);
         Assert.Equal(new DateOnly(2030, 12, 31), until);
         Assert.Throws<DomainException>(() => TaxLossRules.Validate(loss, new List<TaxLossDeduction>(), 1, new DateOnly(2026, 12, 31), 5_000_001m, oneTime: true));
@@ -709,5 +710,27 @@ public class AdditionalComplianceTests
             Assert.True(File.Exists(Path.Combine(dir, "inny.txt")));
         }
         finally { Directory.Delete(dir, true); }
+    }
+
+    [Fact]
+    public async Task Debt_financing_excess_is_split_between_income_sources()
+    {
+        await using var t = await TestBooks.CreateAsync();
+        var d = new DateOnly(2026, 3, 31);
+        // przychody 10 mln; odsetki: 3 mln w źródle „inne” (751-01) i 1 mln w zyskach kapitałowych (konto 751-02 oznaczone jako koszt finansowania)
+        var fx = await t.Db.Accounts.FirstAsync(a => a.Number == "751-02");
+        fx.CitClassification = CitClassification.KosztZyskiKapitalowe;
+        fx.DebtFinancing = DebtFinancingKind.Koszt;
+        await t.Db.SaveChangesAsync();
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/1", new("130-01", 10_000_000m, 0), new("700-01", 0, 10_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/2", new("751-01", 3_000_000m, 0), new("130-01", 0, 3_000_000m)));
+        await t.Ledger().CreateAndPostAsync(TestBooks.Entry(d, "PK/3", new("751-02", 1_000_000m, 0), new("130-01", 0, 1_000_000m)));
+        await t.Db.SaveChangesAsync();
+        var rec = await new CitService(t.Db, t.User, t.Clock).ReconcileAsync(t.Year.Id, 12);
+        // koszty finansowania 4 mln, limit 3 mln → nadwyżka 1 mln: 3/4 ze źródła „inne”, 1/4 z zysków kapitałowych
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c") && !a.Item.Contains("kapitałowe") && a.Amount == 750_000m);
+        Assert.Contains(rec.Adjustments, a => a.Basis.Contains("art. 15c") && a.Item.Contains("kapitałowe") && a.Amount == 250_000m);
+        Assert.Equal(750_000m, rec.CapitalGains.TaxCosts);
+        Assert.Equal(2_250_000m, rec.Operating.TaxCosts);
     }
 }
