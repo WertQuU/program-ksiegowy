@@ -51,7 +51,7 @@ public sealed class PostgresSnapshotBackupTests
         {
             var service = new BackupService(new FixedClock(new DateTime(2026, 10, 31, 12, 0, 0, DateTimeKind.Utc)), Path.Combine(root, "staging"));
             await using var transaction = await db.Database.BeginTransactionAsync();
-            var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            var error = await Assert.ThrowsAsync<PelnaKsiegowosc.Domain.Common.DomainException>(() =>
                 service.CreateAsync(db,
                     new DatabaseProfile { Engine = DatabaseEngine.PostgreSql },
                     new LocalFileStore(Path.Combine(root, "zalaczniki")), null,
