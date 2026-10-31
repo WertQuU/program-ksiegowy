@@ -85,4 +85,23 @@ public class PayrollExternalEmployerChronologyTests
         Assert.Contains("nie mogą maleć", error.Message);
         Assert.Equal(PayrollStatus.Robocza, april.Status);
     }
+    [Fact]
+    public async Task Posting_blocks_incomplete_payroll_when_sick_days_require_separate_zus_benefit()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var payroll = new PayrollService(books.Db, books.User, books.Clock);
+        var employee = await payroll.AddEmployeeAsync(Employee());
+        var april = new DateOnly(2026, 4, 1);
+        await payroll.RecordSickWageAssessmentAsync(employee.Id, april, 33,
+            SickWageCause.Ordinary80, "ŚWIADECTWO/2026/04");
+        var list = await payroll.CreateListAsync(april, new DateOnly(2026, 4, 30));
+        await payroll.ChangeAsync(list.Items.Single().Id, null, 4, null);
+        Assert.True(list.Items.Single().SickDays > list.Items.Single().SickDaysEmployer);
+
+        var ex = await Assert.ThrowsAsync<DomainException>(() => payroll.PostAsync(list.Id));
+        Assert.Contains("zasiłku chorobowego", ex.Message);
+        Assert.Equal(PayrollStatus.Robocza, list.Status);
+        Assert.Null(list.JournalEntryId);
+    }
+
 }
