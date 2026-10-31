@@ -73,7 +73,8 @@ public static class DataDump
     /// <summary>
     /// Import do pustej bazy (po migracjach) w jednej transakcji — przy błędzie nic nie zostaje zapisane.
     /// </summary>
-    public static async Task<Dictionary<string, long>> ImportAsync(KsiegiDbContext db, string directory, CancellationToken ct = default)
+    public static async Task<Dictionary<string, long>> ImportAsync(KsiegiDbContext db, string directory, CancellationToken ct = default,
+        Func<KsiegiDbContext, CancellationToken, Task>? verifyBeforeCommit = null)
     {
         foreach (var et in OrderedEntityTypes(db))
             if (await CountAsync(db, et.ClrType, ct) > 0)
@@ -110,6 +111,10 @@ public static class DataDump
         }
         foreach (var chunk in posted.Chunk(500))
             await db.JournalEntries.Where(e => chunk.Contains(e.Id)).ExecuteUpdateAsync(u => u.SetProperty(e => e.Status, EntryStatus.Zaksiegowany), ct);
+            // Nie zatwierdzaj odtworzenia, jeśli salda, liczności lub łańcuch zapisów
+            // nie są zgodne z manifestem. Weryfikator odczytuje dane w tej transakcji.
+            if (verifyBeforeCommit is not null)
+                await verifyBeforeCommit(db, ct);
             await tx.CommitAsync(ct);
             return counts;
         }
