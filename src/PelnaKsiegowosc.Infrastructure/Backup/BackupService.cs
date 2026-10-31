@@ -439,39 +439,70 @@ public sealed class BackupService
     {
         if (databaseKey is not { Length: 64 } || !databaseKey.All(Uri.IsHexDigit))
             throw new DomainException("Odtwarzanie wymaga klucza szyfrowania bazy — odtworzona baza nie może zostać zapisana jawnie.");
-        var dbPath = Path.Combine(targetDirectory, "ksiegi.db");
-        if (File.Exists(dbPath)) throw new DomainException($"W katalogu {targetDirectory} istnieje już baza — odtwarzanie nie nadpisuje danych. Wskaż pusty katalog.");
-        CreatePrivateDirectory(targetDirectory);
-        var dir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
+        if (attachmentsKey is not { Length: 32 })
+            throw new DomainException("Odtwarzanie wymaga klucza AES-256 dla załączników.");
+
+        var target = Path.GetFullPath(targetDirectory);
+        var targetInfo = new DirectoryInfo(target);
+        if (targetInfo.Exists && (targetInfo.Attributes.HasFlag(FileAttributes.ReparsePoint) ||
+                                  targetInfo.EnumerateFileSystemInfos().Any()))
+            throw new DomainException("Odtwarzanie wymaga pustego, zwykłego katalogu — istniejące dane nie będą nadpisane.");
+        var parent = Path.GetDirectoryName(target)
+            ?? throw new DomainException("Nie można odtwarzać ksiąg bezpośrednio do katalogu głównego dysku.");
+        var pending = Path.Combine(parent, "." + Path.GetFileName(target) + "-odtwarzanie-" + Guid.NewGuid().ToString("N"));
+        var workDir = Path.Combine(_tempRoot, "odtwarzanie-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var manifest = await ExtractAsync(archivePath, key, dir, ct);
-            var problems = await CheckFilesAsync(dir, manifest, ct);
-            if (problems.Count > 0) throw new DomainException("Archiwum jest uszkodzone — odtwarzanie przerwane: " + string.Join("; ", problems));
-            var content = Path.Combine(dir, "zawartosc");
-            var attTarget = Path.Combine(targetDirectory, "Zalaczniki");
-            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"), new Application.Documents.LocalFileStore(attTarget, attachmentsKey), ct);
+            CreatePrivateDirectory(pending);
+            var manifest = await ExtractAsync(archivePath, key, workDir, ct);
+            var problems = await CheckFilesAsync(workDir, manifest, ct);
+            if (problems.Count > 0)
+                throw new DomainException("Archiwum jest uszkodzone — odtwarzanie przerwane: " + string.Join("; ", problems));
+            var content = Path.Combine(workDir, "zawartosc");
+            var pendingAttachments = Path.Combine(pending, "Zalaczniki");
+            await RestoreAttachmentsAsync(Path.Combine(content, "zalaczniki"),
+                new Application.Documents.LocalFileStore(pendingAttachments, attachmentsKey), ct);
 
-            // praca na jawnej kopii w prywatnym katalogu roboczym: migracja schematu, import, kontrola kompletności
-            var work = Path.Combine(dir, "odtwarzana.db");
+            // Wszystkie operacje wrażliwe wykonaj poza katalogiem docelowym.
+            var work = Path.Combine(workDir, "odtwarzana.db");
             var profile = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = work };
             if (manifest.IncludesDatabaseFile)
                 File.Copy(Path.Combine(content, "baza", "ksiegi.db"), work);
             await using (var db = DbContextFactory.Create(DatabaseEngine.Sqlite, profile.BuildConnectionString(null)))
             {
                 await db.Database.MigrateAsync(ct);
-                if (!manifest.IncludesDatabaseFile) await DataDump.ImportAsync(db, Path.Combine(content, "dane"), ct);
+                if (!manifest.IncludesDatabaseFile)
+                    await DataDump.ImportAsync(db, Path.Combine(content, "dane"), ct,
+                        async (candidate, token) =>
+                        {
+                            var difference = await CompareAsync(candidate, manifest, token);
+                            if (difference.Count > 0)
+                                throw new InvalidDataException("Odtworzone księgi są niezgodne z manifestem: " + string.Join("; ", difference));
+                        });
                 problems.AddRange(await CompareAsync(db, manifest, ct));
                 if (problems.Count > 0)
-                    throw new InvalidDataException("Odtwarzana baza nie przeszła weryfikacji ksiąg — plik docelowy nie zostanie opublikowany: " + string.Join("; ", problems));
+                    throw new InvalidDataException("Odtwarzana baza nie przeszła weryfikacji: " + string.Join("; ", problems));
             }
             SqliteConnection.ClearAllPools();
-            SqliteEncryption.ExportEncrypted(work, dbPath, databaseKey);
-            return new RestoreResult(dbPath, attTarget, manifest, problems);
+            SqliteEncryption.ExportEncrypted(work, Path.Combine(pending, "ksiegi.db"), databaseKey);
+
+            // Katalog jest przygotowany i zweryfikowany: publikujemy go jednym
+            // przeniesieniem na tym samym woluminie, nigdy nie odsłaniając
+            // użytkownikowi częściowo odtworzonej bazy i załączników.
+            if (Directory.Exists(target))
+            {
+                if (new DirectoryInfo(target).Attributes.HasFlag(FileAttributes.ReparsePoint) ||
+                    Directory.EnumerateFileSystemEntries(target).Any())
+                    throw new DomainException("Katalog docelowy został zmieniony podczas odtwarzania — odmowa nadpisania.");
+                Directory.Delete(target);
+            }
+            Directory.Move(pending, target);
+            return new RestoreResult(Path.Combine(target, "ksiegi.db"), Path.Combine(target, "Zalaczniki"), manifest, problems);
         }
         finally
         {
-            TryDelete(dir);
+            TryDelete(workDir);
+            TryDelete(pending);
         }
     }
 
