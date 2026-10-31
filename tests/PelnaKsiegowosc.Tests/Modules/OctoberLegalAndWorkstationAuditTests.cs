@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Infrastructure.Configuration;
+using PelnaKsiegowosc.Infrastructure.Secrets;
 using PelnaKsiegowosc.Infrastructure.Export;
 using Npgsql;
 using PelnaKsiegowosc.Domain.Companies;
@@ -28,6 +29,64 @@ public class OctoberLegalAndWorkstationAuditTests
             OperationDate = new DateOnly(2026, 2, 10)
         };
         Assert.Equal(new DateOnly(2026, 2, 1), DocumentService.DefaultVatPeriod(invoice));
+    }
+
+    [Fact]
+    public async Task Legacy_connector_refuses_sqlite_as_active_database_without_creating_it()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pk-active-pg-only-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var profile = new DatabaseProfile
+            {
+                Engine = DatabaseEngine.Sqlite,
+                SqlitePath = Path.Combine(root, "books.sqlite")
+            };
+            var connector = new DatabaseConnector(new FileSecretStore(Path.Combine(root, "secrets")));
+            var (opened, error) = await connector.OpenActiveAsync(profile);
+            Assert.Null(opened);
+            Assert.NotNull(error);
+            Assert.Contains("PostgreSQL", error);
+            Assert.False(File.Exists(profile.SqlitePath));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [PostgresFact]
+    public async Task Legacy_connector_refuses_pending_postgres_migrations_without_changing_schema()
+    {
+        var (db, _, _) = await PostgresTests.CreateEmptyPostgresAsync();
+        await using var cleanup = db;
+        var actualConnection = new NpgsqlConnectionStringBuilder(db.Database.GetDbConnection().ConnectionString);
+        var credentials = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PK_TEST_PG")!);
+        var root = Path.Combine(Path.GetTempPath(), "pk-no-auto-migration-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var profile = new DatabaseProfile
+            {
+                Engine = DatabaseEngine.PostgreSql,
+                Host = actualConnection.Host,
+                Port = actualConnection.Port,
+                Database = actualConnection.Database,
+                Username = actualConnection.Username,
+                SslMode = PgSslMode.Disable // testowy PostgreSQL na localhost
+            };
+            var secretStore = new FileSecretStore(Path.Combine(root, "secrets"));
+            secretStore.Set(profile.PasswordSecretKey, credentials.Password ?? "");
+            var connector = new DatabaseConnector(secretStore);
+            var (opened, error) = await connector.OpenActiveAsync(profile);
+            Assert.Null(opened);
+            Assert.NotNull(error);
+            Assert.Contains("Wymagana aktualizacja schematu", error);
+            Assert.Empty(await db.Database.GetAppliedMigrationsAsync());
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
     }
 
     [Fact]
