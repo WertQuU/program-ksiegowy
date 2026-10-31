@@ -109,6 +109,10 @@ public static class PayrollCalculator
             var sickDeduction = wholeMonthSick || a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
+            if (a.CalendarDaysInMonth == 31 && a.SickDays == 30)
+                notes.Add("WSTĘPNA: 30 dni choroby w 31-dniowym miesiącu — pozostały dzień może być dniem pracy; " +
+                          "0 zł za pracę nie jest potwierdzonym wynagrodzeniem. " +
+                          "Weryfikacja przepracowanych godzin i ręczne rozliczenie wymagane przed księgowaniem (art. 80 KP).");
             // Art. 36–43 ustawy zasiłkowej: nie wolno przyjmować bieżącego gross
             // jako podstawy chorobowego. Serwis płac przekazuje zweryfikowaną
             // podstawę, a przy brakach — 0 z oznaczeniem listy jako wstępnej,
