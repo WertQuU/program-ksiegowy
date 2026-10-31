@@ -26,7 +26,9 @@ public static class OperatorIdentity
         profile.Engine == DatabaseEngine.PostgreSql
             ? "db:" + (string.IsNullOrWhiteSpace(profile.Username)
                 ? throw new DomainException("Połączenie serwerowe wymaga indywidualnego loginu bazy danych.")
-                : profile.Username.Trim().ToLowerInvariant())
+                : PostgresLoginPolicy.IsValid(profile.Username)
+                    ? profile.Username
+                    : throw new DomainException("Login PostgreSQL musi być zapisany małymi literami (a-z, 0-9, _) i nie może przekraczać 63 znaków."))
             : Login;
 
     public static CurrentUser For(Guid companyId, DatabaseProfile profile) =>
