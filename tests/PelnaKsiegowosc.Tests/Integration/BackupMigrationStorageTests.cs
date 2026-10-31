@@ -458,6 +458,29 @@ public class DatabaseEncryptionTests
 public class AttachmentEncryptionTests
 {
     [Fact]
+    public async Task Existing_evidence_cannot_be_overwritten_by_a_second_attachment_write()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "pk-immutable-attachment-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new LocalFileStore(dir, RandomNumberGenerator.GetBytes(32));
+            var first = "%PDF-1.7 oryginal";
+            await store.SaveAtAsync("2026/10/dowod.bin", new MemoryStream(Encoding.UTF8.GetBytes(first)));
+            await Assert.ThrowsAnyAsync<IOException>(() =>
+                store.SaveAtAsync("2026/10/dowod.bin",
+                    new MemoryStream(Encoding.UTF8.GetBytes("%PDF-1.7 podmieniony"))));
+            await using var stored = await store.OpenAsync("2026/10/dowod.bin");
+            using var output = new MemoryStream();
+            await stored.CopyToAsync(output);
+            Assert.Equal(first, Encoding.UTF8.GetString(output.ToArray()));
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Attachments_are_encrypted_at_rest_and_legacy_files_are_converted()
     {
         var dir = Path.Combine(Path.GetTempPath(), "pk-zal-" + Guid.NewGuid().ToString("N"));
