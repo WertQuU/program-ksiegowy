@@ -33,6 +33,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         Session = session;
         TermsText = Terms.Text;
         Database.SqlitePath = session.Paths.DefaultDatabaseFile;
+        LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
         YearEnd = new DateOnly(y, 12, 31).ToPl();
@@ -103,6 +104,13 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private string _recoveryKey = "";
     [ObservableProperty] private bool _recoveryKeySaved;
     [ObservableProperty] private bool _skipBackupKey;
+    [ObservableProperty] private string _localBackupDirectory = "";
+    [ObservableProperty] private bool _configureS3;
+    [ObservableProperty] private string _s3Endpoint = "";
+    [ObservableProperty] private string _s3Region = "";
+    [ObservableProperty] private string _s3Bucket = "";
+    [ObservableProperty] private string _s3AccessKey = "";
+    [ObservableProperty] private string _s3SecretKey = "";
 
     // Sekret KSeF podaje operator stanowiska; trafia WYŁĄCZNIE do lokalnego magazynu sekretów.
     [ObservableProperty] private bool _configureKsef;
@@ -167,6 +175,18 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                     throw new DomainException($"Podaj kierownika jednostki ({LegalForms.ManagementBody(Company.LegalForm.Value)}) — odpowiada za wykonywanie obowiązków w zakresie rachunkowości (art. 4 ust. 5 UoR).");
                 break;
             case WizardStep.KopieZapasowe:
+                if (string.IsNullOrWhiteSpace(LocalBackupDirectory))
+                    throw new DomainException("Wskaż katalog lokalnych zaszyfrowanych kopii zapasowych.");
+                if (ConfigureS3)
+                {
+                    if (!Uri.TryCreate(S3Endpoint.Trim(), UriKind.Absolute, out var endpoint) ||
+                        endpoint.Scheme != Uri.UriSchemeHttps || string.IsNullOrWhiteSpace(S3Region) ||
+                        string.IsNullOrWhiteSpace(S3Bucket) ||
+                        string.IsNullOrWhiteSpace(S3AccessKey) || string.IsNullOrWhiteSpace(S3SecretKey))
+                        throw new DomainException("Kopie S3: podaj adres HTTPS endpointu, region, bucket oraz oba klucze dostępowe. Sekrety pozostaną w systemowym magazynie haseł tego komputera.");
+                    if (!S3Bucket.Trim().All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '.'))
+                        throw new DomainException("Nazwa bucketu S3 zawiera niedozwolone znaki.");
+                }
                 if (!SkipBackupKey && string.IsNullOrEmpty(RecoveryKey) && Session.StoredBackupKey() is null)
                     throw new DomainException("Wygeneruj klucz kopii zapasowych albo zaznacz, że skonfigurujesz kopie później.");
                 if (!string.IsNullOrEmpty(RecoveryKey) && !RecoveryKeySaved) throw new DomainException("Potwierdź, że zapisałeś klucz odzyskiwania poza komputerem.");
@@ -264,6 +284,22 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
             await db.SaveChangesAsync();
+        }
+        // Lokalna/zdalna konfiguracja kopii tego stanowiska; sekrety S3 zostają w magazynie OS.
+        var backupDir = Path.GetFullPath(LocalBackupDirectory.Trim());
+        Directory.CreateDirectory(backupDir);
+        Session.Config.Backup.LocalDirectory = backupDir;
+        if (ConfigureS3)
+        {
+            var o = Session.Config.ObjectStorage;
+            o.Enabled = true;
+            o.Endpoint = S3Endpoint.Trim();
+            o.Region = S3Region.Trim();
+            o.Bucket = S3Bucket.Trim();
+            Session.Secrets.Set(o.AccessKeySecretName, S3AccessKey.Trim());
+            Session.Secrets.Set(o.SecretKeySecretName, S3SecretKey.Trim());
+            Session.Config.Backup.UploadToObjectStorage = true;
+            S3AccessKey = S3SecretKey = "";
         }
         // Poświadczenia KSeF są ustawieniem KOMPUTERA, a nie wspólnej bazy; nigdy nie trafiają do audytu, ksiąg ani JSON.
         if (ConfigureKsef)
