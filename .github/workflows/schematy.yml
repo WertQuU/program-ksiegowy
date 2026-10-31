@@ -10,8 +10,7 @@ on:
       - '.github/workflows/schematy.yml'
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   fetch:
@@ -23,18 +22,12 @@ jobs:
       - name: Pobranie schematów
         timeout-minutes: 25
         run: python3 tools/fetch-schemas.py schemas/MF
-      - name: Utwórz PR zamiast modyfikować main bez przeglądu
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add "schemas/MF"
-          if git diff --cached --quiet; then echo "Bez zmian"; exit 0; fi
-          branch="schema-updates/xsd-mf-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          git switch -c "$branch"
-          git commit -m "Aktualizacja schematów XSD MF — do weryfikacji"
-          git push origin "HEAD:refs/heads/$branch"
-          gh pr create --base "$GITHUB_REF_NAME" --head "$branch" \
-            --title "Aktualizacja schematów XSD MF (kontrola zmian)" \
-            --body "Automatycznie pobrane schematy wymagają przeglądu pochodzenia, sum kontrolnych i zgodności z MF przed scaleniem do main."
+      - name: Raport zmian do ręcznego przeglądu
+        run: git diff --stat -- "schemas/MF/"
+      - name: Archiwum schematów do oceny przed integracją
+        uses: actions/upload-artifact@v4
+        with:
+          name: schematy-xsd-mf
+          path: schemas/MF/
+          if-no-files-found: error
+          retention-days: 14
