@@ -104,8 +104,10 @@ public sealed class SecurityService
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Login == login, ct);
         if (user is null)
         {
-            // stała praca dla nieistniejącego konta (utrudnia enumerację)
-            PasswordHasher.Verify(password, Convert.ToBase64String(new byte[32]), Convert.ToBase64String(new byte[16]), Math.Min(_iterations, 10_000));
+            // Wyrównaj koszt KDF z hasłami tworzonymi przez tę instancję.
+            // Poprzedni limit 10 000 iteracji ujawniał istnienie konta przez różnicę
+            // czasu odpowiedzi względem domyślnych 600 000 iteracji.
+            PasswordHasher.Verify(password, Convert.ToBase64String(new byte[32]), Convert.ToBase64String(new byte[16]), _iterations);
             await _audit.AddAsync(null, "LOGOWANIE_NIEUDANE", "User", null, $"login={Sanitize(login)} (nieznany)", ct);
             await _db.SaveChangesAsync(ct);
             return new(false, null, false, "Nieprawidłowy login lub hasło.");
