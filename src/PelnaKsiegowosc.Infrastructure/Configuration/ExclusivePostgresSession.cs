@@ -47,7 +47,7 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
         $"{p.Host?.Trim().ToLowerInvariant()}:{p.Port}/{p.Database}/{p.Username}";
 
     public static async Task<ExclusivePostgresSession> AcquireAsync(
-        DatabaseProfile profile, string connectionString, CancellationToken ct = default)
+        DatabaseProfile profile, string connectionString, CancellationToken ct = default, bool requireOperatorRole = false)
     {
         if (profile.Engine != DatabaseEngine.PostgreSql)
             throw new DomainException("Aktywna baza programu musi być centralnym PostgreSQL.");
@@ -63,6 +63,33 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 var actualLogin = (string?)await who.ExecuteScalarAsync(ct);
                 if (string.IsNullOrWhiteSpace(actualLogin) || !string.Equals(actualLogin, profile.Username, StringComparison.Ordinal))
                     throw new DomainException("Serwer PostgreSQL uwierzytelnił inne konto niż skonfigurowany login. Sprawdź profil połączenia.");
+            }
+            if (requireOperatorRole)
+            {
+                // Konta administrujące klastrem lub posiadające bazę/schemat mogą ominąć
+                // wyzwalacze niezmienności i kontrole aplikacji. Nie wolno ich stosować
+                // do codziennego księgowania na stanowisku użytkownika.
+                await using var roleCheck = new NpgsqlCommand("""
+                    SELECT r.rolsuper, r.rolcreaterole, r.rolcreatedb,
+                           r.rolreplication, r.rolbypassrls,
+                           pg_has_role(session_user, d.datdba, 'MEMBER'),
+                           EXISTS (
+                             SELECT 1 FROM pg_namespace n
+                             WHERE n.nspname = 'public'
+                               AND pg_has_role(session_user, n.nspowner, 'MEMBER')
+                           )
+                    FROM pg_roles r
+                    JOIN pg_database d ON d.datname = current_database()
+                    WHERE r.rolname = session_user
+                    """, conn);
+                await using var roles = await roleCheck.ExecuteReaderAsync(ct);
+                if (!await roles.ReadAsync(ct))
+                    throw new DomainException("Nie można zweryfikować uprawnień operatora PostgreSQL.");
+                var privileged = Enumerable.Range(0, 7).Any(i => roles.GetBoolean(i));
+                await roles.CloseAsync();
+                if (privileged)
+                    throw new DomainException(
+                        "Nie używaj konta superuser, właściciela bazy/schematu ani roli administracyjnej do codziennej pracy księgowej. Administrator musi utworzyć odrębne konto operatora z ograniczonymi uprawnieniami SQL.");
             }
             // Wspólna blokada wszystkich uruchomionych klientów: administrator nie może aktualizować
             // schematu, dopóki inne stanowiska nadal pracują.
