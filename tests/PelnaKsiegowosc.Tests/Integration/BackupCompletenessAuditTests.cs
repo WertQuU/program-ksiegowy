@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Infrastructure.Backup;
 using PelnaKsiegowosc.Infrastructure.Configuration;
