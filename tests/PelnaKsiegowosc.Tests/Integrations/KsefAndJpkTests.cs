@@ -324,6 +324,27 @@ public class KsefAndJpkTests
     }
 
     [Fact]
+    public async Task Posting_february_invoice_without_ksef_classification_preserves_unknown_status_and_blocks_jpk()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        books.Company.Email = "podatki@example.org";
+        var invoice = await ApprovedSaleAsync(books, new DateOnly(2026, 2, 16), "K005");
+        // Brak potwierdzonego wyjątku od KSeF: BFK nie może zostać odgadnięte.
+        invoice.JpkMarker = null;
+        await books.Db.SaveChangesAsync();
+        await new DocumentService(books.Db, books.User, books.Clock).PostAsync(invoice.Id);
+        var vat = new VatService(books.Db, books.User, books.Clock);
+        var period = new DateOnly(2026, 2, 1);
+        var sales = await vat.RegisterAsync(VatRegisterType.Sprzedaz, period);
+        Assert.All(sales, row => Assert.Null(row.KsefMarker));
+        var decl = await vat.ComputeDeclarationAsync(period);
+        var error = Assert.Throws<DomainException>(() =>
+            JpkV7Builder.Build(books.Company, period, sales, new List<VatRegisterEntry>(), decl,
+                false, new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc), Validator()));
+        Assert.Contains("nie przypisuje automatycznie BFK", error.Message);
+    }
+
+    [Fact]
     public async Task Jpk_v7k_has_monthly_records_and_quarterly_declaration_only_in_last_month()
     {
         await using var t = await TestBooks.CreateAsync();
