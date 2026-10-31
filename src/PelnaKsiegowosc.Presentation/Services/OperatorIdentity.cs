@@ -17,11 +17,7 @@ public static class OperatorIdentity
 
     public static string Login => $"{Environment.UserName}@{Environment.MachineName}";
 
-    public static Guid IdFor(string login)
-    {
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes("PelnaKsiegowosc.Operator|" + login.ToLowerInvariant()));
-        return new Guid(hash.AsSpan(0, 16));
-    }
+    public static Guid IdFor(string login) => Application.Security.OperatorAccessService.IdFor(login);
 
     /// <summary>Tożsamość przy zakładaniu ksiąg (kreator) — operator zakładający księgi jest ich pierwszym administratorem.</summary>
     public static CurrentUser For(Guid companyId) => new(IdFor(Login), Login, companyId, FounderRoles);
