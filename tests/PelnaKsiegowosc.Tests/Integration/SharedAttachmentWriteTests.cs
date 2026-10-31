@@ -18,7 +18,7 @@ public sealed class SharedAttachmentWriteTests
     }
 
     [Fact]
-    public async Task Concurrent_workstations_do_not_delete_or_truncate_each_others_staging_file()
+    public async Task Concurrent_workstations_cannot_overwrite_a_document_saved_by_another_station()
     {
         var root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         var key = RandomNumberGenerator.GetBytes(32);
@@ -32,17 +32,18 @@ public sealed class SharedAttachmentWriteTests
             // While workstation 1 still holds its staging file, workstation 2 completes.
             await second.SaveAtAsync("2026/10/shared.bin", new MemoryStream("second document"u8.ToArray()));
             paused.Resume.TrySetResult();
-            await write;
+            // Stanowisko 1 kończy później, ale nie może nadpisać już zapisanego dowodu.
+            await Assert.ThrowsAnyAsync<IOException>(() => write);
             await using var read = await second.OpenAsync("2026/10/shared.bin");
             using var output = new MemoryStream();
             await read.CopyToAsync(output);
-            Assert.Equal("first document"u8.ToArray(), output.ToArray());
+            Assert.Equal("second document"u8.ToArray(), output.ToArray());
             Assert.Empty(Directory.EnumerateFiles(root, "*.tmp", SearchOption.AllDirectories));
         }
         finally
         {
             paused.Resume.TrySetResult();
-            try { await write; } finally { Directory.Delete(root, true); }
+            try { await write; } catch (IOException) { /* drugi zapis przegrał wyścig */ } finally { Directory.Delete(root, true); }
         }
     }
 }
