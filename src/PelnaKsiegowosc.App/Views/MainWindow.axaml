@@ -20,6 +20,9 @@
     <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding Warning, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
     </Border>
+    <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding IntegrityNotice, Converter={x:Static ObjectConverters.IsNotNull}}">
+      <TextBlock Text="{Binding IntegrityNotice}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
+    </Border>
     <Border DockPanel.Dock="Top" Background="{DynamicResource PkWarnBg}" Padding="12,6" IsVisible="{Binding SharedChangesNotice, Converter={x:Static ObjectConverters.IsNotNull}}">
       <TextBlock Text="{Binding SharedChangesNotice}" TextWrapping="Wrap" Foreground="{DynamicResource PkWarnFg}" />
     </Border>
