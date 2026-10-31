@@ -19,6 +19,7 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
     private readonly NpgsqlConnection _connection;
     private readonly CancellationTokenSource _stop = new();
     private readonly Task _watchdog;
+    private readonly SemaphoreSlim _commandGate = new(1, 1);
     private int _healthy = 1;
     private int _disposed;
 
@@ -30,6 +31,7 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
     }
 
     public string Identity { get; }
+    public static long MaintenanceLockKey => LockKey("central-database-schema-maintenance");
     public bool IsHealthy => Volatile.Read(ref _healthy) == 1 &&
         Volatile.Read(ref _disposed) == 0 && _connection.State == ConnectionState.Open;
 
@@ -62,6 +64,14 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 if (string.IsNullOrWhiteSpace(actualLogin) || !string.Equals(actualLogin, profile.Username, StringComparison.Ordinal))
                     throw new DomainException("Serwer PostgreSQL uwierzytelnił inne konto niż skonfigurowany login. Sprawdź profil połączenia.");
             }
+            // Wspólna blokada wszystkich uruchomionych klientów: administrator nie może aktualizować
+            // schematu, dopóki inne stanowiska nadal pracują.
+            await using (var gate = new NpgsqlCommand("SELECT pg_try_advisory_lock_shared(@maintenance_key)", conn))
+            {
+                gate.Parameters.AddWithValue("maintenance_key", MaintenanceLockKey);
+                if (await gate.ExecuteScalarAsync(ct) is not true)
+                    throw new DomainException("Serwer jest aktualizowany przez administratora. Po zakończeniu aktualizacji ponów uruchomienie.");
+            }
             await using (var command = new NpgsqlCommand("SELECT pg_try_advisory_lock(@session_key)", conn))
             {
                 command.Parameters.AddWithValue("session_key", LockKey(profile.Username!));
@@ -85,9 +95,14 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
             while (await timer.WaitForNextTickAsync(_stop.Token))
             {
                 // Dedykowane połączenie ma być stale żywe; utraty blokady NIGDY nie odzyskujemy automatycznie.
-                await using var command = new NpgsqlCommand("SELECT 1", _connection);
-                if (await command.ExecuteScalarAsync(_stop.Token) is not 1)
-                    throw new IOException("Utracono sesję blokującą.");
+                await _commandGate.WaitAsync(_stop.Token);
+                try
+                {
+                    await using var command = new NpgsqlCommand("SELECT 1", _connection);
+                    if (await command.ExecuteScalarAsync(_stop.Token) is not 1)
+                        throw new IOException("Utracono sesję blokującą.");
+                }
+                finally { _commandGate.Release(); }
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
@@ -95,6 +110,24 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
         {
             Interlocked.Exchange(ref _healthy, 0); // Fail closed; wymagany restart klienta.
         }
+    }
+
+    /// <summary>
+    /// Awans wspólnej blokady schematu do wyłącznej. Administrator uruchamia tę operację
+    /// dopiero przy zamkniętych pozostałych stanowiskach; blokada obowiązuje do końca sesji.
+    /// </summary>
+    public async Task EnterMaintenanceAsync(CancellationToken ct = default)
+    {
+        if (!IsHealthy) throw new DomainException("Nie można aktualizować schematu po utracie sesji.");
+        await _commandGate.WaitAsync(ct);
+        try
+        {
+            await using var command = new NpgsqlCommand("SELECT pg_try_advisory_lock(@maintenance_key)", _connection);
+            command.Parameters.AddWithValue("maintenance_key", MaintenanceLockKey);
+            if (await command.ExecuteScalarAsync(ct) is not true)
+                throw new DomainException("Inny komputer jest połączony z księgami. Przed zmianą schematu wszyscy użytkownicy muszą zakończyć pracę.");
+        }
+        finally { _commandGate.Release(); }
     }
 
     public void Dispose()
