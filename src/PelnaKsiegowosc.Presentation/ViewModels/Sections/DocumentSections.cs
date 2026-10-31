@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Documents;
+using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Reports;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Documents;
@@ -261,7 +262,7 @@ public sealed partial class DocumentsViewModel : DocumentListBase
                     .Where(d => d.CompanyId == Session.CompanyId)
                     .OrderBy(d => d.IssueDate).ThenBy(d => d.Id).Skip(offset).Take(100).ToListAsync();
                 var ids = docs.Select(d => d.Id).ToArray();
-                var attachments = await db.Attachments.AsNoTracking().Where(a => ids.Contains(a.DocumentId)).ToListAsync();
+                var attachments = await db.Attachments.AsNoTracking().Where(a => a.DocumentId.HasValue && ids.Contains(a.DocumentId.Value)).ToListAsync();
                 var history = await db.DocumentHistory.AsNoTracking().Where(h => ids.Contains(h.DocumentId)).ToListAsync();
                 foreach (var d in docs)
                 {
