@@ -81,6 +81,11 @@ public static class JpkV7Builder
         if (!quarterly && declaration is null) throw new DomainException("JPK_V7M wymaga części deklaracyjnej.");
         if (company.LegalForm == LegalForm.DzialalnoscGospodarczaOsobyFizycznej && owner is null)
             throw new DomainException("Dla osoby fizycznej JPK wymaga imienia, nazwiska i daty urodzenia — dodaj właściciela z numerem PESEL w danych jednostki (osoby odpowiedzialne).");
+        // BFK to oświadczenie, że faktura występuje poza KSeF — nie jest
+        // bezpieczną wartością domyślną dla brakujących danych. Od lutego 2026
+        // kwalifikację trzeba ustalić przed eksportem JPK_V7(3).
+        if (ver.KsefMarkers)
+            ValidateKsefClassifications(sales, purchases);
         if (declaration is not null) warnings.AddRange(declaration.Warnings);
         if (quarterly && declaration is null) warnings.Add($"JPK_V7K za {period:MM.yyyy}: tylko ewidencja — deklaracja za kwartał w pliku za {period.AddMonths(3 - (period.Month - 1) % 3 - 1):MM.yyyy}.");
 
@@ -174,14 +179,42 @@ public static class JpkV7Builder
         return new JpkResult(doc, validation, warnings);
     }
 
+    /// <summary>
+    /// W JPK_V7(3) brak oznaczenia nie jest równoważny BFK.
+    /// Wszystkie pozycje tej samej faktury muszą mieć spójną kwalifikację.
+    /// </summary>
+    private static void ValidateKsefClassifications(IReadOnlyList<VatRegisterEntry> sales,
+        IReadOnlyList<VatRegisterEntry> purchases)
+    {
+        foreach (var document in sales.Concat(purchases).GroupBy(v => (v.Register, v.DocumentId)))
+        {
+            var first = document.First();
+            if (document.Any(v => v.KsefMarker != first.KsefMarker ||
+                                  !string.Equals(v.KsefNumber, first.KsefNumber, StringComparison.Ordinal)))
+                throw new DomainException("Dokument " + first.DocumentNumber +
+                    ": pozycje rejestru VAT mają różne oznaczenia KSeF lub numery KSeF — uzgodnij dane przed eksportem JPK.");
+            if (first.KsefMarker is null)
+                throw new DomainException("Dokument " + first.DocumentNumber +
+                    ": brak kwalifikacji NrKSeF/OFF/BFK/DI. Program nie przypisuje automatycznie BFK.");
+            if (first.KsefMarker == JpkKsefMarker.NrKSeF && string.IsNullOrWhiteSpace(first.KsefNumber))
+                throw new DomainException("Dokument " + first.DocumentNumber +
+                    ": oznaczenie NrKSeF wymaga rzeczywistego numeru KSeF.");
+            if (first.KsefMarker != JpkKsefMarker.NrKSeF && !string.IsNullOrWhiteSpace(first.KsefNumber))
+                throw new DomainException("Dokument " + first.DocumentNumber +
+                    ": istnieje numer KSeF, lecz wybrano oznaczenie inne niż NrKSeF — uzgodnij kwalifikację.");
+        }
+    }
+
     private static void AddKsefMarker(XElement row, XNamespace ns, VatRegisterEntry e)
     {
         switch (e.KsefMarker)
         {
-            case JpkKsefMarker.NrKSeF when !string.IsNullOrWhiteSpace(e.KsefNumber): row.Add(new XElement(ns + "NrKSeF", e.KsefNumber)); break;
+            case JpkKsefMarker.NrKSeF when !string.IsNullOrWhiteSpace(e.KsefNumber):
+                row.Add(new XElement(ns + "NrKSeF", e.KsefNumber)); break;
             case JpkKsefMarker.OFF: row.Add(new XElement(ns + "OFF", "1")); break;
             case JpkKsefMarker.DI: row.Add(new XElement(ns + "DI", "1")); break;
-            default: row.Add(new XElement(ns + "BFK", "1")); break;
+            case JpkKsefMarker.BFK: row.Add(new XElement(ns + "BFK", "1")); break;
+            default: throw new DomainException("Nieustalona kwalifikacja faktury w KSeF — nie można wygenerować oznaczenia JPK.");
         }
     }
 }
