@@ -38,44 +38,45 @@ public static class SqliteEncryption
         cmd.ExecuteScalar();
     }
 
-    /// <summary>Zaszyfrowanie istniejącej jawnej bazy: eksport do nowego pliku zaszyfrowanego, weryfikacja, podmiana pliku.</summary>
+    /// <summary>
+    /// Zaszyfrowanie istniejącej jawnej bazy: eksport do nowego pliku, pełna kontrola integralności
+    /// i atomowa zamiana w tym samym katalogu. Nie nadpisujemy/nie usuwamy oryginału przed
+    /// zatwierdzeniem zaszyfrowanej kopii. Szyfrowanie całego nośnika pozostaje zalecane
+    /// (operacja nie gwarantuje fizycznego usunięcia historycznych bloków SSD).
+    /// </summary>
     public static void EncryptInPlace(string path, string hexKey)
     {
         if (!IsPlaintext(path)) throw new InvalidOperationException("Plik nie jest jawną bazą SQLite.");
+        if (hexKey.Length != 64 || !hexKey.All(Uri.IsHexDigit))
+            throw new InvalidOperationException("Nieprawidłowy klucz szyfrowania bazy.");
         var tmp = path + ".szyfrowanie";
-        if (File.Exists(tmp)) File.Delete(tmp);
-        using (var src = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString()))
+        // Pozostałość po przerwanym szyfrowaniu może zawierać poprawną, jeszcze nieprzełączoną
+        // bazę. Nie kasujemy jej automatycznie i nie ryzykujemy utraty danych.
+        if (File.Exists(tmp))
+            throw new InvalidOperationException("Wykryto plik pozostały po przerwanym szyfrowaniu. Sprawdź i zabezpiecz plik .szyfrowanie przed ponowną próbą.");
+        try
         {
-            src.Open();
-            using var cmd = src.CreateCommand();
-            cmd.CommandText = $"ATTACH DATABASE {Quote(tmp)} AS zaszyfrowana KEY \"x'{hexKey}'\"; SELECT sqlcipher_export('zaszyfrowana'); DETACH DATABASE zaszyfrowana;";
-            cmd.ExecuteNonQuery();
+            using (var src = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Pooling = false }.ToString()))
+            {
+                src.Open();
+                using var cmd = src.CreateCommand();
+                cmd.CommandText = $"ATTACH DATABASE {Quote(tmp)} AS zaszyfrowana KEY \"x'{hexKey}'\"; SELECT sqlcipher_export('zaszyfrowana'); DETACH DATABASE zaszyfrowana;";
+                cmd.ExecuteNonQuery();
+            }
+            SqliteConnection.ClearAllPools();
+            VerifyEncryptedCopy(path, tmp, hexKey);
+            // Systemowa operacja replace gwarantuje brak etapu bez pliku docelowego.
+            // Source i destination są w tym samym katalogu/woluminie.
+            File.Replace(tmp, path, destinationBackupFileName: null);
+            foreach (var side in new[] { "-wal", "-shm", "-journal" })
+                if (File.Exists(path + side)) File.Delete(path + side);
         }
-        long plainRows, encRows;
-        using (var a = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = path, Pooling = false, Mode = SqliteOpenMode.ReadOnly }.ToString()))
+        catch
         {
-            a.Open();
-            plainRows = CountObjects(a);
+            SqliteConnection.ClearAllPools();
+            // Nie usuwać pliku docelowego ani potencjalnego odzyskiwalnego eksportu.
+            throw;
         }
-        using (var b = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = tmp, Pooling = false, Mode = SqliteOpenMode.ReadOnly }.ToString()))
-        {
-            b.Open();
-            ApplyKey(b, hexKey);
-            encRows = CountObjects(b);
-        }
-        SqliteConnection.ClearAllPools();
-        if (plainRows != encRows) { File.Delete(tmp); throw new InvalidOperationException("Weryfikacja zaszyfrowanej bazy nie powiodła się — baza pozostała bez zmian."); }
-        // nadpisanie jawnej treści przed usunięciem (na nośnikach SSD nie gwarantuje fizycznego usunięcia — zalecane szyfrowanie dysku)
-        var length = new FileInfo(path).Length;
-        using (var f = new FileStream(path, FileMode.Open, FileAccess.Write))
-        {
-            var zeros = new byte[64 * 1024];
-            for (long done = 0; done < length; done += zeros.Length) f.Write(zeros, 0, (int)Math.Min(zeros.Length, length - done));
-        }
-        File.Delete(path);
-        File.Move(tmp, path);
-        foreach (var side in new[] { "-wal", "-shm", "-journal" })
-            if (File.Exists(path + side)) File.Delete(path + side);
     }
 
     /// <summary>Zapis jawnej bazy roboczej bezpośrednio jako zaszyfrowanego pliku docelowego (bez jawnej kopii w miejscu docelowym).</summary>
