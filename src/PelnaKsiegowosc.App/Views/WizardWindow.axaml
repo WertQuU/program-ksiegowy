@@ -143,7 +143,21 @@
         <CheckBox Content="Skonfiguruję kopie zapasowe później (niezalecane)" IsChecked="{Binding SkipBackupKey}" />
       </StackPanel>
 
-      <!-- 9. Podsumowanie -->
+      <!-- 9. KSeF — poświadczenia konkretnej instalacji (opcjonalne) -->
+      <StackPanel IsVisible="{Binding IsKsef}" Spacing="10">
+        <TextBlock Classes="info" Text="Każdy komputer może korzystać z tej samej bazy księgowej, ale token KSeF zapisuje wyłącznie na swoim stanowisku w systemowym magazynie sekretów. Nie udostępniaj tokenu razem z danymi połączenia z bazą. Pobieranie faktur możesz też skonfigurować później w Integracjach." TextWrapping="Wrap" />
+        <CheckBox Content="Skonfiguruj teraz token KSeF do pobierania faktur na tym komputerze"
+                  IsChecked="{Binding ConfigureKsef}" />
+        <StackPanel Spacing="7" IsVisible="{Binding ConfigureKsef}">
+          <TextBlock Text="Środowisko KSeF" />
+          <ComboBox ItemsSource="{Binding KsefEnvironments}" SelectedItem="{Binding KsefEnvironment}" Width="260" HorizontalAlignment="Left" />
+          <TextBlock Text="Token uwierzytelniający KSeF" />
+          <TextBox Text="{Binding KsefToken}" PasswordChar="•" Watermark="Wprowadź token" />
+          <TextBlock Classes="info" Text="Token nie jest wyświetlany ponownie ani zapisywany w bazie danych. Uprawnienia i zakres pobierania faktur zależą od nadanych uprawnień w KSeF." TextWrapping="Wrap" />
+        </StackPanel>
+      </StackPanel>
+
+      <!-- 10. Podsumowanie -->
       <DockPanel IsVisible="{Binding IsSummary}">
         <SelectableTextBlock DockPanel.Dock="Top" Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,0,0,10" />
         <c:TableView Table="{Binding Readiness}" />
