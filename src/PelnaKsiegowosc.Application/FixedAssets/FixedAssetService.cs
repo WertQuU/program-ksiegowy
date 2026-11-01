@@ -43,8 +43,13 @@ public sealed class FixedAssetService
         var accounts = await ledger.AccountsByNumberAsync(fy.Id, ct);
         foreach (var n in new[] { asset.AssetAccountNumber, asset.AccumulatedDepreciationAccountNumber, asset.ExpenseAccountNumber })
             if (!accounts.ContainsKey(n)) throw new DomainException($"Konto {n} nie istnieje w planie kont.");
-        _db.FixedAssets.Add(asset);
-        asset.Operations.Add(new FixedAssetOperation
+        if (!string.IsNullOrWhiteSpace(offsetAccountNumber) && !accounts.ContainsKey(offsetAccountNumber))
+            throw new DomainException($"Konto przeciwstawne {offsetAccountNumber} nie istnieje w planie kont.");
+
+        // Nie dodajemy środka trwałego do śledzonego kontekstu, dopóki
+        // obowiązkowe konto i dekret OT nie przejdą walidacji. Dzięki temu
+        // odrzucone przyjęcie nie utrwali się przy późniejszym SaveChanges.
+        var operation = new FixedAssetOperation
         {
             CompanyId = asset.CompanyId,
             FixedAssetId = asset.Id,
@@ -55,7 +60,7 @@ public sealed class FixedAssetService
             Description = "Przyjęcie do używania",
             UserId = _user.UserId,
             CreatedAtUtc = _clock.UtcNow
-        });
+        };
         if (!string.IsNullOrWhiteSpace(offsetAccountNumber))
         {
             var lines = new List<LineInput>
@@ -65,8 +70,10 @@ public sealed class FixedAssetService
             };
             var entry = await ledger.CreateAndPostAsync(new EntryInput("PK", asset.PlacedInServiceDate, asset.PlacedInServiceDate, asset.PlacedInServiceDate,
                 $"OT — przyjęcie środka trwałego {asset.InventoryNumber} {asset.Name}", "OT", $"OT/{asset.InventoryNumber}", lines), ct);
-            asset.Operations[0].JournalEntryId = entry.Id;
+            operation.JournalEntryId = entry.Id;
         }
+        _db.FixedAssets.Add(asset);
+        asset.Operations.Add(operation);
         await _audit.AddAsync(_user, "SRODEK_TRWALY_PRZYJETY", "FixedAsset", asset.Id.ToString(), $"{asset.InventoryNumber} {asset.Name}: {Money.Xml(asset.InitialValueBook)}", ct);
         await _db.SaveChangesAsync(ct);
         return asset;
@@ -82,6 +89,8 @@ public sealed class FixedAssetService
         var lastDay = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         var run = new DepreciationRun { CompanyId = _user.CompanyId, Year = year, Month = month, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow };
         var lines = new List<LineInput>();
+        var newCharges = new List<DepreciationCharge>();
+        var completedAssets = new List<FixedAsset>();
         foreach (var a in assets.OrderBy(a => a.InventoryNumber))
         {
             if (await _db.DepreciationCharges.AnyAsync(c => c.FixedAssetId == a.Id && c.Year == year && c.Month == month, ct)) continue;
@@ -89,7 +98,7 @@ public sealed class FixedAssetService
             var tax = DepreciationCalculator.AmountFor(a, DepreciationBasis.Podatkowa, year, month);
             if (book == 0 && tax == 0) continue;
             var nonDed = Money.Round(tax * a.TaxNonDeductiblePercent / 100m);
-            _db.DepreciationCharges.Add(new DepreciationCharge
+            newCharges.Add(new DepreciationCharge
             {
                 CompanyId = a.CompanyId, FixedAssetId = a.Id, Year = year, Month = month, BookAmount = book, TaxAmount = tax,
                 TaxNonDeductibleAmount = nonDed, RunId = run.Id
@@ -102,16 +111,22 @@ public sealed class FixedAssetService
                 lines.Add(new LineInput(a.AccumulatedDepreciationAccountNumber, 0, book, Description: $"Umorzenie {a.InventoryNumber}"));
             }
             var planBook = DepreciationCalculator.Plan(a, DepreciationBasis.Bilansowa);
-            if (planBook.Count > 0 && planBook[^1].Year == year && planBook[^1].Month == month && planBook[^1].NetValue == 0) a.Status = FixedAssetStatus.CalkowicieZamortyzowany;
+            if (planBook.Count > 0 && planBook[^1].Year == year && planBook[^1].Month == month && planBook[^1].NetValue == 0)
+                completedAssets.Add(a);
         }
-        _db.DepreciationRuns.Add(run);
+        // Odpisy, przebieg i zmiana statusu aktywów są na razie wyłącznie
+        // w lokalnych kolekcjach. Odrzucony dekret AM nie może pozostawić
+        // w EF Core osieroconych odpisów do późniejszego SaveChanges.
         if (lines.Count > 0)
         {
             var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("AM", lastDay, lastDay, lastDay,
                 $"Amortyzacja środków trwałych i WNiP za {month:00}.{year}", "AM", $"AM/{year}/{month:00}", lines), ct);
             run.JournalEntryId = entry.Id;
-            foreach (var c in _db.DepreciationCharges.Local.Where(c => c.RunId == run.Id)) c.JournalEntryId = entry.Id;
+            foreach (var charge in newCharges) charge.JournalEntryId = entry.Id;
         }
+        _db.DepreciationRuns.Add(run);
+        _db.DepreciationCharges.AddRange(newCharges);
+        foreach (var asset in completedAssets) asset.Status = FixedAssetStatus.CalkowicieZamortyzowany;
         await _audit.AddAsync(_user, "AMORTYZACJA_NALICZONA", "DepreciationRun", run.Id.ToString(), $"{month:00}.{year}: bilansowa {Money.Xml(run.TotalBook)}, podatkowa {Money.Xml(run.TotalTax)}", ct);
         await _db.SaveChangesAsync(ct);
         return run;
@@ -145,14 +160,20 @@ public sealed class FixedAssetService
         var a = await _db.FixedAssets.Include(x => x.Operations).FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
         if (a.Status is FixedAssetStatus.Zlikwidowany or FixedAssetStatus.Sprzedany) throw new DomainException("Środek trwały został już wycofany z ewidencji.");
         if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Podaj przyczynę / podstawę rozchodu (protokół LT, umowa sprzedaży).");
-        a.DisposalDate = date;
+        if (date < a.PlacedInServiceDate)
+            throw new DomainException("Data rozchodu środka trwałego nie może poprzedzać przyjęcia go do używania.");
+        // Nie ustawiamy DisposalDate przed kontrolą amortyzacji i księgowaniem.
+        // W razie wyjątku EF Core pozostawiłby zmianę śledzoną w pamięci,
+        // a następny SaveChanges mógłby ją utrwalić mimo odmowy rozchodu.
         var plan = DepreciationCalculator.Plan(a, DepreciationBasis.Bilansowa);
         var expectedThroughMonth = plan.Where(p => new DateOnly(p.Year, p.Month, 1) <= new DateOnly(date.Year, date.Month, 1)).Sum(p => p.Amount);
         var charged = (await _db.DepreciationCharges.Where(c => c.FixedAssetId == a.Id).Select(c => c.BookAmount).ToListAsync(ct)).Sum();
         if (charged < expectedThroughMonth)
             throw new DomainException($"Najpierw nalicz amortyzację do miesiąca rozchodu włącznie (naliczono {Money.Format(charged)}, wymagane {Money.Format(expectedThroughMonth)}).");
         var p = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
-        var gross = a.InitialValueBook + a.Operations.Where(o => o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.CzesciowaLikwidacja or FixedAssetOperationType.AktualizacjaWyceny).Sum(o => o.BookValueChange);
+        var valueChanges = a.Operations.Where(o => o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.CzesciowaLikwidacja or FixedAssetOperationType.AktualizacjaWyceny).ToList();
+        var gross = a.InitialValueBook + valueChanges.Sum(o => o.BookValueChange);
+        var taxGross = a.InitialValueTax + valueChanges.Sum(o => o.TaxValueChange);
         var accumulated = a.OpeningAccumulatedBook + charged;
         var net = gross - accumulated;
         var lines = new List<LineInput>();
@@ -161,11 +182,12 @@ public sealed class FixedAssetService
         lines.Add(new LineInput(a.AssetAccountNumber, 0, gross, Description: "Wyksięgowanie wartości początkowej"));
         var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
             $"{(isSale ? "Sprzedaż" : "Likwidacja")} {a.InventoryNumber} {a.Name}: {reason}", "LT", $"LT/{a.InventoryNumber}", lines), ct);
+        a.DisposalDate = date;
         a.Status = isSale ? FixedAssetStatus.Sprzedany : FixedAssetStatus.Zlikwidowany;
         a.Operations.Add(new FixedAssetOperation
         {
             CompanyId = a.CompanyId, FixedAssetId = a.Id, Type = isSale ? FixedAssetOperationType.Sprzedaz : FixedAssetOperationType.Likwidacja, Date = date,
-            BookValueChange = -gross, TaxValueChange = -a.InitialValueTax, Description = reason, JournalEntryId = entry.Id, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            BookValueChange = -gross, TaxValueChange = -taxGross, Description = reason, JournalEntryId = entry.Id, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         });
         await _audit.AddAsync(_user, isSale ? "SRODEK_TRWALY_SPRZEDANY" : "SRODEK_TRWALY_ZLIKWIDOWANY", "FixedAsset", a.Id.ToString(), $"{a.InventoryNumber}; netto {Money.Xml(net)}", ct);
         await _db.SaveChangesAsync(ct);
