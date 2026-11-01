@@ -356,10 +356,29 @@ public sealed class LedgerService
     public async Task<JournalEntry> ReverseAsync(Guid entryId, string reason, DateOnly? postingDate = null, CancellationToken ct = default)
     {
         _user.Require(Permission.CorrectEntries);
-        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
-        var reversal = await BuildAndPostReversalAsync(original, reason, postingDate, ct);
-        await _db.SaveChangesAsync(ct);
-        return reversal;
+        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct)
+            ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
+        var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
+        try
+        {
+            var reversal = await BuildAndPostReversalAsync(original, reason, postingDate, ct);
+            await _db.SaveChangesAsync(ct);
+            if (tx is not null) await tx.CommitAsync(ct);
+            return reversal;
+        }
+        catch
+        {
+            if (tx is not null)
+            {
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear(); // odrzucone storno nie może być zapisane później
+            }
+            throw;
+        }
+        finally
+        {
+            if (tx is not null) await tx.DisposeAsync();
+        }
     }
 
     internal async Task<JournalEntry> BuildAndPostReversalAsync(JournalEntry original, string reason, DateOnly? postingDate, CancellationToken ct)
