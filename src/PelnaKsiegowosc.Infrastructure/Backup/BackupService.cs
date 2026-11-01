@@ -212,7 +212,11 @@ public sealed class BackupService
             db.BackupRecords.Add(record);
             await new AuditService(db, _clock).AddAsync(null, "KOPIA_ZAPASOWA", "Backup", archiveId.ToString(), $"{finalName}; {size} B; SHA-256 {archiveSha}; {record.Status}", ct);
             await db.SaveChangesAsync(ct);
-            if (options.RetainCount > 0) ApplyRetention(options.TargetDirectory, options.RetainCount);
+            // Nie kasuj wcześniejszych lokalnych punktów odzyskiwania, jeżeli nowa kopia
+            // nie dotarła do skonfigurowanego magazynu zdalnego. Zachowaj lokalne archiwum
+            // i zgłoszony błąd wysyłki; retencja wróci po udanym backupie.
+            if (options.RetainCount > 0 && remoteError is null)
+                ApplyRetention(options.TargetDirectory, options.RetainCount);
             return new BackupResult(archiveId, finalPath, size, archiveSha, manifest, true, remoteKey, remoteError);
         }
         catch (Exception ex)
