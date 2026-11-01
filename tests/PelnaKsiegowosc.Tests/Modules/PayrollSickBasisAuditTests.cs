@@ -48,11 +48,98 @@ public class PayrollSickBasisAuditTests
         var march = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
         await service.ChangeAsync(march.Items.Single().Id, null, 10, null);
         await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month, 0, SickWageCause.Ordinary80, "OSW/2026/3");
+        await service.ConfirmSickBasisCompletenessAsync(march.Id, march.Items.Single().EmployeeId,
+            true, "PODSTAWA/2026/3");
         await service.RecalculateAsync(march.Id);
         Assert.Equal(1380.64m, march.Items.Single().SickPay);
         Assert.DoesNotContain("WSTĘPNA", march.Items.Single().Notes ?? "");
         await service.PostAsync(march.Id);
         Assert.Equal(PayrollStatus.Zaksiegowana, march.Status);
+    }
+
+    [Fact]
+    public async Task Stable_pay_and_art92_attestation_do_not_replace_component_completeness()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new PayrollService(books.Db, books.User, books.Clock);
+        await service.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
+        });
+        var january = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
+        await service.PostAsync(january.Id);
+        var february = await service.CreateListAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 28));
+        await service.PostAsync(february.Id);
+        var march = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+        await service.ChangeAsync(march.Items.Single().Id, null, 10, null);
+        await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
+            0, SickWageCause.Ordinary80, "OSW/2026/3");
+        await service.RecalculateAsync(march.Id);
+        Assert.Equal(0m, march.Items.Single().SickPay);
+        Assert.Contains("WSTĘPNA", march.Items.Single().Notes ?? "");
+        var ex = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
+        Assert.Contains("kompletności składników", ex.Message);
+        Assert.Equal(PayrollStatus.Robocza, march.Status);
+        Assert.Null(march.JournalEntryId);
+    }
+
+    [Fact]
+    public async Task Quarterly_bonus_declaration_blocks_automatic_sickness_basis()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new PayrollService(books.Db, books.User, books.Clock);
+        await service.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "ZPremia", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
+        });
+        var january = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
+        await service.PostAsync(january.Id);
+        var february = await service.CreateListAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 28));
+        await service.PostAsync(february.Id);
+        var march = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+        await service.ChangeAsync(march.Items.Single().Id, null, 10, null);
+        await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
+            0, SickWageCause.Ordinary80, "OSW/2026/3");
+        // Udokumentowano premię kwartalną — nie wolno poświadczać jej braku
+        // ani stosować samej pensji zasadniczej jako podstawy.
+        var refusal = await Assert.ThrowsAsync<DomainException>(() =>
+            service.ConfirmSickBasisCompletenessAsync(march.Id, march.Items.Single().EmployeeId,
+                false, "PREMIA-KWARTALNA/2025"));
+        Assert.Contains("dodatkowe składniki", refusal.Message);
+        var blocked = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
+        Assert.Contains("kompletności składników", blocked.Message);
+        Assert.Null(march.JournalEntryId);
+    }
+
+    [Fact]
+    public async Task Changing_source_list_invalidates_previous_sickness_basis_confirmation()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new PayrollService(books.Db, books.User, books.Clock);
+        await service.AddEmployeeAsync(new Employee
+        {
+            FirstName = "Jan", LastName = "Nowak", ContractType = ContractType.UmowaOPrace,
+            Gross = 6000m, StartDate = Start, BirthDate = new DateOnly(1985, 1, 1)
+        });
+        var january = await service.CreateListAsync(new DateOnly(2026, 1, 1), new DateOnly(2026, 1, 31));
+        await service.PostAsync(january.Id);
+        var february = await service.CreateListAsync(new DateOnly(2026, 2, 1), new DateOnly(2026, 2, 28));
+        await service.PostAsync(february.Id);
+        var march = await service.CreateListAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31));
+        await service.ChangeAsync(march.Items.Single().Id, null, 10, null);
+        await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
+            0, SickWageCause.Ordinary80, "OSW/2026/3");
+        await service.ConfirmSickBasisCompletenessAsync(march.Id, march.Items.Single().EmployeeId,
+            true, "PODSTAWA/2026/3");
+        await service.RecalculateAsync(march.Id);
+        Assert.True(march.Items.Single().SickPay > 0);
+        await service.ChangeGrossAsync(march.Items.Single().Id, 6100m);
+        var blocked = await Assert.ThrowsAsync<DomainException>(() => service.PostAsync(march.Id));
+        Assert.Contains("utraciło ważność", blocked.Message);
+        Assert.Equal(PayrollStatus.Robocza, march.Status);
+        Assert.Null(march.JournalEntryId);
     }
 
     [Fact]
@@ -139,6 +226,8 @@ public class PayrollSickBasisAuditTests
         await service.ChangeAsync(march.Items.Single().Id, null, 10, null);
         await service.RecordSickWageAssessmentAsync(march.Items.Single().EmployeeId, march.Month,
             30, SickWageCause.Pregnancy100, "OSW/2026/3");
+        await service.ConfirmSickBasisCompletenessAsync(march.Id, march.Items.Single().EmployeeId,
+            true, "PODSTAWA/2026/3");
         await service.RecalculateAsync(march.Id);
         Assert.Equal(3, march.Items.Single().SickDaysEmployer);
         Assert.Equal(517.74m, march.Items.Single().SickPay); // 6000 × 86,29% / 30 × 3

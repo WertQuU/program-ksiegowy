@@ -1,3 +1,6 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Audit;
@@ -48,6 +51,57 @@ public sealed class PayrollService
 
     private Task<SickWageAssessment?> SickAssessmentAsync(Guid employeeId, DateOnly month, CancellationToken ct) =>
         new SettingsService(_db, _clock).GetAsync<SickWageAssessment?>(_user.CompanyId, SickAssessmentKey(employeeId, month), () => null, ct);
+    // Osobne od art. 92 KP potwierdzenie kompletności składników z art. 36–43 ustawy zasiłkowej.
+    // Jest związane z konkretną listą, pracownikiem i odciskiem danych źródłowych.
+    private static string SickBasisCompletenessKey(Guid employeeId, Guid listId) =>
+        $"place.chorobowe.podstawa-kompletnosc.{employeeId:N}.{listId:N}";
+
+    private Task<SickBasisCompletenessConfirmation?> SickBasisCompletenessAsync(Guid employeeId, Guid listId, CancellationToken ct) =>
+        new SettingsService(_db, _clock).GetAsync<SickBasisCompletenessConfirmation?>(
+            _user.CompanyId, SickBasisCompletenessKey(employeeId, listId), () => null, ct);
+
+    /// <summary>
+    /// Udokumentowane potwierdzenie, że poza zweryfikowaną stałą pensją nie ma
+    /// innych kwalifikujących się składników podstawy chorobowego (w tym premii
+    /// kwartalnych, rocznych ani wypłat poza systemem). Nie zastępuje art. 92 KP.
+    /// Przypadki z dodatkowymi składnikami pozostają zablokowane do czasu wdrożenia
+    /// pełnego kalkulatora lub odrębnej zatwierdzonej ścieżki rozliczenia.
+    /// </summary>
+    public async Task ConfirmSickBasisCompletenessAsync(Guid listId, Guid employeeId,
+        bool noOtherQualifyingComponents, string evidenceReference, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ApproveDocuments);
+        if (string.IsNullOrWhiteSpace(evidenceReference) || evidenceReference.Trim().Length > 120)
+            throw new DomainException("Podaj odnośnik do dowodu kompletności podstawy chorobowego (1–120 znaków).");
+        if (!noOtherQualifyingComponents)
+            throw new DomainException("Występują dodatkowe składniki wynagrodzenia lub nie można potwierdzić ich braku. " +
+                "Automatyczne księgowanie chorobowego wymaga indywidualnego wyliczenia podstawy.");
+
+        var list = await _db.PayrollLists.Include(l => l.Items)
+            .FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
+        if (list.Status != PayrollStatus.Robocza)
+            throw new DomainException("Potwierdzenie podstawy można zapisać tylko dla roboczej listy płac.");
+        if (!list.Items.Any(i => i.EmployeeId == employeeId && i.SickDays > 0))
+            throw new DomainException("Na tej liście nie ma dni chorobowego wskazanego pracownika.");
+        var employee = await _db.Employees.AsNoTracking()
+            .FirstAsync(e => e.Id == employeeId && e.CompanyId == _user.CompanyId, ct);
+        if (employee.ContractType != ContractType.UmowaOPrace)
+            throw new DomainException("Potwierdzenie podstawy chorobowego dotyczy wyłącznie umowy o pracę.");
+
+        var (basis, problem, fingerprint) = await VerifiedSickBasisAsync(employee, list, ct, requireConfirmation: false);
+        if (basis is null || fingerprint is null)
+            throw new DomainException("Nie można potwierdzić podstawy chorobowego: " + problem);
+
+        var confirmation = new SickBasisCompletenessConfirmation(
+            true, evidenceReference.Trim(), fingerprint, _clock.UtcNow, _user.UserId);
+        await new SettingsService(_db, _clock).SetAsync(
+            _user.CompanyId, SickBasisCompletenessKey(employeeId, listId), confirmation, ct);
+        await new AuditService(_db, _clock).AddAsync(_user, "PODSTAWA_CHOROBOWEGO_POTWIERDZONA",
+            "PayrollList", listId.ToString(),
+            $"Pracownik {employeeId}; okres {list.Month:yyyy-MM}; potwierdzono brak innych składników; odnośnik do dowodu zapisany w ustawieniu.", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
 
     /// <summary>
     /// Zatwierdzenie danych art. 92 KP dla wszystkich dni choroby w danym miesiącu.
@@ -216,20 +270,20 @@ public sealed class PayrollService
     /// warunków płacy wymagają indywidualnego wyliczenia; nie wolno zgadywać podstawy.
     /// Wynik jest kwotą BRUTTO — kalkulator odejmuje 13,71% składek.
     /// </summary>
-    private async Task<(decimal? Basis, string Problem)> VerifiedSickBasisAsync(Employee e, PayrollList list, CancellationToken ct)
+    private async Task<(decimal? Basis, string Problem, string? Fingerprint)> VerifiedSickBasisAsync(Employee e, PayrollList list, CancellationToken ct, bool requireConfirmation = true)
     {
         var firstFullMonth = new DateOnly(e.StartDate.Year, e.StartDate.Month, 1);
         if (e.StartDate.Day > 1) firstFullMonth = firstFullMonth.AddMonths(1);
         var startMonth = list.Month.AddMonths(-12);
         if (firstFullMonth > startMonth) startMonth = firstFullMonth;
         if (startMonth >= list.Month)
-            return (null, "brak pełnego miesiąca ubezpieczenia przed zachorowaniem — potrzebna indywidualna podstawa z art. 37");
+            return (null, "brak pełnego miesiąca ubezpieczenia przed zachorowaniem — potrzebna indywidualna podstawa z art. 37", null);
 
         // Inna umowa tej samej osoby u pracodawcy może zwiększać podstawę chorobowego.
         // Bez historii składników nie wolno przyjmować samej pensji zasadniczej.
         if (!string.IsNullOrWhiteSpace(e.Pesel) &&
             await _db.Employees.AsNoTracking().AnyAsync(x => x.CompanyId == _user.CompanyId && x.Id != e.Id && x.Pesel == e.Pesel, ct))
-            return (null, "wiele umów tej samej osoby — wymagana kwalifikacja składników wynagrodzenia");
+            return (null, "wiele umów tej samej osoby — wymagana kwalifikacja składników wynagrodzenia", null);
 
         var history = await (from i in _db.PayrollItems.AsNoTracking()
                              join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
@@ -241,25 +295,51 @@ public sealed class PayrollService
         {
             var entries = history.Where(x => x.Month == month).ToList();
             if (entries.Count != 1)
-                return (null, $"brak jednoznacznej, zaksięgowanej historii za {month:MM.yyyy} (oczekiwano jednej wypłaty)");
+                return (null, $"brak jednoznacznej, zaksięgowanej historii za {month:MM.yyyy} (oczekiwano jednej wypłaty)", null);
             var item = entries[0];
             if (item.ContractType != ContractType.UmowaOPrace || item.SickDays != 0 || item.UnpaidDays != 0 ||
                 item.BaseGross is null || item.SocialBasis <= 0 || item.BaseGross.Value != item.SocialBasis)
-                return (null, $"w {month:MM.yyyy} wystąpiła nieobecność lub składniki wymagające uzupełnienia/kwalifikacji");
+                return (null, $"w {month:MM.yyyy} wystąpiła nieobecność lub składniki wymagające uzupełnienia/kwalifikacji", null);
             var rules = PayrollRules.For(month.Year);
             static decimal Round2(decimal amount) => Math.Round(amount, 2, MidpointRounding.AwayFromZero);
             if (item.PensionEmployee != Round2(item.SocialBasis * rules.PensionEmployee / 100m) ||
                 item.DisabilityEmployee != Round2(item.SocialBasis * rules.DisabilityEmployee / 100m) ||
                 item.SicknessEmployee != Round2(item.SocialBasis * rules.Sickness / 100m))
-                return (null, $"w {month:MM.yyyy} potrącone składki nie odpowiadają standardowym 13,71% (np. limit 30-krotności)");
+                return (null, $"w {month:MM.yyyy} potrącone składki nie odpowiadają standardowym 13,71% (np. limit 30-krotności)", null);
             months.Add(item.SocialBasis);
         }
 
         // Zmiana kwoty może oznaczać zmianę etatu lub składników zmiennych, których
         // historycznego rodzaju system nie przechowuje. Nie wyliczamy jej automatycznie.
         if (months.Any(x => x != months[0]) || months[0] != e.Gross)
-            return (null, "zmiana wynagrodzenia/etatu w okresie podstawy — potrzebne wyliczenie z historii i kwalifikacja składników");
-        return (months.Average(), "");
+            return (null, "zmiana wynagrodzenia/etatu w okresie podstawy — potrzebne wyliczenie z historii i kwalifikacja składników", null);
+        // Odcisk wiąże potwierdzenie z aktualnym zestawem zaksięgowanych danych
+        // oraz z parametrami listy. Sama stałość pensji nie dowodzi braku premii.
+        var sourceJson = JsonSerializer.Serialize(new
+        {
+            CompanyId = _user.CompanyId,
+            EmployeeId = e.Id,
+            ListId = list.Id,
+            list.Month,
+            list.PaymentDate,
+            e.StartDate,
+            e.EndDate,
+            e.Gross,
+            e.ContractType,
+            History = history.OrderBy(x => x.Month).ThenBy(x => x.SocialBasis).ToArray(),
+            Current = list.Items.Where(i => i.EmployeeId == e.Id).OrderBy(i => i.Id)
+                .Select(i => new { i.Id, i.BaseGross, i.SickDays, i.UnpaidDays }).ToArray()
+        });
+        var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sourceJson)));
+        if (!requireConfirmation)
+            return (months.Average(), "", fingerprint);
+
+        var confirmation = await SickBasisCompletenessAsync(e.Id, list.Id, ct);
+        if (confirmation is null || !confirmation.NoOtherQualifyingComponents)
+            return (null, "brak odrębnego potwierdzenia kompletności składników podstawy chorobowego (premie kwartalne/roczne i wypłaty poza systemem)", null);
+        if (!string.Equals(confirmation.SourceFingerprint, fingerprint, StringComparison.Ordinal))
+            return (null, "potwierdzenie kompletności podstawy chorobowego utraciło ważność po zmianie danych źródłowych — potwierdź ponownie", null);
+        return (months.Average(), "", fingerprint);
     }
 
     /// <summary>Dane wejściowe pozycji listy: wynagrodzenie zasadnicze za pełny miesiąc i dni nieobecności.</summary>
@@ -335,7 +415,7 @@ public sealed class PayrollService
                         }
                         if (!sickBases.TryGetValue(e.Id, out sickBasis))
                         {
-                            (sickBasis, _) = await VerifiedSickBasisAsync(e, list, ct);
+                            (sickBasis, _, _) = await VerifiedSickBasisAsync(e, list, ct);
                             sickBases[e.Id] = sickBasis;
                         }
                     }
@@ -582,7 +662,7 @@ public sealed class PayrollService
                     ": " + (item.SickDays - item.SickDaysEmployer) +
                     " dni wymaga rozliczenia zasiłku chorobowego. Program nie ustala jeszcze prawa do zasiłku, jego płatnika, " +
                     "podstawy ani kwoty. Lista jest niekompletna — rozlicz świadczenie w zweryfikowanym systemie kadrowo-płacowym.");
-            var (basis, problem) = await VerifiedSickBasisAsync(employee, list, ct);
+            var (basis, problem, _) = await VerifiedSickBasisAsync(employee, list, ct);
             if (basis is null)
                 throw new DomainException($"Nie można zaksięgować wynagrodzenia chorobowego dla {item.EmployeeName}: {problem}. " +
                     "Ustal i udokumentuj podstawę według art. 36–43 ustawy zasiłkowej; program nie obsługuje jeszcze ręcznego zatwierdzania przypadków szczególnych.");

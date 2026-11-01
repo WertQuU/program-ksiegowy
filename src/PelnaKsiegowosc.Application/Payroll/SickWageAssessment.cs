@@ -27,3 +27,17 @@ public sealed record SickWageAssessment(
 {
     public decimal RatePercent => Cause == SickWageCause.Ordinary80 ? 80m : 100m;
 }
+
+
+/// <summary>
+/// Potwierdzenie kompletności składników podstawy chorobowego (art. 36–43 ustawy
+/// zasiłkowej), odrębne od ustalenia dni i stawki z art. 92 KP.
+/// Odcisk wiąże je z danymi konkretnej roboczej listy i historią wypłat.
+/// Zapisujemy odnośnik do dokumentacji, bez danych o stanie zdrowia.
+/// </summary>
+public sealed record SickBasisCompletenessConfirmation(
+    bool NoOtherQualifyingComponents,
+    string EvidenceReference,
+    string SourceFingerprint,
+    DateTime ConfirmedAtUtc,
+    Guid ConfirmedByUserId);
