@@ -192,27 +192,38 @@ public sealed class AppSession
         {
             return new OpenResult(false, ex is DomainException ? ex.Message : DatabaseConnector.Describe(ex), null);
         }
-        var test = await Connector.TestAsync(Profile, ct);
-        if (!test.Success)
-            return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql
-                ? " Program nie przełącza się automatycznie na inną bazę." : ""), null);
-        string? backup = null, recoveryKey = null;
-        // Wiele stanowisk nie może równocześnie wykonywać migracji schematu.
-        // Uaktualnienia wymagają osobnej operacji administratora przy zatrzymanych klientach.
-        if (test.PendingMigrations > 0)
+        // A failed opening must not keep the exclusive PostgreSQL advisory lock.
+        // Otherwise the next attempt (or another workstation) sees a false 'active session'.
+        var opened = false;
+        try
         {
-            if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+            var test = await Connector.TestAsync(Profile, ct);
+            if (!test.Success)
+                return new OpenResult(false, test.Message + (Profile.Engine == DatabaseEngine.PostgreSql
+                    ? " Program nie przełącza się automatycznie na inną bazę." : ""), null);
+            string? backup = null, recoveryKey = null;
+            // Wiele stanowisk nie może równocześnie wykonywać migracji schematu.
+            // Uaktualnienia wymagają osobnej operacji administratora przy zatrzymanych klientach.
+            if (test.PendingMigrations > 0)
             {
-                await using var isolated = OpenDb();
-                await isolated.Database.MigrateAsync(ct);
+                if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+                {
+                    await using var isolated = OpenDb();
+                    await isolated.Database.MigrateAsync(ct);
+                }
+                else
+                    return new OpenResult(false, "Serwer ma nieaktualny schemat PostgreSQL. Administrator musi wykonać aktualizację z kopią bezpieczeństwa po zatrzymaniu innych stanowisk.", null);
             }
-            else
-                return new OpenResult(false, "Serwer ma nieaktualny schemat PostgreSQL. Administrator musi wykonać aktualizację z kopią bezpieczeństwa po zatrzymaniu innych stanowisk.", null);
+            SaveConfig();
+            await RefreshAsync(ct);
+            await Attachments.EncryptLegacyFilesAsync(ct); // załączniki zapisane wcześniej jawnie — szyfrowane przy otwarciu
+            opened = true;
+            return new OpenResult(true, null, backup, recoveryKey);
         }
-        SaveConfig();
-        await RefreshAsync(ct);
-        await Attachments.EncryptLegacyFilesAsync(ct); // załączniki zapisane wcześniej jawnie — szyfrowane przy otwarciu
-        return new OpenResult(true, null, backup, recoveryKey);
+        finally
+        {
+            if (!opened) ReleaseOperatorSession();
+        }
     }
 
     /// <summary>
