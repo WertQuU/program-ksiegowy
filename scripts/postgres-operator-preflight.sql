@@ -44,11 +44,26 @@ BEGIN
   END IF;
   -- Effective rights matter: grants inherited from other roles may override
   -- a direct REVOKE from the operator. Check the resulting privileges.
-  IF to_regclass('public."AuditEvents"') IS NOT NULL AND (
-    has_table_privilege(session_user, 'public."AuditEvents"', 'UPDATE') OR
-    has_table_privilege(session_user, 'public."AuditEvents"', 'DELETE')
+  IF EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname='AuditEvents'
+      AND c.relkind IN ('r','p')
+      AND (has_table_privilege(session_user,c.oid,'UPDATE')
+           OR has_table_privilege(session_user,c.oid,'DELETE'))
   ) THEN
     RAISE EXCEPTION 'NIEDOZWOLONE: operator może zmieniać lub usuwać wpisy AuditEvents. DBA musi odebrać efektywne prawa UPDATE/DELETE (także z ról dziedziczonych).';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_class c
+    JOIN pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND c.relname='__EFMigrationsHistory'
+      AND c.relkind IN ('r','p')
+      AND (has_table_privilege(session_user,c.oid,'INSERT')
+           OR has_table_privilege(session_user,c.oid,'UPDATE')
+           OR has_table_privilege(session_user,c.oid,'DELETE'))
+  ) THEN
+    RAISE EXCEPTION 'NIEDOZWOLONE: operator może modyfikować __EFMigrationsHistory. DBA musi odebrać efektywne prawa INSERT/UPDATE/DELETE (także z ról dziedziczonych).';
   END IF;
 END $$;
 ROLLBACK;
