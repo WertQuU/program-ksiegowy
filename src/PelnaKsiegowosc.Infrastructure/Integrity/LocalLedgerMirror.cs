@@ -41,6 +41,50 @@ public sealed class LocalLedgerMirror
     public string FilePath => _path;
 
     /// <summary>
+    /// Lokalny SQLite zawiera odciski ksiąg i identyfikatory zapisów. Ograniczamy
+    /// dostęp innych kont systemowych do katalogu (0700) i pliku (0600) na Unix.
+    /// To ochrona uprawnień systemu plików, a NIE kryptograficzne uwierzytelnienie
+    /// rejestru; użytkownik posiadający zapis do pliku nadal może go zmienić.
+    /// </summary>
+    internal static void PreparePrivateMirrorFile(string path)
+    {
+        var directory = Path.GetDirectoryName(path)
+            ?? throw new InvalidOperationException("Nieprawidłowa ścieżka lokalnego rejestru kontrolnego.");
+        const UnixFileMode privateDirectory = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
+        const UnixFileMode privateFile = UnixFileMode.UserRead | UnixFileMode.UserWrite;
+
+        if (OperatingSystem.IsWindows())
+            Directory.CreateDirectory(directory);
+        else
+            Directory.CreateDirectory(directory, privateDirectory);
+
+        if (File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint))
+            throw new InvalidOperationException("Katalog rejestru kontrolnego nie może być dowiązaniem symbolicznym.");
+        if (!OperatingSystem.IsWindows())
+            File.SetUnixFileMode(directory, privateDirectory);
+
+        if (File.Exists(path))
+        {
+            if (File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint))
+                throw new InvalidOperationException("Plik rejestru kontrolnego nie może być dowiązaniem symbolicznym.");
+            if (!OperatingSystem.IsWindows())
+                File.SetUnixFileMode(path, privateFile);
+        }
+        else if (!OperatingSystem.IsWindows())
+        {
+            // CreateNew nie podąży za istniejącym dowiązaniem, również uszkodzonym.
+            // Plik istnieje z prawami 0600 zanim SQLite otworzy połączenie.
+            using var file = new FileStream(path, new FileStreamOptions
+            {
+                Mode = FileMode.CreateNew,
+                Access = FileAccess.ReadWrite,
+                Share = FileShare.None,
+                UnixCreateMode = privateFile
+            });
+        }
+    }
+
+    /// <summary>
     /// Pobiera jeden spójny stan PostgreSQL w transakcji REPEATABLE READ.
     /// Najpierw sprawdza kompletność łańcucha na serwerze i zgodność z zapisami lokalnymi;
     /// dopiero po udanym porównaniu dopisuje nowe zaksięgowane rekordy do SQLite.
@@ -92,7 +136,7 @@ public sealed class LocalLedgerMirror
                 "Główne księgi PostgreSQL nie przeszły kontroli wewnętrznej. Skontaktuj się z administratorem; program pozostaje dostępny.",
                 0, 0, problems.Take(20).ToArray());
 
-        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
+        PreparePrivateMirrorFile(_path);
         await using var local = new SqliteConnection(new SqliteConnectionStringBuilder
         {
             DataSource = _path,
