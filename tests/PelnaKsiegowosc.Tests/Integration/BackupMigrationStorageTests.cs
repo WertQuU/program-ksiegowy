@@ -305,6 +305,28 @@ public class PostgresTests
 
 public class ObjectStorageTests
 {
+    [Theory]
+    [InlineData("http://storage.example.com")]
+    [InlineData("http://192.0.2.25:9000")]
+    [InlineData("ftp://storage.example.com")]
+    public void Remote_s3_endpoint_must_not_use_plaintext_http(string endpoint)
+    {
+        var settings = new ObjectStorageSettings { Endpoint = endpoint, Bucket = "test-bucket" };
+        Assert.Throws<DomainException>(() => new S3BackupTarget(settings, "test-access", "test-secret"));
+    }
+
+    [Theory]
+    [InlineData("https://storage.example.com")]
+    [InlineData("http://localhost:5055")]
+    [InlineData("http://127.0.0.1:5055")]
+    public void S3_endpoint_allows_https_and_local_test_emulator(string endpoint)
+    {
+        var settings = new ObjectStorageSettings { Endpoint = endpoint, Bucket = "test-bucket" };
+        using var target = new S3BackupTarget(settings, "test-access", "test-secret");
+        // Constructor-only test: no network call or real S3 credentials.
+        Assert.NotNull(target);
+    }
+
     private static ObjectStorageSettings Settings(string bucket) => new()
     {
         Enabled = true,
