@@ -338,7 +338,9 @@ public sealed class BankService
         if (amount == 0) throw new DomainException("Kwota nie może być zerowa.");
         if (string.IsNullOrWhiteSpace(title)) throw new DomainException("Podaj tytuł operacji kasowej.");
         var cpName = counterpartyId is { } cid
-            ? (await _db.Counterparties.FirstAsync(c => c.Id == cid && c.CompanyId == _user.CompanyId, ct)).Name
+            ? (await _db.Counterparties.FirstOrDefaultAsync(
+                  c => c.Id == cid && c.CompanyId == _user.CompanyId, ct)
+                  ?? throw new DomainException("Kontrahent operacji kasowej nie istnieje w aktualnej jednostce.")).Name
             : null;
         var seq = await new NumberingService(_db).NextAsync(_user.CompanyId, $"CASH/{acc.Id:N}/{date.Year}", ct);
         var t = new MoneyTransaction
