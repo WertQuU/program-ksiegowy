@@ -102,19 +102,39 @@ public sealed class StockService
             _ when !string.IsNullOrWhiteSpace(offsetAccount) => new[] { new LineInput(item.InventoryAccount, value, 0), new LineInput(offsetAccount.Trim(), 0, value, counterpartyId) },
             _ => null
         };
-        if (lines is not null && value != 0)
+        // Dokument magazynowy, dekret księgowy, zmiana kartoteki i audyt
+        // muszą być jedną operacją. Gdy ostatni zapis się nie powiedzie,
+        // nie może pozostać zaksięgowany dekret bez ruchu magazynowego.
+        var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
+        try
         {
-            var e = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
-                $"{number}: {item.Name} {quantity:0.###} {item.Unit}{(reference is null ? "" : $" ({reference})")}", type.ToString(), number, lines), ct);
-            mv.JournalEntryId = e.Id;
+            if (lines is not null && value != 0)
+            {
+                var e = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
+                    $"{number}: {item.Name} {quantity:0.###} {item.Unit}{(reference is null ? "" : $" ({reference})")}", type.ToString(), number, lines), ct);
+                mv.JournalEntryId = e.Id;
+            }
+            item.Quantity = quantityAfter;
+            item.Value = valueAfter;
+            _db.StockMovements.Add(mv);
+            await new AuditService(_db, _clock).AddAsync(_user, "MAGAZYN_DOKUMENT", "StockMovement", mv.Id.ToString(), $"{number}; {item.Code}; {quantity}; {value}", ct);
+            await _db.SaveChangesAsync(ct);
+            if (tx is not null) await tx.CommitAsync(ct);
+            return mv;
         }
-        // Zmiana wartości magazynu następuje dopiero po poprawnej dekretacji.
-        item.Quantity = quantityAfter;
-        item.Value = valueAfter;
-        _db.StockMovements.Add(mv);
-        await new AuditService(_db, _clock).AddAsync(_user, "MAGAZYN_DOKUMENT", "StockMovement", mv.Id.ToString(), $"{number}; {item.Code}; {quantity}; {value}", ct);
-        await _db.SaveChangesAsync(ct);
-        return mv;
+        catch
+        {
+            if (tx is not null)
+            {
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear();
+            }
+            throw;
+        }
+        finally
+        {
+            if (tx is not null) await tx.DisposeAsync();
+        }
     }
 
     /// <summary>Wartość rozchodu metodą FIFO: odtworzenie partii z historii przyjęć i rozchodów, zużycie najstarszych partii.</summary>
@@ -150,6 +170,7 @@ public sealed class StockService
     /// <summary>Stan pozycji na dzień (z historii dokumentów).</summary>
     public async Task<List<(StockItem Item, decimal Quantity, decimal Value)>> StateAsync(DateOnly asOf, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewData);
         var items = await _db.StockItems.AsNoTracking().Where(i => i.CompanyId == _user.CompanyId).OrderBy(i => i.Code).ToListAsync(ct);
         var last = (await _db.StockMovements.AsNoTracking().Where(m => m.CompanyId == _user.CompanyId && m.Date <= asOf).ToListAsync(ct))
             .GroupBy(m => m.StockItemId).ToDictionary(g => g.Key, g => g.OrderBy(m => m.Date).ThenBy(m => m.CreatedAtUtc).Last());
