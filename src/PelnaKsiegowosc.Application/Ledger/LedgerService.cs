@@ -74,9 +74,19 @@ public sealed class LedgerService
     }
 
     /// <summary>Tworzy zapis w buforze (edytowalny).</summary>
+    private static void RejectManualStorno(EntryKind kind)
+    {
+        // Storno musi powstawać wyłącznie z zaksięgowanego zapisu poprzez ReverseAsync/CorrectAsync.
+        // Samo ustawienie Kind=Storno bez powiązania z oryginałem omijałoby reguły
+        // dokumentowania korekt i umożliwiało dowolne zapisy ujemne.
+        if (kind == EntryKind.Storno)
+            throw new DomainException("Storno wolno utworzyć wyłącznie przez funkcję korekty zaksięgowanego zapisu.");
+    }
+
     public async Task<JournalEntry> CreateDraftAsync(EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
+        RejectManualStorno(input.Kind);
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
         var accounts = await AccountsByNumberAsync(fy.Id, ct);
         var entry = new JournalEntry
@@ -101,6 +111,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> UpdateDraftAsync(Guid entryId, EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
+        RejectManualStorno(input.Kind);
         var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         if (entry.IsPosted)
             throw new DomainException("Zapis zaksięgowany nie może być modyfikowany. Użyj funkcji „Korekta (storno)” — zapis pierwotny pozostanie w księgach.");
@@ -146,6 +157,7 @@ public sealed class LedgerService
     {
         _user.Require(Permission.PostEntries);
         var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
+        RejectManualStorno(entry.Kind);
         var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
         try
         {
@@ -164,6 +176,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> CreateAndPostAsync(EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
+        RejectManualStorno(input.Kind);
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
         var accounts = await AccountsByNumberAsync(fy.Id, ct);
         var entry = new JournalEntry
