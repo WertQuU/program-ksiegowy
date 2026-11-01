@@ -54,3 +54,20 @@ Przed zmianą statusu któregokolwiek z A1–A3 na **zweryfikowane** należy:
 - Szczegółowe istniejące ograniczenia programu: `README.md`, `docs/SECURITY.md`, `docs/REVIEW_2026-11-01.md`.
 
 **Wniosek:** poprawki zwiększają bezpieczeństwo i rzetelność, lecz **nie jest możliwe uznanie programu za w pełni gotowy do prowadzenia rzeczywistej księgowości** bez zamknięcia ryzyk P0/P1 i niezależnej weryfikacji. Nie wolno zastępować tego warunku deklaracją „100% zgodności”.
+
+
+## 6. Audyt uzupełniający — kolejne luki integralności
+
+Audyt prowadzony po scaleniu PR #23–#31 wykazał następne nieprawidłowości. **Poprawki PR #32–#34 są niezależnymi propozycjami i wymagają własnej weryfikacji CI oraz ponownego testu po scaleniu.**
+
+| Kod | Waga | Nieprawidłowość | Poprawka |
+|---|---|---|---|
+| A4 | Wysoka | Publiczne metody dekretacji akceptowały wpisy o typie `BilansOtwarcia`, `Zamkniecie`, `Korekta` bez właściwej procedury. | PR #32: tylko zwykłe dekrety w publicznym API; wewnętrzna ścieżka dla zamknięcia roku z kontrolą uprawnienia i transakcji. |
+| A5 | Wysoka | Flaga `SkipReadinessCheck` pozwalała pominąć kontrolę zatwierdzonego planu kont również dla zwykłych księgowań. | PR #32: pomijanie gotowości ograniczone do systemowego BO/ZAM; test odmowy przy niezatwierdzonym planie kont. |
+| A6 | Wysoka | `UpdateDraftAsync` nie sprawdzało przynależności identyfikatora kontrahenta przed zmianą śledzonego przez EF Core dekretu. | PR #32: sprawdzenie jednostki przed mutacją; test obcego kontrahenta i kolejnego `SaveChangesAsync`. |
+| A7 | Wysoka | Błąd końcowego etapu zamknięcia roku mógł zostawić w aktywnym kontekście EF Core nieaktualne statusy i wpisy, mimo wycofania transakcji SQL. | PR #33: rollback, wyczyszczenie śledzonego stanu oraz regresja z nieudanym BO i ponownym zamknięciem roku. |
+| A8 | Wysoka | Zwykłe storno/korekta mogły odwrócić systemowy BO lub zapis zamknięcia roku poza dedykowaną procedurą. | PR #34: blokada w domenowym `EntryValidator.BuildReversal`, zachowanie korekt zwykłych zapisów. |
+
+**P0 architektoniczne (otwarte):** [issue #35](https://github.com/WertQuU/program-ksiegowy/issues/35) — operatorzy PostgreSQL muszą utracić możliwość bezpośredniego zapisu do tabel biznesowych z obejściem serwerowej autoryzacji. Usunięcie wyłącznie powyższych usterek nie rozwiązuje problemu.
+
+**Powtórna bramka akceptacji:** dla każdego z PR #32–#34 zielone testy Windows/Linux dokładnego SHA; następnie integracja i testy wspólnego `main`, poprawne zamknięcie roku i BO, ścieżki zwykłego storna oraz test prób nieuprawnionych zapisów. Zakończenie tej bramki **nie potwierdza** pełnej zgodności z przepisami bez pozostałych kontroli merytorycznych i architektonicznych.

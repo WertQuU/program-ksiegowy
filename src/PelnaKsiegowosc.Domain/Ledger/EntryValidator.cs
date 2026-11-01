@@ -112,6 +112,11 @@ public static class EntryValidator
         if (!original.IsPosted) throw new DomainException("Stornować można wyłącznie zapis zaksięgowany. Zapis w buforze można edytować.");
         if (original.ReversedByEntryId is not null) throw new DomainException("Zapis został już wystornowany.");
         if (original.Kind == EntryKind.Storno) throw new DomainException("Nie można stornować zapisu stornującego — wprowadź zapis korygujący.");
+        // BO i zapis zamknięcia roku są elementem kontrolowanego, nieodwracalnego
+        // procesu rocznego. Zwykłe storno/dekret korygujący mogłoby naruszyć
+        // ciągłość bilansu otwarcia i zamknięcia bez aktualizacji statusu roku.
+        if (original.Kind is EntryKind.BilansOtwarcia or EntryKind.Zamkniecie)
+            throw new DomainException("Bilansu otwarcia ani zapisu zamknięcia roku nie można stornować zwykłą korektą księgową.");
         if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Podaj przyczynę korekty.");
 
         var rev = new JournalEntry
