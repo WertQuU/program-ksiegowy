@@ -64,7 +64,12 @@ public sealed class DatabaseMigrator
         try
         {
             report.PreMigrationBackup = await createSourceBackup();
-            await target.Database.MigrateAsync(ct);
+            if ((await target.Database.GetPendingMigrationsAsync(ct)).Any())
+            {
+                if (target.Database.ProviderName?.Contains("Npgsql", StringComparison.OrdinalIgnoreCase) == true)
+                    throw new DomainException("Przygotuj schemat PostgreSQL przed importem danych. Operator nie wykonuje migracji schematu.");
+                await target.Database.MigrateAsync(ct);
+            }
             BackupService.CreatePrivateDirectory(dumpDir);
             var tables = await DataDump.ExportAsync(source, dumpDir, ct);
             var sourceSums = await DataDump.ControlSumsAsync(source, ct);

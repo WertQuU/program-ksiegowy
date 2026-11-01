@@ -35,8 +35,18 @@
       <!-- 2. Baza -->
       <ScrollViewer IsVisible="{Binding IsDatabase}">
         <StackPanel Spacing="6">
-          <TextBlock Classes="info" Text="Podaj indywidualny login i hasło do wspólnej bazy PostgreSQL. Wiele komputerów pracuje na tych samych księgach bez kopiowania bazy. Każdy operator musi mieć osobne konto serwera. MySQL/MariaDB nie są jeszcze obsługiwane w tym wydaniu. Lokalne SQLite pozostaje technologią wewnętrzną/kopią awaryjną." />
-          <TextBlock Text="Serwer PostgreSQL — jedna wspólna baza, odrębne konto na operatora" Classes="h2" />
+          <TextBlock Classes="info" Text="Wybierz sposób przechowywania ksiąg. SQLite działa samodzielnie na tym komputerze, bez serwera. PostgreSQL pozwala pracować wielu stanowiskom na wspólnej bazie." />
+          <RadioButton GroupName="Engine" Content="SQLite — praca lokalna, bez PostgreSQL" IsChecked="{Binding Database.UseSqlite}" />
+          <RadioButton GroupName="Engine" Content="PostgreSQL — baza na serwerze" IsChecked="{Binding Database.UsePostgres}" />
+          <TextBlock Text="Co chcesz zrobić?" Classes="h2" />
+          <RadioButton GroupName="DatabaseAction" Content="A — utworzyć nową bazę i przygotować tabele" IsChecked="{Binding CreateFirstDatabase}" />
+          <RadioButton GroupName="DatabaseAction" Content="B — podłączyć istniejącą bazę i pobrać zapisane dane" IsChecked="{Binding UseExistingDatabase}" />
+          <StackPanel IsVisible="{Binding Database.UseSqlite}" Spacing="6">
+            <TextBlock Text="Plik bazy SQLite" />
+            <TextBox Text="{Binding Database.SqlitePath}" />
+            <Button Content="Wybierz plik…" Command="{Binding PickSqliteCommand}" />
+            <TextBlock Classes="info" Text="Plik jest szyfrowany. Przechowuj go lokalnie; do jednoczesnej pracy wielu komputerów wybierz PostgreSQL." TextWrapping="Wrap" />
+          </StackPanel>
           <Grid Classes="form" ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" IsVisible="{Binding Database.UsePostgres}" Margin="24,0,0,0">
             <TextBlock Text="Adres serwera" /><TextBox Grid.Column="1" Text="{Binding Database.Host}" />
             <TextBlock Grid.Row="1" Text="Port" /><TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Database.Port}" />
@@ -48,18 +58,33 @@
             <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
           </Grid>
           <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
-          <CheckBox Content="Utwórz pierwszą bazę (nowa baza lub pusty schemat)" IsChecked="{Binding CreateFirstDatabase}" />
           <StackPanel IsVisible="{Binding CreateFirstDatabase}" Spacing="6">
+            <StackPanel IsVisible="{Binding Database.UsePostgres}" Spacing="6">
             <TextBlock Classes="info" Text="Program utworzy brakującą bazę, przygotuje tabele i ograniczone konto operatora. Wpisz poniżej osobne dane administratora PostgreSQL. Hasło administratora służy tylko tej operacji i nie jest zapisywane. Istniejące księgi nie zostaną zmienione." TextWrapping="Wrap" />
             <TextBlock Text="Login administratora PostgreSQL" />
             <TextBox Text="{Binding AdministratorLogin}" />
             <TextBlock Text="Hasło administratora PostgreSQL" />
             <TextBox Text="{Binding AdministratorPassword}" PasswordChar="•" />
+            </StackPanel>
             <Button Content="Utwórz bazę i przygotuj schemat" Command="{Binding PrepareFirstDatabaseCommand}" />
+          </StackPanel>
+          <TextBlock Text="Czy przenieść dane z innej bazy SQLite?" Classes="h2" />
+          <RadioButton GroupName="SqliteMigration" Content="Nie — bez przenoszenia danych" IsChecked="{Binding SkipSqliteMigration}" />
+          <RadioButton GroupName="SqliteMigration" Content="Tak — przenieś istniejące księgi z SQLite" IsChecked="{Binding MigrateFromSqlite}" />
+          <StackPanel IsVisible="{Binding MigrateFromSqlite}" Spacing="6">
+            <TextBlock Classes="info" Text="Migracja jest dostępna w obu wariantach A/B, wyłącznie do pustej bazy docelowej. Źródło pozostaje bez zmian. Zamknij program używający pliku źródłowego; do przeniesienia ksiąg wymagane są uprawnienia administratora tej bazy." TextWrapping="Wrap" />
+            <TextBlock Text="Źródłowy plik SQLite" /><TextBox Text="{Binding MigrationSourcePath}" />
+            <Button Content="Wybierz źródło…" Command="{Binding PickMigrationSourceCommand}" />
+            <TextBlock Text="Klucz szyfrowania źródła (jeśli nie jest zapisany na tym komputerze)" />
+            <TextBox Text="{Binding MigrationSourceKey}" PasswordChar="•" />
+            <TextBlock Text="Katalog źródłowych załączników" /><TextBox Text="{Binding MigrationAttachmentsDirectory}" />
+            <TextBlock Text="Klucz źródłowych załączników (Base64, jeśli potrzebny)" />
+            <TextBox Text="{Binding MigrationAttachmentsKey}" PasswordChar="•" />
           </StackPanel>
           <Button Content="Połącz i pobierz zapisane dane" Command="{Binding TestDatabaseCommand}" IsVisible="{Binding !CreateFirstDatabase}" />
           <TextBlock Classes="info" Text="Po połączeniu kreator pobierze dane jednostki, rok obrotowy, plan kont, politykę rachunkowości i osobę odpowiedzialną. Zapisane informacje zobaczysz w kolejnych krokach. Uzupełnisz tylko braki; ustawienia kopii i KSeF dotyczą tego komputera." TextWrapping="Wrap" />
           <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
+          <TextBlock Text="{Binding MigrationInfo}" TextWrapping="Wrap" />
         </StackPanel>
       </ScrollViewer>
 

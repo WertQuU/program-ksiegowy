@@ -35,7 +35,7 @@ public static class SelfTestScenario
     public static async Task<SetupWizardViewModel> RunWizardAsync(AppSession session, AutomaticDialogService dialogs, LegalForm form = LegalForm.SpolkaZOgraniczonaOdpowiedzialnoscia)
     {
         var w = new SetupWizardViewModel(session, dialogs) { TermsAccepted = true };
-        // Sam autotest używa SQLite; normalne uruchomienie programu wymaga PostgreSQL.
+        // Scenariusz sprawdza samodzielny tryb SQLite.
         w.Database.UsePostgres = false;
         await w.NextCommand.ExecuteAsync(null);
         await w.NextCommand.ExecuteAsync(null); // baza (SQLite domyślnie w katalogu danych)

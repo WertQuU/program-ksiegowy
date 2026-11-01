@@ -49,8 +49,11 @@ public sealed class AppSession
     /// <summary>Jedna aktywna instancja programu na login bazy (kilka połączeń SQL w tej instancji jest dozwolonych).</summary>
     public async Task AcquireOperatorSessionAsync(CancellationToken ct = default)
     {
-        if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+        if (Profile.Engine == DatabaseEngine.Sqlite)
+        {
+            ReleaseOperatorSession();
             return;
+        }
         if (Profile.Engine != DatabaseEngine.PostgreSql)
             throw new DomainException("Aktywne księgi wymagają centralnej bazy PostgreSQL. Lokalny SQLite pozostaje narzędziem migracji i odzyskiwania.");
         if (_operatorSession is { } current)
@@ -106,7 +109,7 @@ public sealed class AppSession
     /// <summary>Kontekst bazy ograniczony do jednostki sesji (gdy wybrana) — dane innych jednostek są niewidoczne i niezmienialne.</summary>
     public KsiegiDbContext OpenDb()
     {
-        if (!(IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite) &&
+        if (Profile.Engine != DatabaseEngine.Sqlite &&
             (Profile.Engine != DatabaseEngine.PostgreSql || _operatorSession is not { IsHealthy: true } active ||
              active.Identity != ExclusivePostgresSession.ProfileIdentity(Profile)))
             throw new DomainException("Brak aktywnej, wyłącznej sesji PostgreSQL. Operacje księgowe są zablokowane.");
@@ -201,8 +204,10 @@ public sealed class AppSession
         // Uaktualnienia wymagają osobnej operacji administratora przy zatrzymanych klientach.
         if (test.PendingMigrations > 0)
         {
-            if (IsIsolatedSelfTest && Profile.Engine == DatabaseEngine.Sqlite)
+            if (Profile.Engine == DatabaseEngine.Sqlite)
             {
+                if (!test.DatabaseEmpty)
+                    (backup, recoveryKey) = await PreMigrationBackupAsync(ct);
                 await using var isolated = OpenDb();
                 await isolated.Database.MigrateAsync(ct);
             }

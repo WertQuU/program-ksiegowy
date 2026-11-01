@@ -10,6 +10,9 @@ using PelnaKsiegowosc.Application.Setup;
 using PelnaKsiegowosc.Application.Templates;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Infrastructure.Configuration;
+using PelnaKsiegowosc.Infrastructure.Migration;
+using PelnaKsiegowosc.Infrastructure.Backup;
+using PelnaKsiegowosc.Application.Documents;
 using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Domain.Companies;
 using PelnaKsiegowosc.Domain.Periods;
@@ -37,6 +40,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         // Nowa instalacja pracuje na wspólnym serwerze, po jednym koncie DB na operatora.
         Database.UsePostgres = !session.IsIsolatedSelfTest;
         LocalBackupDirectory = session.Config.Backup.LocalDirectory ?? session.Paths.DefaultBackupDirectory;
+        MigrationSourcePath = session.Profile.Engine == DatabaseEngine.Sqlite
+            ? session.Profile.SqlitePath ?? "" : session.Paths.DefaultDatabaseFile;
+        MigrationAttachmentsDirectory = session.AttachmentsRoot;
         var y = session.Clock.Today.Year;
         YearStart = new DateOnly(y, 1, 1).ToPl();
         YearEnd = new DateOnly(y, 12, 31).ToPl();
@@ -86,7 +92,17 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private bool _termsAccepted;
     [ObservableProperty] private string _databaseInfo = "";
     [ObservableProperty] private bool _connectToExisting;
-    [ObservableProperty] private bool _createFirstDatabase;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(UseExistingDatabase))] private bool _createFirstDatabase;
+    public bool UseExistingDatabase { get => !CreateFirstDatabase; set => CreateFirstDatabase = !value; }
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(SkipSqliteMigration))] private bool _migrateFromSqlite;
+    public bool SkipSqliteMigration { get => !MigrateFromSqlite; set => MigrateFromSqlite = !value; }
+    [ObservableProperty] private string _migrationSourcePath = "";
+    [ObservableProperty] private string _migrationSourceKey = "";
+    [ObservableProperty] private string _migrationAttachmentsDirectory = "";
+    [ObservableProperty] private string _migrationAttachmentsKey = "";
+    [ObservableProperty] private string _migrationInfo = "";
+    private string? _migratedTarget;
+    private string? _migratedSource;
     [ObservableProperty] private string _administratorLogin = "postgres";
     [ObservableProperty] private string _administratorPassword = "";
     [ObservableProperty] private bool _companyStored;
@@ -242,8 +258,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         DatabaseInfo = "";
         Session.ReleaseOperatorSession();
         var p = Database.ToProfile(Session.IsIsolatedSelfTest);
-        if (p.Engine != DatabaseEngine.PostgreSql && !(Session.IsIsolatedSelfTest && p.Engine == DatabaseEngine.Sqlite))
-            throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
+        ValidateMigrationSource(p);
+        if (p.Engine == DatabaseEngine.Sqlite && !CreateFirstDatabase && !Session.IsIsolatedSelfTest && !File.Exists(p.SqlitePath))
+            throw new DomainException("Wybierz istniejący plik SQLite albo opcję A — nowa baza.");
         if (p.Engine == DatabaseEngine.Sqlite)
             Directory.CreateDirectory(Path.GetDirectoryName(p.SqlitePath!)!);
         if (p.Engine == DatabaseEngine.PostgreSql && !string.IsNullOrEmpty(Database.Password))
@@ -263,7 +280,14 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         if (p.Engine == DatabaseEngine.PostgreSql && r.PendingMigrations > 0)
             throw new DomainException("Baza nie ma aktualnego schematu. Dla pustej bazy wybierz w kroku 2 „Utwórz pierwszą bazę” i podaj osobne dane administratora. Aktualizacja istniejących ksiąg wymaga osobnej operacji administracyjnej.");
         await using var db = Session.Connector.CreateContext(p);
-        var companies = r.DatabaseEmpty ? new List<Company>() : await db.Companies.AsNoTracking().Take(2).ToListAsync();
+        if (p.Engine == DatabaseEngine.Sqlite && r.PendingMigrations > 0)
+        {
+            if (!r.DatabaseEmpty) throw new DomainException("Baza SQLite wymaga aktualizacji. Otwórz ją w skonfigurowanym programie, aby wykonać kopię i aktualizację, albo zaimportuj ją do nowej bazy.");
+            await db.Database.MigrateAsync();
+        }
+        if (MigrateFromSqlite && (_migratedTarget != p.BuildConnectionString(null) || _migratedSource != Path.GetFullPath(MigrationSourcePath)))
+            await ImportSqliteAsync(db, p);
+        var companies = await db.Companies.AsNoTracking().Take(2).ToListAsync();
         if (companies.Count > 1) throw new DomainException("Baza zawiera kilka jednostek. Wskaż oddzielną bazę dla jednej jednostki.");
         var company = companies.SingleOrDefault();
         if (company is not null)
@@ -334,6 +358,17 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         _checkedConnection = null;
         Session.ReleaseOperatorSession();
         var profile = Database.ToProfile(Session.IsIsolatedSelfTest);
+        ValidateMigrationSource(profile);
+        if (profile.Engine == DatabaseEngine.Sqlite)
+        {
+            if (File.Exists(profile.SqlitePath)) throw new DomainException("Plik SQLite już istnieje. Wybierz opcję B albo nową nazwę pliku.");
+            Directory.CreateDirectory(Path.GetDirectoryName(profile.SqlitePath!)!);
+            await using var sqlite = Session.Connector.CreateContext(profile);
+            await sqlite.Database.MigrateAsync();
+            CreateFirstDatabase = false;
+            await CheckDatabaseAsync();
+            return;
+        }
         var operatorPassword = string.IsNullOrEmpty(Database.Password)
             ? Session.Secrets.Get(profile.PasswordSecretKey) ?? "" : Database.Password;
         try
@@ -348,7 +383,67 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [RelayCommand]
     private async Task PickSqliteAsync()
     {
-        if (await Dialogs.SaveFileAsync("Plik bazy danych", "ksiegi.db", new FileFilter("Baza SQLite", "*.db")) is { } f) Database.SqlitePath = f;
+        var filter = new FileFilter("Baza SQLite", "*.db", "*.sqlite");
+        var file = CreateFirstDatabase
+            ? await Dialogs.SaveFileAsync("Nowa baza SQLite", "ksiegi.db", filter)
+            : await Dialogs.OpenFileAsync("Istniejąca baza SQLite", filter);
+        if (file is not null) Database.SqlitePath = file;
+    }
+
+    [RelayCommand]
+    private async Task PickMigrationSourceAsync()
+    {
+        if (await Dialogs.OpenFileAsync("Źródłowa baza SQLite do migracji", new FileFilter("Baza SQLite", "*.db", "*.sqlite")) is { } file)
+            MigrationSourcePath = file;
+    }
+
+    private void ValidateMigrationSource(DatabaseProfile target)
+    {
+        if (!MigrateFromSqlite) return;
+        if (string.IsNullOrWhiteSpace(MigrationSourcePath) || !File.Exists(MigrationSourcePath))
+            throw new DomainException("Wskaż istniejący plik źródłowy SQLite albo wybierz brak migracji.");
+        if (target.Engine == DatabaseEngine.Sqlite && Path.GetFullPath(target.SqlitePath!).Equals(Path.GetFullPath(MigrationSourcePath), StringComparison.OrdinalIgnoreCase))
+            throw new DomainException("Źródło i cel migracji muszą być różnymi plikami SQLite.");
+    }
+
+    private async Task ImportSqliteAsync(KsiegiDbContext target, DatabaseProfile profile)
+    {
+        if ((await DataDump.CountsAsync(target)).Values.Any(n => n != 0))
+            throw new DomainException("Cel migracji zawiera dane. Wybierz pustą bazę albo wyłącz migrację, aby podłączyć istniejące księgi.");
+        var source = new DatabaseProfile { Engine = DatabaseEngine.Sqlite, SqlitePath = Path.GetFullPath(MigrationSourcePath) };
+        var sourceKey = string.IsNullOrWhiteSpace(MigrationSourceKey)
+            ? Session.Connector.ExportSqliteKey(source) : MigrationSourceKey.Trim();
+        if (string.IsNullOrWhiteSpace(MigrationAttachmentsDirectory))
+            throw new DomainException("Wskaż katalog załączników źródłowej bazy SQLite.");
+        var sourceRoot = Path.GetFullPath(MigrationAttachmentsDirectory);
+        byte[]? fileKey = null;
+        var storedFileKey = Session.Secrets.Get("PelnaKsiegowosc/zalaczniki/" + sourceRoot.ToLowerInvariant());
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(MigrationAttachmentsKey)) fileKey = Convert.FromBase64String(MigrationAttachmentsKey.Trim());
+            else if (!string.IsNullOrEmpty(storedFileKey)) fileKey = Convert.FromBase64String(storedFileKey);
+            else if (sourceKey is { Length: 64 }) fileKey = System.Security.Cryptography.HKDF.DeriveKey(
+                System.Security.Cryptography.HashAlgorithmName.SHA256, Convert.FromHexString(sourceKey), 32,
+                info: System.Text.Encoding.UTF8.GetBytes("PelnaKsiegowosc/zalaczniki"));
+        }
+        catch (FormatException) { throw new DomainException("Nieprawidłowy klucz bazy lub załączników źródłowych."); }
+        if (fileKey is not null && fileKey.Length != 32) throw new DomainException("Klucz załączników ma 32 bajty w formacie Base64.");
+        if (fileKey is null && LocalFileStore.EncryptedOnly(sourceRoot))
+            throw new DomainException("Podaj klucz źródłowych załączników.");
+        if (sourceRoot.Equals(Path.GetFullPath(Session.AttachmentsRoot), StringComparison.OrdinalIgnoreCase) && fileKey is not null)
+            Session.ImportAttachmentsKey(Convert.ToBase64String(fileKey));
+        var sourceFiles = new LocalFileStore(sourceRoot, fileKey);
+        var targetFiles = new LocalFileStore(Session.AttachmentsRoot, Session.AttachmentsKeyFor(Session.AttachmentsRoot, profile), keyRequired: true);
+        if (Session.StoredBackupKey() is null)
+        {
+            RecoveryKey = Session.GenerateBackupKey(); RecoveryKeySaved = false;
+        }
+        var backupPath = await WizardSqliteImport.ImportAsync(MigrationSourcePath, sourceKey, sourceFiles,
+            target, targetFiles, OperatorIdentity.LoginFor(source), OperatorIdentity.LoginFor(profile),
+            Session.Clock, Session.Paths.TempDirectory, Session.StoredBackupKey()!, LocalBackupDirectory);
+        _migratedTarget = profile.BuildConnectionString(null); _migratedSource = Path.GetFullPath(MigrationSourcePath);
+        MigrationInfo = "Dane SQLite przeniesione i zweryfikowane. Kopia źródła: " + backupPath;
+        MigrationSourceKey = ""; MigrationAttachmentsKey = "";
     }
 
     [RelayCommand]
@@ -387,7 +482,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             if (profile.Engine == DatabaseEngine.PostgreSql &&
                 (await db.Database.GetPendingMigrationsAsync()).Any())
                 throw new DomainException("Wymagana aktualizacja schematu PostgreSQL. Administrator musi przygotować schemat osobno przed zakończeniem kreatora. Konto operatora nie wykonuje migracji.");
-            if (!ConnectToExisting && Session.IsIsolatedSelfTest && profile.Engine == DatabaseEngine.Sqlite)
+            if (!ConnectToExisting && profile.Engine == DatabaseEngine.Sqlite)
                 await db.Database.MigrateAsync();
             if (ConnectToExisting)
             {

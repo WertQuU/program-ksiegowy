@@ -4,7 +4,7 @@ using PelnaKsiegowosc.Domain.Common;
 
 namespace PelnaKsiegowosc.Presentation.ViewModels;
 
-/// <summary>Formularz aktywnej centralnej bazy PostgreSQL. SQLite obsługiwany wyłącznie przez narzędzia importu.</summary>
+/// <summary>Formularz lokalnej bazy SQLite lub serwera PostgreSQL.</summary>
 public sealed partial class DatabaseForm : ObservableObject
 {
     [ObservableProperty] private bool _usePostgres;
@@ -43,11 +43,9 @@ public sealed partial class DatabaseForm : ObservableObject
     {
         if (!UsePostgres)
         {
-            if (!isolatedSelfTest)
-                throw new DomainException("Jedyną aktywną bazą ksiąg jest centralny PostgreSQL.");
             if (string.IsNullOrWhiteSpace(SqlitePath))
-                throw new DomainException("Odizolowany autotest wymaga lokalizacji testowej bazy SQLite.");
-            return new DatabaseProfile { Name = "Izolowany autotest SQLite", Engine = DatabaseEngine.Sqlite, SqlitePath = Path.GetFullPath(SqlitePath.Trim()) };
+                throw new DomainException("Wskaż plik bazy SQLite.");
+            return new DatabaseProfile { Name = "Lokalna baza SQLite", Engine = DatabaseEngine.Sqlite, SqlitePath = Path.GetFullPath(SqlitePath.Trim()) };
         }
         if (string.IsNullOrWhiteSpace(Host) || string.IsNullOrWhiteSpace(Database) || string.IsNullOrWhiteSpace(Username))
             throw new DomainException("Podaj adres serwera, nazwę bazy i użytkownika PostgreSQL.");

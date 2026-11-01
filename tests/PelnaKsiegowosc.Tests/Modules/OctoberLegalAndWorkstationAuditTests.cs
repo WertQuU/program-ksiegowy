@@ -33,7 +33,7 @@ public class OctoberLegalAndWorkstationAuditTests
     }
 
     [Fact]
-    public async Task Legacy_connector_refuses_sqlite_as_active_database_without_creating_it()
+    public async Task Connector_creates_encrypted_standalone_sqlite_database()
     {
         var root = Path.Combine(Path.GetTempPath(), "pk-active-pg-only-" + Guid.NewGuid().ToString("N"));
         try
@@ -45,10 +45,12 @@ public class OctoberLegalAndWorkstationAuditTests
             };
             var connector = new DatabaseConnector(new FileSecretStore(Path.Combine(root, "secrets")));
             var (opened, error) = await connector.OpenActiveAsync(profile);
-            Assert.Null(opened);
-            Assert.NotNull(error);
-            Assert.Contains("PostgreSQL", error);
-            Assert.False(File.Exists(profile.SqlitePath));
+            Assert.Null(error);
+            Assert.NotNull(opened);
+            await opened!.DisposeAsync();
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            Assert.True(File.Exists(profile.SqlitePath));
+            Assert.True(SqliteEncryption.IsEncrypted(profile.SqlitePath!));
         }
         finally
         {

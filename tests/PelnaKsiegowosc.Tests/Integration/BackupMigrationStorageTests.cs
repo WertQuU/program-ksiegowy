@@ -240,6 +240,7 @@ public class PostgresTests
         await new DocumentService(t.Db, t.User, t.Clock).AddAttachmentAsync(doc.Id, store, "skan.pdf", new MemoryStream(Encoding.ASCII.GetBytes("%PDF-1.7 skan")));
         var (pg, _, _) = await CreateEmptyPostgresAsync();
         await using var __ = pg;
+        await pg.Database.MigrateAsync(); // schemat przygotowuje administrator, nigdy importer/operator
         var targetStore = new LocalFileStore(Path.Combine(t.Directory, "Zalaczniki-PG"));
         var backup = new BackupService(t.Clock, Path.Combine(t.Directory, "tmp"));
         var migrator = new DatabaseMigrator(t.Clock, Path.Combine(t.Directory, "tmp"));

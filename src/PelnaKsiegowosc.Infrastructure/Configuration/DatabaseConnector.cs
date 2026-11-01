@@ -146,18 +146,28 @@ public sealed class DatabaseConnector
 
     /// <summary>
     /// Starszy punkt wejścia do otwierania aktywnych ksiąg. Tak samo jak AppSession.OpenAsync
-    /// nie może samodzielnie przeprowadzać migracji schematu ani uruchomić SQLite jako głównej bazy.
+    /// nie może samodzielnie przeprowadzać migracji schematu PostgreSQL. SQLite może być bazą główną.
     /// Migracje PostgreSQL wykonuje administrator w osobnej operacji z kopią bezpieczeństwa.
     /// </summary>
     public async Task<(KsiegiDbContext? db, string? error)> OpenActiveAsync(DatabaseProfile p, CancellationToken ct = default)
     {
-        if (p.Engine != DatabaseEngine.PostgreSql)
-            return (null, "Aktywne księgi wymagają centralnej bazy PostgreSQL. SQLite służy wyłącznie do kontroli, testów i odzyskiwania.");
+        if (p.Engine == DatabaseEngine.Sqlite && !string.IsNullOrWhiteSpace(p.SqlitePath))
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(p.SqlitePath))!);
         var test = await TestAsync(p, ct);
         if (!test.Success)
             return (null, test.Message + " Program nie przełącza się automatycznie na bazę lokalną.");
         if (test.PendingMigrations > 0)
+        {
+            if (p.Engine == DatabaseEngine.Sqlite && test.DatabaseEmpty)
+            {
+                var sqlite = CreateContext(p);
+                try { await sqlite.Database.MigrateAsync(ct); return (sqlite, null); }
+                catch { await sqlite.DisposeAsync(); throw; }
+            }
+            if (p.Engine == DatabaseEngine.Sqlite)
+                return (null, "Baza SQLite wymaga kopii bezpieczeństwa i aktualizacji. Otwórz ją przez skonfigurowane stanowisko albo zaimportuj do nowej bazy.");
             return (null, $"Wymagana aktualizacja schematu PostgreSQL ({test.PendingMigrations} oczekujących migracji). Administrator musi wykonać ją osobno, po sprawdzeniu kopii zapasowej i zakończeniu pozostałych sesji. Program nie aktualizuje schematu automatycznie.");
+        }
         return (CreateContext(p), null);
     }
 
