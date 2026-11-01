@@ -60,4 +60,30 @@ public class FixedAssetDisposalSafetyTests
         Assert.Null(asset.DisposalDate);
         Assert.Equal(FixedAssetStatus.WEwidencji, asset.Status);
     }
+
+    [Fact]
+    public async Task Rejected_registration_does_not_leave_ghost_asset_on_later_save()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new FixedAssetService(books.Db, books.User, books.Clock);
+        var asset = new FixedAsset
+        {
+            InventoryNumber = "OT/INVALID", Name = "Sprzęt bez dekretu",
+            AcquisitionDate = new DateOnly(2026, 1, 2),
+            PlacedInServiceDate = new DateOnly(2026, 1, 3),
+            InitialValueBook = 12000m, InitialValueTax = 12000m,
+            BookMethod = DepreciationMethod.Liniowa, BookRatePercent = 20m,
+            TaxMethod = DepreciationMethod.Liniowa, TaxRatePercent = 20m
+        };
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            service.RegisterAsync(asset, offsetAccountNumber: "NIEISTNIEJACE"));
+        Assert.Contains("Konto przeciwstawne", error.Message);
+
+        // Wcześniej stan Added pozostawał w kontekście i następny SaveChanges
+        // mógł zapisać niezatwierdzony środek trwały z operacją OT bez dekretu.
+        await books.AddCounterpartyAsync("NEXT", "Kolejny kontrahent");
+        books.Db.ChangeTracker.Clear();
+        Assert.False(await books.Db.FixedAssets.AnyAsync(a => a.InventoryNumber == "OT/INVALID"));
+        Assert.False(await books.Db.FixedAssetOperations.AnyAsync(o => o.FixedAssetId == asset.Id));
+    }
 }
