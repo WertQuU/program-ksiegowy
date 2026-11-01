@@ -162,6 +162,19 @@ public static class DbContextFactory
         return b.Options;
     }
 
-    public static KsiegiDbContext Create(DatabaseEngine engine, string connectionString, string? sqliteKey = null) =>
-        new(BuildOptions(engine, connectionString, sqliteKey));
+    public static KsiegiDbContext Create(DatabaseEngine engine, string connectionString, string? sqliteKey = null)
+    {
+        if (engine != DatabaseEngine.Sqlite || sqliteKey is null)
+            return new KsiegiDbContext(BuildOptions(engine, connectionString, sqliteKey));
+
+        // One interceptor instance for encrypted SQLite contexts prevents EF Core from
+        // building a new internal service provider on every context creation.
+        // The key is bound to this specific context, not stored on the shared interceptor.
+        var options = new DbContextOptionsBuilder<KsiegiDbContext>(BuildOptions(engine, connectionString))
+            .AddInterceptors(SqliteKeyInterceptor.Shared)
+            .Options;
+        var db = new KsiegiDbContext(options);
+        SqliteKeyInterceptor.Register(db, sqliteKey);
+        return db;
+    }
 }

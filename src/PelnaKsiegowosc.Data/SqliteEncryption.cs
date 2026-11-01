@@ -1,6 +1,8 @@
 using System.Data.Common;
 using System.Security.Cryptography;
+using System.Runtime.CompilerServices;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace PelnaKsiegowosc.Data;
@@ -33,9 +35,16 @@ public static class SqliteEncryption
     public static void ApplyKey(DbConnection connection, string hexKey)
     {
         if (hexKey.Length != 64 || !hexKey.All(Uri.IsHexDigit)) throw new InvalidOperationException("Nieprawidłowy klucz szyfrowania bazy.");
+        // ExecuteScalar() on a multi-statement command may return from the first
+        // PRAGMA without evaluating sqlite_master. Verify the key with a separate
+        // schema query so an incorrect SQLCipher key fails during connection opening.
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"PRAGMA key = \"x'{hexKey}'\"; PRAGMA foreign_keys = ON; SELECT count(*) FROM sqlite_master;";
+        cmd.CommandText = $"PRAGMA key = \"x'{hexKey}'\"";
+        cmd.ExecuteNonQuery();
+        cmd.CommandText = "SELECT count(*) FROM sqlite_master";
         cmd.ExecuteScalar();
+        cmd.CommandText = "PRAGMA foreign_keys = ON";
+        cmd.ExecuteNonQuery();
     }
 
     /// <summary>
@@ -204,14 +213,35 @@ public static class SqliteEncryption
 /// <summary>Ustawia klucz SQLCipher przy każdym otwarciu połączenia EF Core.</summary>
 public sealed class SqliteKeyInterceptor : DbConnectionInterceptor
 {
-    private readonly string _hexKey;
+    private sealed record ContextKey(string Value);
+    private static readonly ConditionalWeakTable<DbContext, ContextKey> ContextKeys = new();
+
+    // A shared stateless instance is used by DbContextFactory.Create. The weak
+    // association prevents keys from being kept alive after their contexts are collected.
+    public static SqliteKeyInterceptor Shared { get; } = new();
+    private readonly string? _hexKey;
+    private SqliteKeyInterceptor() { }
+
+    // Preserve the existing direct BuildOptions(..., sqliteKey) contract.
     public SqliteKeyInterceptor(string hexKey) => _hexKey = hexKey;
 
-    public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData) => SqliteEncryption.ApplyKey(connection, _hexKey);
+    public static void Register(DbContext context, string hexKey) =>
+        ContextKeys.Add(context, new ContextKey(hexKey));
+
+    private string KeyFor(ConnectionEndEventData eventData)
+    {
+        if (_hexKey is not null) return _hexKey;
+        if (eventData.Context is not null && ContextKeys.TryGetValue(eventData.Context, out var key))
+            return key.Value;
+        throw new InvalidOperationException("Brak klucza szyfrowania przypisanego do kontekstu SQLite.");
+    }
+
+    public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData) =>
+        SqliteEncryption.ApplyKey(connection, KeyFor(eventData));
 
     public override Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
     {
-        SqliteEncryption.ApplyKey(connection, _hexKey);
+        SqliteEncryption.ApplyKey(connection, KeyFor(eventData));
         return Task.CompletedTask;
     }
 }
