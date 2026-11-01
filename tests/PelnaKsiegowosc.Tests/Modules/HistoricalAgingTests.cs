@@ -58,4 +58,31 @@ public sealed class HistoricalAgingTests
         Assert.Equal(150m, Assert.Single(afterFirst).RemainingPln);
         Assert.Empty(await aging.AgingAsync(OpenItemSide.Naleznosc, new DateOnly(2026, 2, 11)));
     }
+
+    [Fact]
+    public async Task Reversed_payment_reopens_receivable_in_historical_aging()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var cp = await books.AddCounterpartyAsync("AGING03", "Odbiorca ze stornem wpłaty");
+        var ledger = books.Ledger();
+        await ledger.CreateAndPostAsync(TestBooks.Entry(new DateOnly(2026, 1, 10), "FS/AGING03",
+            new("200", 100m, 0m, cp.Id), new("700-01", 0m, 100m)));
+        await books.Db.SaveChangesAsync();
+        var item = await books.Db.OpenItems.SingleAsync();
+
+        var payment = await ledger.CreateAndPostAsync(
+            TestBooks.Entry(new DateOnly(2026, 1, 20), "WB/AGING03",
+                new("130-01", 100m, 0m),
+                new("200", 0m, 100m, cp.Id, OpenItemId: item.Id)));
+        await books.Db.SaveChangesAsync();
+        var svc = new SettlementService(books.Db, books.User, books.Clock);
+        Assert.Empty(await svc.AgingAsync(OpenItemSide.Naleznosc, new DateOnly(2026, 2, 1)));
+
+        await ledger.ReverseAsync(payment.Id, "Błędne zaksięgowanie wpłaty",
+            new DateOnly(2026, 2, 15));
+        var beforeReversal = await svc.AgingAsync(OpenItemSide.Naleznosc, new DateOnly(2026, 2, 1));
+        Assert.Empty(beforeReversal);
+        var afterReversal = await svc.AgingAsync(OpenItemSide.Naleznosc, new DateOnly(2026, 2, 20));
+        Assert.Equal(100m, Assert.Single(afterReversal).RemainingPln);
+    }
 }
