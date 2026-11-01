@@ -73,6 +73,10 @@ public sealed class DbContextFactoryTests
                 await db.Database.ExecuteSqlRawAsync("INSERT INTO KeyProbe (Value) VALUES (123)");
             }
 
+            // The file must actually be SQLCipher-encrypted before testing key isolation.
+            Assert.True(SqliteEncryption.IsEncrypted(profile.SqlitePath!));
+
+            // A wrong key must be rejected while opening, not only on a later query.
             await using (var db = DbContextFactory.Create(DatabaseEngine.Sqlite, connectionString, wrongKey))
                 await Assert.ThrowsAnyAsync<Exception>(() => db.Database.OpenConnectionAsync());
 
