@@ -51,7 +51,12 @@ public sealed class StockService
         _user.Require(Permission.PostEntries);
         if (quantity <= 0) throw new DomainException("Ilość musi być dodatnia.");
         var item = await _db.StockItems.FirstAsync(i => i.Id == itemId && i.CompanyId == _user.CompanyId, ct);
-        if (await _db.StockMovements.AnyAsync(m => m.StockItemId == itemId && m.Date > date, ct))
+        if (!item.IsActive) throw new DomainException("Pozycja magazynowa jest nieaktywna.");
+        if (counterpartyId is { } cpId && !await _db.Counterparties.AnyAsync(
+                cp => cp.Id == cpId && cp.CompanyId == _user.CompanyId, ct))
+            throw new DomainException("Kontrahent dokumentu magazynowego nie należy do aktualnej jednostki.");
+        if (await _db.StockMovements.AnyAsync(m => m.CompanyId == _user.CompanyId &&
+                m.StockItemId == itemId && m.Date > date, ct))
             throw new DomainException("Na tej pozycji są dokumenty z późniejszą datą — wprowadzaj dokumenty magazynowe chronologicznie (wycena średnią ważoną).");
         var inbound = type is StockMovementType.PZ or StockMovementType.PW or StockMovementType.InwNadwyzka;
         decimal value;
@@ -70,14 +75,16 @@ public sealed class StockService
         }
         if (type == StockMovementType.PW && string.IsNullOrWhiteSpace(offsetAccount)) throw new DomainException("Przyjęcie z produkcji wymaga konta przeciwstawnego (np. 490 lub 580).");
 
-        item.Quantity += inbound ? quantity : -quantity;
-        item.Value += inbound ? value : -value;
+        // Obliczamy wartości bez zmiany śledzonego obiektu. Odrzucony
+        // dekret nie może zmienić stanów magazynowych przy kolejnym SaveChanges.
+        var quantityAfter = item.Quantity + (inbound ? quantity : -quantity);
+        var valueAfter = item.Value + (inbound ? value : -value);
         var count = await _db.StockMovements.CountAsync(m => m.CompanyId == _user.CompanyId && m.Type == type && m.Date.Year == date.Year, ct);
         var number = $"{(type is StockMovementType.InwNadwyzka or StockMovementType.InwNiedobor ? "INW" : type.ToString())}/{count + 1}/{date.Year}";
         var mv = new StockMovement
         {
             CompanyId = _user.CompanyId, Number = number, Type = type, Date = date, StockItemId = item.Id, Quantity = quantity,
-            UnitPrice = Math.Round(value / quantity, 4), Value = value, QuantityAfter = item.Quantity, ValueAfter = item.Value,
+            UnitPrice = Math.Round(value / quantity, 4), Value = value, QuantityAfter = quantityAfter, ValueAfter = valueAfter,
             Reference = reference, CounterpartyId = counterpartyId, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         };
         var lines = type switch
@@ -94,6 +101,9 @@ public sealed class StockService
                 $"{number}: {item.Name} {quantity:0.###} {item.Unit}{(reference is null ? "" : $" ({reference})")}", type.ToString(), number, lines), ct);
             mv.JournalEntryId = e.Id;
         }
+        // Zmiana wartości magazynu następuje dopiero po poprawnej dekretacji.
+        item.Quantity = quantityAfter;
+        item.Value = valueAfter;
         _db.StockMovements.Add(mv);
         await new AuditService(_db, _clock).AddAsync(_user, "MAGAZYN_DOKUMENT", "StockMovement", mv.Id.ToString(), $"{number}; {item.Code}; {quantity}; {value}", ct);
         await _db.SaveChangesAsync(ct);
