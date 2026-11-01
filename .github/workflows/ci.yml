@@ -56,6 +56,35 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: PostgreSQL do testów integracyjnych (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # windows-latest zawiera PostgreSQL; usługa jest domyślnie wyłączona.
+          # Wykrywanie nazwy usługi zamiast przywiązania do wersji serwera.
+          $service = Get-Service -Name 'postgresql-x64-*' -ErrorAction Stop |
+            Select-Object -First 1
+          if (-not $service) { throw 'Brak usługi PostgreSQL na obrazie Windows.' }
+          Set-Service -Name $service.Name -StartupType Manual
+          Start-Service -Name $service.Name
+          $pgIsReady = Join-Path $env:PGBIN 'pg_isready.exe'
+          $psql = Join-Path $env:PGBIN 'psql.exe'
+          if (-not (Test-Path $psql)) { throw 'Brak narzędzia psql.exe na obrazie Windows.' }
+          $ready = $false
+          for ($i = 0; $i -lt 30; $i++) {
+            & $pgIsReady -h 127.0.0.1 -p 5432 | Out-Null
+            if ($LASTEXITCODE -eq 0) { $ready = $true; break }
+            Start-Sleep -Seconds 1
+          }
+          if (-not $ready) { throw 'PostgreSQL na Windows nie rozpoczął nasłuchiwania.' }
+          # Dane testowe dostarczane przez obraz GitHub Actions, nigdy produkcyjne.
+          $env:PGPASSWORD = 'root'
+          & $psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE USER pk WITH PASSWORD 'pk_test_pw' CREATEDB CREATEROLE;"
+          if ($LASTEXITCODE -ne 0) { throw 'Nie udało się utworzyć testowej roli PostgreSQL.' }
+          Remove-Item Env:\PGPASSWORD
+          "PK_TEST_PG=Host=127.0.0.1;Username=pk;Password=pk_test_pw;Database=postgres" |
+            Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - name: PostgreSQL i atrapa S3 do testów integracyjnych (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -124,6 +153,26 @@ jobs:
         run: dotnet build PelnaKsiegowosc.sln -c Release --no-restore
       - name: Testy
         run: dotnet test PelnaKsiegowosc.sln -c Release --no-build --blame-hang --blame-hang-timeout 12m --blame-hang-dump-type none --logger "trx;LogFileName=wyniki.trx" --logger "console;verbosity=normal"
+      - name: Bramka regresyjna — bez pominiętych testów PostgreSQL na Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $files = @(Get-ChildItem -Path . -Recurse -Filter wyniki.trx |
+            Where-Object { $_.FullName -match 'TestResults' })
+          if ($files.Count -eq 0) { throw 'Brak raportu TRX — nie można potwierdzić wykonania testów.' }
+          foreach ($file in $files) {
+            [xml]$trx = Get-Content -Path $file.FullName -Raw
+            $ns = [System.Xml.XmlNamespaceManager]::new($trx.NameTable)
+            $ns.AddNamespace('t', 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010')
+            $counts = $trx.SelectSingleNode('//t:ResultSummary/t:Counters', $ns)
+            if (-not $counts) { throw "Brak liczników testów w $($file.FullName)" }
+            $skipped = [int]$counts.GetAttribute('notExecuted')
+            Write-Host "$($file.Name): pominięte=$skipped"
+            if ($skipped -ne 0) {
+              throw "Pominięto $skipped testów na Windows; sprawdź PK_TEST_PG i zależności."
+            }
+          }
       - name: Wyniki testów
         if: always()
         uses: actions/upload-artifact@v4
