@@ -387,14 +387,51 @@ public sealed class LedgerService
     public async Task<(JournalEntry reversal, JournalEntry corrected)> CorrectAsync(Guid entryId, string reason, EntryInput corrected, CancellationToken ct = default)
     {
         _user.Require(Permission.CorrectEntries);
-        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
-        var reversal = await BuildAndPostReversalAsync(original, reason, corrected.PostingDate, ct);
-        var newEntry = await CreateAndPostAsync(corrected with { Kind = EntryKind.Korekta }, ct);
-        newEntry.CorrectsEntryId = original.Id;
-        newEntry.CorrectionReason = reason;
-        newEntry.Hash = newEntry.ComputeHash();
-        await _db.SaveChangesAsync(ct);
-        return (reversal, newEntry);
+        var original = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct)
+            ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
+
+        // Sprawdź poprawność nowego dekretu PRZED storno. Odmowa utworzenia
+        // poprawnej strony korekty nie może pozostawić w DbContext wystornowanego
+        // oryginału, który późniejszy SaveChanges zapisze przypadkowo.
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new DomainException("Podaj przyczynę korekty.");
+        var input = corrected with { Kind = EntryKind.Korekta };
+        var (year, period) = await PeriodForDateAsync(input.PostingDate, ct);
+        var accounts = await AccountsByNumberAsync(year.Id, ct);
+        var preview = new JournalEntry { CompanyId = _user.CompanyId, FiscalYearId = year.Id, PeriodId = period.Id };
+        Apply(preview, input, accounts);
+        var byId = accounts.Values.ToDictionary(a => a.Id);
+        EntryValidator.ValidateForPosting(preview, new EntryValidator.Context(year, period, byId)).ThrowIfInvalid();
+        await EnsureCounterpartiesBelongToCompanyAsync(preview, ct);
+
+        // Oba zapisy są jedną korektą: albo storno i poprawny dekret,
+        // albo żaden. W przypadku niepowodzenia odrzucamy także śledzony
+        // stan EF Core, żeby nie wyciekł do następnej operacji.
+        var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
+        try
+        {
+            var reversal = await BuildAndPostReversalAsync(original, reason, corrected.PostingDate, ct);
+            var newEntry = await CreateAndPostAsync(input, ct);
+            newEntry.CorrectsEntryId = original.Id;
+            newEntry.CorrectionReason = reason;
+            newEntry.Hash = newEntry.ComputeHash();
+            await _db.SaveChangesAsync(ct);
+            if (tx is not null) await tx.CommitAsync(ct);
+            return (reversal, newEntry);
+        }
+        catch
+        {
+            if (tx is not null)
+            {
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear(); // nie zachowuj częściowej korekty po rollbacku
+            }
+            throw;
+        }
+        finally
+        {
+            if (tx is not null) await tx.DisposeAsync();
+        }
     }
 
     private async Task<DateOnly> DefaultCorrectionDateAsync(JournalEntry original, CancellationToken ct)
