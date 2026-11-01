@@ -35,7 +35,8 @@ implementacja i co wymaga sprawdzenia przez uprawnioną osobę. Brzmienie przepi
 | Rozporządzenie MF ws. JPK_V7 | struktura JPK_V7M / JPK_V7K | wersje (2) i (3) wg okresu, miesięczny i kwartalny, osoba fizyczna i niefizyczna; walidacja oficjalnymi schematami w testach | Z |
 | VAT art. 99 ust. 2, art. 103 ust. 2 | rozliczenie kwartalne | deklaracja za kwartał w ostatnim miesiącu, ewidencja miesięczna | Z/W |
 | VAT art. 100 | informacja podsumowująca VAT-UE | zestawienie WDT, WNT, usług (art. 100 ust. 1 pkt 4) wg kontrahentów | Z/W |
-| CIT art. 9 ust. 1e | JPK_CIT (JPK_KR_PD(1) v1-1) | ZOiS7 ze słownikiem znaczników MF, znaczniki PD, dziennik; RPD K_1–K_8 z rocznego uzgodnienia CIT (różnice trwałe i przejściowe, art. 18f, odpisy i rezerwy, amortyzacja, korekty lat ubiegłych); zapis zablokowany, gdy RPD nie uzgadnia się z dochodem; JPK_ST_KR — poza programem (MF 30.10.2026: podpisane czasowe zwolnienie dla CIT i wskazanych spółek za lata rozpoczynające się 2026–2028; **wejście w życie wymaga ogłoszenia w Dz.U., PIT niepotwierdzony** — zob. audyt i issue #4) | Z/W |
+| CIT art. 9 ust. 1e | JPK_KR_PD(1) v1-1 (część JPK_CIT) | ZOiS7 ze słownikiem znaczników MF, znaczniki PD, dziennik; RPD K_1–K_8 z rocznego uzgodnienia CIT (różnice trwałe i przejściowe, art. 18f, odpisy i rezerwy, amortyzacja, korekty lat ubiegłych); zapis zablokowany, gdy RPD nie uzgadnia się z dochodem. Walidacja XSD nie potwierdza poprawności podatkowej. | Z/W |
+| CIT art. 9 ust. 1e | JPK_ST_KR (część JPK_CIT) | **Brak generatora i weryfikacji merytorycznej JPK_ST_KR** — program nie zapewnia kompletnej obsługi JPK_CIT dla podmiotów i okresów, w których ten plik jest wymagany. MF 30.10.2026 poinformowało o podpisaniu 29.10.2026 rozporządzenia o czasowym zwolnieniu określonych podatników CIT i spółek niebędących osobami prawnymi dla lat rozpoczynających się po 31.12.2025 i przed 01.01.2029; **stosowanie zwolnienia wymaga sprawdzenia publikacji i wejścia w życie w Dz.U. oraz zakresu podmiotowego i okresu**. Nie zakładać automatycznego zwolnienia podatników PIT. Zob. [issue #4](https://github.com/WertQuU/program-ksiegowy/issues/4). | N |
 | CIT art. 27 | zeznanie CIT-8, CIT-8/O | zestawienie kwot z uzgodnienia wyniku, zaliczek i odliczeń | Z/W |
 | CIT art. 26 ust. 3 | IFT-2R / CIT-10Z | zestawienie wypłat na rzecz nierezydentów (ocena WHT — użytkownik) | Cz |
 | PIT art. 8, 27, 30c, 44, 45 | dochód wspólników / właściciela, PIT-36, PIT-36L | podział dochodu wg udziałów, skala / liniowy, odliczenie składek | Z/W |
@@ -100,7 +101,7 @@ wymagają sprawdzenia w aktualnym tekście aktu przed pierwszym rozliczeniem).
 | PK-10 JPK bez XSD | Poprawione: plik oznaczony jako roboczy, okres nieoznaczany jako przygotowany. |
 | PK-11/PK-12 | Ostrzeżenia i zatwierdzenia istniejące; wymagają oceny doradcy. |
 | PK-13 CIT-8 „nadpłata” | Poprawione: zaliczki należne vs wpłaty wg ksiąg i saldo rozrachunku. |
-| PK-14 JPK_ST_KR | Ograniczenie: brak generatora (schemat nieopublikowany w repozytorium; zwolnienie 2026–2028 w projekcie rozporządzenia). |
+| PK-14 JPK_ST_KR | Ograniczenie: brak generatora i testów; komunikat MF z 30.10.2026 dotyczy **podpisanego** rozporządzenia o czasowym zwolnieniu wybranych podmiotów, a nie automatycznie obowiązującego zwolnienia. Sprawdzić publikację w Dz.U. i zastosowanie do podatnika przed przyjęciem zwolnienia. |
 | PK-15 rozliczenia wielowalutowe | Ograniczenie: ręcznie (program blokuje automatyczne rozliczenie). |
 | PK-16 integralność załączników | Poprawione: pełna kontrola obecności, odszyfrowania, rozmiaru i SHA-256. |
 | PK-17 limity archiwum | Poprawione: limity liczby plików i rozmiaru po dekompresji, sprzątanie plików tymczasowych. |
