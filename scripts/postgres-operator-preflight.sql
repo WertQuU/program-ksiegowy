@@ -50,7 +50,7 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'NIEDOZWOLONE: operator może zmieniać lub usuwać wpisy AuditEvents. DBA musi odebrać efektywne prawa UPDATE/DELETE (także z ról dziedziczonych).';
   END IF;
-END $;
+END $$;
 ROLLBACK;
 -- Dodatkowo sprawdź ręcznie, kto ma prawa do DML na tabelach i brak restrykcji
 -- dostępu poza aplikacją. Bezpieczne operacje księgowe wymagają serwerowej autoryzacji.
