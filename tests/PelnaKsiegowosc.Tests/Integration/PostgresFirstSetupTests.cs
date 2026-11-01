@@ -71,6 +71,11 @@ public class PostgresFirstSetupTests
                 await using var rights = db.Database.GetDbConnection().CreateCommand();
                 rights.CommandText = "SELECT has_schema_privilege('public','CREATE') OR has_table_privilege('\"Companies\"','TRUNCATE') OR has_table_privilege('\"__EFMigrationsHistory\"','INSERT')";
                 Assert.False((bool)(await rights.ExecuteScalarAsync())!);
+                // The operator may append audit records but must never edit or delete history.
+                rights.CommandText = "SELECT has_table_privilege('\"AuditEvents\"','UPDATE') OR has_table_privilege('\"AuditEvents\"','DELETE')";
+                Assert.False((bool)(await rights.ExecuteScalarAsync())!);
+                rights.CommandText = "SELECT has_table_privilege('\"AuditEvents\"','INSERT')";
+                Assert.True((bool)(await rights.ExecuteScalarAsync())!);
             }
             wizard.Company.FullName = "Nowa Testowa sp. z o.o.";
             wizard.Company.Nip = "5260250274"; wizard.Company.Krs = "0000123456";
