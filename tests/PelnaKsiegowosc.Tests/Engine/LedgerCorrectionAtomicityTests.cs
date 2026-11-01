@@ -72,4 +72,32 @@ public sealed class LedgerCorrectionAtomicityTests
         Assert.Equal(storno.Id,
             (await books.Db.JournalEntries.AsNoTracking().SingleAsync(e => e.Id == original.Id)).ReversedByEntryId);
     }
+
+    [Fact]
+    public async Task Reversal_rejected_by_closed_period_must_not_persist_as_ghost_draft()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var ledger = books.Ledger();
+        var original = await ledger.CreateDraftAsync(TestBooks.Entry(Day, "PK/REV",
+            new("130-01", 100m, 0m), new("801", 0m, 100m)));
+        await ledger.PostAsync(original.Id);
+
+        var period = books.Year.Periods.Single(p => p.Contains(Day));
+        period.Status = PelnaKsiegowosc.Domain.Periods.PeriodStatus.Zamkniety;
+        await books.Db.SaveChangesAsync();
+
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            ledger.ReverseAsync(original.Id, "Powód storna", postingDate: Day));
+        Assert.Contains("zamknięty", error.Message);
+
+        // Kolejny poprawny SaveChanges na tym samym kontekście nie może
+        // utrwalić odrzuconego storna ani zmienić wskaźnika oryginału.
+        await books.AddCounterpartyAsync("LATER", "Po nieudanym stornie");
+        books.Db.ChangeTracker.Clear();
+        var entries = await books.Db.JournalEntries.AsNoTracking().ToListAsync();
+        Assert.Single(entries);
+        Assert.Equal(original.Id, entries[0].Id);
+        Assert.Null(entries[0].ReversedByEntryId);
+        Assert.Equal(EntryStatus.Zaksiegowany, entries[0].Status);
+    }
 }
