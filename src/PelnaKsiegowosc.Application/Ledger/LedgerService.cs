@@ -240,7 +240,11 @@ public sealed class LedgerService
             .OrderByDescending(c => c.Version).FirstAsync(ct);
         var accounts = await _db.Accounts.Where(a => a.ChartId == chart.Id).ToDictionaryAsync(a => a.Id, ct);
 
-        if (!SkipReadinessCheck && entry.Kind != EntryKind.BilansOtwarcia) await EnsureReadyForPostingAsync(chart.Id, ct);
+        // Flaga pomocnicza może pomijać gotowość tylko przy systemowym BO/ZAM.
+        // Wcześniej dowolny zwykły dekret z SkipReadinessCheck=true
+        // obchodził obowiązek zatwierdzenia polityki rachunkowości i planu kont.
+        if (!SkipReadinessCheck || entry.Kind is not (EntryKind.BilansOtwarcia or EntryKind.Zamkniecie))
+            await EnsureReadyForPostingAsync(chart.Id, ct);
 
         var v = EntryValidator.ValidateForPosting(entry, new EntryValidator.Context(fy, period, accounts));
         v.ThrowIfInvalid();
