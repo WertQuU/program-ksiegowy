@@ -58,7 +58,8 @@ public sealed class FixedAssetSupplierAndPeriodTests
         await books.AddCounterpartyAsync("LATER", "Zapis po błędnym przyjęciu");
         books.Db.ChangeTracker.Clear();
         Assert.False(await books.Db.FixedAssets.AsNoTracking()
-            .AnyAsync(a => a.InventoryNumber is "OT/SUP-FOREIGN" or "OT/SUP-OFFSET"));
+            .AnyAsync(a => a.InventoryNumber == "OT/SUP-FOREIGN" ||
+                a.InventoryNumber == "OT/SUP-OFFSET"));
     }
 
     [Theory]
