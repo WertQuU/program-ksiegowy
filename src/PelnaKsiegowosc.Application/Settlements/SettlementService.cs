@@ -51,8 +51,14 @@ public sealed class SettlementService
         var openIds = items.Select(o => o.Id).ToArray();
         var allocations = await _db.SettlementAllocations.AsNoTracking()
             .Where(a => a.CompanyId == _user.CompanyId && openIds.Contains(a.OpenItemId) &&
-                        !a.IsReversed && a.Date <= asOf)
+                        a.Date <= asOf &&
+                        (a.JournalEntryId == null || _db.JournalEntries.Any(e =>
+                            e.CompanyId == _user.CompanyId && e.Id == a.JournalEntryId &&
+                            e.Status == EntryStatus.Zaksiegowany && e.PostingDate <= asOf)))
             .ToListAsync(ct);
+        // Storno rozliczenia zapisuje alokację ujemną z IsReversed=true.
+        // Nie wolno jej odrzucać: historyczne saldo musi uwzględniać
+        // zarówno zapłatę, jak i późniejsze wystornowanie zapłaty.
         var settled = allocations.GroupBy(a => a.OpenItemId).ToDictionary(g => g.Key,
             g => (Amount: g.Sum(a => a.Amount), AmountPln: g.Sum(a => a.AmountPln)));
         var names = await _db.Counterparties.AsNoTracking()
