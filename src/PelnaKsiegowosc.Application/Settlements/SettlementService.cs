@@ -34,6 +34,7 @@ public sealed class SettlementService
 
     public async Task<List<AgingRow>> AgingAsync(OpenItemSide side, DateOnly asOf, bool overdueOnly = false, Guid? counterpartyId = null, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewData);
         var q = _db.OpenItems.AsNoTracking().Where(o => o.CompanyId == _user.CompanyId && o.Side == side && o.Status != OpenItemStatus.Rozliczona);
         if (counterpartyId is { } c) q = q.Where(o => o.CounterpartyId == c);
         var items = await q.ToListAsync(ct);
@@ -59,17 +60,39 @@ public sealed class SettlementService
         if (rec.Currency != "PLN" || pay.Currency != "PLN") throw new DomainException("Kompensata rozrachunków walutowych nie jest obsługiwana.");
         if (amount <= 0 || amount > rec.RemainingPln || amount > pay.RemainingPln) throw new DomainException("Kwota kompensaty przekracza saldo jednego z rozrachunków.");
         if (string.IsNullOrWhiteSpace(noteNumber)) throw new DomainException("Podaj numer noty kompensacyjnej (dowód księgowy).");
-        var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
-            $"Kompensata {rec.Reference} z {pay.Reference}", "NK", noteNumber, new List<LineInput>
+        // Księgowanie, nadanie źródła alokacjom i aktualizacje opłacenia
+        // dokumentów tworzą jedną transakcję. W przeciwnym razie nieudana
+        // końcowa aktualizacja pozostawiałaby częściowo zaksięgowaną kompensatę.
+        var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
+        try
+        {
+            var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
+                $"Kompensata {rec.Reference} z {pay.Reference}", "NK", noteNumber, new List<LineInput>
+                {
+                    new(pay.AccountNumber, amount, 0, pay.CounterpartyId, $"Kompensata {pay.Reference}", pay.Id),
+                    new(rec.AccountNumber, 0, amount, rec.CounterpartyId, $"Kompensata {rec.Reference}", rec.Id)
+                }), ct);
+            foreach (var allocation in _db.SettlementAllocations.Local.Where(a => a.JournalEntryId == entry.Id))
+                allocation.Source = SettlementSource.Kompensata;
+            await _db.SaveChangesAsync(ct);
+            var docs = new DocumentService(_db, _user, _clock);
+            if (rec.DocumentId is { } r) await docs.RefreshPaymentStatusAsync(r, ct);
+            if (pay.DocumentId is { } p) await docs.RefreshPaymentStatusAsync(p, ct);
+            if (tx is not null) await tx.CommitAsync(ct);
+            return entry;
+        }
+        catch
+        {
+            if (tx is not null)
             {
-                new(pay.AccountNumber, amount, 0, pay.CounterpartyId, $"Kompensata {pay.Reference}", pay.Id),
-                new(rec.AccountNumber, 0, amount, rec.CounterpartyId, $"Kompensata {rec.Reference}", rec.Id)
-            }), ct);
-        foreach (var a in _db.SettlementAllocations.Local.Where(a => a.JournalEntryId == entry.Id)) a.Source = SettlementSource.Kompensata;
-        await _db.SaveChangesAsync(ct);
-        var docs = new DocumentService(_db, _user, _clock);
-        if (rec.DocumentId is { } r) await docs.RefreshPaymentStatusAsync(r, ct);
-        if (pay.DocumentId is { } p) await docs.RefreshPaymentStatusAsync(p, ct);
-        return entry;
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear();
+            }
+            throw;
+        }
+        finally
+        {
+            if (tx is not null) await tx.DisposeAsync();
+        }
     }
 }
