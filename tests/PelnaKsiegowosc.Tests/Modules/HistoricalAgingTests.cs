@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Settlements;
 using PelnaKsiegowosc.Domain.Settlements;
 using PelnaKsiegowosc.Tests.Infrastructure;
