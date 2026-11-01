@@ -89,6 +89,8 @@ public sealed class FixedAssetService
         var lastDay = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         var run = new DepreciationRun { CompanyId = _user.CompanyId, Year = year, Month = month, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow };
         var lines = new List<LineInput>();
+        var newCharges = new List<DepreciationCharge>();
+        var completedAssets = new List<FixedAsset>();
         foreach (var a in assets.OrderBy(a => a.InventoryNumber))
         {
             if (await _db.DepreciationCharges.AnyAsync(c => c.FixedAssetId == a.Id && c.Year == year && c.Month == month, ct)) continue;
@@ -96,7 +98,7 @@ public sealed class FixedAssetService
             var tax = DepreciationCalculator.AmountFor(a, DepreciationBasis.Podatkowa, year, month);
             if (book == 0 && tax == 0) continue;
             var nonDed = Money.Round(tax * a.TaxNonDeductiblePercent / 100m);
-            _db.DepreciationCharges.Add(new DepreciationCharge
+            newCharges.Add(new DepreciationCharge
             {
                 CompanyId = a.CompanyId, FixedAssetId = a.Id, Year = year, Month = month, BookAmount = book, TaxAmount = tax,
                 TaxNonDeductibleAmount = nonDed, RunId = run.Id
@@ -109,16 +111,22 @@ public sealed class FixedAssetService
                 lines.Add(new LineInput(a.AccumulatedDepreciationAccountNumber, 0, book, Description: $"Umorzenie {a.InventoryNumber}"));
             }
             var planBook = DepreciationCalculator.Plan(a, DepreciationBasis.Bilansowa);
-            if (planBook.Count > 0 && planBook[^1].Year == year && planBook[^1].Month == month && planBook[^1].NetValue == 0) a.Status = FixedAssetStatus.CalkowicieZamortyzowany;
+            if (planBook.Count > 0 && planBook[^1].Year == year && planBook[^1].Month == month && planBook[^1].NetValue == 0)
+                completedAssets.Add(a);
         }
-        _db.DepreciationRuns.Add(run);
+        // Odpisy, przebieg i zmiana statusu aktywów są na razie wyłącznie
+        // w lokalnych kolekcjach. Odrzucony dekret AM nie może pozostawić
+        // w EF Core osieroconych odpisów do późniejszego SaveChanges.
         if (lines.Count > 0)
         {
             var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("AM", lastDay, lastDay, lastDay,
                 $"Amortyzacja środków trwałych i WNiP za {month:00}.{year}", "AM", $"AM/{year}/{month:00}", lines), ct);
             run.JournalEntryId = entry.Id;
-            foreach (var c in _db.DepreciationCharges.Local.Where(c => c.RunId == run.Id)) c.JournalEntryId = entry.Id;
+            foreach (var charge in newCharges) charge.JournalEntryId = entry.Id;
         }
+        _db.DepreciationRuns.Add(run);
+        _db.DepreciationCharges.AddRange(newCharges);
+        foreach (var asset in completedAssets) asset.Status = FixedAssetStatus.CalkowicieZamortyzowany;
         await _audit.AddAsync(_user, "AMORTYZACJA_NALICZONA", "DepreciationRun", run.Id.ToString(), $"{month:00}.{year}: bilansowa {Money.Xml(run.TotalBook)}, podatkowa {Money.Xml(run.TotalTax)}", ct);
         await _db.SaveChangesAsync(ct);
         return run;
