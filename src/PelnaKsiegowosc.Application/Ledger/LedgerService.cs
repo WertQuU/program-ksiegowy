@@ -74,19 +74,24 @@ public sealed class LedgerService
     }
 
     /// <summary>Tworzy zapis w buforze (edytowalny).</summary>
-    private static void RejectManualStorno(EntryKind kind)
+    private static void RejectManualReservedKind(EntryKind kind)
     {
-        // Storno musi powstawać wyłącznie z zaksięgowanego zapisu poprzez ReverseAsync/CorrectAsync.
-        // Samo ustawienie Kind=Storno bez powiązania z oryginałem omijałoby reguły
-        // dokumentowania korekt i umożliwiało dowolne zapisy ujemne.
+        // Zwykły dekret nie może udawać systemowej korekty, bilansu otwarcia
+        // ani zamknięcia roku: każde z tych księgowań ma osobną kontrolowaną ścieżkę.
         if (kind == EntryKind.Storno)
             throw new DomainException("Storno wolno utworzyć wyłącznie przez funkcję korekty zaksięgowanego zapisu.");
+        if (kind == EntryKind.Korekta)
+            throw new DomainException("Zapis korygujący wolno utworzyć wyłącznie przez funkcję korekty zaksięgowanego zapisu.");
+        if (kind is EntryKind.BilansOtwarcia or EntryKind.Zamkniecie)
+            throw new DomainException("Bilans otwarcia i zamknięcie roku można zaksięgować wyłącznie przez procedurę zamknięcia roku.");
+        if (kind != EntryKind.Zwykly)
+            throw new DomainException("Nieznany rodzaj zapisu księgowego.");
     }
 
     public async Task<JournalEntry> CreateDraftAsync(EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        RejectManualStorno(input.Kind);
+        RejectManualReservedKind(input.Kind);
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
         var accounts = await AccountsByNumberAsync(fy.Id, ct);
         var entry = new JournalEntry
@@ -111,7 +116,7 @@ public sealed class LedgerService
     public async Task<JournalEntry> UpdateDraftAsync(Guid entryId, EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        RejectManualStorno(input.Kind);
+        RejectManualReservedKind(input.Kind);
         var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
         if (entry.IsPosted)
             throw new DomainException("Zapis zaksięgowany nie może być modyfikowany. Użyj funkcji „Korekta (storno)” — zapis pierwotny pozostanie w księgach.");
@@ -128,6 +133,7 @@ public sealed class LedgerService
         };
         Apply(candidate, input, accounts);
         EntryValidator.ValidateStructure(candidate, accounts.Values.ToDictionary(a => a.Id)).ThrowIfInvalid();
+        await EnsureCounterpartiesBelongToCompanyAsync(candidate, ct);
 
         _db.JournalLines.RemoveRange(entry.Lines);
         entry.Lines.Clear();
@@ -157,7 +163,7 @@ public sealed class LedgerService
     {
         _user.Require(Permission.PostEntries);
         var entry = await _db.JournalEntries.Include(e => e.Lines).FirstOrDefaultAsync(e => e.Id == entryId && e.CompanyId == _user.CompanyId, ct) ?? throw new DomainException("Nie znaleziono zapisu w księgach tej jednostki.");
-        RejectManualStorno(entry.Kind);
+        RejectManualReservedKind(entry.Kind);
         var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
         try
         {
@@ -182,10 +188,29 @@ public sealed class LedgerService
     }
 
     /// <summary>Tworzy i od razu księguje zapis (używane przez moduły: dokumenty, bank, amortyzacja). Zapis do bazy wykonuje wywołujący (SaveChanges).</summary>
-    public async Task<JournalEntry> CreateAndPostAsync(EntryInput input, CancellationToken ct = default)
+    public Task<JournalEntry> CreateAndPostAsync(EntryInput input, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
-        RejectManualStorno(input.Kind);
+        RejectManualReservedKind(input.Kind);
+        return CreateAndPostCoreAsync(input, ct);
+    }
+
+    /// <summary>
+    /// Ścieżka tylko dla PeriodService: BO i zamknięcie roku wymagają uprawnienia
+    /// i aktywnej transakcji zamknięcia. Zwykłe API dekretacji ich nie przyjmuje.
+    /// </summary>
+    internal Task<JournalEntry> CreateAndPostYearTransitionAsync(EntryInput input, CancellationToken ct = default)
+    {
+        _user.Require(Permission.CloseYear);
+        if (input.Kind is not (EntryKind.BilansOtwarcia or EntryKind.Zamkniecie))
+            throw new DomainException("Niedozwolony typ zapisu w procedurze zamknięcia roku.");
+        if (_db.Database.CurrentTransaction is null)
+            throw new DomainException("Bilans otwarcia i zamknięcie roku wymagają transakcji zamknięcia.");
+        return CreateAndPostCoreAsync(input, ct);
+    }
+
+    private async Task<JournalEntry> CreateAndPostCoreAsync(EntryInput input, CancellationToken ct)
+    {
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
         var accounts = await AccountsByNumberAsync(fy.Id, ct);
         var entry = new JournalEntry
@@ -215,7 +240,11 @@ public sealed class LedgerService
             .OrderByDescending(c => c.Version).FirstAsync(ct);
         var accounts = await _db.Accounts.Where(a => a.ChartId == chart.Id).ToDictionaryAsync(a => a.Id, ct);
 
-        if (!SkipReadinessCheck && entry.Kind != EntryKind.BilansOtwarcia) await EnsureReadyForPostingAsync(chart.Id, ct);
+        // Flaga pomocnicza może pomijać gotowość tylko przy systemowym BO/ZAM.
+        // Wcześniej dowolny zwykły dekret z SkipReadinessCheck=true
+        // obchodził obowiązek zatwierdzenia polityki rachunkowości i planu kont.
+        if (!SkipReadinessCheck || entry.Kind is not (EntryKind.BilansOtwarcia or EntryKind.Zamkniecie))
+            await EnsureReadyForPostingAsync(chart.Id, ct);
 
         var v = EntryValidator.ValidateForPosting(entry, new EntryValidator.Context(fy, period, accounts));
         v.ThrowIfInvalid();
@@ -439,7 +468,8 @@ public sealed class LedgerService
         try
         {
             var reversal = await BuildAndPostReversalAsync(original, reason, corrected.PostingDate, ct);
-            var newEntry = await CreateAndPostAsync(input, ct);
+            _user.Require(Permission.PostEntries);
+            var newEntry = await CreateAndPostCoreAsync(input, ct);
             newEntry.CorrectsEntryId = original.Id;
             newEntry.CorrectionReason = reason;
             newEntry.Hash = newEntry.ComputeHash();

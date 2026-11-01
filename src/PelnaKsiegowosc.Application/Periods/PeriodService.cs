@@ -326,7 +326,7 @@ public sealed class PeriodService
         await _db.SaveChangesAsync(ct);
         if (preview.ClosingLines.Count > 0)
         {
-            await ledger.CreateAndPostAsync(new EntryInput("ZAM", fy.EndDate, fy.EndDate, fy.EndDate, $"Zamknięcie roku obrotowego {fy.Name} — przeksięgowanie kont wynikowych",
+            await ledger.CreateAndPostYearTransitionAsync(new EntryInput("ZAM", fy.EndDate, fy.EndDate, fy.EndDate, $"Zamknięcie roku obrotowego {fy.Name} — przeksięgowanie kont wynikowych",
                 "PK", $"PK/ZAM/{fy.Name}", preview.ClosingLines, Kind: EntryKind.Zamkniecie), ct);
             await _db.SaveChangesAsync(ct);
         }
@@ -421,7 +421,7 @@ public sealed class PeriodService
         if (dsum != csum) throw new DomainException($"Bilans otwarcia nie bilansuje się (Wn {Money.Format(dsum)} ≠ Ma {Money.Format(csum)}) — sprawdź zgodność rozrachunków z kontami.");
         if (lines.Count == 0) return;
         var ledger = new LedgerService(_db, _user, _clock) { SkipReadinessCheck = true };
-        await ledger.CreateAndPostAsync(new EntryInput("BO", next.StartDate, closed.EndDate, next.StartDate, $"Bilans otwarcia {next.Name}", "BO", $"BO/{next.Name}",
+        await ledger.CreateAndPostYearTransitionAsync(new EntryInput("BO", next.StartDate, closed.EndDate, next.StartDate, $"Bilans otwarcia {next.Name}", "BO", $"BO/{next.Name}",
             lines, Kind: EntryKind.BilansOtwarcia), ct);
         next.OpeningBalanceApproved = true;
         await _audit.AddAsync(_user, "BILANS_OTWARCIA", "FiscalYear", next.Id.ToString(), $"{next.Name}; pozycji: {lines.Count}; suma {Money.Format(dsum)}", ct);
