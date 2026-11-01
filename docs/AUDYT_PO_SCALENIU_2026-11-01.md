@@ -21,6 +21,10 @@
 
 **Ważne:** w przypadku transakcji należącej do zewnętrznego wywołującego, to wywołujący odpowiada za rollback i odrzucenie niepoprawnego `DbContext`. Przegląd nie obejmuje wszystkich analogicznych ścieżek modułów biznesowych.
 
+### Dodatkowa obserwacja podczas testów audytu
+
+W CI gałęzi dokumentacyjnej test `Same_postgres_login_cannot_run_two_clients_at_once_and_is_released_on_exit` ujawnił kolizję współdzielonej blokady utrzymania schematu z równolegle wykonywanymi testami PostgreSQL. To **niestabilność testu**, nie dowód, że kontrola autoryzacji produkcyjnej działa nieprawidłowo: wcześniejsze testy na tej samej implementacji były zielone. Środowisko tego testu zostało przeniesione z globalnego `PK_TEST_PG` do izolowanej bazy testowej. Wymagana jest ponowna kontrola Windows i Linux na dokładnym SHA poprawki.
+
 ## 3. Stan najważniejszych luk po poprawkach — drugi przegląd
 
 | Priorytet | Obszar | Stan i warunek zamknięcia |
