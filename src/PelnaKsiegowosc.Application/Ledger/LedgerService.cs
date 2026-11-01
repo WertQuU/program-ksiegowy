@@ -222,13 +222,17 @@ public sealed class LedgerService
             CreatedAtUtc = _clock.UtcNow
         };
         Apply(entry, input, accounts);
-        await EnsureCounterpartiesBelongToCompanyAsync(entry, ct);
+        // Zwaliduj pełne księgowanie PRZED śledzeniem przez EF Core. Wcześniej
+        // odmowa (np. niezatwierdzony plan, zamknięty okres) pozostawiała nowy
+        // dekret w stanie Added i późniejsze SaveChanges mogło go przypadkowo utrwalić.
+        await ValidatePostingBeforeMutationAsync(entry, ct);
         _db.JournalEntries.Add(entry);
         await PostInternalAsync(entry, ct);
         return entry;
     }
 
-    private async Task PostInternalAsync(JournalEntry entry, CancellationToken ct)
+    private async Task<(FiscalYear year, Dictionary<Guid, Account> accounts)> ValidatePostingBeforeMutationAsync(
+        JournalEntry entry, CancellationToken ct)
     {
         if (entry.IsPosted) throw new DomainException("Zapis jest już zaksięgowany.");
         if (entry.CompanyId != _user.CompanyId)
@@ -240,15 +244,17 @@ public sealed class LedgerService
             .OrderByDescending(c => c.Version).FirstAsync(ct);
         var accounts = await _db.Accounts.Where(a => a.ChartId == chart.Id).ToDictionaryAsync(a => a.Id, ct);
 
-        // Flaga pomocnicza może pomijać gotowość tylko przy systemowym BO/ZAM.
-        // Wcześniej dowolny zwykły dekret z SkipReadinessCheck=true
-        // obchodził obowiązek zatwierdzenia polityki rachunkowości i planu kont.
         if (!SkipReadinessCheck || entry.Kind is not (EntryKind.BilansOtwarcia or EntryKind.Zamkniecie))
             await EnsureReadyForPostingAsync(chart.Id, ct);
 
-        var v = EntryValidator.ValidateForPosting(entry, new EntryValidator.Context(fy, period, accounts));
-        v.ThrowIfInvalid();
+        EntryValidator.ValidateForPosting(entry, new EntryValidator.Context(fy, period, accounts)).ThrowIfInvalid();
         await EnsureCounterpartiesBelongToCompanyAsync(entry, ct);
+        return (fy, accounts);
+    }
+
+    private async Task PostInternalAsync(JournalEntry entry, CancellationToken ct)
+    {
+        var (fy, accounts) = await ValidatePostingBeforeMutationAsync(entry, ct);
 
         // numeracja ciągła w roku obrotowym (art. 14 ust. 2 i art. 23 ust. 3 UoR)
         var seq = await _numbering.NextAsync(entry.CompanyId, $"JE/{fy.Id:N}", ct);
