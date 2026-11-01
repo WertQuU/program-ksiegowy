@@ -11,7 +11,8 @@ public enum Role
     /// <summary>Kierownik jednostki / członek zarządu — zatwierdzenia, wgląd.</summary>
     Zarzad,
     /// <summary>Audytor / biegły rewident — tylko odczyt.</summary>
-    Audytor
+    Audytor,
+    KadryPlace
 }
 
 public enum Permission
@@ -40,7 +41,9 @@ public enum Permission
     RestoreBackups,
     ManageIntegrations,
     ManageSettings,
-    ViewAuditLog
+    ViewAuditLog,
+    ViewPayrollData,
+    ManagePayrollData
 }
 
 public static class RolePermissions
@@ -61,7 +64,9 @@ public static class RolePermissions
             Permission.ViewData, Permission.ApproveDocuments, Permission.RunReports, Permission.ExportData,
             Permission.ConfirmCapitalDocuments, Permission.ManageCapital, Permission.ViewAuditLog, Permission.ManageCompany
         },
-        [Role.Audytor] = new[] { Permission.ViewData, Permission.RunReports, Permission.ExportData, Permission.ViewAuditLog }
+        [Role.Audytor] = new[] { Permission.ViewData, Permission.RunReports, Permission.ExportData, Permission.ViewAuditLog },
+        [Role.KadryPlace] = new[] { Permission.ViewData, Permission.ViewPayrollData, Permission.ManagePayrollData,
+            Permission.PostEntries, Permission.ApproveDocuments, Permission.RunReports }
     };
 
     public static bool Has(IEnumerable<Role> roles, Permission p) => roles.Any(r => Map[r].Contains(p));
@@ -75,6 +80,7 @@ public static class RolePermissions
         Role.Fakturzysta => "Fakturzysta",
         Role.Zarzad => "Zarząd / kierownik jednostki",
         Role.Audytor => "Audytor (tylko odczyt)",
+        Role.KadryPlace => "Kadry i płace",
         _ => r.ToString()
     };
 }

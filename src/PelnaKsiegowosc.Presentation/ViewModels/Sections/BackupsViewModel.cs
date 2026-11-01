@@ -1,3 +1,5 @@
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Domain.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
@@ -28,8 +30,15 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [ObservableProperty] private bool _upload;
     [ObservableProperty] private string _directory = "";
 
+    private void RequireBackupAccess()
+    {
+        Session.User.Require(Permission.ManageBackups);
+        Session.User.Require(Permission.ViewPayrollData);
+    }
+
     protected override async Task LoadCoreAsync()
     {
+        RequireBackupAccess();
         var b = Session.Config.Backup;
         Automatic = b.AutomaticEnabled; IntervalHours = b.IntervalHours.ToString(); OnExit = b.BackupOnExit; Retain = b.RetainLocalCount.ToString();
         IncludeAttachments = b.IncludeAttachments; Upload = b.UploadToObjectStorage; Directory = Session.BackupDirectory;
@@ -50,6 +59,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task SaveSettingsAsync() => ChangeAsync(() =>
     {
+        RequireBackupAccess();
         var b = Session.Config.Backup;
         b.AutomaticEnabled = Automatic; b.IntervalHours = Math.Max(1, Parse.Int(IntervalHours, "Odstęp (godziny)")); b.BackupOnExit = OnExit;
         b.RetainLocalCount = Math.Max(0, Parse.Int(Retain, "Liczba kopii")); b.IncludeAttachments = IncludeAttachments; b.UploadToObjectStorage = Upload;
@@ -68,6 +78,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task BackupNowAsync() => ChangeAsync(async () =>
     {
+        RequireBackupAccess();
         var r = await Session.BackupAsync("ręczna", upload: true);
         await Dialogs.InfoAsync("Kopia zapasowa", $"Utworzono i zweryfikowano:{Environment.NewLine}{r.FilePath}{Environment.NewLine}Rozmiar: {r.SizeBytes:N0} B" +
             (r.RemoteKey is not null ? $"{Environment.NewLine}Object Storage: {r.RemoteKey}" : "") + (r.RemoteError is not null ? $"{Environment.NewLine}Błąd wysyłki: {r.RemoteError}" : ""));
@@ -97,6 +108,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task VerifyAsync() => RunAsync(async () =>
     {
+        RequireBackupAccess();
         var file = SelectedFile;
         if (await KeyForArchiveAsync() is not { } key) return;
         var r = await new BackupService(Session.Clock, Session.Paths.TempDirectory).VerifyAsync(file, key);
@@ -108,6 +120,8 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task RestoreAsync() => RunAsync(async () =>
     {
+        RequireBackupAccess();
+        Session.User.Require(Permission.RestoreBackups);
         var file = SelectedFile;
         if (await KeyForArchiveAsync() is not { } key) return;
         var dir = await Dialogs.PickFolderAsync("Katalog docelowy odtworzenia (pusty lub nowy)");
@@ -131,6 +145,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task GenerateKeyAsync() => ChangeAsync(async () =>
     {
+        RequireBackupAccess();
         if (Session.StoredBackupKey() is not null &&
             !await Dialogs.ConfirmAsync("Nowy klucz kopii", "Nowy klucz zastąpi obecny na tym stanowisku. Dotychczasowe kopie nadal wymagają STAREGO klucza odzyskiwania. Kontynuować?")) return;
         var recovery = Session.GenerateBackupKey();
@@ -142,6 +157,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task EnterRecoveryKeyAsync() => ChangeAsync(async () =>
     {
+        RequireBackupAccess();
         var text = await Dialogs.PromptAsync("Klucz odzyskiwania", "Wpisz klucz odzyskiwania kopii zapasowych:", password: true);
         if (string.IsNullOrWhiteSpace(text)) return;
         var key = TryParseRecoveryKey(text) ?? throw new DomainException("Nieprawidłowy klucz odzyskiwania.");
@@ -152,6 +168,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task ListRemoteAsync() => RunAsync(async () =>
     {
+        RequireBackupAccess();
         using var target = Session.RemoteTarget() ?? throw new DomainException("Object Storage nie jest skonfigurowany (sekcja „Integracje”).");
         var t = new TableData(new TableColumn("Obiekt", Width: 3), new TableColumn("Rozmiar (MB)", ColumnKind.Decimal, 0.7), new TableColumn("Zmieniono", Width: 1.1));
         foreach (var (key, size, at) in await target.ListAsync()) t.Add(key, key, Math.Round(size / 1048576m, 2), at.ToPlDateTime());
@@ -161,6 +178,7 @@ public sealed partial class BackupsViewModel : SectionViewModel
     [RelayCommand]
     private Task DownloadRemoteAsync() => ChangeAsync(async () =>
     {
+        RequireBackupAccess();
         if (SelectedRemote?.Tag is not string key) throw new DomainException("Zaznacz obiekt na liście kopii zdalnych.");
         using var target = Session.RemoteTarget() ?? throw new DomainException("Object Storage nie jest skonfigurowany.");
         var local = Path.Combine(Session.BackupDirectory, Path.GetFileName(key));

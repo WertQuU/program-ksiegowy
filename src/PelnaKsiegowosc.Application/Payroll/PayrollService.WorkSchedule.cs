@@ -73,6 +73,7 @@ public sealed partial class PayrollService
     public async Task ConfirmWorkScheduleAsync(Guid listId, Guid itemId, IReadOnlyList<WorkScheduleDay> days,
         string evidenceReference, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.ApproveDocuments);
         if (string.IsNullOrWhiteSpace(evidenceReference) || evidenceReference.Trim().Length > 120)
             throw new DomainException("Podaj odnośnik do zatwierdzonego grafiku i ewidencji czasu pracy (1–120 znaków).");

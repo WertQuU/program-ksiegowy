@@ -54,6 +54,7 @@ public sealed class HrService
 
     public async Task<Absence> AddAbsenceAsync(Guid employeeId, AbsenceKind kind, DateOnly from, DateOnly to, string? notes = null, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         if (to < from) throw new DomainException("Data „do” jest wcześniejsza niż „od”.");
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
@@ -84,6 +85,7 @@ public sealed class HrService
 
     public async Task DeleteAbsenceAsync(Guid id, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var a = await _db.Absences.FirstAsync(x => x.Id == id && x.CompanyId == _user.CompanyId, ct);
         _db.Absences.Remove(a);
@@ -91,8 +93,11 @@ public sealed class HrService
         await _db.SaveChangesAsync(ct);
     }
 
-    public Task<List<Absence>> AbsencesAsync(int year, CancellationToken ct = default) =>
-        _db.Absences.AsNoTracking().Where(a => a.CompanyId == _user.CompanyId && a.From.Year <= year && a.To.Year >= year).OrderBy(a => a.From).ToListAsync(ct);
+    public Task<List<Absence>> AbsencesAsync(int year, CancellationToken ct = default)
+    {
+        _user.Require(Permission.ViewPayrollData);
+        return _db.Absences.AsNoTracking().Where(a => a.CompanyId == _user.CompanyId && a.From.Year <= year && a.To.Year >= year).OrderBy(a => a.From).ToListAsync(ct);
+    }
 
     /// <summary>Wymiar w roku: pełny albo proporcjonalny do miesięcy zatrudnienia (art. 155¹ KP, zaokrąglenie w górę do pełnego dnia), z uwzględnieniem etatu.</summary>
     public static decimal Entitlement(Employee e, int year)
@@ -107,9 +112,10 @@ public sealed class HrService
 
     public async Task<LeaveBalance> LeaveBalanceAsync(Guid employeeId, int year, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewPayrollData);
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
         var leaves = await _db.Absences.AsNoTracking()
-            .Where(a => a.EmployeeId == employeeId && (a.Kind == AbsenceKind.UrlopWypoczynkowy || a.Kind == AbsenceKind.UrlopNaZadanie)).ToListAsync(ct);
+            .Where(a => a.CompanyId == _user.CompanyId && a.EmployeeId == employeeId && (a.Kind == AbsenceKind.UrlopWypoczynkowy || a.Kind == AbsenceKind.UrlopNaZadanie)).ToListAsync(ct);
         decimal carried = e.LeaveCarriedOver;
         for (var y = e.StartDate.Year; y < year; y++)
             carried = Entitlement(e, y) + carried - leaves.Sum(a => WorkingDaysInYear(a.From, a.To, y));
@@ -120,6 +126,7 @@ public sealed class HrService
 
     public async Task<List<LeaveBalance>> LeaveBalancesAsync(int year, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewPayrollData);
         var ids = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId && e.ContractType == ContractType.UmowaOPrace && e.StartDate.Year <= year)
             .OrderBy(e => e.LastName).Select(e => e.Id).ToListAsync(ct);
         var list = new List<LeaveBalance>();
@@ -130,9 +137,10 @@ public sealed class HrService
     /// <summary>Dni choroby (kalendarzowe) i urlopu bezpłatnego / nieobecności nieusprawiedliwionej (robocze) w miesiącu — do listy płac.</summary>
     public async Task<(int SickDays, int UnpaidWorkingDays)> MonthAbsencesAsync(Guid employeeId, DateOnly month, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewPayrollData);
         var m0 = new DateOnly(month.Year, month.Month, 1);
         var m1 = m0.AddMonths(1).AddDays(-1);
-        var list = await _db.Absences.AsNoTracking().Where(a => a.EmployeeId == employeeId && a.From <= m1 && a.To >= m0).ToListAsync(ct);
+        var list = await _db.Absences.AsNoTracking().Where(a => a.CompanyId == _user.CompanyId && a.EmployeeId == employeeId && a.From <= m1 && a.To >= m0).ToListAsync(ct);
         int sick = 0, unpaid = 0;
         foreach (var a in list)
         {
@@ -147,6 +155,7 @@ public sealed class HrService
     /// <summary>Terminy kadrowe w horyzoncie (domyślnie 45 dni) oraz przeterminowane.</summary>
     public async Task<List<HrReminder>> RemindersAsync(int horizonDays = 45, CancellationToken ct = default)
     {
+        _user.Require(Permission.ViewPayrollData);
         var limit = _clock.Today.AddDays(horizonDays);
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId && e.IsActive).ToListAsync(ct);
         var r = new List<HrReminder>();

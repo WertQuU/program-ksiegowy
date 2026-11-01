@@ -76,7 +76,7 @@ public class PayrollExternalEmployerChronologyTests
         // Sytuacja po imporcie starszych niespójnych danych: zapis omija aktualną
         // walidację formularza, ale nie może ominąć walidacji przed księgowaniem.
         var key = $"place.chorobowe.weryfikacja.{employee.Id:N}.202604";
-        var oldAssessment = new SickWageAssessment(0, SickWageCause.Ordinary80,
+        var oldAssessment = new SickWageAssessment(0, 80m,
             "STARE-USTALENIE", books.Clock.UtcNow, books.User.UserId);
         await new SettingsService(books.Db, books.Clock)
             .SetAsync(books.Company.Id, key, oldAssessment);

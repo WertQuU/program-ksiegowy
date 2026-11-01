@@ -1,13 +1,14 @@
 namespace PelnaKsiegowosc.Application.Payroll;
 
-/// <summary>Art. 92 Kodeksu pracy: przyczyna decydująca o stawce 80% albo 100%.
+/// <summary>Historyczne wartości wejścia API art. 92 KP; do bazy zapisujemy wyłącznie stawkę.
 /// Nie stosować tego modelu do zasiłku ZUS ani zasiłku wypadkowego.</summary>
 public enum SickWageCause
 {
     Ordinary80,
     Pregnancy100,
     CommuteAccident100,
-    OrganOrTissueDonation100
+    OrganOrTissueDonation100,
+    Statutory100
 }
 
 /// <summary>
@@ -20,13 +21,10 @@ public enum SickWageCause
 /// </summary>
 public sealed record SickWageAssessment(
     int PreviousEmployerDays,
-    SickWageCause Cause,
+    decimal RatePercent,
     string EvidenceReference,
     DateTime ConfirmedAtUtc,
-    Guid ConfirmedByUserId)
-{
-    public decimal RatePercent => Cause == SickWageCause.Ordinary80 ? 80m : 100m;
-}
+    Guid ConfirmedByUserId);
 
 
 /// <summary>

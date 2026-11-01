@@ -1,3 +1,6 @@
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Application.Audit;
+using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Application.Payroll;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Domain.Common;
@@ -8,6 +11,17 @@ namespace PelnaKsiegowosc.Application.Reports;
 /// <summary>Wydruki płacowe i zestawienia do deklaracji płatnika (ZUS DRA/RCA, PIT-4R, PIT-8AR, PIT-11).</summary>
 public sealed partial class ReportService
 {
+    private async Task AuditPayrollReadAsync(CancellationToken ct)
+    {
+        _user.Require(Permission.ViewPayrollData);
+        _user.Require(Permission.RunReports);
+        if (_db.ChangeTracker.HasChanges())
+            throw new DomainException("Zapisz bieżące zmiany przed odczytem raportu kadrowo-płacowego.");
+        await new AuditService(_db, _clock).AddAsync(_user, "RAPORT_PLACOWY_ODCZYT", "Payroll", null,
+            "Autoryzowany odczyt danych do raportu kadrowo-płacowego", ct);
+        await _db.SaveChangesAsync(ct);
+    }
+
     private static string ContractName(ContractType t) => t switch
     {
         ContractType.UmowaOPrace => "umowa o pracę",
@@ -24,6 +38,7 @@ public sealed partial class ReportService
 
     public async Task<ReportDocument> PayrollListAsync(Guid listId, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var list = await _db.PayrollLists.AsNoTracking().Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
         var r = await NewAsync($"Lista płac {list.Number}", $"{list.Description}; wypłata {list.PaymentDate.ToPl()}", true, ct);
         r.Filters.Add(("Status", list.Status == PayrollStatus.Zaksiegowana ? "zaksięgowana" : "robocza"));
@@ -53,6 +68,7 @@ public sealed partial class ReportService
     /// <summary>Zestawienie składek do deklaracji ZUS DRA i raportów imiennych RCA — za miesiąc wypłaty.</summary>
     public async Task<ReportDocument> ZusMonthlyAsync(DateOnly month, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var m = new DateOnly(month.Year, month.Month, 1);
         var items = await PostedItemsAsync(m, m.AddMonths(1).AddDays(-1), ct);
         var r = await NewAsync("Zestawienie składek ZUS (do DRA i RCA)", $"wypłaty w {m:MM.yyyy}", true, ct);
@@ -80,6 +96,7 @@ public sealed partial class ReportService
     /// <summary>Zestawienie do PIT-4R (zaliczki od wynagrodzeń, roczne) i PIT-8AR (podatek zryczałtowany).</summary>
     public async Task<ReportDocument> Pit4RAsync(int year, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var items = await PostedItemsAsync(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31), ct);
         var r = await NewAsync("Zestawienie do PIT-4R i PIT-8AR", $"rok {year}", false, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Miesiąc"), new ReportColumn("PIT-4R: zaliczki — stosunek pracy", ColumnKind.Money, 1.4),
@@ -105,6 +122,7 @@ public sealed partial class ReportService
     /// <summary>Dane do informacji PIT-11 — dla każdej osoby (bez umów rozliczanych ryczałtem).</summary>
     public async Task<ReportDocument> Pit11Async(int year, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var items = await PostedItemsAsync(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31), ct);
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
         var r = await NewAsync("Dane do informacji PIT-11", $"rok {year}", true, ct);
@@ -147,6 +165,7 @@ public sealed partial class ReportService
 
     public async Task<List<Pit11Person>> Pit11DataAsync(int year, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var items = await PostedItemsAsync(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31), ct);
         var employees = await _db.Employees.AsNoTracking().Where(e => e.CompanyId == _user.CompanyId).ToDictionaryAsync(e => e.Id, ct);
         var result = new List<Pit11Person>();
@@ -172,6 +191,7 @@ public sealed partial class ReportService
     /// <summary>Karta wynagrodzeń pracownika za rok (dokumentacja płacowa, art. 149 KP / § 10 rozporządzenia o dokumentacji pracowniczej).</summary>
     public async Task<ReportDocument> SalaryCardAsync(Guid employeeId, int year, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
         var items = (await PostedItemsAsync(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31), ct)).Where(x => x.Item.EmployeeId == employeeId)
             .OrderBy(x => x.List.PaymentDate).ToList();
@@ -194,6 +214,7 @@ public sealed partial class ReportService
     /// <summary>Zestawienie urlopów wypoczynkowych (wymiar, zaległy, wykorzystany, pozostały).</summary>
     public async Task<ReportDocument> LeaveReportAsync(int year, CancellationToken ct = default)
     {
+        await AuditPayrollReadAsync(ct);
         var r = await NewAsync("Ewidencja urlopów wypoczynkowych", $"rok {year}", false, ct);
         r.Columns.AddRange(new[] { new ReportColumn("Pracownik", ColumnKind.Text, 2), new ReportColumn("Wymiar", ColumnKind.Money), new ReportColumn("Zaległy", ColumnKind.Money),
             new ReportColumn("Wykorzystany", ColumnKind.Money), new ReportColumn("w tym na żądanie", ColumnKind.Money), new ReportColumn("Pozostało", ColumnKind.Money) });

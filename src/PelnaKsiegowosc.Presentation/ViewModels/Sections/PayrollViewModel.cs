@@ -1,5 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Domain.Security;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Payroll;
@@ -103,9 +105,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
     public List<Choice<SickWageCause>> SickWageCauses { get; } = new()
     {
         new(SickWageCause.Ordinary80, "Zwykła niezdolność — 80%"),
-        new(SickWageCause.Pregnancy100, "W ciąży — 100%"),
-        new(SickWageCause.CommuteAccident100, "Wypadek w drodze do/z pracy — 100%"),
-        new(SickWageCause.OrganOrTissueDonation100, "Badania/zabieg dawstwa — 100%")
+        new(SickWageCause.Statutory100, "Udokumentowane uprawnienie — 100%")
     };
     [ObservableProperty] private Choice<SickWageCause>? _selectedSickWageCause;
     [ObservableProperty] private string _previousEmployerSickDays = "";
@@ -130,14 +130,18 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private string _zusMonth = "";
     [ObservableProperty] private TableData _report = TableData.Empty;
     private ReportDocument? _currentReport;
+    private Guid? _reportCompanyId;
+    [ObservableProperty] private bool _canViewPayrollData;
 
     partial void OnSelectedEmployeeChanged(TableRow? value)
     {
         if (value?.Tag is not Guid id) return;
         _ = RunAsync(async () =>
         {
+            Session.User.Require(Permission.ViewPayrollData);
+            await Session.AuditAsync("DANE_KADROWE_ODCZYT", "Employee", id.ToString(), "Odczyt kartoteki pracownika");
             await using var db = Session.OpenDb();
-            var e = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id);
+            var e = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id && x.CompanyId == Session.CompanyId);
             FirstName = e.FirstName; LastName = e.LastName; Pesel = e.Pesel ?? ""; Street = e.Street ?? ""; HouseNumber = e.HouseNumber ?? ""; FlatNumber = e.FlatNumber ?? ""; PostalCode = e.PostalCode ?? ""; City = e.City ?? ""; Voivodeship = e.Voivodeship ?? ""; County = e.County ?? ""; Commune = e.Commune ?? "";
             AnnualLeaveDays = e.AnnualLeaveDays.ToString(); LeaveCarriedOver = e.LeaveCarriedOver == 0 ? "" : e.LeaveCarriedOver.ToString("0.##", Money.Pl);
             MedicalExamUntil = e.MedicalExamUntil?.ToPl() ?? ""; BhpTrainingUntil = e.BhpTrainingUntil?.ToPl() ?? ""; Iban = e.BankAccountIban ?? ""; TaxOffice = e.TaxOfficeCode ?? "";
@@ -167,9 +171,11 @@ public sealed partial class PayrollViewModel : SectionViewModel
 
     private async Task LoadItemsAsync()
     {
+        Session.User.Require(Permission.ViewPayrollData);
+        await Session.AuditAsync("DANE_PLACOWE_ODCZYT", "PayrollList", SelectedList?.Tag?.ToString(), "Odczyt pozycji listy płac");
         if (SelectedList?.Tag is not Guid id) { Items = TableData.Empty; return; }
         await using var db = Session.OpenDb();
-        var list = await db.PayrollLists.AsNoTracking().Include(l => l.Items).FirstAsync(l => l.Id == id);
+        var list = await db.PayrollLists.AsNoTracking().Include(l => l.Items).FirstAsync(l => l.Id == id && l.CompanyId == Session.CompanyId);
         var t = new TableData(new TableColumn("Osoba", Width: 1.8), new TableColumn("Umowa", Width: 1.1), new TableColumn("Brutto bazowe", ColumnKind.Money), new TableColumn("Dni chor./bezpł.", Width: 0.7), new TableColumn("Brutto", ColumnKind.Money), new TableColumn("ZUS prac.", ColumnKind.Money),
             new TableColumn("Zdrowotna", ColumnKind.Money), new TableColumn("Zaliczka PIT", ColumnKind.Money), new TableColumn("Netto", ColumnKind.Money),
             new TableColumn("Koszt pracodawcy", ColumnKind.Money), new TableColumn("Uwagi", Width: 2.2));
@@ -180,6 +186,14 @@ public sealed partial class PayrollViewModel : SectionViewModel
 
     protected override async Task LoadCoreAsync()
     {
+        CanViewPayrollData = Session.User.Can(Permission.ViewPayrollData);
+        if (!CanViewPayrollData)
+        {
+            Employees = Items = Lists = Absences = LeaveBalances = Report = TableData.Empty;
+            _currentReport = null; _reportCompanyId = null;
+        }
+        Session.User.Require(Permission.ViewPayrollData);
+        await Session.AuditAsync("DANE_KADROWE_ODCZYT", "Payroll", null, "Otwarcie kartotek kadr i płac");
         var today = Session.Clock.Today;
         if (string.IsNullOrEmpty(ListMonth)) ListMonth = $"{today.Month:00}.{today.Year}";
         if (string.IsNullOrEmpty(PaymentDate)) PaymentDate = new DateOnly(today.Year, today.Month, 1).AddMonths(1).AddDays(-1).ToPl();
@@ -233,8 +247,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
     private Task SaveEmployeeAsync() => ChangeAsync(async () =>
     {
         if (SelectedEmployee?.Tag is not Guid id) throw new DomainException("Zaznacz osobę na liście.");
+        Session.User.Require(Permission.ManagePayrollData);
         await using var db = Session.OpenDb();
-        var old = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id);
+        var old = await db.Employees.AsNoTracking().FirstAsync(x => x.Id == id && x.CompanyId == Session.CompanyId);
         var e = FromForm(id);
         e.CounterpartyId = old.CounterpartyId;
         e.CreatedAtUtc = old.CreatedAtUtc;
@@ -294,6 +309,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
             throw new DomainException("Wybierz listę płac i jej pozycję z dniami choroby.");
         if (!NoOtherSickBasisComponents)
             throw new DomainException("Potwierdź brak innych kwalifikujących się składników dopiero po sprawdzeniu dokumentacji płacowej.");
+        Session.User.Require(Permission.ManagePayrollData);
         await using var db = Session.OpenDb();
         var employeeId = await db.PayrollItems.Where(i => i.Id == itemId && i.PayrollListId == listId)
             .Select(i => i.EmployeeId).SingleAsync();
@@ -310,6 +326,8 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [RelayCommand]
     private Task PrepareWorkScheduleAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ViewPayrollData);
+        await Session.AuditAsync("DANE_KADROWE_ODCZYT", "WorkSchedule", SelectedItem?.Tag?.ToString(), "Odczyt danych do grafiku");
         if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
             throw new DomainException("Wybierz listę i pozycję płac.");
         await using var db = Session.OpenDb();
@@ -387,6 +405,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
 
     private async Task LoadHrAsync(Data.KsiegiDbContext db)
     {
+        Session.User.Require(Permission.ViewPayrollData);
         var year = Parse.Int(string.IsNullOrWhiteSpace(ReportYear) ? Session.Clock.Today.Year.ToString() : ReportYear, "Rok");
         var hr = new HrService(db, Session.User, Session.Clock);
         var names = EmployeeChoices.ToDictionary(c => c.Value, c => c.Label);
@@ -404,7 +423,12 @@ public sealed partial class PayrollViewModel : SectionViewModel
     }
 
     [RelayCommand]
-    private Task RefreshHrAsync() => RunAsync(async () => { await using var db = Session.OpenDb(); await LoadHrAsync(db); });
+    private Task RefreshHrAsync() => RunAsync(async () =>
+    {
+        Session.User.Require(Permission.ViewPayrollData);
+        await Session.AuditAsync("DANE_KADROWE_ODCZYT", "Absence", null, "Odświeżenie ewidencji nieobecności i urlopów");
+        await using var db = Session.OpenDb(); await LoadHrAsync(db);
+    });
 
     [RelayCommand]
     private Task AddAbsenceAsync() => RunAsync(async () =>
@@ -449,6 +473,7 @@ public sealed partial class PayrollViewModel : SectionViewModel
     {
         await using var db = Session.OpenDb();
         _currentReport = await build(new ReportService(db, Session.User, Session.Clock));
+        _reportCompanyId = Session.CompanyId;
         Report = TableData.FromReport(_currentReport);
         StatusMessage = _currentReport.Title;
     });
@@ -461,10 +486,13 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [RelayCommand]
     private Task ExportReportPdfAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ViewPayrollData);
+        if (_reportCompanyId != Session.CompanyId) throw new DomainException("Wygeneruj raport ponownie dla aktualnej jednostki.");
         if (_currentReport is null) throw new DomainException("Najpierw wygeneruj zestawienie.");
         var name = string.Concat(_currentReport.Title.Split(Path.GetInvalidFileNameChars())).Replace(' ', '-');
         var target = await Dialogs.SaveFileAsync("Zapisz PDF", $"{name}.pdf", new FileFilter("PDF", "*.pdf"));
         if (target is null) return;
+        await Session.AuditAsync("RAPORT_PLACOWY_EKSPORT", "Payroll", null, "Eksport autoryzowanego raportu do PDF");
         await File.WriteAllBytesAsync(target, new PdfReportExporter().Export(_currentReport));
         StatusMessage = $"Zapisano {target}";
     });

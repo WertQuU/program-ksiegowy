@@ -40,6 +40,7 @@ public sealed partial class PayrollService
 
     public async Task SetAccidentRateAsync(decimal rate, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         if (rate is < 0.67m or > 3.33m) throw new DomainException("Stopa składki wypadkowej musi mieścić się w przedziale 0,67–3,33% (zawiadomienie ZUS).");
         await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, AccidentRateKey, rate, ct);
@@ -49,8 +50,13 @@ public sealed partial class PayrollService
     private static string SickAssessmentKey(Guid employeeId, DateOnly month) =>
         $"place.chorobowe.weryfikacja.{employeeId:N}.{month:yyyyMM}";
 
-    private Task<SickWageAssessment?> SickAssessmentAsync(Guid employeeId, DateOnly month, CancellationToken ct) =>
-        new SettingsService(_db, _clock).GetAsync<SickWageAssessment?>(_user.CompanyId, SickAssessmentKey(employeeId, month), () => null, ct);
+    private async Task<SickWageAssessment?> SickAssessmentAsync(Guid employeeId, DateOnly month, CancellationToken ct)
+    {
+        _user.Require(Permission.ViewPayrollData);
+        var data = await new SettingsService(_db, _clock).GetAsync<System.Text.Json.Nodes.JsonObject?>(
+            _user.CompanyId, SickAssessmentKey(employeeId, month), () => null, ct);
+        return data is null ? null : PayrollPrivacyService.ReadAssessment(data);
+    }
     // Osobne od art. 92 KP potwierdzenie kompletności składników z art. 36–43 ustawy zasiłkowej.
     // Jest związane z konkretną listą, pracownikiem i odciskiem danych źródłowych.
     private static string SickBasisCompletenessKey(Guid employeeId, Guid listId) =>
@@ -70,6 +76,7 @@ public sealed partial class PayrollService
     public async Task ConfirmSickBasisCompletenessAsync(Guid listId, Guid employeeId,
         bool noOtherQualifyingComponents, string evidenceReference, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.ApproveDocuments);
         if (string.IsNullOrWhiteSpace(evidenceReference) || evidenceReference.Trim().Length > 120)
             throw new DomainException("Podaj odnośnik do dowodu kompletności podstawy chorobowego (1–120 znaków).");
@@ -111,6 +118,7 @@ public sealed partial class PayrollService
     public async Task RecordSickWageAssessmentAsync(Guid employeeId, DateOnly month, int previousEmployerDays,
         SickWageCause cause, string evidenceReference, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         month = new DateOnly(month.Year, month.Month, 1);
         if (!Enum.IsDefined(cause)) throw new DomainException("Nieprawidłowy rodzaj wynagrodzenia chorobowego.");
@@ -138,7 +146,7 @@ public sealed partial class PayrollService
                             select i.Id).AnyAsync(ct);
         if (booked)
             throw new DomainException("Zaksięgowano już dni choroby w tym lub późniejszym miesiącu. Zmiana deklaracji wymaga korekty list.");
-        var assessment = new SickWageAssessment(previousEmployerDays, cause, evidenceReference.Trim(), _clock.UtcNow, _user.UserId);
+        var assessment = new SickWageAssessment(previousEmployerDays, cause == SickWageCause.Ordinary80 ? 80m : 100m, evidenceReference.Trim(), _clock.UtcNow, _user.UserId);
         await new SettingsService(_db, _clock).SetAsync(_user.CompanyId, SickAssessmentKey(employeeId, month), assessment, ct);
         await new AuditService(_db, _clock).AddAsync(_user, "CHOROBOWE_ZATWIERDZONE", "Employee", employeeId.ToString(),
             $"{month:yyyy-MM}; zapisano odnośnik do dokumentacji (bez danych medycznych)", ct);
@@ -202,6 +210,7 @@ public sealed partial class PayrollService
 
     public async Task<Employee> AddEmployeeAsync(Employee e, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         Validate(e);
         var code = "P" + (await _db.Employees.CountAsync(x => x.CompanyId == _user.CompanyId, ct) + 1).ToString("000");
@@ -224,6 +233,7 @@ public sealed partial class PayrollService
 
     public async Task UpdateEmployeeAsync(Employee changed, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         Validate(changed);
         var e = await _db.Employees.FirstAsync(x => x.Id == changed.Id && x.CompanyId == _user.CompanyId, ct);
@@ -470,6 +480,7 @@ public sealed partial class PayrollService
     /// <summary>Tworzy listę płac za miesiąc dla osób z umową aktywną w tym miesiącu (kwoty z ewidencji; można je zmienić przed zaksięgowaniem).</summary>
     public async Task<PayrollList> CreateListAsync(DateOnly month, DateOnly paymentDate, string? description = null, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var m = new DateOnly(month.Year, month.Month, 1);
         var end = m.AddMonths(1).AddDays(-1);
@@ -513,6 +524,7 @@ public sealed partial class PayrollService
     /// </summary>
     public async Task<PayrollItem> ChangeAsync(Guid itemId, decimal? gross, int? sickDays, int? unpaidWorkingDays, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var it = await _db.PayrollItems.FirstAsync(i => i.Id == itemId, ct);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == it.PayrollListId && l.CompanyId == _user.CompanyId, ct);
@@ -531,6 +543,7 @@ public sealed partial class PayrollService
     /// <summary>Przelicza całą roboczą listę według aktualnych danych osób, limitów i innych zaksięgowanych list (kwoty i dni pozycji bez zmian).</summary>
     public async Task<PayrollList> RecalculateAsync(Guid listId, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest zaksięgowana — zmiana wymaga storna zapisu i nowej listy.");
@@ -574,6 +587,7 @@ public sealed partial class PayrollService
 
     public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Nie można usunąć zaksięgowanej listy płac.");
@@ -594,6 +608,7 @@ public sealed partial class PayrollService
 
     public async Task<PayrollList> PostAsync(Guid listId, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Robocza) throw new DomainException("Lista płac jest już zaksięgowana.");
@@ -764,6 +779,7 @@ public sealed partial class PayrollService
     /// </summary>
     public async Task RecordPpkTransferAsync(Guid listId, DateOnly transferredOn, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var list = await _db.PayrollLists.Include(l => l.Items).FirstAsync(l => l.Id == listId && l.CompanyId == _user.CompanyId, ct);
         if (list.Status != PayrollStatus.Zaksiegowana) throw new DomainException("Datę przekazania wpłat PPK rejestruje się dla zaksięgowanej listy płac.");

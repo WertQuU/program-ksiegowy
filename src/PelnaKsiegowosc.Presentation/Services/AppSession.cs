@@ -267,6 +267,8 @@ public sealed class AppSession
             : OperatorIdentity.For(Company.Id, Profile,
                 await new Application.Security.OperatorAccessService(db, Clock).ResolveAsync(
                     OperatorIdentity.IdFor(authenticatedLogin), authenticatedLogin, Company.Id, ct));
+        if (Company is not null && User.Can(Permission.ManagePayrollData))
+            await new Application.Payroll.PayrollPrivacyService(db, User, Clock).MinimizeLegacySettingsAsync(ct);
         Years = Company is null
             ? Array.Empty<FiscalYear>()
             : await db.FiscalYears.AsNoTracking().Include(f => f.Periods).Where(f => f.CompanyId == Company.Id).OrderBy(f => f.StartDate).ToListAsync(ct);
@@ -314,6 +316,7 @@ public sealed class AppSession
     public async Task<BackupResult> BackupAsync(string reason, bool upload, CancellationToken ct = default)
     {
         User.Require(Permission.ManageBackups);
+        User.Require(Permission.ViewPayrollData); // full archive contains employee data
         var key = StoredBackupKey() ?? throw new DomainException("Brak klucza kopii zapasowych na tym stanowisku — wygeneruj go lub wprowadź klucz odzyskiwania w sekcji „Backupy”.");
         using var remote = upload && Config.Backup.UploadToObjectStorage ? RemoteTarget() : null;
         await using var db = OpenDb();

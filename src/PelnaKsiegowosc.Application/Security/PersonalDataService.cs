@@ -141,6 +141,7 @@ public sealed class PersonalDataService
 
     public async Task<RetentionDecision> EraseEmployeeAsync(Guid employeeId, string request, CancellationToken ct = default)
     {
+        _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.ManageCompany);
         if (string.IsNullOrWhiteSpace(request)) throw new DomainException("Opisz żądanie (data wpływu, osoba, sposób przekazania).");
         var decision = await EmployeeRetentionAsync(employeeId, ct);
@@ -151,6 +152,15 @@ public sealed class PersonalDataService
             await _db.SaveChangesAsync(ct);
             return decision;
         }
+        var payrollItemIds = await _db.PayrollItems.Where(i => i.EmployeeId == employeeId)
+            .Select(i => i.Id).ToListAsync(ct);
+        var settings = await _db.Settings.Where(s => s.CompanyId == _user.CompanyId && s.Key.StartsWith("place.")).ToListAsync(ct);
+        var employeeToken = employeeId.ToString("N");
+        _db.Settings.RemoveRange(settings.Where(s =>
+            s.Key.StartsWith("place.chorobowe.") && s.Key.Contains(employeeToken, StringComparison.OrdinalIgnoreCase) ||
+            s.Key.StartsWith("place.grafik.") && payrollItemIds.Any(id => s.Key.EndsWith(id.ToString("N"), StringComparison.OrdinalIgnoreCase))));
+        var absences = await _db.Absences.Where(a => a.CompanyId == _user.CompanyId && a.EmployeeId == employeeId).ToListAsync(ct);
+        _db.Absences.RemoveRange(absences);
         e.FirstName = "Osoba usunięta (RODO)";
         e.LastName = e.Id.ToString()[..8];
         e.Pesel = e.Address = e.Street = e.HouseNumber = e.FlatNumber = e.PostalCode = e.City = null;

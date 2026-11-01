@@ -6,7 +6,7 @@
              x:DataType="s:PayrollViewModel">
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Text="{Binding Title}" Classes="h1" />
-    <TabControl>
+    <TabControl IsVisible="{Binding CanViewPayrollData}">
       <TabItem Header="1. Osoby i umowy">
         <DockPanel>
           <Grid DockPanel.Dock="Top" Classes="form" ColumnDefinitions="140,*,140,*,140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">

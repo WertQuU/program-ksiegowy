@@ -50,6 +50,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
     [ObservableProperty] private bool _opInvoicing;
     [ObservableProperty] private bool _opBoard;
     [ObservableProperty] private bool _opAuditor;
+    [ObservableProperty] private bool _opPayroll;
     [ObservableProperty] private bool _opActive = true;
 
     protected override async Task LoadCoreAsync()
@@ -106,7 +107,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
         var roles = (value.Cells[1] ?? "").Split(", ", StringSplitOptions.RemoveEmptyEntries).ToHashSet();
         bool H(Role r) => roles.Contains(RolePermissions.Name(r));
         OpAdmin = H(Role.Administrator); OpChief = H(Role.GlownyKsiegowy); OpAccountant = H(Role.Ksiegowy);
-        OpInvoicing = H(Role.Fakturzysta); OpBoard = H(Role.Zarzad); OpAuditor = H(Role.Audytor);
+        OpInvoicing = H(Role.Fakturzysta); OpBoard = H(Role.Zarzad); OpAuditor = H(Role.Audytor); OpPayroll = H(Role.KadryPlace);
         OpActive = value.Cells[2] == "tak";
     }
 
@@ -119,6 +120,7 @@ public sealed partial class CompanyViewModel : SectionViewModel
         if (OpInvoicing) roles.Add(Role.Fakturzysta);
         if (OpBoard) roles.Add(Role.Zarzad);
         if (OpAuditor) roles.Add(Role.Audytor);
+        if (OpPayroll) roles.Add(Role.KadryPlace);
         return roles;
     }
 

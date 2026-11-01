@@ -1,3 +1,5 @@
+using PelnaKsiegowosc.Application.Abstractions;
+using PelnaKsiegowosc.Domain.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using PelnaKsiegowosc.Application.Documents;
@@ -120,6 +122,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task ShowDatabaseKeyAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
         var key = Session.Connector.ExportSqliteKey(Session.Profile) ?? throw new DomainException("Aktywna baza nie jest plikiem SQLite szyfrowanym na tym stanowisku.");
         if (!await Dialogs.ConfirmAsync("Klucz bazy", "Klucz otwiera plik bazy z danymi księgowymi i osobowymi. Wyświetlić? Przekaż go wyłącznie bezpiecznym kanałem.")) return;
@@ -131,6 +135,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task ShowAttachmentsKeyAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
         var key = Session.ExportAttachmentsKey() ?? throw new DomainException("Na tym stanowisku nie ma klucza załączników.");
         if (!await Dialogs.ConfirmAsync("Klucz załączników", "Klucz otwiera zaszyfrowane dokumenty źródłowe. Wyświetlić? Przekaż go wyłącznie bezpiecznym kanałem.")) return;
@@ -141,6 +147,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task ImportAttachmentsKeyAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         Application.Abstractions.PermissionGuard.Require(Session.User, Domain.Security.Permission.ManageUsers);
         var key = await Dialogs.PromptAsync("Klucz załączników", "Wklej klucz załączników ze stanowiska, które zaszyfrowało pliki we wspólnym katalogu:", "");
         if (string.IsNullOrWhiteSpace(key)) return;
@@ -246,6 +254,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task UseDatabaseAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         var p = ProfileWithPassword();
         var r = await Session.Connector.TestAsync(p);
         if (!r.Success) throw new DomainException(r.Message);
@@ -262,6 +272,9 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task RestoreOtherProfileAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.RestoreBackups);
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         if (OtherProfile is null) throw new DomainException("Wybierz profil z listy.");
         var p = Session.Config.OtherProfiles[OtherProfile.Value];
         if (!await Dialogs.ConfirmAsync("Zmiana bazy", $"Wrócić do bazy: {p.SafeDescription}? Wymagane ponowne uruchomienie.")) return;
@@ -275,6 +288,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task MigrateAsync() => RunAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         var target = ProfileWithPassword();
         if (target.Engine == Session.Profile.Engine && target.SafeDescription == Session.Profile.SafeDescription) throw new DomainException("Wskaż inną bazę docelową niż aktywna.");
         var test = await Session.Connector.TestAsync(target);
@@ -302,6 +317,8 @@ public sealed partial class SettingsViewModel : SectionViewModel
     [RelayCommand]
     private Task SaveAttachmentsDirectoryAsync() => ChangeAsync(async () =>
     {
+        Session.User.Require(Permission.ManageSettings);
+        Session.User.Require(Permission.ViewPayrollData);
         var dir = Path.GetFullPath(AttachmentsDirectory.Trim());
         if (dir == Session.AttachmentsRoot) return;
         if (Directory.Exists(Session.AttachmentsRoot) && Directory.EnumerateFiles(Session.AttachmentsRoot, "*", SearchOption.AllDirectories).Any() &&

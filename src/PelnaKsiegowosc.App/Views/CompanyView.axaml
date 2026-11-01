@@ -98,6 +98,7 @@
             <CheckBox Content="Fakturzysta" IsChecked="{Binding OpInvoicing}" />
             <CheckBox Content="Zarząd / kierownik jednostki" IsChecked="{Binding OpBoard}" />
             <CheckBox Content="Audytor (tylko odczyt)" IsChecked="{Binding OpAuditor}" />
+            <CheckBox Content="Kadry i płace (dane pracowników)" IsChecked="{Binding OpPayroll}" />
             <CheckBox Content="Aktywny" IsChecked="{Binding OpActive}" />
             <Button Content="Zapisz uprawnienia zaznaczonego" Command="{Binding SaveOperatorCommand}" />
           </WrapPanel>
