@@ -35,6 +35,7 @@ Wynik administracyjnego uprawnienia lub własności tabel powinien blokować nor
 - **SQLite:** SQLCipher szyfruje testowe, migracyjne i odtwarzane pliki. Migracja jawnej bazy weryfikuje kopię przed zamianą pliku; sama zamiana nie gwarantuje fizycznego usunięcia historycznych bloków SSD. Stosuj BitLocker lub LUKS.
 - **Załączniki:** AES-256-GCM i sumy SHA-256; lokalne pliki nie stają się automatycznie dostępne na innych stanowiskach. Klucze muszą być odtwarzalne i przenoszone bezpiecznym kanałem.
 - **Kopie:** AES-256-GCM (uwierzytelniane fragmenty), hasło przetwarzane PBKDF2 albo losowy klucz odzyskiwania. Archiwum wymaga osobnego zabezpieczenia przed skasowaniem i przed ransomware.
+- **Object Storage S3:** zdalny endpoint wymaga HTTPS, aby klucze Access Key / Secret Key nie były używane na połączeniu bez TLS. HTTP jest akceptowane tylko na adresie loopback (`localhost`/`127.0.0.1`) do lokalnych emulatorów testowych; istniejące konfiguracje zdalnego HTTP trzeba przełączyć na HTTPS.
 - **Windows:** Credential Manager. **Linux:** Secret Service lub awaryjny lokalny magazyn z osobnym plikiem klucza i szyfrogramem pod tym samym kontem. Kompromitacja tego konta może ujawnić oba pliki; preferuj systemowy magazyn kluczy.
 
 ## 3. Integralność i księgowość
