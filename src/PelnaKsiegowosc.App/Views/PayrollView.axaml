@@ -84,6 +84,11 @@
             <TextBox Text="{Binding SickEvidenceReference}" Watermark="Identyfikator dowodu/oświadczenia, bez danych medycznych" MinWidth="250" />
             <Button Content="Zatwierdź chorobowe i przelicz" Command="{Binding ConfirmSickWageCommand}" />
           </WrapPanel>
+          <WrapPanel DockPanel.Dock="Top" Classes="toolbar">
+            <CheckBox Content="Sprawdzono brak innych składników podstawy (premie kwartalne/roczne, wypłaty poza systemem)" IsChecked="{Binding NoOtherSickBasisComponents}" />
+            <TextBox Text="{Binding SickBasisEvidenceReference}" Watermark="Odrębny dowód kompletności podstawy, bez danych medycznych" MinWidth="280" />
+            <Button Content="Potwierdź podstawę i przelicz" Command="{Binding ConfirmSickBasisCommand}" />
+          </WrapPanel>
           <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />
         </DockPanel>
       </TabItem>

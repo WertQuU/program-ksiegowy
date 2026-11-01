@@ -632,13 +632,10 @@ public sealed partial class CitViewModel : SectionViewModel
             new FileFilter("XML", "*.xml"));
         if (target is null) return;
         r.Document.Save(target);
-        if (ready)
-        {
-            // Ten znacznik dotyczy tylko JPK_KR_PD; nie potwierdza kompletności JPK_PD.
-            await new Application.Setup.SettingsService(db, Session.Clock).SetAsync<DateTime?>(
-                Session.CompanyId, $"jpk-cit.wygenerowano.{year.Name}", Session.Clock.UtcNow);
-            await db.SaveChangesAsync();
-        }
+        // A later draft export invalidates the previous readiness marker.
+        await new Application.Setup.SettingsService(db, Session.Clock).SetAsync<DateTime?>(
+            Session.CompanyId, $"jpk-cit.wygenerowano.{year.Name}", ready ? Session.Clock.UtcNow : null);
+        await db.SaveChangesAsync();
         await Session.AuditAsync(ready ? "JPK_CIT_WYGENEROWANY" : "JPK_CIT_ROBOCZY", "JPK", null,
             $"{year.Name}; {r.Status}; JPK_KR_PD; {(ready ? "XSD poprawne, rok zamknięty" : "plik roboczy")}");
         var draftWarning = ready ? "" :

@@ -167,10 +167,14 @@ jobs:
             $ns.AddNamespace('t', 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010')
             $counts = $trx.SelectSingleNode('//t:ResultSummary/t:Counters', $ns)
             if (-not $counts) { throw "Brak liczników testów w $($file.FullName)" }
-            $skipped = [int]$counts.GetAttribute('notExecuted')
-            Write-Host "$($file.Name): pominięte=$skipped"
-            if ($skipped -ne 0) {
-              throw "Pominięto $skipped testów na Windows; sprawdź PK_TEST_PG i zależności."
+            # S3 is tested on Linux; this is the only allowed skip on Windows.
+            $skipped = @($trx.SelectNodes('//t:UnitTestResult[@outcome="NotExecuted"]', $ns))
+            $unexpected = @($skipped | Where-Object {
+              $_.testName -ne 'PelnaKsiegowosc.Tests.Integration.ObjectStorageTests.Backup_upload_list_download_verify_and_connection_test'
+            })
+            Write-Host "$($file.Name): pominięte=$($skipped.Count), nieoczekiwane=$($unexpected.Count)"
+            if ($unexpected.Count -ne 0) {
+              throw "Nie wykonano testów: $($unexpected.testName -join ', '); sprawdź PK_TEST_PG i zależności."
             }
           }
       - name: Wyniki testów

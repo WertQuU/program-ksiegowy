@@ -109,6 +109,8 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private Choice<SickWageCause>? _selectedSickWageCause;
     [ObservableProperty] private string _previousEmployerSickDays = "";
     [ObservableProperty] private string _sickEvidenceReference = "";
+    [ObservableProperty] private bool _noOtherSickBasisComponents;
+    [ObservableProperty] private string _sickBasisEvidenceReference = "";
     [ObservableProperty] private string _sickDays = "";
     [ObservableProperty] private string _unpaidDays = "";
 
@@ -143,6 +145,12 @@ public sealed partial class PayrollViewModel : SectionViewModel
             YouthRelief = e.YouthRelief; Student = e.StudentUnder26; VoluntarySickness = e.VoluntarySickness; ExemptFromFp = e.ExemptFromFp; Ppk = e.Ppk; WorkForOwnEmployer = e.WorkForOwnEmployer;
             AuthorShare = e.AuthorSharePercent.ToString("0.##", Money.Pl); AuthorBasis = e.AuthorCostsBasis ?? "";
         });
+    }
+
+    partial void OnSelectedItemChanged(TableRow? value)
+    {
+        NoOtherSickBasisComponents = false;
+        SickBasisEvidenceReference = "";
     }
 
     partial void OnSelectedListChanged(TableRow? value)
@@ -271,6 +279,23 @@ public sealed partial class PayrollViewModel : SectionViewModel
             SelectedSickWageCause.Value, SickEvidenceReference);
         await svc.RecalculateAsync(listId);
     }, "Zatwierdzono udokumentowaną stawkę i dni chorobowego; lista została przeliczona.");
+
+    [RelayCommand]
+    private Task ConfirmSickBasisAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
+            throw new DomainException("Wybierz listę płac i jej pozycję z dniami choroby.");
+        if (!NoOtherSickBasisComponents)
+            throw new DomainException("Potwierdź brak innych kwalifikujących się składników dopiero po sprawdzeniu dokumentacji płacowej.");
+        await using var db = Session.OpenDb();
+        var employeeId = await db.PayrollItems.Where(i => i.Id == itemId && i.PayrollListId == listId)
+            .Select(i => i.EmployeeId).SingleAsync();
+        var service = new PayrollService(db, Session.User, Session.Clock);
+        await service.ConfirmSickBasisCompletenessAsync(listId, employeeId, true, SickBasisEvidenceReference);
+        await service.RecalculateAsync(listId);
+        NoOtherSickBasisComponents = false;
+        SickBasisEvidenceReference = "";
+    }, "Zapisano potwierdzenie kompletności podstawy i przeliczono listę.");
 
     [RelayCommand]
     private Task RecalculateListAsync() => ChangeAsync(async () =>

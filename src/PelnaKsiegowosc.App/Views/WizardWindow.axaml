@@ -57,7 +57,7 @@
             <TextBlock Grid.Row="6" Text="Certyfikat CA (opcjonalnie)" /><TextBox Grid.Row="6" Grid.Column="1" Text="{Binding Database.RootCertificate}" />
             <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
           </Grid>
-          <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
+          <TextBlock IsVisible="{Binding Database.UsePostgres}" Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
           <StackPanel IsVisible="{Binding CreateFirstDatabase}" Spacing="6">
             <StackPanel IsVisible="{Binding Database.UsePostgres}" Spacing="6">
             <TextBlock Classes="info" Text="Program utworzy brakującą bazę, przygotuje tabele i ograniczone konto operatora. Wpisz poniżej osobne dane administratora PostgreSQL. Hasło administratora służy tylko tej operacji i nie jest zapisywane. Istniejące księgi nie zostaną zmienione." TextWrapping="Wrap" />

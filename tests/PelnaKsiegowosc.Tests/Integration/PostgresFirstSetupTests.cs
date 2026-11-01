@@ -19,7 +19,13 @@ public class PostgresFirstSetupTests
     [PostgresFact]
     public Task Wizard_initializes_existing_empty_database_without_manual_sql() => RunFirstSetupAsync(true);
 
-    private static async Task RunFirstSetupAsync(bool databaseExists)
+    [PostgresFact]
+    public Task Wizard_imports_sqlite_into_new_postgres_as_restricted_operator() => RunFirstSetupAsync(false, importSqlite: true);
+
+    [PostgresFact]
+    public Task Wizard_imports_sqlite_into_prepared_postgres_as_restricted_operator() => RunFirstSetupAsync(true, importSqlite: true);
+
+    private static async Task RunFirstSetupAsync(bool databaseExists, bool importSqlite = false)
     {
         using var root = new TempRoot();
         var admin = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("PK_TEST_PG")!) { Database = "postgres", Pooling = false };
@@ -46,6 +52,25 @@ public class PostgresFirstSetupTests
             TermsAccepted = true, CreateFirstDatabase = true, AdministratorLogin = admin.Username!,
             AdministratorPassword = admin.Password!, SkipBackupKey = true
         };
+        Guid? importedId = null;
+        if (importSqlite)
+        {
+            var (source, sourceDialogs) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "source"));
+            await SelfTestScenario.RunWizardAsync(source, sourceDialogs);
+            importedId = source.Company!.Id;
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+            wizard.MigrateFromSqlite = true;
+            wizard.MigrationSourcePath = source.Profile.SqlitePath!;
+            wizard.MigrationSourceKey = source.Connector.ExportSqliteKey(source.Profile)!;
+            wizard.MigrationAttachmentsDirectory = source.AttachmentsRoot;
+            // Exercise B with a database prepared separately by an administrator.
+            if (databaseExists)
+            {
+                await PostgresFirstSetup.PrepareAsync(profile, admin.Username!, admin.Password!, password);
+                wizard.CreateFirstDatabase = false;
+                wizard.AdministratorPassword = "";
+            }
+        }
         wizard.Database.Load(profile);
         wizard.Database.Password = password;
         try
@@ -66,7 +91,7 @@ public class PostgresFirstSetupTests
             await using (var db = DbContextFactory.Create(DatabaseEngine.PostgreSql, profile.BuildConnectionString(password)))
             {
                 Assert.Empty(await db.Database.GetPendingMigrationsAsync());
-                Assert.False(await db.Companies.AnyAsync());
+                Assert.Equal(importSqlite, await db.Companies.AnyAsync());
                 await db.Database.OpenConnectionAsync();
                 await using var rights = db.Database.GetDbConnection().CreateCommand();
                 rights.CommandText = "SELECT has_schema_privilege('public','CREATE') OR has_table_privilege('\"Companies\"','TRUNCATE') OR has_table_privilege('\"__EFMigrationsHistory\"','INSERT')";
@@ -77,12 +102,16 @@ public class PostgresFirstSetupTests
                 rights.CommandText = "SELECT has_table_privilege('\"AuditEvents\"','INSERT')";
                 Assert.True((bool)(await rights.ExecuteScalarAsync())!);
             }
+            if (!importSqlite)
+            {
             wizard.Company.FullName = "Nowa Testowa sp. z o.o.";
             wizard.Company.Nip = "5260250274"; wizard.Company.Krs = "0000123456";
             wizard.Company.Street = "Testowa"; wizard.Company.BuildingNumber = "1";
             wizard.Company.PostalCode = "00-001"; wizard.Company.City = "Warszawa";
             wizard.Company.TaxOfficeCode = "1471";
             wizard.ManagerFirstName = "Anna"; wizard.ManagerLastName = "Nowak";
+            }
+            wizard.RecoveryKeySaved = true;
             for (var step = 0; step < 8 && !wizard.IsLastStep; step++)
             {
                 await wizard.NextCommand.ExecuteAsync(null);
@@ -96,7 +125,8 @@ public class PostgresFirstSetupTests
             Assert.Contains("już tabele", blocked.Message);
             await using var check = DbContextFactory.Create(DatabaseEngine.PostgreSql, profile.BuildConnectionString(password));
             Assert.Equal(1, await check.Companies.CountAsync());
-            Assert.Equal(1, await check.Users.CountAsync());
+            Assert.Equal(importSqlite ? 2 : 1, await check.Users.CountAsync());
+            if (importedId.HasValue) Assert.Equal(importedId.Value, await check.Companies.Select(c => c.Id).SingleAsync());
         }
         finally
         {

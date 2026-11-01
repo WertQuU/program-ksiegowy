@@ -11,13 +11,11 @@ potwierdzenia pełnej zgodności prawno-podatkowej**.
 
 > **Ważne:** program wymaga weryfikacji przed użyciem w realnej księgowości. Wyniki obliczeń podatkowych, list płac i raportów należy porównać z niezależnymi przykładami i aktualnymi przepisami. Testy CI nie stanowią certyfikacji prawnej.
 
-**Aktualna architektura pracy:** jedna **centralna baza PostgreSQL na jednostkę**. Program odrzuca bazę zawierającą wiele jednostek, ponieważ role operatorów nie mają jeszcze udowodnionej izolacji per jednostka. Bezpośredni dostęp SQL wymaga osobnego ograniczenia uprawnień po stronie serwera. Każdy operator
-używa osobnego loginu PostgreSQL nadanego przez administratora; identyfikator w programie
-ma postać `db:login`. Ten sam login może być użyty na kilku urządzeniach, ale **tylko jedna
-aktywna instancja programu na login jednocześnie** (sesyjna blokada serwera). Techniczne
-połączenia SQL w obrębie tej samej instancji nie są w ten sposób limitowane. SQLite jest
-wykorzystywana w odizolowanych autotestach i wybranych operacjach odzyskiwania, **nie jako
-standardowa baza robocza**.
+**Aktualna architektura pracy:** jedna baza na jednostkę: samodzielna, szyfrowana **SQLite** na komputerze albo wspólna **PostgreSQL**. W kroku 2 kreatora wybierz silnik oraz **A — nową bazę** lub **B — istniejącą bazę**. Dla obu opcji można zaznaczyć import danych SQLite do pustego celu. Import wykonuje i weryfikuje szyfrowaną kopię, sprawdza integralność, liczby rekordów i sumy kontrolne; plik źródłowy pozostaje nienaruszony. Przed importem zamknij program używający źródła. Zapisz klucz odzyskiwania kopii poza komputerem.
+
+Opcja A SQLite tworzy nowy plik i tabele. Opcja A PostgreSQL wymaga osobnych danych administratora tylko na czas przygotowania bazy i ograniczonego konta operatora. Opcja B nie tworzy brakującego pliku SQLite ani bazy PostgreSQL. Przy podłączaniu istniejących ksiąg kreator od kroku 2 pobiera zapisane dane; wymaga uzupełnienia braków. Aktualizację schematu PostgreSQL administrator wykonuje osobno.
+
+Program odrzuca bazę zawierającą wiele jednostek. W PostgreSQL każdy operator używa osobnego loginu `db:login`; jedna aktywna instancja programu na login jest kontrolowana blokadą serwera. SQLite korzysta z tożsamości konta systemowego. Role aplikacji nie zabezpieczają bezpośredniego SQL — administracja serwerem i dostęp do plików pozostają osobnymi granicami bezpieczeństwa.
 
 ![Pulpit](docs/zrzuty/pulpit.png)
 
@@ -25,7 +23,7 @@ standardowa baza robocza**.
 
 | Obszar | Stan |
 |---|---|
-| Wspólna baza ksiąg | PostgreSQL; wymaga indywidualnych kont SQL i administracji serwerem |
+| Baza ksiąg | SQLite na jednym komputerze lub PostgreSQL z indywidualnymi kontami SQL |
 | Operatorzy i role | Loginy `db:login`, role w aplikacji, blokada jednej aktywnej sesji na login |
 | Uprawnienia PostgreSQL | **Wymagają utwardzenia po stronie serwera**; sama rola aplikacyjna nie zabezpiecza bezpośredniego SQL |
 | Równoległa praca | Wymagane dalsze testy numeracji, transakcji i konfliktów zapisów |
