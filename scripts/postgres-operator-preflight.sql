@@ -42,7 +42,15 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'NIEDOZWOLONE uprawnienia operatora %: %', session_user, array_to_string(bad,', ');
   END IF;
-END $$;
+  -- Effective rights matter: grants inherited from other roles may override
+  -- a direct REVOKE from the operator. Check the resulting privileges.
+  IF to_regclass('public."AuditEvents"') IS NOT NULL AND (
+    has_table_privilege(session_user, 'public."AuditEvents"', 'UPDATE') OR
+    has_table_privilege(session_user, 'public."AuditEvents"', 'DELETE')
+  ) THEN
+    RAISE EXCEPTION 'NIEDOZWOLONE: operator może zmieniać lub usuwać wpisy AuditEvents. DBA musi odebrać efektywne prawa UPDATE/DELETE (także z ról dziedziczonych).';
+  END IF;
+END $;
 ROLLBACK;
 -- Dodatkowo sprawdź ręcznie, kto ma prawa do DML na tabelach i brak restrykcji
 -- dostępu poza aplikacją. Bezpieczne operacje księgowe wymagają serwerowej autoryzacji.
