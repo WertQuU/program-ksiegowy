@@ -160,4 +160,42 @@ public sealed class StockMutationAndTenantSafetyTests
         Assert.Equal(100m, stored.Value);
         Assert.Equal(1, await books.Db.StockMovements.CountAsync(m => m.StockItemId == item.Id));
     }
+
+    [Fact]
+    public async Task Failed_stock_movement_save_rolls_back_already_posted_ledger_entry()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var stock = new StockService(books.Db, books.User, books.Clock);
+        var item = await stock.AddItemAsync(new StockItem
+        {
+            Code = "REG-ATOMIC", Name = "Towar w transakcji", Kind = StockItemKind.Towar
+        });
+
+        // Wymuszamy błąd na samym końcu — podczas utrwalania dokumentu
+        // magazynowego, PO pomyślnym utworzeniu i zaksięgowaniu dekretu.
+        await books.Db.Database.ExecuteSqlRawAsync("""
+            CREATE TRIGGER "test_fail_stock_movement"
+            BEFORE INSERT ON "StockMovements"
+            BEGIN
+                SELECT RAISE(ABORT, 'injected stock movement failure');
+            END;
+            """);
+
+        await Assert.ThrowsAnyAsync<Exception>(() => stock.RegisterAsync(
+            StockMovementType.PZ, item.Id, new DateOnly(2026, 1, 10),
+            10m, 25m, reference: "FV/ATOMIC", offsetAccount: "300"));
+
+        await books.Db.Database.ExecuteSqlRawAsync(
+            "DROP TRIGGER \"test_fail_stock_movement\"");
+
+        // Kolejny niezależny zapis w tym samym DbContext nie może przypadkowo
+        // przywrócić dekretu ani zmiany stanu magazynowego po rollbacku.
+        await books.AddCounterpartyAsync("AFTERATOMIC", "Po nieudanym zapisie PZ");
+        books.Db.ChangeTracker.Clear();
+        Assert.False(await books.Db.JournalEntries.AnyAsync());
+        Assert.False(await books.Db.StockMovements.AnyAsync());
+        var stored = await books.Db.StockItems.AsNoTracking().SingleAsync(i => i.Id == item.Id);
+        Assert.Equal(0m, stored.Quantity);
+        Assert.Equal(0m, stored.Value);
+    }
 }
