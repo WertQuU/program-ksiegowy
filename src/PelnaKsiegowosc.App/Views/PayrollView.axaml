@@ -89,6 +89,33 @@
             <TextBox Text="{Binding SickBasisEvidenceReference}" Watermark="Odrębny dowód kompletności podstawy, bez danych medycznych" MinWidth="280" />
             <Button Content="Potwierdź podstawę i przelicz" Command="{Binding ConfirmSickBasisCommand}" />
           </WrapPanel>
+          <Expander DockPanel.Dock="Top" Header="30 dni choroby w miesiącu 31-dniowym — ewidencja czasu pracy">
+            <StackPanel Spacing="6">
+              <TextBlock TextWrapping="Wrap" Text="Najpierw zapisz daty choroby w Kadrach. Projekt grafiku wymaga sprawdzenia z dokumentacją; nie jest potwierdzeniem przepracowanych godzin. Dla pracy wynagrodzenie = pensja miesięczna / suma godzin grafiku × faktyczne godziny pracy." />
+              <Button Content="Przygotuj projekt grafiku" Command="{Binding PrepareWorkScheduleCommand}" />
+              <Grid ColumnDefinitions="120,150,150,*">
+                <TextBlock Text="Dzień" /><TextBlock Grid.Column="1" Text="Godziny grafiku" />
+                <TextBlock Grid.Column="2" Text="Godziny pracy" /><TextBlock Grid.Column="3" Text="Rodzaj dnia" />
+              </Grid>
+              <ScrollViewer Height="220">
+                <ItemsControl ItemsSource="{Binding WorkScheduleDays}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="s:WorkScheduleDayForm">
+                      <Grid ColumnDefinitions="120,150,150,*" Margin="0,2">
+                        <TextBlock Text="{Binding DateLabel}" VerticalAlignment="Center" />
+                        <NumericUpDown Grid.Column="1" Value="{Binding ScheduledHours}" Minimum="0" Maximum="24" Increment="0.25" />
+                        <NumericUpDown Grid.Column="2" Value="{Binding WorkedHours}" Minimum="0" Maximum="24" Increment="0.25" />
+                        <ComboBox Grid.Column="3" ItemsSource="{Binding Kinds}" SelectedItem="{Binding SelectedKind}" />
+                      </Grid>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </ScrollViewer>
+              <TextBox Text="{Binding WorkScheduleEvidenceReference}" Watermark="Odnośnik do zatwierdzonego grafiku i ewidencji czasu pracy" />
+              <CheckBox Content="Sprawdzono każdy dzień, nieobecności i faktyczne godziny z dokumentacją" IsChecked="{Binding WorkScheduleReviewed}" />
+              <Button Content="Zatwierdź ewidencję i przelicz" Command="{Binding ConfirmWorkScheduleCommand}" />
+            </StackPanel>
+          </Expander>
           <c:TableView Table="{Binding Items}" SelectedRow="{Binding SelectedItem}" />
         </DockPanel>
       </TabItem>

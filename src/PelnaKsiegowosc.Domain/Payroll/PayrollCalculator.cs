@@ -49,7 +49,9 @@ public sealed record PayrollRules(
 /// do dni roboczych miesiąca.
 /// </summary>
 public sealed record PayrollAbsence(int SickDays, int UnpaidWorkingDays, int WorkingDaysInMonth, decimal? SickBasis = null, decimal SickRatePercent = 80m,
-    int? CalendarDaysInMonth = null, int? SickYear = null);
+    int? CalendarDaysInMonth = null, int? SickYear = null, PayrollWorkHours? VerifiedWorkHours = null);
+
+public sealed record PayrollWorkHours(decimal Scheduled, decimal Worked);
 
 /// <summary>Narastające wartości od początku roku (z wcześniejszych list płac danej osoby).</summary>
 /// <param name="AuthorCosts">Koszty 50% (art. 22 ust. 9 pkt 1–3 ustawy o PIT) uwzględnione od początku roku — limit roczny.</param>
@@ -109,7 +111,15 @@ public static class PayrollCalculator
             var sickDeduction = wholeMonthSick || a.SickDays >= 30 ? gross : R2(gross / 30m * a.SickDays);
             var unpaidDeduction = R2(gross / a.WorkingDaysInMonth * a.UnpaidWorkingDays);
             salary = Math.Max(0, gross - sickDeduction - unpaidDeduction);
-            if (a.CalendarDaysInMonth == 31 && a.SickDays == 30)
+            if (a.VerifiedWorkHours is { } hours)
+            {
+                if (a.CalendarDaysInMonth != 31 || a.SickDays != 30 || hours.Scheduled <= 0 ||
+                    hours.Scheduled > 744 || hours.Worked < 0 || hours.Worked > 24 || hours.Worked > hours.Scheduled)
+                    throw new Common.DomainException("Nieprawidłowa ewidencja godzin dla 30/31 dni choroby.");
+                salary = R2(gross / hours.Scheduled * hours.Worked);
+                notes.Add($"Art. 80 KP — potwierdzona ewidencja 30/31: {hours.Worked} godzin pracy / {hours.Scheduled} godzin grafiku; wynagrodzenie za pracę {salary:N2} zł");
+            }
+            if (a.CalendarDaysInMonth == 31 && a.SickDays == 30 && a.VerifiedWorkHours is null)
                 notes.Add("WSTĘPNA: 30 dni choroby w 31-dniowym miesiącu — pozostały dzień może być dniem pracy; " +
                           "0 zł za pracę nie jest potwierdzonym wynagrodzeniem. " +
                           "Weryfikacja przepracowanych godzin i ręczne rozliczenie wymagane przed księgowaniem (art. 80 KP).");

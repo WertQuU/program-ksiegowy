@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
 using PelnaKsiegowosc.Application.Payroll;
@@ -111,6 +112,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
     [ObservableProperty] private string _sickEvidenceReference = "";
     [ObservableProperty] private bool _noOtherSickBasisComponents;
     [ObservableProperty] private string _sickBasisEvidenceReference = "";
+    [ObservableProperty] private ObservableCollection<WorkScheduleDayForm> _workScheduleDays = new();
+    [ObservableProperty] private string _workScheduleEvidenceReference = "";
+    [ObservableProperty] private bool _workScheduleReviewed;
     [ObservableProperty] private string _sickDays = "";
     [ObservableProperty] private string _unpaidDays = "";
 
@@ -151,6 +155,9 @@ public sealed partial class PayrollViewModel : SectionViewModel
     {
         NoOtherSickBasisComponents = false;
         SickBasisEvidenceReference = "";
+        WorkScheduleDays = new();
+        WorkScheduleEvidenceReference = "";
+        WorkScheduleReviewed = false;
     }
 
     partial void OnSelectedListChanged(TableRow? value)
@@ -295,7 +302,54 @@ public sealed partial class PayrollViewModel : SectionViewModel
         await service.RecalculateAsync(listId);
         NoOtherSickBasisComponents = false;
         SickBasisEvidenceReference = "";
+        WorkScheduleDays = new();
+        WorkScheduleEvidenceReference = "";
+        WorkScheduleReviewed = false;
     }, "Zapisano potwierdzenie kompletności podstawy i przeliczono listę.");
+
+    [RelayCommand]
+    private Task PrepareWorkScheduleAsync() => RunAsync(async () =>
+    {
+        if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
+            throw new DomainException("Wybierz listę i pozycję płac.");
+        await using var db = Session.OpenDb();
+        var list = await db.PayrollLists.AsNoTracking().FirstAsync(l => l.Id == listId && l.CompanyId == Session.CompanyId);
+        var item = await db.PayrollItems.AsNoTracking().SingleAsync(i => i.Id == itemId && i.PayrollListId == list.Id);
+        var employee = await db.Employees.AsNoTracking().SingleAsync(e => e.Id == item.EmployeeId && e.CompanyId == Session.CompanyId);
+        if (item.SickDays != 30 || DateTime.DaysInMonth(list.Month.Year, list.Month.Month) != 31)
+            throw new DomainException("Ten formularz służy do rozliczenia 30 dni choroby w miesiącu 31-dniowym.");
+        var absences = await new HrService(db, Session.User, Session.Clock).AbsencesAsync(list.Month.Year);
+        var rows = new ObservableCollection<WorkScheduleDayForm>();
+        for (var date = list.Month; date < list.Month.AddMonths(1); date = date.AddDays(1))
+        {
+            var absence = absences.FirstOrDefault(a => a.EmployeeId == employee.Id && a.From <= date && a.To >= date);
+            var planned = HrService.WorkingDays(date, date) == 1 ? 8m * employee.WorkTimeFraction : 0m;
+            var kind = absence?.Kind == Domain.Payroll.AbsenceKind.Choroba ? WorkScheduleDayKind.Choroba
+                : absence is not null ? WorkScheduleDayKind.NieodplatnaNieobecnosc
+                : planned > 0 ? WorkScheduleDayKind.Praca : WorkScheduleDayKind.Wolne;
+            rows.Add(new WorkScheduleDayForm(date, planned, kind));
+        }
+        foreach (var row in rows)
+            row.PropertyChanged += (_, _) => WorkScheduleReviewed = false;
+        WorkScheduleDays = rows;
+        WorkScheduleReviewed = false;
+        StatusMessage = "Projekt standardowego grafiku. Uzgodnij każdy dzień i godziny z zatwierdzonym grafikiem oraz ewidencją. Godziny pracy wpisz z dokumentacji.";
+    });
+
+    [RelayCommand]
+    private Task ConfirmWorkScheduleAsync() => ChangeAsync(async () =>
+    {
+        if (SelectedList?.Tag is not Guid listId || SelectedItem?.Tag is not Guid itemId)
+            throw new DomainException("Wybierz listę i pozycję płac.");
+        if (!WorkScheduleReviewed) throw new DomainException("Potwierdź sprawdzenie grafiku i faktycznych godzin z dokumentacją.");
+        var days = WorkScheduleDays.Select(row => new WorkScheduleDay(row.Date, row.ScheduledHours,
+            row.WorkedHours, row.SelectedKind.Value)).ToArray();
+        await using var db = Session.OpenDb();
+        var service = new PayrollService(db, Session.User, Session.Clock);
+        await service.ConfirmWorkScheduleAsync(listId, itemId, days, WorkScheduleEvidenceReference);
+        await service.RecalculateAsync(listId);
+        WorkScheduleReviewed = false;
+    }, "Zatwierdzono ewidencję godzin i przeliczono płace.");
 
     [RelayCommand]
     private Task RecalculateListAsync() => ChangeAsync(async () =>
@@ -414,4 +468,22 @@ public sealed partial class PayrollViewModel : SectionViewModel
         await File.WriteAllBytesAsync(target, new PdfReportExporter().Export(_currentReport));
         StatusMessage = $"Zapisano {target}";
     });
+}
+
+public sealed partial class WorkScheduleDayForm : ObservableObject
+{
+    public WorkScheduleDayForm(DateOnly date, decimal scheduled, WorkScheduleDayKind kind)
+    {
+        Date = date; ScheduledHours = scheduled; _selectedKind = Kinds.Single(c => c.Value == kind);
+    }
+    public DateOnly Date { get; }
+    public string DateLabel => Date.ToString("dd.MM.yyyy");
+    public List<Choice<WorkScheduleDayKind>> Kinds { get; } = new()
+    {
+        new(WorkScheduleDayKind.Praca, "Praca"), new(WorkScheduleDayKind.Choroba, "Choroba"),
+        new(WorkScheduleDayKind.Wolne, "Dzień wolny"), new(WorkScheduleDayKind.NieodplatnaNieobecnosc, "Nieobecność nieodpłatna")
+    };
+    [ObservableProperty] private decimal _scheduledHours;
+    [ObservableProperty] private decimal _workedHours;
+    [ObservableProperty] private Choice<WorkScheduleDayKind> _selectedKind;
 }

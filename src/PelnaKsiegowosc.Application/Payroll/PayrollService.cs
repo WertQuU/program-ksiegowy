@@ -20,7 +20,7 @@ namespace PelnaKsiegowosc.Application.Payroll;
 /// i księgowanie: Wn 404 / Ma 230 (netto per osoba — rozrachunek do wypłaty), Ma 220-03 (ZUS i zdrowotna pracownika),
 /// Ma 220-02 (zaliczki PIT); Wn 405 / Ma 220-03 (składki pracodawcy, FP, FGŚP).
 /// </summary>
-public sealed class PayrollService
+public sealed partial class PayrollService
 {
     public const string AccidentRateKey = "place.stopa-wypadkowa";
     public const decimal DefaultAccidentRate = 1.67m;
@@ -329,7 +329,7 @@ public sealed class PayrollService
             History = history.OrderBy(x => x.Month).ThenBy(x => x.SocialBasis).ToArray(),
             Current = list.Items.Where(i => i.EmployeeId == e.Id).OrderBy(i => i.Id)
                 .Select(i => new { i.Id, i.BaseGross, i.SickDays, i.UnpaidDays }).ToArray()
-        });
+        }, FingerprintJson);
         var fingerprint = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(sourceJson)));
         if (!requireConfirmation)
             return (months.Average(), "", fingerprint);
@@ -419,6 +419,8 @@ public sealed class PayrollService
                             sickBases[e.Id] = sickBasis;
                         }
                     }
+                    var verifiedHours = input.SickDays == 30 && DateTime.DaysInMonth(list.Month.Year, list.Month.Month) == 31
+                        ? await VerifiedWorkScheduleAsync(list, input, e, ct) : null;
                     var absence = e.ContractType == ContractType.UmowaOPrace && (input.SickDays > 0 || input.UnpaidDays > 0)
                         ? new PayrollAbsence(input.SickDays, input.UnpaidDays, workingDays,
                             // Bez potwierdzonej historii 0 oznacza WYŁĄCZNIE wstępne
@@ -426,7 +428,7 @@ public sealed class PayrollService
                             // Nie podstawiamy bieżącej pensji jako rzekomej podstawy chorobowego.
                             SickBasis: input.SickDays > 0 ? (sicknessAssessment is null ? 0m : sickBasis ?? 0m) : null,
                             SickRatePercent: sicknessAssessment?.RatePercent ?? 80m,
-                            CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month), SickYear: list.Month.Year) : null;
+                            CalendarDaysInMonth: DateTime.DaysInMonth(list.Month.Year, list.Month.Month), SickYear: list.Month.Year, VerifiedWorkHours: verifiedHours) : null;
                     var ytd = baseYtd with { PensionBasis = baseYtd.PensionBasis + pension, YouthExemptRevenue = baseYtd.YouthExemptRevenue + youth,
                         TaxBase = baseYtd.TaxBase + employmentTax, AuthorCosts = baseYtd.AuthorCosts + author,
                         EmployerSickDays = baseYtd.EmployerSickDays + (sicknessAssessment?.PreviousEmployerDays ?? 0) };
@@ -558,10 +560,17 @@ public sealed class PayrollService
     }
 
     /// <summary>Kwoty pozycji istotne dla księgowania i deklaracji — porównywane przed zaksięgowaniem z ponownym wyliczeniem.</summary>
-    private static string Fingerprint(PayrollItem i) => string.Join("|", i.Gross, i.SocialBasis, i.PensionEmployee, i.DisabilityEmployee, i.SicknessEmployee,
+    private static string Fingerprint(PayrollItem i) => PayrollValueFingerprint(i.Gross, i.SocialBasis, i.PensionEmployee, i.DisabilityEmployee, i.SicknessEmployee,
         i.HealthBase, i.Health, i.CostsOfIncome, i.AuthorCosts, i.ExemptRevenue, i.TaxBase, i.TaxReduction, i.TaxAdvance, i.FlatRateTax, i.Net,
         i.PpkEmployee, i.PpkEmployer, i.PpkEmployerTaxed, i.PensionEmployer, i.DisabilityEmployer, i.Accident, i.LaborFund, i.Fgsp, i.SickPay,
         i.SickDaysEmployer, i.InsuranceUndetermined, i.ContractType, i.Notes);
+
+    private static string PayrollValueFingerprint(params object?[] values) => string.Join("|", values.Select(value => value switch
+    {
+        decimal amount => amount.ToString("G29", System.Globalization.CultureInfo.InvariantCulture),
+        IFormattable formatted => formatted.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+        _ => value?.ToString() ?? ""
+    }));
 
     public async Task DeleteListAsync(Guid listId, CancellationToken ct = default)
     {
@@ -630,17 +639,11 @@ public sealed class PayrollService
         // za który może należeć się zapłata za rzeczywiście wykonaną pracę.
         // Bez grafiku i liczby przepracowanych godzin pomniejszenie 30/30
         // mogłoby niezgodnie z prawem dać wynagrodzenie za pracę równe 0 zł.
-        var oneDayRemaining = list.Items.Where(i =>
-            i.ContractType == ContractType.UmowaOPrace && i.SickDays == 30 &&
-            DateTime.DaysInMonth(list.Month.Year, list.Month.Month) == 31)
-            .Select(i => i.EmployeeName).Distinct().ToList();
-        if (oneDayRemaining.Count > 0)
-            throw new DomainException(
-                "Nie można automatycznie zaksięgować listy z 30 dniami choroby w miesiącu 31-dniowym (" +
-                string.Join(", ", oneDayRemaining) + "). Pozostały dzień mógł być przepracowany. " +
-                "Zgodnie z art. 80 KP wymaga to weryfikacji grafiku i wynagrodzenia za faktycznie " +
-                "przepracowane godziny (§ 4 ust. 2 pkt 1 rozporządzenia z 29.05.1996). " +
-                "Program nie obsługuje jeszcze takiej korekty; nie księguj automatycznego wyniku 0 zł.");
+        foreach (var input in (await StoredInputsAsync(list, ct)).Where(i => i.SickDays == 30))
+            if (DateTime.DaysInMonth(list.Month.Year, list.Month.Month) == 31 &&
+                employees[input.EmployeeId].ContractType == ContractType.UmowaOPrace &&
+                await VerifiedWorkScheduleAsync(list, input, employees[input.EmployeeId], ct) is null)
+                throw new DomainException("Nie można zaksięgować listy z 30 dniami choroby w miesiącu 31-dniowym bez aktualnego, potwierdzonego grafiku i przepracowanych godzin. Uzupełnij ewidencję godzin i przelicz listę.");
 
         foreach (var item in list.Items.Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
         {
