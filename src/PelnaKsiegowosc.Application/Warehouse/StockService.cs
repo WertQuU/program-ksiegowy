@@ -120,7 +120,9 @@ public sealed class StockService
     /// <summary>Wartość rozchodu metodą FIFO: odtworzenie partii z historii przyjęć i rozchodów, zużycie najstarszych partii.</summary>
     private async Task<decimal> FifoValueAsync(Guid itemId, decimal quantity, CancellationToken ct)
     {
-        var moves = await _db.StockMovements.AsNoTracking().Where(m => m.StockItemId == itemId).OrderBy(m => m.Date).ThenBy(m => m.CreatedAtUtc).ToListAsync(ct);
+        var moves = await _db.StockMovements.AsNoTracking()
+            .Where(m => m.CompanyId == _user.CompanyId && m.StockItemId == itemId)
+            .OrderBy(m => m.Date).ThenBy(m => m.CreatedAtUtc).ToListAsync(ct);
         var lots = new LinkedList<(decimal qty, decimal price)>();
         void Consume(decimal q, Action<decimal, decimal>? onTake = null)
         {
@@ -132,6 +134,8 @@ public sealed class StockService
                 if (take == f.Value.qty) lots.RemoveFirst();
                 else f.Value = (f.Value.qty - take, f.Value.price);
             }
+            if (q > 0)
+                throw new DomainException("Niespójna historia magazynowa FIFO: wydanie przekracza dostępne partie. Przeprowadź kontrolę integralności przed księgowaniem.");
         }
         foreach (var m in moves)
         {
