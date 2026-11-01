@@ -86,4 +86,34 @@ public class FixedAssetDisposalSafetyTests
         Assert.False(await books.Db.FixedAssets.AnyAsync(a => a.InventoryNumber == "OT/INVALID"));
         Assert.False(await books.Db.FixedAssetOperations.AnyAsync(o => o.FixedAssetId == asset.Id));
     }
+
+    [Fact]
+    public async Task Rejected_depreciation_journal_does_not_leave_phantom_charges_or_run()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new FixedAssetService(books.Db, books.User, books.Clock);
+        var asset = await service.RegisterAsync(new FixedAsset
+        {
+            InventoryNumber = "OT/AM-ERR", Name = "Środek z amortyzacją",
+            AcquisitionDate = new DateOnly(2026, 1, 2),
+            PlacedInServiceDate = new DateOnly(2026, 1, 3),
+            InitialValueBook = 12000m, InitialValueTax = 12000m,
+            BookMethod = DepreciationMethod.Liniowa, BookRatePercent = 20m,
+            TaxMethod = DepreciationMethod.Liniowa, TaxRatePercent = 20m
+        }, offsetAccountNumber: null);
+
+        // W testowych księgach jest tylko rok 2026. Próba wystawienia
+        // dekretu AM na luty 2027 powinna zostać odrzucona.
+        var error = await Assert.ThrowsAsync<DomainException>(() => service.RunDepreciationAsync(2027, 2));
+        Assert.Contains("Brak roku obrotowego", error.Message);
+
+        // Wymuś kolejny, niezwiązany zapis w tym samym DbContext.
+        await books.AddCounterpartyAsync("AFTERAM", "Po odmowie naliczenia");
+        books.Db.ChangeTracker.Clear();
+        Assert.False(await books.Db.DepreciationRuns.AnyAsync(r => r.Year == 2027 && r.Month == 2));
+        Assert.False(await books.Db.DepreciationCharges.AnyAsync(c =>
+            c.FixedAssetId == asset.Id && c.Year == 2027 && c.Month == 2));
+        Assert.Equal(FixedAssetStatus.WEwidencji,
+            (await books.Db.FixedAssets.AsNoTracking().SingleAsync(a => a.Id == asset.Id)).Status);
+    }
 }
