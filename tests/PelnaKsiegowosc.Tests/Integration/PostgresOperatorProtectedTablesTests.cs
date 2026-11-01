@@ -73,6 +73,18 @@ public sealed class PostgresOperatorProtectedTablesTests
                 $"""REVOKE UPDATE ON public."AuditEvents" FROM "{inherited}";""", admin))
                 await revoke.ExecuteNonQueryAsync();
 
+            // GRANT dla PUBLIC też jest efektywnym uprawnieniem każdego operatora.
+            await using (var grant = new NpgsqlCommand(
+                """GRANT DELETE ON public."AuditEvents" TO PUBLIC;""", admin))
+                await grant.ExecuteNonQueryAsync();
+            var publicAuditError = await Assert.ThrowsAsync<DomainException>(() =>
+                ExclusivePostgresSession.AcquireAsync(
+                    profile, builder.ConnectionString, requireOperatorRole: true));
+            Assert.Contains("AuditEvents", publicAuditError.Message);
+            await using (var revoke = new NpgsqlCommand(
+                """REVOKE DELETE ON public."AuditEvents" FROM PUBLIC;""", admin))
+                await revoke.ExecuteNonQueryAsync();
+
             // Prawo INSERT do historii migracji jest równie niedozwolone.
             await using (var grant = new NpgsqlCommand(
                 $"""GRANT INSERT ON public."__EFMigrationsHistory" TO "{inherited}";""", admin))
@@ -84,6 +96,18 @@ public sealed class PostgresOperatorProtectedTablesTests
 
             await using (var revoke = new NpgsqlCommand(
                 $"""REVOKE INSERT ON public."__EFMigrationsHistory" FROM "{inherited}";""", admin))
+                await revoke.ExecuteNonQueryAsync();
+
+            // Wykrywane są również uprawnienia nadane bezpośrednio operatorowi.
+            await using (var grant = new NpgsqlCommand(
+                $"""GRANT DELETE ON public."__EFMigrationsHistory" TO "{login}";""", admin))
+                await grant.ExecuteNonQueryAsync();
+            var directMigrationError = await Assert.ThrowsAsync<DomainException>(() =>
+                ExclusivePostgresSession.AcquireAsync(
+                    profile, builder.ConnectionString, requireOperatorRole: true));
+            Assert.Contains("__EFMigrationsHistory", directMigrationError.Message);
+            await using (var revoke = new NpgsqlCommand(
+                $"""REVOKE DELETE ON public."__EFMigrationsHistory" FROM "{login}";""", admin))
                 await revoke.ExecuteNonQueryAsync();
 
             // Odmowa dostępu zwalnia połączenie i blokadę; po usunięciu nadmiarowych
