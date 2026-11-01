@@ -84,4 +84,25 @@ public sealed class LedgerReservedKindsAndDraftReferencesTests
         Assert.All(stored.Lines, l => Assert.Null(l.CounterpartyId));
         Assert.Null(stored.ModifiedAtUtc);
     }
+
+    [Fact]
+    public async Task SkipReadinessCheck_cannot_bypass_unapproved_chart_for_ordinary_entries()
+    {
+        await using var books = await TestBooks.CreateAsync(approvePolicy: true, approveChart: false);
+        var ledger = new PelnaKsiegowosc.Application.Ledger.LedgerService(books.Db, books.User, books.Clock)
+        {
+            SkipReadinessCheck = true
+        };
+        var input = TestBooks.Entry(Day, "PK/NOT-READY",
+            new("130-01", 100m, 0m), new("801", 0m, 100m));
+        var draft = await ledger.CreateDraftAsync(input);
+        var denied = await Assert.ThrowsAsync<DomainException>(() => ledger.PostAsync(draft.Id));
+        Assert.Contains("plan kont nie został zatwierdzony", denied.Message);
+
+        var direct = await Assert.ThrowsAsync<DomainException>(() => ledger.CreateAndPostAsync(input));
+        Assert.Contains("plan kont nie został zatwierdzony", direct.Message);
+        books.Db.ChangeTracker.Clear();
+        Assert.False(await books.Db.JournalEntries.AsNoTracking()
+            .AnyAsync(e => e.Status == EntryStatus.Zaksiegowany));
+    }
 }
