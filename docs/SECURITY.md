@@ -14,7 +14,7 @@
 
 Przy **pierwszym** przygotowaniu nowej bazy aplikacja przyznaje operatorowi `SELECT/INSERT` do `public."AuditEvents"`, lecz odbiera `UPDATE/DELETE`. Pozwala to dopisywać ślad audytowy bez bezpośredniego edytowania i usuwania historii. Jest to dodatkowa warstwa ochrony obok triggerów — **nie usuwa ryzyka P0**, ponieważ operator mający bezpośrednie prawo `INSERT` do bazy nadal może omijać logikę aplikacji i fałszować nowe wpisy.
 
-**Istniejące bazy nie są automatycznie modyfikowane.** Administrator musi po wykonaniu kopii i przeglądzie ról odebrać efektywne uprawnienia `UPDATE/DELETE` do `public."AuditEvents"` operatorom i rolom, z których dziedziczą uprawnienia. Kontrolę przeprowadza `scripts/postgres-operator-preflight.sql`, uruchamiany pod kontem operatora. Nie nadawaj operatorowi własności tabel ani uprawnień `TRIGGER`; wyzwalacze nie zastępują kontroli dostępu.
+**Istniejące bazy nie są automatycznie modyfikowane.** Administrator musi po wykonaniu kopii i przeglądzie ról odebrać efektywne uprawnienia `UPDATE/DELETE` do `public."AuditEvents"` oraz `INSERT/UPDATE/DELETE` do `public."__EFMigrationsHistory"` operatorom i rolom, z których dziedziczą uprawnienia. Przy otwieraniu zwykłej sesji PostgreSQL program odmawia dostępu, jeśli wykryje takie prawa; niezależny `scripts/postgres-operator-preflight.sql` sprawdza je pod kontem operatora. Obejmuje to uprawnienia pochodzące z `PUBLIC` i członkostwa w innych rolach. Nie nadawaj operatorowi własności tabel ani uprawnień `TRIGGER`; wyzwalacze nie zastępują kontroli dostępu. **To zabezpieczenie nie zamyka ryzyka P0** związanego z bezpośrednim DML do pozostałych tabel biznesowych.
 
 ### Minimalna kontrola konfiguracji DBA
 
