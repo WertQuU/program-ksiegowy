@@ -31,6 +31,7 @@ public class PostgresWizardTests
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO "{role}";
             GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO "{role}";
             REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM "{role}";
+            REVOKE UPDATE, DELETE ON TABLE public."AuditEvents" FROM "{role}";
             """, admin)) await provision.ExecuteNonQueryAsync();
         var b = new NpgsqlConnectionStringBuilder(cs);
         var profile = new DatabaseProfile
