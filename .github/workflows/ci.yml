@@ -69,6 +69,55 @@ jobs:
           curl -s -o /dev/null http://127.0.0.1:5055 || { cat moto.log; exit 1; }
           echo "PK_TEST_PG=Host=127.0.0.1;Username=pk;Password=pk_test_pw;Database=postgres" >> "$GITHUB_ENV"
           echo "PK_TEST_S3_ENDPOINT=http://127.0.0.1:5055" >> "$GITHUB_ENV"
+      - name: SQL preflight operatora — test rzeczywisty (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Osobna testowa baza i login bez praw administracyjnych.
+          sudo -u postgres createdb pk_preflight_ci
+          sudo -u postgres psql -d pk_preflight_ci -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE pk_preflight_operator LOGIN INHERIT PASSWORD 'pk_preflight_ci_pw';
+          CREATE ROLE pk_preflight_inherited NOLOGIN;
+          REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+          CREATE TABLE public."AuditEvents" ("Id" integer PRIMARY KEY);
+          GRANT USAGE ON SCHEMA public TO pk_preflight_operator;
+          GRANT SELECT, INSERT ON TABLE public."AuditEvents" TO pk_preflight_operator;
+          SQL
+          export PGPASSWORD=pk_preflight_ci_pw
+          # Pozytywny przypadek: operator może czytać i dopisywać audyt,
+          # ale nie ma praw właściciela ani UPDATE/DELETE.
+          psql -h 127.0.0.1 -U pk_preflight_operator -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -f scripts/postgres-operator-preflight.sql
+
+          # Negatywny przypadek: bezpośredni grant UPDATE musi zostać wykryty.
+          sudo -u postgres psql -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -c 'GRANT UPDATE ON public."AuditEvents" TO pk_preflight_operator'
+          if psql -h 127.0.0.1 -U pk_preflight_operator -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -f scripts/postgres-operator-preflight.sql > "$RUNNER_TEMP/preflight-update.log" 2>&1; then
+            echo "BŁĄD: preflight zaakceptował operatora z UPDATE na AuditEvents"; exit 1
+          fi
+          grep -q 'AuditEvents' "$RUNNER_TEMP/preflight-update.log"
+          sudo -u postgres psql -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -c 'REVOKE UPDATE ON public."AuditEvents" FROM pk_preflight_operator'
+
+          # Negatywny przypadek: DELETE odziedziczony z innej roli.
+          sudo -u postgres psql -d pk_preflight_ci -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT DELETE ON public."AuditEvents" TO pk_preflight_inherited;
+          GRANT pk_preflight_inherited TO pk_preflight_operator;
+          SQL
+          if psql -h 127.0.0.1 -U pk_preflight_operator -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -f scripts/postgres-operator-preflight.sql > "$RUNNER_TEMP/preflight-inherited.log" 2>&1; then
+            echo "BŁĄD: preflight zaakceptował odziedziczone DELETE na AuditEvents"; exit 1
+          fi
+          grep -q 'AuditEvents' "$RUNNER_TEMP/preflight-inherited.log"
+
+          # Negatywny przypadek: konto z CREATEDB/CREATEROLE nie jest operatorem.
+          if PGPASSWORD=pk_test_pw psql -h 127.0.0.1 -U pk -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -f scripts/postgres-operator-preflight.sql > "$RUNNER_TEMP/preflight-admin.log" 2>&1; then
+            echo "BŁĄD: preflight zaakceptował konto administracyjne"; exit 1
+          fi
+          grep -Eq 'CREATEDB|CREATEROLE' "$RUNNER_TEMP/preflight-admin.log"
       - name: Przywrócenie pakietów
         run: dotnet restore PelnaKsiegowosc.sln
       - name: Kompilacja
