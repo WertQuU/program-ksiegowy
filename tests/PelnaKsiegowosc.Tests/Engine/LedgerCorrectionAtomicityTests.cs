@@ -100,4 +100,34 @@ public sealed class LedgerCorrectionAtomicityTests
         Assert.Null(entries[0].ReversedByEntryId);
         Assert.Equal(EntryStatus.Zaksiegowany, entries[0].Status);
     }
+
+    [Fact]
+    public async Task Failed_posting_does_not_persist_numbering_or_settlement_side_effects()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var ledger = books.Ledger();
+        var cp = await books.AddCounterpartyAsync("OWN", "Odbiorca");
+        var pending = await ledger.CreateDraftAsync(TestBooks.Entry(Day, "PK/BAD-SETTLEMENT",
+            new("130-01", 200m, 0m), new("200", 0m, 200m, cp.Id, OpenItemId: Guid.NewGuid())));
+
+        var error = await Assert.ThrowsAsync<DomainException>(() => ledger.PostAsync(pending.Id));
+        Assert.Contains("rozrachunek", error.Message);
+
+        await books.AddCounterpartyAsync("LATER", "Po odmowie księgowania");
+        books.Db.ChangeTracker.Clear();
+
+        var draft = await books.Db.JournalEntries.AsNoTracking().SingleAsync(e => e.Id == pending.Id);
+        Assert.Equal(EntryStatus.Bufor, draft.Status);
+        Assert.Null(draft.SequenceNumber);
+        Assert.Null(draft.JournalNumber);
+        Assert.Empty(await books.Db.SettlementAllocations.ToListAsync());
+        Assert.Empty(await books.Db.OpenItems.ToListAsync());
+
+        // Pierwszy udany zapis musi dostać numer 1: wcześniejszy numer
+        // pobrany dla odrzuconego księgowania nie może być utrwalony.
+        var good = await ledger.CreateDraftAsync(TestBooks.Entry(Day, "PK/GOOD",
+            new("130-01", 100m, 0m), new("801", 0m, 100m)));
+        await ledger.PostAsync(good.Id);
+        Assert.Equal(1L, good.SequenceNumber);
+    }
 }
