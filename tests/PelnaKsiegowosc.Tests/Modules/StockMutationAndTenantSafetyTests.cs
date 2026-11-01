@@ -127,4 +127,37 @@ public sealed class StockMutationAndTenantSafetyTests
         Assert.Contains("Nieznany rodzaj", error.Message);
         Assert.False(await books.Db.StockMovements.AnyAsync(m => m.StockItemId == item.Id));
     }
+
+    [Fact]
+    public async Task Fifo_rejects_issue_when_inventory_differs_from_historical_lots()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var stock = new StockService(books.Db, books.User, books.Clock);
+        var item = await stock.AddItemAsync(new StockItem
+        {
+            Code = "REG-FIFO", Name = "Towar FIFO", Kind = StockItemKind.Towar,
+            Valuation = StockValuation.Fifo
+        });
+        await stock.RegisterAsync(StockMovementType.PZ, item.Id,
+            new DateOnly(2026, 1, 5), 10m, 5m);
+
+        // Symulacja nieuzgodnionej ingerencji w bazę: kartoteka mówi 20 szt.,
+        // ale historia FIFO posiada tylko 10 szt. Księgowanie nie może
+        // wyliczyć zaniżonego kosztu wydania z niepełnych partii.
+        item.Quantity = 20m;
+        item.Value = 100m;
+        await books.Db.SaveChangesAsync();
+
+        var error = await Assert.ThrowsAsync<DomainException>(() =>
+            stock.RegisterAsync(StockMovementType.WZ, item.Id,
+                new DateOnly(2026, 1, 6), 15m, reference: "FS/FIFO-CHECK"));
+        Assert.Contains("Niespójna historia magazynowa FIFO", error.Message);
+
+        await books.AddCounterpartyAsync("AFTERFIFO", "Po odmowie FIFO");
+        books.Db.ChangeTracker.Clear();
+        var stored = await books.Db.StockItems.AsNoTracking().SingleAsync(i => i.Id == item.Id);
+        Assert.Equal(20m, stored.Quantity);
+        Assert.Equal(100m, stored.Value);
+        Assert.Equal(1, await books.Db.StockMovements.CountAsync(m => m.StockItemId == item.Id));
+    }
 }
