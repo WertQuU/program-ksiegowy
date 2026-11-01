@@ -116,4 +116,35 @@ public class FixedAssetDisposalSafetyTests
         Assert.Equal(FixedAssetStatus.WEwidencji,
             (await books.Db.FixedAssets.AsNoTracking().SingleAsync(a => a.Id == asset.Id)).Status);
     }
+
+    [Fact]
+    public async Task Disposal_removes_full_tax_value_including_capitalized_improvements()
+    {
+        await using var books = await TestBooks.CreateAsync();
+        var service = new FixedAssetService(books.Db, books.User, books.Clock);
+        var asset = await service.RegisterAsync(new FixedAsset
+        {
+            InventoryNumber = "OT/TAX-IMPROV", Name = "Sprzęt po ulepszeniu",
+            AcquisitionDate = new DateOnly(2026, 1, 2),
+            PlacedInServiceDate = new DateOnly(2026, 1, 3),
+            InitialValueBook = 12000m, InitialValueTax = 12000m,
+            BookMethod = DepreciationMethod.Liniowa, BookRatePercent = 20m,
+            TaxMethod = DepreciationMethod.Liniowa, TaxRatePercent = 20m
+        }, offsetAccountNumber: "130-01");
+        await service.AddImprovementAsync(asset.Id, new DateOnly(2026, 1, 20), 2000m,
+            "130-01", "Ulepszenie udokumentowane");
+        await service.RunDepreciationAsync(2026, 2);
+        await service.DisposeAsync(asset.Id, new DateOnly(2026, 2, 28), isSale: false,
+            reason: "Protokół LT/2026/02");
+
+        books.Db.ChangeTracker.Clear();
+        var stored = await books.Db.FixedAssets.AsNoTracking().Include(a => a.Operations)
+            .SingleAsync(a => a.Id == asset.Id);
+        var disposal = stored.Operations.Single(o => o.Type == FixedAssetOperationType.Likwidacja);
+        Assert.Equal(-14000m, disposal.BookValueChange);
+        Assert.Equal(-14000m, disposal.TaxValueChange);
+        Assert.Equal(0m, stored.Operations.Sum(o => o.TaxValueChange));
+        Assert.Equal(FixedAssetStatus.Zlikwidowany, stored.Status);
+        Assert.Equal(new DateOnly(2026, 2, 28), stored.DisposalDate);
+    }
 }
