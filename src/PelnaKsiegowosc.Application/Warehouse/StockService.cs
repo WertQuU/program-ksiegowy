@@ -4,6 +4,7 @@ using PelnaKsiegowosc.Application.Audit;
 using PelnaKsiegowosc.Application.Ledger;
 using PelnaKsiegowosc.Data;
 using PelnaKsiegowosc.Domain.Common;
+using PelnaKsiegowosc.Domain.Periods;
 using PelnaKsiegowosc.Domain.Security;
 using PelnaKsiegowosc.Domain.Warehouse;
 
@@ -49,7 +50,13 @@ public sealed class StockService
         string? reference = null, Guid? counterpartyId = null, string? offsetAccount = null, CancellationToken ct = default)
     {
         _user.Require(Permission.PostEntries);
+        if (!Enum.IsDefined(type)) throw new DomainException("Nieznany rodzaj dokumentu magazynowego.");
         if (quantity <= 0) throw new DomainException("Ilość musi być dodatnia.");
+        // Także przyjęcie PZ bez dekretu (np. faktura księgowana wcześniej)
+        // zmienia stany magazynu i nie może następować w zamkniętym okresie.
+        var (year, period) = await new LedgerService(_db, _user, _clock).PeriodForDateAsync(date, ct);
+        if (year.Status != FiscalYearStatus.Otwarty || period.Status != PeriodStatus.Otwarty)
+            throw new DomainException("Nie można zmieniać stanów magazynowych w zamkniętym okresie lub roku obrotowym.");
         var item = await _db.StockItems.FirstAsync(i => i.Id == itemId && i.CompanyId == _user.CompanyId, ct);
         if (!item.IsActive) throw new DomainException("Pozycja magazynowa jest nieaktywna.");
         if (counterpartyId is { } cpId && !await _db.Counterparties.AnyAsync(
