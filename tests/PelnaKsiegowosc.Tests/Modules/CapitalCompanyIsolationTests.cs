@@ -79,7 +79,6 @@ public sealed class CapitalCompanyIsolationTests
         books.Db.ChangeTracker.Clear();
         Assert.Equal(CapitalEventStatus.DokumentyPotwierdzone,
             (await books.Db.CapitalEvents.SingleAsync(e => e.Id == ev.Id)).Status);
-        Assert.False(await books.Db.JournalEntries
-            .AnyAsync(e => e.SourceDocumentId == ev.DocumentId && ev.DocumentId != null));
+        Assert.Empty(await books.Db.JournalEntries.ToListAsync());
     }
 }
