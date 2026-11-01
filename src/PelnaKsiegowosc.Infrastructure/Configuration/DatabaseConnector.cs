@@ -127,7 +127,7 @@ public sealed class DatabaseConnector
         return inner switch
         {
             PostgresException { SqlState: "28P01" } => "Uwierzytelnienie nieudane — nieprawidłowy użytkownik lub hasło.",
-            PostgresException { SqlState: "3D000" } => "Baza danych o podanej nazwie nie istnieje.",
+            PostgresException { SqlState: "3D000" } => "Baza danych o podanej nazwie nie istnieje. W kroku 2 kreatora wybierz „Utwórz pierwszą bazę” i podaj osobne dane administratora PostgreSQL.",
             PostgresException { SqlState: "42501" } => "Brak wymaganych uprawnień konta PostgreSQL (42501). Administrator musi sprawdzić dostęp operatora do schematu, tabel i sekwencji. Migracje schematu wykonuje osobno konto administracyjne; nie nadawaj operatorowi praw superusera.",
             PostgresException pe => $"Błąd serwera PostgreSQL ({pe.SqlState}).",
             NpgsqlException { InnerException: System.Net.Sockets.SocketException } => "Serwer niedostępny — brak połączenia sieciowego z podanym adresem i portem.",

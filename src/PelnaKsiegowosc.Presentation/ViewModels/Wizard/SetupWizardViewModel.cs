@@ -86,6 +86,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private bool _termsAccepted;
     [ObservableProperty] private string _databaseInfo = "";
     [ObservableProperty] private bool _connectToExisting;
+    [ObservableProperty] private bool _createFirstDatabase;
+    [ObservableProperty] private string _administratorLogin = "postgres";
+    [ObservableProperty] private string _administratorPassword = "";
     [ObservableProperty] private bool _companyStored;
     [ObservableProperty] private bool _yearStored;
     [ObservableProperty] private bool _chartStored;
@@ -151,7 +154,8 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 if (!TermsAccepted) throw new DomainException("Aby korzystać z programu, zaakceptuj warunki licencji.");
                 break;
             case WizardStep.Baza:
-                await CheckDatabaseAsync();
+                if (CreateFirstDatabase) await PrepareFirstDatabaseCoreAsync();
+                else await CheckDatabaseAsync();
                 break;
             case WizardStep.Jednostka:
                 var c = Company.ToCompany();
@@ -257,7 +261,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         var r = await Session.Connector.TestAsync(p);
         if (!r.Success) throw new DomainException(r.Message);
         if (p.Engine == DatabaseEngine.PostgreSql && r.PendingMigrations > 0)
-            throw new DomainException("Administrator musi najpierw przygotować aktualny schemat PostgreSQL. Konto operatora nie wykonuje migracji.");
+            throw new DomainException("Baza nie ma aktualnego schematu. Dla pustej bazy wybierz w kroku 2 „Utwórz pierwszą bazę” i podaj osobne dane administratora. Aktualizacja istniejących ksiąg wymaga osobnej operacji administracyjnej.");
         await using var db = Session.Connector.CreateContext(p);
         var companies = r.DatabaseEmpty ? new List<Company>() : await db.Companies.AsNoTracking().Take(2).ToListAsync();
         if (companies.Count > 1) throw new DomainException("Baza zawiera kilka jednostek. Wskaż oddzielną bazę dla jednej jednostki.");
@@ -321,6 +325,25 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
 
     [RelayCommand]
     private Task TestDatabaseAsync() => RunAsync(CheckDatabaseAsync);
+
+    [RelayCommand]
+    private Task PrepareFirstDatabaseAsync() => RunAsync(PrepareFirstDatabaseCoreAsync);
+
+    private async Task PrepareFirstDatabaseCoreAsync()
+    {
+        _checkedConnection = null;
+        Session.ReleaseOperatorSession();
+        var profile = Database.ToProfile(Session.IsIsolatedSelfTest);
+        var operatorPassword = string.IsNullOrEmpty(Database.Password)
+            ? Session.Secrets.Get(profile.PasswordSecretKey) ?? "" : Database.Password;
+        try
+        {
+            await PostgresFirstSetup.PrepareAsync(profile, AdministratorLogin.Trim(), AdministratorPassword, operatorPassword);
+        }
+        finally { AdministratorPassword = ""; }
+        CreateFirstDatabase = false;
+        await CheckDatabaseAsync();
+    }
 
     [RelayCommand]
     private async Task PickSqliteAsync()
