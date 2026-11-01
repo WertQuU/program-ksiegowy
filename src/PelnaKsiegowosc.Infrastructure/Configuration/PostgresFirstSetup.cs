@@ -102,6 +102,9 @@ public static class PostgresFirstSetup
             GRANT USAGE ON SCHEMA public TO {loginSql};
             GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO {loginSql};
             REVOKE INSERT, UPDATE, DELETE ON TABLE public."__EFMigrationsHistory" FROM {loginSql};
+            -- AuditEvents is append-only. A SQL operator must not receive UPDATE/DELETE
+            -- even when the application also installs an immutability trigger.
+            REVOKE UPDATE, DELETE ON TABLE public."AuditEvents" FROM PUBLIC, {loginSql};
             GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO {loginSql};
             """, target)) await grants.ExecuteNonQueryAsync(ct);
         // Release the maintenance lock before testing the ordinary operator session.
