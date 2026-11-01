@@ -165,6 +165,15 @@ public sealed class LedgerService
             await _db.SaveChangesAsync(ct);
             if (tx is not null) await tx.CommitAsync(ct);
         }
+        catch
+        {
+            if (tx is not null)
+            {
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear(); // po błędzie księgowania nie zachowuj częściowych zmian EF
+            }
+            throw;
+        }
         finally
         {
             if (tx is not null) await tx.DisposeAsync();
