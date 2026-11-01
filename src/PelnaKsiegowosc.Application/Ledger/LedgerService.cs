@@ -104,12 +104,23 @@ public sealed class LedgerService
             throw new DomainException("Zapis zaksięgowany nie może być modyfikowany. Użyj funkcji „Korekta (storno)” — zapis pierwotny pozostanie w księgach.");
         var (fy, period) = await PeriodForDateAsync(input.PostingDate, ct);
         var accounts = await AccountsByNumberAsync(fy.Id, ct);
+        // Najpierw zweryfikuj niezależny projekt dekretu. Wcześniejsza kolejność
+        // usuwała linie śledzone przez EF przed walidacją; błąd walidacji
+        // pozostawiał w DbContext zmiany, które mogły zapisać się przy następnej operacji.
+        var candidate = new JournalEntry
+        {
+            CompanyId = entry.CompanyId,
+            FiscalYearId = fy.Id,
+            PeriodId = period.Id
+        };
+        Apply(candidate, input, accounts);
+        EntryValidator.ValidateStructure(candidate, accounts.Values.ToDictionary(a => a.Id)).ThrowIfInvalid();
+
         _db.JournalLines.RemoveRange(entry.Lines);
         entry.Lines.Clear();
         entry.FiscalYearId = fy.Id;
         entry.PeriodId = period.Id;
         Apply(entry, input, accounts);
-        EntryValidator.ValidateStructure(entry, accounts.Values.ToDictionary(a => a.Id)).ThrowIfInvalid();
         entry.ModifiedAtUtc = _clock.UtcNow;
         entry.ModifiedByUserId = _user.UserId;
         foreach (var l in entry.Lines) _db.Entry(l).State = EntityState.Added;
