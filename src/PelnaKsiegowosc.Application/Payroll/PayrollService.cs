@@ -637,17 +637,29 @@ public sealed partial class PayrollService
         // Chorobowe z art. 92 KP zużywa limit w kolejności okresów niezdolności,
         // nie w kolejności sporządzenia list. Zapis za wcześniejszy miesiąc mógłby
         // zmienić limit już naliczony w późniejszym miesiącu.
-        var sickYearEnd = new DateOnly(list.Month.Year + 1, 1, 1);
-        var futureSickness = await (from i in _db.PayrollItems.AsNoTracking()
-                                    join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
-                                    where payrollPersonIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
-                                          l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
-                                          l.Month > list.Month && l.Month < sickYearEnd && i.SickDays > 0
-                                    select new { l.Number, l.Month, i.EmployeeName }).FirstOrDefaultAsync(ct);
-        if (futureSickness is not null && list.Items.Any(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0))
-            throw new DomainException($"Chorobowe za {list.Month:MM.yyyy} wymaga korekty już zaksięgowanej " +
-                $"późniejszej listy {futureSickness.Number} ({futureSickness.Month:MM.yyyy}, {futureSickness.EmployeeName}). " +
-                "Limit 33/14 dni stosuje się w kolejności okresów choroby; nie można przeliczyć wyłącznie wcześniejszej listy.");
+        // Sprawdzamy wyłącznie osoby, dla których TA lista zawiera chorobowe.
+        // Późniejsza choroba innego pracownika na tej samej liście nie zmienia
+        // limitu art. 92 KP osoby rozliczanej za wcześniejszy miesiąc.
+        var sickPersonKeys = list.Items
+            .Where(i => i.ContractType == ContractType.UmowaOPrace && i.SickDays > 0)
+            .Select(i => PersonKey(employees[i.EmployeeId]))
+            .ToHashSet(StringComparer.Ordinal);
+        if (sickPersonKeys.Count > 0)
+        {
+            var sickPersonIds = employees.Values.Where(e => sickPersonKeys.Contains(PersonKey(e)))
+                .Select(e => e.Id).ToList();
+            var sickYearEnd = new DateOnly(list.Month.Year + 1, 1, 1);
+            var futureSickness = await (from i in _db.PayrollItems.AsNoTracking()
+                                        join l in _db.PayrollLists.AsNoTracking() on i.PayrollListId equals l.Id
+                                        where sickPersonIds.Contains(i.EmployeeId) && l.CompanyId == _user.CompanyId &&
+                                              l.Status == PayrollStatus.Zaksiegowana && l.Id != list.Id &&
+                                              l.Month > list.Month && l.Month < sickYearEnd && i.SickDays > 0
+                                        select new { l.Number, l.Month, i.EmployeeName }).FirstOrDefaultAsync(ct);
+            if (futureSickness is not null)
+                throw new DomainException($"Chorobowe za {list.Month:MM.yyyy} wymaga korekty już zaksięgowanej " +
+                    $"późniejszej listy {futureSickness.Number} ({futureSickness.Month:MM.yyyy}, {futureSickness.EmployeeName}). " +
+                    "Limit 33/14 dni stosuje się w kolejności okresów choroby; nie można przeliczyć wyłącznie wcześniejszej listy.");
+        }
 
         // Art. 80 KP i stanowisko GIP GPP-87-4560-64/09/PE/RP:
         // 30 dni choroby w 31-dniowym miesiącu pozostawia jeden dzień,
