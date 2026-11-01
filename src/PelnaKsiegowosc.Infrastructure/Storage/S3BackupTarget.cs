@@ -35,6 +35,10 @@ public sealed class S3BackupTarget : IBackupTarget, IDisposable
     {
         if (string.IsNullOrWhiteSpace(settings.Endpoint) || !Uri.TryCreate(settings.Endpoint, UriKind.Absolute, out var uri) || uri.Scheme is not ("https" or "http"))
             throw new DomainException("Podaj prawidłowy adres endpointu Object Storage (https://...).");
+        // Access Key and Secret Key must never be transmitted over plaintext HTTP to a remote endpoint.
+        // Loopback HTTP is retained for local S3 emulators used by integration tests.
+        if (uri.Scheme == Uri.UriSchemeHttp && !uri.IsLoopback)
+            throw new DomainException("Zdalny endpoint Object Storage musi używać HTTPS. HTTP jest dozwolone wyłącznie dla lokalnego serwera testowego (loopback).");
         if (string.IsNullOrWhiteSpace(settings.Bucket)) throw new DomainException("Podaj nazwę bucketu.");
         if (string.IsNullOrWhiteSpace(accessKey) || string.IsNullOrWhiteSpace(secretKey)) throw new DomainException("Brak klucza dostępowego Object Storage.");
         _settings = settings;
