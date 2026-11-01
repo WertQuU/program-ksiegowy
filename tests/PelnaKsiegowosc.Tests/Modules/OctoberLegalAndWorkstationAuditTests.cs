@@ -171,7 +171,12 @@ public class OctoberLegalAndWorkstationAuditTests
     [PostgresFact]
     public async Task Same_postgres_login_cannot_run_two_clients_at_once_and_is_released_on_exit()
     {
-        var connectionString = Environment.GetEnvironmentVariable("PK_TEST_PG")!;
+        // Test blokady utrzymania schematu musi używać oddzielnej bazy.
+        // Wspólna baza PK_TEST_PG jest równolegle wykorzystywana przez inne
+        // testy PostgreSQL, co powodowało sporadyczne fałszywe odmowy
+        // EnterMaintenanceAsync wskutek kolizji advisory lock.
+        var (ownerDb, connectionString, _) = await PostgresTests.CreateEmptyPostgresAsync();
+        await using var cleanup = ownerDb;
         var b = new NpgsqlConnectionStringBuilder(connectionString);
         var profile = new DatabaseProfile
         {
