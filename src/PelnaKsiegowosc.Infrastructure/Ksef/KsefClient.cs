@@ -287,10 +287,18 @@ public sealed class KsefClient
         {
             var resp = await SendAsync<KsefDto.QueryResponse>("wyszukanie faktur zakupowych", () => Req(HttpMethod.Post, $"invoices/query/metadata?pageOffset={page}&pageSize=100&sortOrder=Asc", accessToken,
                 new KsefDto.QueryFilters("Subject2", new KsefDto.DateRange("PermanentStorage", from, to))), ct);
+            // KSeF ogranicza wynik jednego zestawu filtrów do 10 000 rekordów.
+            // Nie wolno zwrócić częściowej listy jako kompletnej synchronizacji.
+            if (resp.IsTruncated)
+                throw new KsefException("KSeF ograniczył wyniki wyszukiwania (isTruncated=true, limit 10 000). " +
+                    "Zawęź zakres dat i ponów pobieranie; aktualny wynik nie jest kompletny.");
             all.AddRange(resp.Invoices);
-            if (!resp.HasMore) break;
+            if (!resp.HasMore) return all;
         }
-        return all;
+        // Ograniczenie pętli jest zabezpieczeniem, a nie warunkiem zakończenia synchronizacji.
+        // Jeżeli ostatnia strona nadal ma hasMore=true, nie udajemy sukcesu.
+        throw new KsefException("KSeF zwrócił więcej niż 100 stron metadanych faktur. " +
+            "Zawęź zakres dat i ponów pobieranie; aktualny wynik nie jest kompletny.");
     }
 
     public Task<string> DownloadInvoiceAsync(string accessToken, string ksefNumber, CancellationToken ct = default) =>
