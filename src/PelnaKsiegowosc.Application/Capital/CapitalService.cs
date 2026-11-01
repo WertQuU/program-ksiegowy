@@ -78,6 +78,9 @@ public sealed class CapitalService
                 throw new DomainException("Wkład w postaci świadczenia pracy lub usług nie jest wnoszony na kapitał podstawowy (np. P.S.A. — art. 300^3 KSH) — jego ujęcie wymaga indywidualnej oceny księgowej (funkcja niezaimplementowana).");
         }
         if (ev.WithholdingTaxAmount > ev.TotalAmount) throw new DomainException("Podatek pobrany nie może przekraczać kwoty wypłaty.");
+        if (ev.ShareholderId is { } shareholderId && !await _db.Shareholders.AnyAsync(
+                s => s.Id == shareholderId && s.CompanyId == _user.CompanyId, ct))
+            throw new DomainException("Akcjonariusz zdarzenia kapitałowego nie należy do aktualnej jednostki.");
         _db.CapitalEvents.Add(ev);
         await _audit.AddAsync(_user, "ZDARZENIE_KAPITALOWE_UTWORZONE", "CapitalEvent", ev.Id.ToString(), $"{ev.Type}: {Money.Xml(ev.TotalAmount)}", ct);
         await _db.SaveChangesAsync(ct);
@@ -116,8 +119,15 @@ public sealed class CapitalService
         if (ev.Status == CapitalEventStatus.Zaksiegowany) throw new DomainException("Zdarzenie jest już zaksięgowane.");
         if (ev.Status != CapitalEventStatus.DokumentyPotwierdzone) throw new DomainException("Przed księgowaniem dokumenty korporacyjne muszą zostać potwierdzone.");
         var p = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
-        var sh = ev.ShareholderId is { } sid ? await _db.Shareholders.FirstAsync(s => s.Id == sid, ct) : null;
+        var sh = ev.ShareholderId is { } sid
+            ? await _db.Shareholders.FirstOrDefaultAsync(
+                s => s.Id == sid && s.CompanyId == _user.CompanyId, ct)
+                ?? throw new DomainException("Akcjonariusz zdarzenia nie należy do aktualnej jednostki.")
+            : null;
         var cp = sh?.CounterpartyId;
+        if (cp is { } cpId && !await _db.Counterparties.AnyAsync(
+                c => c.Id == cpId && c.CompanyId == _user.CompanyId, ct))
+            throw new DomainException("Kontrahent powiązany z akcjonariuszem nie należy do aktualnej jednostki.");
         var lines = new List<LineInput>();
         var form = await _db.Companies.Where(c => c.Id == _user.CompanyId).Select(c => c.LegalForm).FirstAsync(ct);
         var psa = form == LegalForm.ProstaSpolkaAkcyjna;
