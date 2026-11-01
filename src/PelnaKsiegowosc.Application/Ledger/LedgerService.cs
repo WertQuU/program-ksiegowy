@@ -67,8 +67,9 @@ public sealed class LedgerService
 
     public async Task<Dictionary<string, Account>> AccountsByNumberAsync(Guid fiscalYearId, CancellationToken ct = default)
     {
-        var chart = await _db.Charts.Where(c => c.FiscalYearId == fiscalYearId).OrderByDescending(c => c.Version).FirstOrDefaultAsync(ct)
-                    ?? throw new DomainException("Brak planu kont dla roku obrotowego.");
+        var chart = await _db.Charts.Where(c => c.FiscalYearId == fiscalYearId && c.CompanyId == _user.CompanyId)
+            .OrderByDescending(c => c.Version).FirstOrDefaultAsync(ct)
+                    ?? throw new DomainException("Brak planu kont dla roku obrotowego tej jednostki.");
         return await _db.Accounts.Where(a => a.ChartId == chart.Id).ToDictionaryAsync(a => a.Number, ct);
     }
 
@@ -89,6 +90,7 @@ public sealed class LedgerService
         Apply(entry, input, accounts);
         var validation = EntryValidator.ValidateStructure(entry, accounts.Values.ToDictionary(a => a.Id));
         validation.ThrowIfInvalid();
+        await EnsureCounterpartiesBelongToCompanyAsync(entry, ct);
         _db.JournalEntries.Add(entry);
         await _audit.AddAsync(_user, "ZAPIS_BUFOR_UTWORZONY", "JournalEntry", entry.Id.ToString(), $"{entry.DocumentNumber}: {entry.Description}", ct);
         await _db.SaveChangesAsync(ct);
@@ -173,6 +175,7 @@ public sealed class LedgerService
             CreatedAtUtc = _clock.UtcNow
         };
         Apply(entry, input, accounts);
+        await EnsureCounterpartiesBelongToCompanyAsync(entry, ct);
         _db.JournalEntries.Add(entry);
         await PostInternalAsync(entry, ct);
         return entry;
@@ -181,15 +184,20 @@ public sealed class LedgerService
     private async Task PostInternalAsync(JournalEntry entry, CancellationToken ct)
     {
         if (entry.IsPosted) throw new DomainException("Zapis jest już zaksięgowany.");
-        var fy = await _db.FiscalYears.Include(f => f.Periods).FirstAsync(f => f.Id == entry.FiscalYearId, ct);
+        if (entry.CompanyId != _user.CompanyId)
+            throw new DomainException("Zapis księgowy należy do innej jednostki.");
+        var fy = await _db.FiscalYears.Include(f => f.Periods)
+            .FirstAsync(f => f.Id == entry.FiscalYearId && f.CompanyId == _user.CompanyId, ct);
         var period = fy.Periods.First(p => p.Id == entry.PeriodId);
-        var chart = await _db.Charts.Where(c => c.FiscalYearId == fy.Id).OrderByDescending(c => c.Version).FirstAsync(ct);
+        var chart = await _db.Charts.Where(c => c.FiscalYearId == fy.Id && c.CompanyId == _user.CompanyId)
+            .OrderByDescending(c => c.Version).FirstAsync(ct);
         var accounts = await _db.Accounts.Where(a => a.ChartId == chart.Id).ToDictionaryAsync(a => a.Id, ct);
 
         if (!SkipReadinessCheck && entry.Kind != EntryKind.BilansOtwarcia) await EnsureReadyForPostingAsync(chart.Id, ct);
 
         var v = EntryValidator.ValidateForPosting(entry, new EntryValidator.Context(fy, period, accounts));
         v.ThrowIfInvalid();
+        await EnsureCounterpartiesBelongToCompanyAsync(entry, ct);
 
         // numeracja ciągła w roku obrotowym (art. 14 ust. 2 i art. 23 ust. 3 UoR)
         var seq = await _numbering.NextAsync(entry.CompanyId, $"JE/{fy.Id:N}", ct);
@@ -210,6 +218,30 @@ public sealed class LedgerService
         entry.Hash = entry.ComputeHash();
         await _audit.AddAsync(_user, "ZAPIS_ZAKSIEGOWANY", "JournalEntry", entry.Id.ToString(),
             $"{entry.JournalNumber} poz.{seq}; {entry.DocumentNumber}; Wn={Money.Xml(entry.TotalDebit)} Ma={Money.Xml(entry.TotalCredit)}", ct);
+    }
+
+    /// <summary>
+    /// Wszystkie identyfikatory kontrahentów w dekrecie muszą należeć do jednostki.
+    /// Uwzględniamy też nowo utworzonych kontrahentów śledzonych przez bieżący
+    /// kontekst (np. faktura i kontrahent tworzone w jednej transakcji).
+    /// </summary>
+    private async Task EnsureCounterpartiesBelongToCompanyAsync(JournalEntry entry, CancellationToken ct)
+    {
+        var ids = entry.Lines.Where(l => l.CounterpartyId.HasValue)
+            .Select(l => l.CounterpartyId!.Value).Distinct().ToArray();
+        if (ids.Length == 0) return;
+
+        var local = _db.Counterparties.Local
+            .Where(c => c.CompanyId == entry.CompanyId && ids.Contains(c.Id) &&
+                        _db.Entry(c).State != EntityState.Deleted)
+            .Select(c => c.Id).ToHashSet();
+        var remaining = ids.Where(id => !local.Contains(id)).ToArray();
+        if (remaining.Length == 0) return;
+        var existing = await _db.Counterparties.AsNoTracking()
+            .Where(c => c.CompanyId == entry.CompanyId && remaining.Contains(c.Id))
+            .Select(c => c.Id).ToListAsync(ct);
+        if (existing.Count != remaining.Length)
+            throw new DomainException("Dekret wskazuje kontrahenta nieistniejącego lub należącego do innej jednostki.");
     }
 
     private static DateTime TruncateToMicroseconds(DateTime dt) => new(dt.Ticks - dt.Ticks % 10, DateTimeKind.Utc);
@@ -262,7 +294,9 @@ public sealed class LedgerService
             }
             else
             {
-                var item = _db.OpenItems.Local.FirstOrDefault(o => o.Id == l.OpenItemId) ?? await _db.OpenItems.FirstAsync(o => o.Id == l.OpenItemId, ct);
+                var item = _db.OpenItems.Local.FirstOrDefault(o => o.Id == l.OpenItemId && o.CompanyId == entry.CompanyId)
+                    ?? await _db.OpenItems.FirstOrDefaultAsync(o => o.Id == l.OpenItemId && o.CompanyId == entry.CompanyId, ct)
+                    ?? throw new DomainException($"Pozycja {l.LineNo}: rozrachunek nie należy do tej jednostki lub nie istnieje.");
                 if (item.AccountNumber != acc.Number) throw new DomainException($"Pozycja {l.LineNo}: rozrachunek {item.Reference} dotyczy innego konta.");
                 if (item.CounterpartyId != l.CounterpartyId) throw new DomainException($"Pozycja {l.LineNo}: rozrachunek {item.Reference} dotyczy innego kontrahenta.");
                 var sameSide = item.Side == OpenItemSide.Naleznosc ? l.Debit != 0 : l.Credit != 0;
