@@ -110,8 +110,10 @@ jobs:
           CREATE ROLE pk_preflight_inherited NOLOGIN;
           REVOKE CREATE ON SCHEMA public FROM PUBLIC;
           CREATE TABLE public."AuditEvents" ("Id" integer PRIMARY KEY);
+          CREATE TABLE public."__EFMigrationsHistory" ("MigrationId" text PRIMARY KEY);
           GRANT USAGE ON SCHEMA public TO pk_preflight_operator;
           GRANT SELECT, INSERT ON TABLE public."AuditEvents" TO pk_preflight_operator;
+          GRANT SELECT ON TABLE public."__EFMigrationsHistory" TO pk_preflight_operator;
           SQL
           export PGPASSWORD=pk_preflight_ci_pw
           # Pozytywny przypadek: operator może czytać i dopisywać audyt,
@@ -140,6 +142,17 @@ jobs:
             echo "BŁĄD: preflight zaakceptował odziedziczone DELETE na AuditEvents"; exit 1
           fi
           grep -q 'AuditEvents' "$RUNNER_TEMP/preflight-inherited.log"
+
+          # Negatywny przypadek: odziedziczone prawo modyfikacji historii migracji.
+          sudo -u postgres psql -d pk_preflight_ci -v ON_ERROR_STOP=1 <<'SQL'
+          REVOKE DELETE ON public."AuditEvents" FROM pk_preflight_inherited;
+          GRANT INSERT ON public."__EFMigrationsHistory" TO pk_preflight_inherited;
+          SQL
+          if psql -h 127.0.0.1 -U pk_preflight_operator -d pk_preflight_ci -v ON_ERROR_STOP=1 \
+            -f scripts/postgres-operator-preflight.sql > "$RUNNER_TEMP/preflight-migrations.log" 2>&1; then
+            echo "BŁĄD: preflight zaakceptował INSERT do __EFMigrationsHistory"; exit 1
+          fi
+          grep -q '__EFMigrationsHistory' "$RUNNER_TEMP/preflight-migrations.log"
 
           # Negatywny przypadek: konto z CREATEDB/CREATEROLE nie jest operatorem.
           if PGPASSWORD=pk_test_pw psql -h 127.0.0.1 -U pk -d pk_preflight_ci -v ON_ERROR_STOP=1 \
