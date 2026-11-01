@@ -1,6 +1,7 @@
 using Npgsql;
 using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Data;
+using PelnaKsiegowosc.Domain.Common;
 using PelnaKsiegowosc.Infrastructure.Configuration;
 using PelnaKsiegowosc.Presentation.Services;
 using PelnaKsiegowosc.Tests.Infrastructure;
