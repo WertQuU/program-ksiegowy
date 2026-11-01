@@ -140,6 +140,13 @@ public sealed partial class CompanyViewModel : SectionViewModel
     }, "Zapisano uprawnienia operatora (zmiana zapisana w dzienniku zdarzeń).");
 
     [RelayCommand]
+    private Task FetchCompanyByNipAsync() => RunAsync(async () =>
+    {
+        using var http = new HttpClient { BaseAddress = Infrastructure.WhiteList.WhiteListClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        await Form.FetchByNipAsync(new Infrastructure.WhiteList.WhiteListClient(http), Session.Clock.Today);
+    });
+
+    [RelayCommand]
     private Task SaveCompanyAsync() => ChangeAsync(async () =>
     {
         await using var db = Session.OpenDb();

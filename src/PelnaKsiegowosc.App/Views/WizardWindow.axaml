@@ -92,7 +92,12 @@
       <ScrollViewer IsVisible="{Binding IsCompany}" IsEnabled="{Binding !CompanyStored}">
         <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
           <TextBlock Text="Forma prawna" /><ComboBox Grid.Column="1" ItemsSource="{Binding Company.LegalFormChoices}" SelectedItem="{Binding Company.LegalForm}" />
-          <TextBlock Grid.Column="2" Text="NIP" /><TextBox Grid.Column="3" Text="{Binding Company.Nip}" />
+          <TextBlock Grid.Column="2" Text="NIP" />
+          <StackPanel Grid.Column="3" Spacing="4">
+            <TextBox Text="{Binding Company.Nip}" />
+            <Button Content="Uzupełnij dane po NIP" Command="{Binding FetchCompanyByNipCommand}" IsEnabled="{Binding !IsBusy}" />
+            <TextBlock Text="{Binding Company.LookupInfo}" TextWrapping="Wrap" />
+          </StackPanel>
           <TextBlock Grid.Row="1" Text="Pełna nazwa (firma)" /><TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding Company.FullName}" />
           <TextBlock Grid.Row="2" Text="Nazwa skrócona" /><TextBox Grid.Row="2" Grid.Column="1" Text="{Binding Company.ShortName}" />
           <TextBlock Grid.Row="2" Grid.Column="2" Text="REGON" /><TextBox Grid.Row="2" Grid.Column="3" Text="{Binding Company.Regon}" />

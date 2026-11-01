@@ -156,6 +156,14 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(CanGoBack))] private bool _finished;
 
     [RelayCommand]
+    private Task FetchCompanyByNipAsync() => RunAsync(async () =>
+    {
+        if (CompanyStored) throw new DomainException("Dane istniejących ksiąg są zachowane. Uzupełnij je w sekcji Jednostka i polityka.");
+        using var http = new HttpClient { BaseAddress = Infrastructure.WhiteList.WhiteListClient.BaseUrl, Timeout = TimeSpan.FromSeconds(20) };
+        await Company.FetchByNipAsync(new Infrastructure.WhiteList.WhiteListClient(http), Session.Clock.Today);
+    });
+
+    [RelayCommand]
     private void Back()
     {
         if (Step > WizardStep.Warunki) Step--;

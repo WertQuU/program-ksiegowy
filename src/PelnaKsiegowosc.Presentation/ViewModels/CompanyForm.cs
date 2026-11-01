@@ -1,3 +1,4 @@
+using PelnaKsiegowosc.Domain.Common;
 using CommunityToolkit.Mvvm.ComponentModel;
 using PelnaKsiegowosc.Domain.Companies;
 
@@ -42,8 +43,41 @@ public sealed partial class CompanyForm : ObservableObject
     public List<Choice<VatSettlementPeriod>> VatPeriods { get; } = Choices.Of<VatSettlementPeriod>();
     public List<Choice<CitAdvanceMethod>> CitMethods { get; } = Choices.Of<CitAdvanceMethod>();
 
+    [ObservableProperty] private string _lookupInfo = "";
+
+    /// <summary>Public MF lookup fills missing fields only; never changes tax elections or legal form.</summary>
+    public async Task FetchByNipAsync(Infrastructure.WhiteList.WhiteListClient client, DateOnly date, CancellationToken ct = default)
+    {
+        LookupInfo = "";
+        var requestedNip = Domain.Validation.Identifiers.NormalizeNip(Nip);
+        var subject = await client.FindByNipAsync(requestedNip, date, ct);
+        if (Domain.Validation.Identifiers.NormalizeNip(Nip) != requestedNip)
+            throw new DomainException("NIP zmienił się podczas pobierania. Ponów wyszukiwanie dla aktualnego NIP.");
+        if (subject is null)
+        {
+            LookupInfo = "Brak podmiotu w wykazie VAT MF. Możesz podać dane ręcznie; brak wyniku nie oznacza, że firma nie istnieje.";
+            return;
+        }
+        static string Fill(string? current, string? found) => string.IsNullOrWhiteSpace(current) ? found ?? "" : current;
+        Nip = requestedNip;
+        FullName = Fill(FullName, subject.Name);
+        Regon = Fill(Regon, subject.Regon);
+        Krs = Fill(Krs, subject.Krs);
+        if (Infrastructure.WhiteList.WhiteListClient.ParseAddress(subject.Address) is { } address)
+        {
+            Street = Fill(Street, address.Street); BuildingNumber = Fill(BuildingNumber, address.Building);
+            ApartmentNumber = Fill(ApartmentNumber, address.Apartment);
+            PostalCode = Fill(PostalCode, address.PostalCode); City = Fill(City, address.City);
+        }
+        if (subject.AccountNumbers.Count == 1) BankIban = Fill(BankIban, subject.AccountNumbers[0]);
+        LookupInfo = $"Uzupełniono puste pola z wykazu VAT MF na {date.ToPl()} (zapytanie {subject.RequestId}). Sprawdź dane przed zapisem. " +
+            "Forma prawna, urząd skarbowy i ustawienia podatkowe wymagają Twojego wyboru." +
+            (subject.AccountNumbers.Count > 1 ? " W rejestrze jest kilka rachunków — wybierz właściwy ręcznie." : "");
+    }
+
     public void Load(Company c)
     {
+        LookupInfo = "";
         FullName = c.FullName; ShortName = c.ShortName; Nip = c.Nip; Regon = c.Regon; Krs = c.Krs; RegistryCourt = c.RegistryCourt;
         Street = c.Street; BuildingNumber = c.BuildingNumber; ApartmentNumber = c.ApartmentNumber; PostalCode = c.PostalCode; City = c.City;
         Voivodeship = c.Voivodeship; County = c.County; Commune = c.Commune; PkdCode = c.PkdCode; Email = c.Email; Phone = c.Phone; TaxOfficeCode = c.TaxOfficeCode; BankIban = c.DefaultBankAccountIban;

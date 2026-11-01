@@ -46,6 +46,8 @@ public sealed class WhiteListClient
         var r = await resp.Content.ReadFromJsonAsync<SearchResponse>(Json, ct);
         var s = r?.Result?.Subject;
         if (s is null) return null;
+        if (!string.IsNullOrWhiteSpace(s.Nip) && Identifiers.NormalizeNip(s.Nip) != n)
+            throw new DomainException("Wykaz MF zwrócił dane dla innego NIP. Dane nie zostały pobrane do formularza.");
         return new WhiteListSubject(s.Name ?? "", s.Nip ?? n, s.StatusVat, s.Regon, s.Krs, s.WorkingAddress ?? s.ResidenceAddress,
             (s.AccountNumbers ?? new()).ToList(), date, r!.Result!.RequestId);
     }
