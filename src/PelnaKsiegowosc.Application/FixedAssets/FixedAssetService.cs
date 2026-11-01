@@ -43,8 +43,13 @@ public sealed class FixedAssetService
         var accounts = await ledger.AccountsByNumberAsync(fy.Id, ct);
         foreach (var n in new[] { asset.AssetAccountNumber, asset.AccumulatedDepreciationAccountNumber, asset.ExpenseAccountNumber })
             if (!accounts.ContainsKey(n)) throw new DomainException($"Konto {n} nie istnieje w planie kont.");
-        _db.FixedAssets.Add(asset);
-        asset.Operations.Add(new FixedAssetOperation
+        if (!string.IsNullOrWhiteSpace(offsetAccountNumber) && !accounts.ContainsKey(offsetAccountNumber))
+            throw new DomainException($"Konto przeciwstawne {offsetAccountNumber} nie istnieje w planie kont.");
+
+        // Nie dodajemy środka trwałego do śledzonego kontekstu, dopóki
+        // obowiązkowe konto i dekret OT nie przejdą walidacji. Dzięki temu
+        // odrzucone przyjęcie nie utrwali się przy późniejszym SaveChanges.
+        var operation = new FixedAssetOperation
         {
             CompanyId = asset.CompanyId,
             FixedAssetId = asset.Id,
@@ -55,7 +60,7 @@ public sealed class FixedAssetService
             Description = "Przyjęcie do używania",
             UserId = _user.UserId,
             CreatedAtUtc = _clock.UtcNow
-        });
+        };
         if (!string.IsNullOrWhiteSpace(offsetAccountNumber))
         {
             var lines = new List<LineInput>
@@ -65,8 +70,10 @@ public sealed class FixedAssetService
             };
             var entry = await ledger.CreateAndPostAsync(new EntryInput("PK", asset.PlacedInServiceDate, asset.PlacedInServiceDate, asset.PlacedInServiceDate,
                 $"OT — przyjęcie środka trwałego {asset.InventoryNumber} {asset.Name}", "OT", $"OT/{asset.InventoryNumber}", lines), ct);
-            asset.Operations[0].JournalEntryId = entry.Id;
+            operation.JournalEntryId = entry.Id;
         }
+        _db.FixedAssets.Add(asset);
+        asset.Operations.Add(operation);
         await _audit.AddAsync(_user, "SRODEK_TRWALY_PRZYJETY", "FixedAsset", asset.Id.ToString(), $"{asset.InventoryNumber} {asset.Name}: {Money.Xml(asset.InitialValueBook)}", ct);
         await _db.SaveChangesAsync(ct);
         return asset;
