@@ -8,37 +8,37 @@ namespace PelnaKsiegowosc.Tests.Integration;
 
 public sealed class DataDumpRestoreSafetyTests
 {
-    [Fact]
-    public async Task Failed_import_restores_original_change_tracking_setting()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Malformed_json_after_prior_table_import_rolls_back_and_restores_tracking(bool autoDetectChanges)
     {
-        var root = Path.Combine(Path.GetTempPath(), "pk-import-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        try
-        {
-            await using var db = DbContextFactory.Create(
-                DatabaseEngine.Sqlite, new DatabaseProfile
-                {
-                    Engine = DatabaseEngine.Sqlite,
-                    SqlitePath = Path.Combine(root, "empty.db")
-                }.BuildConnectionString(null));
-            await db.Database.MigrateAsync();
+        await using var source = await TestBooks.CreateAsync();
+        var dump = Path.Combine(source.Directory, "dump-with-malformed-json");
+        var exported = await DataDump.ExportAsync(source.Db, dump);
 
-            var dump = Path.Combine(root, "dump");
-            Directory.CreateDirectory(dump);
-            var first = DataDump.OrderedEntityTypes(db).First().GetTableName()!;
-            await File.WriteAllTextAsync(Path.Combine(dump, first + ".jsonl"), "{invalid-json}");
+        // The previous test created only one JSONL file. ImportAsync rejected missing
+        // tables during preflight, so it never exercised the transaction or catch/finally.
+        // Corrupt the last populated table to ensure earlier populated tables were saved
+        // inside the transaction before JSON deserialization fails.
+        var populated = exported.Where(t => t.Rows > 0).ToArray();
+        Assert.True(populated.Length >= 2, "Fixture must contain at least two populated tables.");
+        await File.AppendAllTextAsync(
+            Path.Combine(dump, populated[^1].Table + ".jsonl"), "{invalid-json}\n");
 
-            Assert.True(db.ChangeTracker.AutoDetectChangesEnabled);
-            await Assert.ThrowsAnyAsync<Exception>(() => DataDump.ImportAsync(db, dump));
-            Assert.True(db.ChangeTracker.AutoDetectChangesEnabled);
-            Assert.Empty(db.ChangeTracker.Entries());
-            Assert.Null(db.Database.CurrentTransaction);
-        }
-        finally
-        {
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-            if (Directory.Exists(root)) Directory.Delete(root, true);
-        }
+        await using var target = TestBooks.Open(Path.Combine(
+            source.Directory, autoDetectChanges ? "rollback-enabled.db" : "rollback-disabled.db"));
+        await target.Database.MigrateAsync();
+        var before = await DataDump.CountsAsync(target);
+        target.ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
+
+        await Assert.ThrowsAsync<System.Text.Json.JsonException>(() => DataDump.ImportAsync(target, dump));
+
+        Assert.Equal(autoDetectChanges, target.ChangeTracker.AutoDetectChangesEnabled);
+        Assert.Null(target.Database.CurrentTransaction);
+        Assert.Empty(target.ChangeTracker.Entries());
+        Assert.Equal(before.OrderBy(x => x.Key),
+            (await DataDump.CountsAsync(target)).OrderBy(x => x.Key));
     }
     [Fact]
     public async Task Validation_before_commit_rolls_back_all_imported_books()
