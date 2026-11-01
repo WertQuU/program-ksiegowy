@@ -158,14 +158,186 @@ public class ScreensTests
         d2.Prompts.Enqueue(first.Connector.ExportSqliteKey(first.Profile)!); // baza zaszyfrowana — klucz przekazany z pierwszego stanowiska
         await w.NextCommand.ExecuteAsync(null);
         Assert.True(w.ConnectToExisting);
-        Assert.Equal(WizardStep.KopieZapasowe, w.Step);
+        Assert.Equal(WizardStep.Jednostka, w.Step);
+        Assert.Equal(first.Company!.FullName, w.Company.FullName);
+        Assert.Equal(first.Company.Nip, w.Company.Nip);
+        Assert.True(w.CompanyStored);
+        Assert.True(w.YearStored);
+        Assert.True(w.ChartStored);
+        Assert.True(w.PolicyStored);
+        Assert.True(w.ManagerStored);
+        Assert.False(string.IsNullOrWhiteSpace(w.PolicyContent));
+        Assert.Equal("Jan", w.ManagerFirstName);
         w.SkipBackupKey = true;
-        await w.NextCommand.ExecuteAsync(null);
+        while (w.Step < WizardStep.Podsumowanie) await w.NextCommand.ExecuteAsync(null);
         await w.FinishCommand.ExecuteAsync(null);
         Assert.True(w.Finished, string.Join(" | ", d2.Errors));
         Assert.Equal(first.Company!.Id, second.Company!.Id);
         await using var db = second.OpenDb();
         Assert.Equal(1, await db.Companies.CountAsync());
+        Assert.Equal(1, await db.FiscalYears.CountAsync());
+        Assert.Equal(1, await db.Charts.CountAsync());
+        Assert.Equal(1, await db.AccountingPolicies.CountAsync());
+        Assert.Equal(1, await db.ResponsiblePersons.CountAsync());
+    }
+
+    [Fact]
+    public async Task Wizard_loads_partial_books_and_requires_only_missing_data_without_duplicate_records()
+    {
+        using var root = new TempRoot();
+        var (first, d1) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "a"));
+        await SelfTestScenario.RunWizardAsync(first, d1);
+        await using (var seed = first.OpenDb())
+        {
+            (await seed.Companies.SingleAsync()).City = "";
+            var policy = await seed.AccountingPolicies.SingleAsync();
+            policy.Content = ""; policy.ApprovedByManagement = false;
+            seed.ResponsiblePersons.RemoveRange(await seed.ResponsiblePersons.ToListAsync());
+            await seed.SaveChangesAsync();
+        }
+        var (second, dialogs) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "b"));
+        var wizard = new SetupWizardViewModel(second, dialogs) { TermsAccepted = true, SkipBackupKey = true };
+        await wizard.NextCommand.ExecuteAsync(null);
+        wizard.Database.SqlitePath = first.Profile.SqlitePath!;
+        dialogs.Prompts.Enqueue(first.Connector.ExportSqliteKey(first.Profile)!);
+        await wizard.NextCommand.ExecuteAsync(null);
+        Assert.Equal(WizardStep.Jednostka, wizard.Step);
+        Assert.False(wizard.CompanyStored);
+        Assert.Equal(first.Company!.Nip, wizard.Company.Nip);
+        Assert.True(wizard.YearStored);
+        Assert.True(wizard.ChartStored);
+        Assert.False(wizard.PolicyStored);
+        Assert.False(wizard.ManagerStored);
+        await wizard.NextCommand.ExecuteAsync(null);
+        Assert.Equal(WizardStep.Jednostka, wizard.Step); // missing city blocks progress
+        wizard.Company.City = "Kraków";
+        dialogs.Errors.Clear();
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.NextCommand.ExecuteAsync(null);
+        wizard.PolicyContent = "Uzupełniona polityka jednostki";
+        await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.NextCommand.ExecuteAsync(null);
+        Assert.Equal(WizardStep.OsobaOdpowiedzialna, wizard.Step);
+        wizard.ManagerFirstName = "Anna"; wizard.ManagerLastName = "Nowak";
+        dialogs.Errors.Clear();
+        while (wizard.Step < WizardStep.Podsumowanie) await wizard.NextCommand.ExecuteAsync(null);
+        await wizard.FinishCommand.ExecuteAsync(null);
+        Assert.True(wizard.Finished, string.Join(" | ", dialogs.Errors));
+        await using var db = second.OpenDb();
+        Assert.Equal("Kraków", (await db.Companies.SingleAsync()).City);
+        Assert.Equal("Uzupełniona polityka jednostki", (await db.AccountingPolicies.SingleAsync()).Content);
+        Assert.Equal("Anna", (await db.ResponsiblePersons.SingleAsync()).FirstName);
+        Assert.Equal(1, await db.FiscalYears.CountAsync());
+        Assert.Equal(1, await db.Charts.CountAsync());
+        Assert.Equal(1, await db.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task Wizard_does_not_load_company_details_for_deactivated_operator()
+    {
+        using var root = new TempRoot();
+        var (first, d1) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "a"));
+        await SelfTestScenario.RunWizardAsync(first, d1);
+        await using (var db = first.OpenDb())
+        {
+            (await db.Users.SingleAsync()).IsActive = false;
+            await db.SaveChangesAsync();
+        }
+        var (second, dialogs) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "b"));
+        var wizard = new SetupWizardViewModel(second, dialogs) { TermsAccepted = true };
+        await wizard.NextCommand.ExecuteAsync(null);
+        wizard.Database.SqlitePath = first.Profile.SqlitePath!;
+        dialogs.Prompts.Enqueue(first.Connector.ExportSqliteKey(first.Profile)!);
+        await wizard.NextCommand.ExecuteAsync(null);
+        Assert.Equal(WizardStep.Baza, wizard.Step);
+        Assert.Empty(wizard.Company.FullName);
+        Assert.Contains(dialogs.Errors, e => e.Contains("zablokowany"));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Wizard_completes_missing_chart_and_year_without_recreating_company(bool keepYear)
+    {
+        using var root = new TempRoot();
+        var (first, d1) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "a"));
+        await SelfTestScenario.RunWizardAsync(first, d1);
+        await using (var seed = first.OpenDb())
+        {
+            await seed.Accounts.ExecuteDeleteAsync();
+            await seed.Charts.ExecuteDeleteAsync();
+            if (!keepYear)
+            {
+                await seed.Periods.ExecuteDeleteAsync();
+                await seed.FiscalYears.ExecuteDeleteAsync();
+            }
+        }
+        var (second, dialogs) = SelfTestScenario.CreateSession(Path.Combine(root.Path, "b"));
+        var wizard = new SetupWizardViewModel(second, dialogs) { TermsAccepted = true, SkipBackupKey = true };
+        await wizard.NextCommand.ExecuteAsync(null);
+        wizard.Database.SqlitePath = first.Profile.SqlitePath!;
+        dialogs.Prompts.Enqueue(first.Connector.ExportSqliteKey(first.Profile)!);
+        await wizard.NextCommand.ExecuteAsync(null);
+        Assert.True(wizard.CompanyStored);
+        Assert.Equal(keepYear, wizard.YearStored);
+        Assert.False(wizard.ChartStored);
+        Assert.True(wizard.PolicyStored);
+        for (var step = 0; step < 8 && !wizard.IsLastStep; step++)
+        {
+            await wizard.NextCommand.ExecuteAsync(null);
+            Assert.Empty(dialogs.Errors);
+        }
+        await wizard.FinishCommand.ExecuteAsync(null);
+        Assert.True(wizard.Finished, string.Join(" | ", dialogs.Errors));
+        await using var db = second.OpenDb();
+        Assert.Equal(first.Company!.Id, (await db.Companies.SingleAsync()).Id);
+        Assert.Equal(1, await db.FiscalYears.CountAsync());
+        Assert.Equal(1, await db.Charts.CountAsync());
+        Assert.Equal(1, await db.AccountingPolicies.CountAsync());
+        Assert.Equal(1, await db.Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task Wizard_clears_loaded_data_when_switching_to_an_empty_database()
+    {
+        using var root = new TempRoot();
+        var (first, dialogs) = SelfTestScenario.CreateSession(root.Path);
+        var wizard = await SelfTestScenario.RunWizardAsync(first, dialogs);
+        // A new wizard reads the existing database, then the user selects another one.
+        var reload = new SetupWizardViewModel(first, dialogs) { TermsAccepted = true };
+        reload.Database.SqlitePath = first.Profile.SqlitePath!;
+        await reload.NextCommand.ExecuteAsync(null);
+        await reload.NextCommand.ExecuteAsync(null);
+        Assert.True(reload.ConnectToExisting);
+        reload.BackCommand.Execute(null);
+        reload.Database.SqlitePath = Path.Combine(root.Path, "empty.db");
+        await reload.NextCommand.ExecuteAsync(null);
+        Assert.Empty(dialogs.Errors);
+        Assert.False(reload.ConnectToExisting);
+        Assert.Empty(reload.Company.FullName);
+        Assert.Empty(reload.PolicyContent);
+        Assert.Empty(reload.ManagerFirstName);
+        Assert.False(reload.YearStored);
+        Assert.False(reload.ChartStored);
+    }
+
+    [Fact]
+    public async Task Wizard_rolls_back_new_books_when_a_later_write_fails()
+    {
+        using var root = new TempRoot();
+        var (session, dialogs) = SelfTestScenario.CreateSession(root.Path);
+        await using (var db = session.Connector.CreateContext(session.Profile))
+        {
+            await db.Database.MigrateAsync();
+            await db.Database.ExecuteSqlRawAsync("CREATE TRIGGER test_abort_founder BEFORE INSERT ON Users BEGIN SELECT RAISE(ABORT, 'test write failure'); END;");
+        }
+        await Assert.ThrowsAsync<InvalidOperationException>(() => SelfTestScenario.RunWizardAsync(session, dialogs));
+        await using var check = session.OpenDb();
+        Assert.Empty(await check.Companies.ToListAsync());
+        Assert.Empty(await check.Journals.ToListAsync());
+        Assert.Empty(await check.Users.ToListAsync());
+        Assert.False(session.Config.SetupCompleted);
     }
 
     [Fact]

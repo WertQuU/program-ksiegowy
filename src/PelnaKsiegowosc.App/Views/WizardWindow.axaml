@@ -48,13 +48,14 @@
             <TextBlock Grid.Row="7" Text="Rola serwera" /><ComboBox Grid.Row="7" Grid.Column="1" ItemsSource="{Binding Database.Roles}" SelectedItem="{Binding Database.Role}" />
           </Grid>
           <TextBlock Classes="info" Text="Hasło serwera jest zapisywane w magazynie haseł systemu (Windows: Menedżer poświadczeń; Linux: pęk kluczy), nigdy w pliku konfiguracji. Przy kilku stanowiskach każdy podaje WŁASNY login i hasło; administrator serwera musi wcześniej utworzyć oddzielne konta." />
-          <Button Content="Sprawdź połączenie" Command="{Binding TestDatabaseCommand}" />
+          <Button Content="Połącz i pobierz zapisane dane" Command="{Binding TestDatabaseCommand}" />
+          <TextBlock Classes="info" Text="Po połączeniu kreator pobierze dane jednostki, rok obrotowy, plan kont, politykę rachunkowości i osobę odpowiedzialną. Zapisane informacje zobaczysz w kolejnych krokach. Uzupełnisz tylko braki; ustawienia kopii i KSeF dotyczą tego komputera." TextWrapping="Wrap" />
           <TextBlock Text="{Binding DatabaseInfo}" TextWrapping="Wrap" />
         </StackPanel>
       </ScrollViewer>
 
       <!-- 3. Jednostka -->
-      <ScrollViewer IsVisible="{Binding IsCompany}">
+      <ScrollViewer IsVisible="{Binding IsCompany}" IsEnabled="{Binding !CompanyStored}">
         <Grid Classes="form" ColumnDefinitions="210,*,170,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
           <TextBlock Text="Forma prawna" /><ComboBox Grid.Column="1" ItemsSource="{Binding Company.LegalFormChoices}" SelectedItem="{Binding Company.LegalForm}" />
           <TextBlock Grid.Column="2" Text="NIP" /><TextBox Grid.Column="3" Text="{Binding Company.Nip}" />
@@ -82,7 +83,7 @@
       </ScrollViewer>
 
       <!-- 4. Rok obrotowy -->
-      <StackPanel IsVisible="{Binding IsYear}" Spacing="6">
+      <StackPanel IsVisible="{Binding IsYear}" Spacing="6" IsEnabled="{Binding !YearStored}">
         <TextBlock Classes="info" Text="Rok obrotowy to zwykle rok kalendarzowy. Pierwszy rok może być krótszy albo — przy rozpoczęciu działalności w drugiej połowie roku — dłuższy (do 24 miesięcy, art. 3 ust. 1 pkt 9 UoR)." />
         <Grid Classes="form" ColumnDefinitions="210,200" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="Początek" /><TextBox Grid.Column="1" Text="{Binding YearStart}" Watermark="dd.mm.rrrr" />
@@ -92,8 +93,9 @@
       </StackPanel>
 
       <!-- 5. Plan kont -->
-      <StackPanel IsVisible="{Binding IsChart}" Spacing="6">
+      <StackPanel IsVisible="{Binding IsChart}" Spacing="6" IsEnabled="{Binding !ChartStored}">
         <TextBlock Classes="info" Text="{Binding ChartInfo}" />
+        <StackPanel IsVisible="{Binding !ChartStored}" Spacing="6">
         <TextBlock Text="Kilka pytań — plan kont zostanie dopasowany do Twojej działalności:" Classes="h2" />
         <CheckBox Content="Szczegółowe konta kosztów (paliwo, telefon, najem, IT…) — zalecane, wydatki same trafią na właściwe konta" IsChecked="{Binding ChartOptions.DetailedCosts}" />
         <CheckBox Content="Kupuję towary do odsprzedaży (handel)" IsChecked="{Binding ChartOptions.TradingGoods}" />
@@ -103,11 +105,12 @@
         <CheckBox Content="Mam kredyt lub pożyczkę bankową" IsChecked="{Binding ChartOptions.BankLoans}" />
         <CheckBox Content="Korzystam z leasingu" IsChecked="{Binding ChartOptions.Leasing}" />
         <TextBlock Classes="info" Text="Odpowiedzi możesz zmienić później — konta dodaje się w sekcji „Plan kont”." />
+        </StackPanel>
         <CheckBox Content="Zatwierdź plan kont teraz (bez zatwierdzenia księgowanie jest zablokowane)" IsChecked="{Binding ApproveChart}" Margin="0,8,0,0" />
       </StackPanel>
 
       <!-- 6. Polityka -->
-      <DockPanel IsVisible="{Binding IsPolicy}">
+      <DockPanel IsVisible="{Binding IsPolicy}" IsEnabled="{Binding !PolicyStored}">
         <TextBlock DockPanel.Dock="Top" Classes="info" Text="Szablon zasad (polityki) rachunkowości — dostosuj go do jednostki. Pola [DO UZUPEŁNIENIA…] muszą zostać wypełnione przed zatwierdzeniem przez kierownika jednostki. Możesz zrobić to później w sekcji „Jednostka i polityka”." />
         <Grid DockPanel.Dock="Bottom" Classes="form" ColumnDefinitions="Auto,*" Margin="0,8,0,0">
           <CheckBox Content="Zatwierdź politykę teraz — zatwierdza:" IsChecked="{Binding ApprovePolicy}" />
@@ -117,7 +120,7 @@
       </DockPanel>
 
       <!-- 7. Kierownik jednostki -->
-      <StackPanel IsVisible="{Binding IsPerson}" Spacing="6">
+      <StackPanel IsVisible="{Binding IsPerson}" Spacing="6" IsEnabled="{Binding !ManagerStored}">
         <TextBlock Classes="info" Text="Kierownik jednostki odpowiada za wykonywanie obowiązków w zakresie rachunkowości (art. 4 ust. 5 UoR). Kolejne osoby (np. główny księgowy) dodasz w sekcji „Jednostka i polityka”." />
         <Grid Classes="form" ColumnDefinitions="210,300" RowDefinitions="Auto,Auto,Auto">
           <TextBlock Text="Imię" /><TextBox Grid.Column="1" Text="{Binding ManagerFirstName}" />

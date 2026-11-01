@@ -44,7 +44,7 @@ public sealed class LocalLedgerMirrorTests
             Assert.Equal(LocalLedgerMirror.MirrorStatus.Synchronized, second.Status);
             Assert.Null(db.Database.CurrentTransaction);
 
-            await using (var local = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = mirror.FilePath }.ToString()))
+            await using (var local = new SqliteConnection(new SqliteConnectionStringBuilder { DataSource = mirror.FilePath, Pooling = false }.ToString()))
             {
                 await local.OpenAsync();
                 await using var insert = local.CreateCommand();
@@ -62,6 +62,9 @@ public sealed class LocalLedgerMirrorTests
         }
         finally
         {
+            // CompareAsync uses pooled SQLite connections. Release idle handles
+            // before removing the temporary directory on Windows.
+            SqliteConnection.ClearAllPools();
             if (Directory.Exists(root)) Directory.Delete(root, true);
         }
     }

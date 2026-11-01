@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.EntityFrameworkCore;
+using PelnaKsiegowosc.Application.Abstractions;
 using PelnaKsiegowosc.Application.Audit;
 using PelnaKsiegowosc.Application.Banking;
 using PelnaKsiegowosc.Domain.Banking;
@@ -85,6 +86,17 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [ObservableProperty] private bool _termsAccepted;
     [ObservableProperty] private string _databaseInfo = "";
     [ObservableProperty] private bool _connectToExisting;
+    [ObservableProperty] private bool _companyStored;
+    [ObservableProperty] private bool _yearStored;
+    [ObservableProperty] private bool _chartStored;
+    [ObservableProperty] private bool _policyStored;
+    [ObservableProperty] private bool _managerStored;
+    private Guid? _loadedCompanyId;
+    private Guid? _loadedYearId;
+    private Guid? _loadedManagerId;
+    private string? _checkedConnection;
+    private string? _loadedCompanySnapshot;
+    private string? _storedChartName;
 
     [ObservableProperty] private string _yearStart = "";
     [ObservableProperty] private string _yearEnd = "";
@@ -127,7 +139,6 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     [RelayCommand]
     private void Back()
     {
-        if (Step == WizardStep.KopieZapasowe && ConnectToExisting) { Step = WizardStep.Baza; return; }
         if (Step > WizardStep.Warunki) Step--;
     }
 
@@ -141,7 +152,6 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 break;
             case WizardStep.Baza:
                 await CheckDatabaseAsync();
-                if (ConnectToExisting) { Step = WizardStep.KopieZapasowe; return; }
                 break;
             case WizardStep.Jednostka:
                 var c = Company.ToCompany();
@@ -153,19 +163,20 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             case WizardStep.RokObrotowy:
                 FiscalYear.ValidateRange(Parse.Date(YearStart, "Początek roku"), Parse.Date(YearEnd, "Koniec roku"), IsFirstYear).ThrowIfInvalid();
                 var form = Company.LegalForm.Value;
-                ChartInfo = $"Zostanie utworzony plan kont „{ChartTemplate.Name}” ({ChartTemplate.Accounts.Count} kont) — koszty w układzie rodzajowym, RZiS w wariancie porównawczym, " +
+                if (!ChartStored) ChartInfo = $"Zostanie utworzony plan kont „{ChartTemplate.Name}” ({ChartTemplate.Accounts.Count} kont) — koszty w układzie rodzajowym, RZiS w wariancie porównawczym, " +
                             $"konto 801: „{LegalForms.ShareCapitalName(form)}”. Plan kont jest elementem polityki rachunkowości: możesz go zmienić w sekcji „Plan kont”.";
                 break;
             case WizardStep.PlanKont:
-                if (string.IsNullOrEmpty(PolicyContent))
+                if (string.IsNullOrWhiteSpace(PolicyContent))
                 {
                     var start = Parse.Date(YearStart, "Początek roku");
                     PolicyContent = PolicyTemplate.Build(Company.FullName, LegalForms.Name(Company.LegalForm.Value), LegalForms.ManagementBody(Company.LegalForm.Value),
-                        start.Month == 1 ? "rok kalendarzowy" : $"od {start:dd.MM} do {Parse.Date(YearEnd, "Koniec roku"):dd.MM}", ChartTemplate.Name, HelpVersion());
+                        start.Month == 1 ? "rok kalendarzowy" : $"od {start:dd.MM} do {Parse.Date(YearEnd, "Koniec roku"):dd.MM}", _storedChartName ?? ChartTemplate.Name, HelpVersion());
                 }
                 break;
             case WizardStep.Polityka:
-                if (ApprovePolicy)
+                if (string.IsNullOrWhiteSpace(PolicyContent)) throw new DomainException("Podaj treść polityki rachunkowości.");
+                if (ApprovePolicy && !PolicyStored)
                 {
                     if (PolicyContent.Contains("[DO UZUPEŁNIENIA", StringComparison.OrdinalIgnoreCase))
                         throw new DomainException("Polityka zawiera pola [DO UZUPEŁNIENIA…] — uzupełnij je albo odznacz zatwierdzenie (zatwierdzisz później w sekcji „Jednostka i polityka”).");
@@ -208,6 +219,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
 
     private string BuildSummary() => ConnectToExisting
         ? $"Stanowisko zostanie podłączone do istniejących ksiąg w bazie: {Database.ToProfile(Session.IsIsolatedSelfTest).SafeDescription}.{Environment.NewLine}" +
+          $"Jednostka: {Company.FullName}, NIP {Company.Nip}.{Environment.NewLine}" +
+          $"Rok obrotowy: {YearStart} – {YearEnd}. Plan kont: {_storedChartName ?? ChartTemplate.Name}.{Environment.NewLine}" +
+          $"Kierownik jednostki: {ManagerFirstName} {ManagerLastName}. Brakujące dane zostaną zapisane przy zakończeniu kreatora.{Environment.NewLine}" +
           $"KSeF na stanowisku: {(ConfigureKsef ? $"token zapisany lokalnie ({KsefEnvironment.Value})" : "do konfiguracji w Integracjach")}. Kopie zapasowe: {(Session.StoredBackupKey() is null ? "do konfiguracji" : "klucz skonfigurowany")}."
         : $"Baza: {Database.ToProfile(Session.IsIsolatedSelfTest).SafeDescription}{Environment.NewLine}" +
           $"Jednostka: {Company.FullName} ({LegalForms.Name(Company.LegalForm.Value)}), NIP {Company.Nip}{Environment.NewLine}" +
@@ -220,6 +234,9 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
 
     private async Task CheckDatabaseAsync()
     {
+        _checkedConnection = null;
+        DatabaseInfo = "";
+        Session.ReleaseOperatorSession();
         var p = Database.ToProfile(Session.IsIsolatedSelfTest);
         if (p.Engine != DatabaseEngine.PostgreSql && !(Session.IsIsolatedSelfTest && p.Engine == DatabaseEngine.Sqlite))
             throw new DomainException("Wspólne księgi wymagają jednej centralnej bazy PostgreSQL.");
@@ -234,13 +251,72 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             if (string.IsNullOrWhiteSpace(key)) throw new DomainException("Bez klucza nie można otworzyć zaszyfrowanej bazy.");
             Session.Connector.ImportSqliteKey(p, key);
         }
+        await using var validationSession = p.Engine == DatabaseEngine.PostgreSql
+            ? await ExclusivePostgresSession.AcquireAsync(p, Session.Connector.ConnectionString(p), requireOperatorRole: true)
+            : null;
         var r = await Session.Connector.TestAsync(p);
         if (!r.Success) throw new DomainException(r.Message);
-        ConnectToExisting = !r.DatabaseEmpty;
-        DatabaseInfo = r.Message + (ConnectToExisting ? " Baza zawiera księgi — stanowisko zostanie do nich podłączone." : " Baza jest pusta — zostaną utworzone nowe księgi.");
-        if (ConnectToExisting && !await Dialogs.ConfirmAsync("Istniejące księgi", "Wskazana baza zawiera już księgi. Podłączyć to stanowisko do istniejących ksiąg (bez tworzenia nowej jednostki)?"))
-            throw new DomainException("Wskaż inną (pustą) bazę albo inny plik.");
+        if (p.Engine == DatabaseEngine.PostgreSql && r.PendingMigrations > 0)
+            throw new DomainException("Administrator musi najpierw przygotować aktualny schemat PostgreSQL. Konto operatora nie wykonuje migracji.");
+        await using var db = Session.Connector.CreateContext(p);
+        var companies = r.DatabaseEmpty ? new List<Company>() : await db.Companies.AsNoTracking().Take(2).ToListAsync();
+        if (companies.Count > 1) throw new DomainException("Baza zawiera kilka jednostek. Wskaż oddzielną bazę dla jednej jednostki.");
+        var company = companies.SingleOrDefault();
+        if (company is not null)
+        {
+            var login = OperatorIdentity.LoginFor(p);
+            await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+                OperatorIdentity.IdFor(login), login, company.Id);
+        }
+        await LoadStoredDataAsync(db, company);
+        ConnectToExisting = company is not null;
+        DatabaseInfo = r.Message + (ConnectToExisting
+            ? " Pobrano dane jednostki i ksiąg. Kolejne kroki pokażą zapisane informacje; uzupełnij brakujące dane."
+            : " Baza nie zawiera jednostki. Podaj dane w kolejnych krokach.");
         Session.Config.ActiveDatabase = p;
+        _checkedConnection = p.BuildConnectionString(null);
+    }
+
+    private async Task LoadStoredDataAsync(KsiegiDbContext db, Company? company)
+    {
+        ChartOptions.DetailedCosts = true; ChartOptions.TradingGoods = true;
+        ChartOptions.Employees = false; ChartOptions.ForeignCurrencyEur = false;
+        ChartOptions.ForeignCurrencyUsd = false; ChartOptions.BankLoans = false; ChartOptions.Leasing = false;
+        Company.Load(company ?? new Company());
+        _loadedCompanyId = company?.Id;
+        _loadedCompanySnapshot = company is null ? null : System.Text.Json.JsonSerializer.Serialize(company);
+        CompanyStored = company?.Validate().IsValid == true;
+        var year = company is null ? null : await db.FiscalYears.AsNoTracking()
+            .Where(y => y.CompanyId == company.Id)
+            .OrderBy(y => y.Status == FiscalYearStatus.Otwarty ? 0 : 1)
+            .ThenByDescending(y => y.StartDate).FirstOrDefaultAsync();
+        _loadedYearId = year?.Id;
+        YearStored = year is not null;
+        YearStart = (year?.StartDate ?? new DateOnly(Session.Clock.Today.Year, 1, 1)).ToPl();
+        YearEnd = (year?.EndDate ?? new DateOnly(Session.Clock.Today.Year, 12, 31)).ToPl();
+        IsFirstYear = year?.IsFirstYear ?? true;
+        var chart = year is null ? null : await db.Charts.AsNoTracking()
+            .Where(c => c.FiscalYearId == year.Id).OrderByDescending(c => c.Version).FirstOrDefaultAsync();
+        ChartStored = chart is not null;
+        _storedChartName = chart?.Name;
+        ApproveChart = chart?.IsApproved ?? true;
+        ChartInfo = chart is null ? "" : $"Pobrano zapisany plan kont: {chart.Name}, wersja {chart.Version}. Zostanie zachowany.";
+        var policy = company is null ? null : await db.AccountingPolicies.AsNoTracking()
+            .Where(p => p.CompanyId == company.Id).OrderByDescending(p => p.Version).FirstOrDefaultAsync();
+        PolicyStored = !string.IsNullOrWhiteSpace(policy?.Content);
+        PolicyContent = policy?.Content ?? "";
+        ApprovePolicy = policy?.ApprovedByManagement ?? false;
+        PolicyApprovedBy = policy?.ApprovedBy ?? "";
+        var person = company is null ? null : await db.ResponsiblePersons.AsNoTracking()
+            .Where(p => p.CompanyId == company.Id && p.SignsFinancialStatements &&
+                (p.From == null || p.From <= Session.Clock.Today) && (p.To == null || p.To >= Session.Clock.Today))
+            .OrderBy(p => p.Role == ResponsibleRole.GlownyKsiegowy || p.Role == ResponsibleRole.OsobaProwadzacaKsiegi || p.Role == ResponsibleRole.BiuroRachunkowe ? 1 : 0)
+            .ThenBy(p => p.Id).FirstOrDefaultAsync();
+        _loadedManagerId = person?.Id;
+        ManagerStored = !string.IsNullOrWhiteSpace(person?.FirstName) && !string.IsNullOrWhiteSpace(person?.LastName);
+        ManagerFirstName = person?.FirstName ?? "";
+        ManagerLastName = person?.LastName ?? "";
+        ManagerRole = ManagerRoles.First(x => x.Value == (person?.Role ?? ResponsibleRole.CzlonekZarzadu));
     }
 
     [RelayCommand]
@@ -277,12 +353,20 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
     {
         if (Finished) { Completed?.Invoke(this, EventArgs.Empty); return; }
         var profile = Session.Config.ActiveDatabase;
+        if (_checkedConnection is null || _checkedConnection != Database.ToProfile(Session.IsIsolatedSelfTest).BuildConnectionString(null)
+            || _checkedConnection != profile.BuildConnectionString(null))
+            throw new DomainException("Sprawdź połączenie i pobierz dane w kroku 2 przed zakończeniem kreatora.");
         await Session.AcquireOperatorSessionAsync();
         await using (var db = Session.OpenDb())
         {
-            if (!ConnectToExisting)
+            // A PostgreSQL operator cannot run migrations, even when all migrations
+            // are already applied (EF may still attempt DDL for its history table).
+            if (profile.Engine == DatabaseEngine.PostgreSql &&
+                (await db.Database.GetPendingMigrationsAsync()).Any())
+                throw new DomainException("Wymagana aktualizacja schematu PostgreSQL. Administrator musi przygotować schemat osobno przed zakończeniem kreatora. Konto operatora nie wykonuje migracji.");
+            if (!ConnectToExisting && Session.IsIsolatedSelfTest && profile.Engine == DatabaseEngine.Sqlite)
                 await db.Database.MigrateAsync();
-            else
+            if (ConnectToExisting)
             {
                 var id = await db.Companies.Select(c => c.Id).FirstOrDefaultAsync();
                 if (id == Guid.Empty)
@@ -290,12 +374,15 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
                 var existingLogin = OperatorIdentity.LoginFor(profile);
                 await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
                     OperatorIdentity.IdFor(existingLogin), existingLogin, id);
+                if (id != _loadedCompanyId) throw new DomainException("Dane jednostki zmieniły się. Wróć do kroku 2 i pobierz je ponownie.");
             }
+            await using var transaction = await db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
             if (!ConnectToExisting)
             {
                 if (await db.Companies.AnyAsync()) throw new DomainException("Baza zawiera już księgi — wróć do kroku wyboru bazy.");
                 await CreateBooksAsync(db);
             }
+            else await CompleteStoredBooksAsync(db);
             var companyId = await db.Companies.Select(c => c.Id).FirstAsync();
             var login = OperatorIdentity.LoginFor(Session.Profile);
             var assignedRoles = await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
@@ -305,6 +392,7 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
             await settings.SetAsync(null, $"{Terms.SettingKey}.{actor.Login}", new Terms.Acceptance(Terms.Version, actor.Login, Session.Clock.UtcNow));
             await new AuditService(db, Session.Clock).AddAsync(actor, "WARUNKI_ZAAKCEPTOWANE", "Terms", Terms.Version, $"Licencja w wersji {Terms.Version}; stanowisko {Environment.MachineName}");
             await db.SaveChangesAsync();
+            await transaction.CommitAsync();
         }
         // Lokalna/zdalna konfiguracja kopii tego stanowiska; sekrety S3 zostają w magazynie OS.
         var backupDir = Path.GetFullPath(LocalBackupDirectory.Trim());
@@ -359,6 +447,53 @@ public sealed partial class SetupWizardViewModel : ViewModelBase
         Summary = result + Environment.NewLine + "Pozycje oznaczone ✖ uzupełnisz w programie (Pulpit pokazuje listę gotowości). Kliknij „Zakończ”, aby przejść do programu.";
         Finished = true;
     });
+
+    private async Task CompleteStoredBooksAsync(KsiegiDbContext db)
+    {
+        var company = await db.Companies.SingleAsync(c => c.Id == _loadedCompanyId);
+        var login = OperatorIdentity.LoginFor(Session.Profile);
+        var roles = await new Application.Security.OperatorAccessService(db, Session.Clock).ResolveAsync(
+            OperatorIdentity.IdFor(login), login, company.Id);
+        var actor = OperatorIdentity.For(company.Id, Session.Profile, roles);
+        var setup = new SetupService(db, Session.Clock);
+        if (!CompanyStored)
+        {
+            if (System.Text.Json.JsonSerializer.Serialize(company) != _loadedCompanySnapshot)
+                throw new DomainException("Dane jednostki zmieniły się. Wróć do kroku 2 i pobierz je ponownie.");
+            await setup.UpdateCompanyAsync(actor, Company.ToCompany(company));
+        }
+        var year = _loadedYearId is { } yearId
+            ? await db.FiscalYears.SingleAsync(y => y.Id == yearId && y.CompanyId == company.Id)
+            : await setup.CreateFiscalYearAsync(actor, company.Id, Parse.Date(YearStart, "Początek roku"), Parse.Date(YearEnd, "Koniec roku"), IsFirstYear);
+        if (!await db.Charts.AnyAsync(c => c.FiscalYearId == year.Id))
+        {
+            var chart = await new ChartService(db, actor, Session.Clock).CreateFromTemplateAsync(year.Id, ChartTemplate.Build(company.LegalForm, ChartOptions.ToOptions()));
+            await ChartOptions.ApplyPostingSettingsAsync(db, company.Id, Session.Clock);
+            if (ApproveChart) await setup.ApproveChartAsync(actor, chart.Id);
+        }
+        if (!PolicyStored)
+        {
+            var policy = await db.AccountingPolicies.OrderByDescending(p => p.Version).FirstOrDefaultAsync(p => p.CompanyId == company.Id);
+            if (!string.IsNullOrWhiteSpace(policy?.Content))
+                throw new DomainException("Polityka została uzupełniona na innym stanowisku. Wróć do kroku 2 i pobierz dane ponownie.");
+            policy ??= await setup.CreatePolicyFromTemplateAsync(actor, company.Id);
+            policy = await setup.SavePolicyAsync(actor, policy.Id, PolicyContent, policy.CorrectionMethod, policy.LowValueAssetThreshold, policy.IsSmallEntity, policy.IsMicroEntity);
+            if (ApprovePolicy) await setup.ApprovePolicyAsync(actor, policy.Id, PolicyApprovedBy.Trim());
+        }
+        if (!ManagerStored)
+        {
+            actor.Require(Domain.Security.Permission.ManageCompany);
+            var person = _loadedManagerId is { } personId
+                ? await db.ResponsiblePersons.SingleAsync(p => p.Id == personId && p.CompanyId == company.Id)
+                : new ResponsiblePerson { CompanyId = company.Id, SignsFinancialStatements = true, From = year.StartDate };
+            if (_loadedManagerId is null) db.ResponsiblePersons.Add(person);
+            else if (!string.IsNullOrWhiteSpace(person.FirstName) && !string.IsNullOrWhiteSpace(person.LastName))
+                throw new DomainException("Dane osoby odpowiedzialnej zmieniły się. Wróć do kroku 2 i pobierz je ponownie.");
+            person.FirstName = ManagerFirstName.Trim(); person.LastName = ManagerLastName.Trim(); person.Role = ManagerRole.Value;
+            await new AuditService(db, Session.Clock).AddAsync(actor, "OSOBA_ODPOWIEDZIALNA_UZUPELNIONA", "ResponsiblePerson", person.Id.ToString(), "Uzupełnienie danych w kreatorze stanowiska");
+            await db.SaveChangesAsync();
+        }
+    }
 
     private async Task CreateBooksAsync(KsiegiDbContext db)
     {

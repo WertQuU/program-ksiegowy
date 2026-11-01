@@ -60,7 +60,8 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo systemctl start postgresql.service
-          sudo -u postgres psql -c "CREATE USER pk WITH PASSWORD 'pk_test_pw' CREATEDB;"
+          # Test kreatora tworzy osobny login operatora z ograniczonymi prawami.
+          sudo -u postgres psql -c "CREATE USER pk WITH PASSWORD 'pk_test_pw' CREATEDB CREATEROLE;"
           python3 -m venv "$RUNNER_TEMP/moto"
           "$RUNNER_TEMP/moto/bin/pip" install --quiet "moto[server]"
           nohup "$RUNNER_TEMP/moto/bin/python" -m moto.server -H 127.0.0.1 -p 5055 > moto.log 2>&1 &
