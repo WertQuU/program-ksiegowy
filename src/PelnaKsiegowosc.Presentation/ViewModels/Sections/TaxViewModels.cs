@@ -618,14 +618,40 @@ public sealed partial class CitViewModel : SectionViewModel
         var r = await JpkKrPdBuilder.BuildAsync(db, company, fy, rec.Rpd, false, Session.Clock.UtcNow, Session.Validator);
         if (rec.Warnings.FirstOrDefault(w => w.StartsWith("RPD")) is { } gap)
             throw new DomainException(gap + " Plik JPK_CIT nie został zapisany — część RPD musi odpowiadać rozliczeniu podatku.");
-        var target = await Dialogs.SaveFileAsync("Zapisz JPK_CIT (JPK_KR_PD)", $"JPK_CIT-{year.Name}.xml", new FileFilter("XML", "*.xml"));
+        // XSD jest warunkiem koniecznym, ale nie wystarczającym. Nie oznaczamy roboczego
+        // pliku jako wygenerowanego do dalszego przekazania, gdy rok nie jest zamknięty.
+        var yearClosed = fy.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany;
+        var ready = r.Validation.IsValid && yearClosed;
+        var limitations = "Program generuje wyłącznie JPK_KR_PD, nie generuje JPK_ST_KR. " +
+            "Przed złożeniem sprawdź, czy dla jednostki i danego roku obowiązuje JPK_ST_KR " +
+            "oraz czy weszło w życie właściwe zwolnienie opublikowane w Dzienniku Ustaw. " +
+            "Poprawność XSD nie oznacza poprawności podatkowej danych.";
+        var target = await Dialogs.SaveFileAsync(
+            ready ? "Zapisz JPK_KR_PD" : "Zapisz ROBOCZY JPK_KR_PD (nie do wysyłki)",
+            $"JPK_KR_PD-{year.Name}{(ready ? "" : "-ROBOCZY-NIE-WYSYLAC")}.xml",
+            new FileFilter("XML", "*.xml"));
         if (target is null) return;
         r.Document.Save(target);
-        await new Application.Setup.SettingsService(db, Session.Clock).SetAsync<DateTime?>(Session.CompanyId, $"jpk-cit.wygenerowano.{year.Name}", Session.Clock.UtcNow);
-        await db.SaveChangesAsync();
-        await Session.AuditAsync("JPK_CIT_WYGENEROWANY", "JPK", null, $"{year.Name}; {r.Status}");
-        await Dialogs.ShowTextAsync("JPK_CIT", $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
+        if (ready)
+        {
+            // Ten znacznik dotyczy tylko JPK_KR_PD; nie potwierdza kompletności JPK_PD.
+            await new Application.Setup.SettingsService(db, Session.Clock).SetAsync<DateTime?>(
+                Session.CompanyId, $"jpk-cit.wygenerowano.{year.Name}", Session.Clock.UtcNow);
+            await db.SaveChangesAsync();
+        }
+        await Session.AuditAsync(ready ? "JPK_CIT_WYGENEROWANY" : "JPK_CIT_ROBOCZY", "JPK", null,
+            $"{year.Name}; {r.Status}; JPK_KR_PD; {(ready ? "XSD poprawne, rok zamknięty" : "plik roboczy")}");
+        var draftWarning = ready ? "" :
+            "PLIK ROBOCZY — nie wysyłaj go. " +
+            (!r.Validation.IsValid ? "Nie przeszedł walidacji XSD MF. " : "") +
+            (!yearClosed ? "Rok nie jest zamknięty. " : "") +
+            "Nie oznaczono okresu jako przygotowanego." + Environment.NewLine + Environment.NewLine;
+        await Dialogs.ShowTextAsync("JPK_KR_PD", draftWarning +
+            $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
+            limitations + Environment.NewLine + Environment.NewLine +
             string.Join(Environment.NewLine, r.Warnings.Take(40).Concat(r.Validation.Errors.Take(30))) +
-            $"{Environment.NewLine}{Environment.NewLine}Termin: do końca 7. miesiąca po roku podatkowym. Plik wyślij bramką JPK MF (wymaga podpisu). Program nie wysyła JPK.");
+            $"{Environment.NewLine}{Environment.NewLine}Termin JPK_PD dla CIT: co do zasady do końca 7. miesiąca po roku podatkowym. " +
+            "Zweryfikuj termin i obowiązek dla konkretnego roku i jednostki. " +
+            "Plik wyślij bramką JPK MF (wymaga podpisu). Program nie wysyła JPK." );
     });
 }
