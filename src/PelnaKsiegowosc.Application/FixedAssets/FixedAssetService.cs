@@ -171,7 +171,9 @@ public sealed class FixedAssetService
         if (charged < expectedThroughMonth)
             throw new DomainException($"Najpierw nalicz amortyzację do miesiąca rozchodu włącznie (naliczono {Money.Format(charged)}, wymagane {Money.Format(expectedThroughMonth)}).");
         var p = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
-        var gross = a.InitialValueBook + a.Operations.Where(o => o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.CzesciowaLikwidacja or FixedAssetOperationType.AktualizacjaWyceny).Sum(o => o.BookValueChange);
+        var valueChanges = a.Operations.Where(o => o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.CzesciowaLikwidacja or FixedAssetOperationType.AktualizacjaWyceny).ToList();
+        var gross = a.InitialValueBook + valueChanges.Sum(o => o.BookValueChange);
+        var taxGross = a.InitialValueTax + valueChanges.Sum(o => o.TaxValueChange);
         var accumulated = a.OpeningAccumulatedBook + charged;
         var net = gross - accumulated;
         var lines = new List<LineInput>();
@@ -185,7 +187,7 @@ public sealed class FixedAssetService
         a.Operations.Add(new FixedAssetOperation
         {
             CompanyId = a.CompanyId, FixedAssetId = a.Id, Type = isSale ? FixedAssetOperationType.Sprzedaz : FixedAssetOperationType.Likwidacja, Date = date,
-            BookValueChange = -gross, TaxValueChange = -a.InitialValueTax, Description = reason, JournalEntryId = entry.Id, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
+            BookValueChange = -gross, TaxValueChange = -taxGross, Description = reason, JournalEntryId = entry.Id, UserId = _user.UserId, CreatedAtUtc = _clock.UtcNow
         });
         await _audit.AddAsync(_user, isSale ? "SRODEK_TRWALY_SPRZEDANY" : "SRODEK_TRWALY_ZLIKWIDOWANY", "FixedAsset", a.Id.ToString(), $"{a.InventoryNumber}; netto {Money.Xml(net)}", ct);
         await _db.SaveChangesAsync(ct);
