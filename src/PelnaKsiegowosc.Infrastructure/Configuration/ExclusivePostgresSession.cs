@@ -94,6 +94,25 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                                AND c.relkind IN ('r','p')
                                AND (has_table_privilege(r.oid, c.oid, 'TRUNCATE')
                                     OR has_table_privilege(r.oid, c.oid, 'TRIGGER'))
+                           ),
+                           -- Efektywne uprawnienia obejmują również role dziedziczone i PUBLIC.
+                           -- Sam REVOKE na koncie operatora nie wystarczy.
+                           EXISTS (
+                             SELECT 1 FROM pg_class c
+                             JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relname = 'AuditEvents'
+                               AND c.relkind IN ('r','p')
+                               AND (has_table_privilege(r.oid, c.oid, 'UPDATE')
+                                    OR has_table_privilege(r.oid, c.oid, 'DELETE'))
+                           ),
+                           EXISTS (
+                             SELECT 1 FROM pg_class c
+                             JOIN pg_namespace n ON n.oid = c.relnamespace
+                             WHERE n.nspname = 'public' AND c.relname = '__EFMigrationsHistory'
+                               AND c.relkind IN ('r','p')
+                               AND (has_table_privilege(r.oid, c.oid, 'INSERT')
+                                    OR has_table_privilege(r.oid, c.oid, 'UPDATE')
+                                    OR has_table_privilege(r.oid, c.oid, 'DELETE'))
                            )
                     FROM pg_roles r
                     JOIN pg_database d ON d.datname = current_database()
@@ -103,10 +122,18 @@ public sealed class ExclusivePostgresSession : IDisposable, IAsyncDisposable
                 if (!await roles.ReadAsync(ct))
                     throw new DomainException("Nie można zweryfikować uprawnień operatora PostgreSQL.");
                 var privileged = Enumerable.Range(0, 10).Any(i => roles.GetBoolean(i));
+                var canRewriteAudit = roles.GetBoolean(10);
+                var canModifyMigrations = roles.GetBoolean(11);
                 await roles.CloseAsync();
                 if (privileged)
                     throw new DomainException(
                         "Nie używaj konta superuser, właściciela bazy/schematu ani roli administracyjnej do codziennej pracy księgowej. Administrator musi utworzyć odrębne konto operatora z ograniczonymi uprawnieniami SQL.");
+                if (canRewriteAudit)
+                    throw new DomainException(
+                        "Operator PostgreSQL ma efektywne prawa UPDATE/DELETE do AuditEvents (także przez PUBLIC lub role dziedziczone). Administrator musi je odebrać przed otwarciem ksiąg.");
+                if (canModifyMigrations)
+                    throw new DomainException(
+                        "Operator PostgreSQL ma efektywne prawa INSERT/UPDATE/DELETE do __EFMigrationsHistory. Modyfikowanie historii migracji wymaga oddzielnego konta administracyjnego.");
             }
             // Wspólna blokada wszystkich uruchomionych klientów: administrator nie może aktualizować
             // schematu, dopóki inne stanowiska nadal pracują.
