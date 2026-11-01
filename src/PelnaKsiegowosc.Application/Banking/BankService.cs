@@ -184,6 +184,10 @@ public sealed class BankService
         if (t.Status == TransactionStatus.Zaksiegowana) throw new DomainException("Operacja jest już zaksięgowana.");
         var total = allocations.Sum(a => a.Amount);
         if (allocations.Any(a => a.Amount <= 0)) throw new DomainException("Kwoty rozliczeń muszą być dodatnie.");
+        // Ten sam rozrachunek może wystąpić w danych wejściowych wielokrotnie.
+        // Sprawdzaj łączną kwotę, nie tylko każdą pozycję oddzielnie.
+        var allocationsByItem = allocations.GroupBy(a => a.OpenItemId)
+            .ToDictionary(g => g.Key, g => g.Sum(a => a.Amount));
         if (total > Math.Abs(t.Amount)) throw new DomainException("Suma rozliczeń przekracza kwotę operacji.");
         if (total < Math.Abs(t.Amount) && string.IsNullOrWhiteSpace(offsetAccountNumber))
             throw new DomainException($"Nierozliczona reszta {Money.Format(Math.Abs(t.Amount) - total)} — wskaż konto przeciwstawne lub dodatkowe rozrachunki.");
@@ -191,7 +195,8 @@ public sealed class BankService
         foreach (var a in allocations)
         {
             var item = await _db.OpenItems.FirstAsync(o => o.Id == a.OpenItemId && o.CompanyId == _user.CompanyId, ct);
-            if (a.Amount > item.Remaining) throw new DomainException($"Kwota rozliczenia przekracza saldo rozrachunku {item.Reference}.");
+            if (allocationsByItem[a.OpenItemId] > item.Remaining)
+                throw new DomainException($"Łączna kwota rozliczenia przekracza saldo rozrachunku {item.Reference}.");
             var expectedSide = t.Amount > 0 ? OpenItemSide.Naleznosc : OpenItemSide.Zobowiazanie;
             if (item.Side != expectedSide)
                 throw new DomainException(t.Amount > 0 ? $"Wpływ rozlicza zobowiązanie {item.Reference} — dopuszczalne tylko jako zwrot (zaksięguj poleceniem księgowania)."
@@ -226,7 +231,7 @@ public sealed class BankService
         var t = await _db.MoneyTransactions.FirstAsync(x => x.Id == transactionId && x.CompanyId == _user.CompanyId, ct);
         if (t.Status == TransactionStatus.Zaksiegowana) throw new DomainException("Operacja jest już zaksięgowana.");
         if (t.Status != TransactionStatus.Dopasowana) throw new DomainException("Najpierw dopasuj operację do rozrachunków lub wskaż konto przeciwstawne.");
-        var account = await _db.MoneyAccounts.FirstAsync(m => m.Id == t.MoneyAccountId, ct);
+        var account = await _db.MoneyAccounts.FirstAsync(m => m.Id == t.MoneyAccountId && m.CompanyId == _user.CompanyId, ct);
         var (allocations, offset) = Allocations.Deserialize(t.Notes);
         var posting = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
         var foreign = account.Currency != "PLN";
@@ -242,7 +247,7 @@ public sealed class BankService
         decimal allocatedPln = 0, fxDiff = 0;
         foreach (var a in allocations)
         {
-            var item = await _db.OpenItems.FirstAsync(o => o.Id == a.OpenItemId, ct);
+            var item = await _db.OpenItems.FirstAsync(o => o.Id == a.OpenItemId && o.CompanyId == _user.CompanyId, ct);
             if (item.Currency != account.Currency) throw new DomainException($"Rozrachunek {item.Reference} jest w walucie {item.Currency}, a rachunek w {account.Currency} — rozliczenie wielowalutowe niezaimplementowane (użyj polecenia księgowania).");
             decimal itemPln;
             if (foreign)
@@ -268,7 +273,9 @@ public sealed class BankService
 
         var journal = account.Kind == MoneyAccountKind.Kasa ? "KASA" : "BANK";
         var docType = account.Kind == MoneyAccountKind.Kasa ? (inflow ? "KP" : "KW") : "WB";
-        var statement = t.StatementId is { } sid ? await _db.MoneyStatements.FirstAsync(s => s.Id == sid, ct) : null;
+        var statement = t.StatementId is { } sid
+            ? await _db.MoneyStatements.FirstAsync(s => s.Id == sid && s.CompanyId == _user.CompanyId, ct)
+            : null;
         var docNumber = statement is not null ? $"WB {statement.Number}" : $"{docType}/{t.BookingDate:yyyyMMdd}/{t.Id.ToString()[..8]}";
 
         var tx = _db.Database.CurrentTransaction is null ? await _db.Database.BeginTransactionAsync(ct) : null;
@@ -295,15 +302,26 @@ public sealed class BankService
             var docs = new DocumentService(_db, _user, _clock);
             foreach (var a in allocations)
             {
-                var item = await _db.OpenItems.FirstAsync(o => o.Id == a.OpenItemId, ct);
+                var item = await _db.OpenItems.FirstAsync(o => o.Id == a.OpenItemId && o.CompanyId == _user.CompanyId, ct);
                 if (item.DocumentId is { } did) await docs.RefreshPaymentStatusAsync(did, ct);
             }
-            if (statement is not null && !await _db.MoneyTransactions.AnyAsync(x => x.StatementId == statement.Id && x.Status != TransactionStatus.Zaksiegowana && x.Status != TransactionStatus.Pominieta, ct))
+            if (statement is not null && !await _db.MoneyTransactions.AnyAsync(x =>
+                    x.CompanyId == _user.CompanyId && x.StatementId == statement.Id &&
+                    x.Status != TransactionStatus.Zaksiegowana && x.Status != TransactionStatus.Pominieta, ct))
                 statement.Status = StatementStatus.Rozliczony;
             else if (statement is not null) statement.Status = StatementStatus.WTrakcieRozliczania;
             await _db.SaveChangesAsync(ct);
             if (tx is not null) await tx.CommitAsync(ct);
             return entry;
+        }
+        catch
+        {
+            if (tx is not null)
+            {
+                await tx.RollbackAsync(CancellationToken.None);
+                _db.ChangeTracker.Clear(); // nie utrwalaj częściowego księgowania przy późniejszym SaveChanges
+            }
+            throw;
         }
         finally
         {
@@ -319,7 +337,9 @@ public sealed class BankService
         if (acc.Kind != MoneyAccountKind.Kasa) throw new DomainException("Operacje ręczne dotyczą kasy.");
         if (amount == 0) throw new DomainException("Kwota nie może być zerowa.");
         if (string.IsNullOrWhiteSpace(title)) throw new DomainException("Podaj tytuł operacji kasowej.");
-        var cpName = counterpartyId is { } cid ? (await _db.Counterparties.FirstAsync(c => c.Id == cid, ct)).Name : null;
+        var cpName = counterpartyId is { } cid
+            ? (await _db.Counterparties.FirstAsync(c => c.Id == cid && c.CompanyId == _user.CompanyId, ct)).Name
+            : null;
         var seq = await new NumberingService(_db).NextAsync(_user.CompanyId, $"CASH/{acc.Id:N}/{date.Year}", ct);
         var t = new MoneyTransaction
         {
