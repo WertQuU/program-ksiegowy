@@ -36,6 +36,15 @@ public sealed class FixedAssetService
         asset.CompanyId = _user.CompanyId;
         asset.CreatedAtUtc = _clock.UtcNow;
         asset.Validate(policy?.LowValueAssetThreshold ?? 10000m).ThrowIfInvalid();
+        // Identyfikatory dostawców są dostarczane przez formularz; nie wolno
+        // zapisywać relacji do kontrahentów innych jednostek, nawet bez dekretu OT.
+        foreach (var supplierId in new Guid?[] { asset.SupplierId, supplierCounterpartyId }
+                     .Where(id => id.HasValue).Distinct())
+        {
+            if (!await _db.Counterparties.AnyAsync(cp =>
+                    cp.Id == supplierId!.Value && cp.CompanyId == _user.CompanyId, ct))
+                throw new DomainException("Dostawca środka trwałego nie należy do aktualnej jednostki.");
+        }
         if (await _db.FixedAssets.AnyAsync(a => a.CompanyId == _user.CompanyId && a.InventoryNumber == asset.InventoryNumber, ct))
             throw new DomainException($"Numer inwentarzowy {asset.InventoryNumber} jest już zajęty.");
         var ledger = new LedgerService(_db, _user, _clock);
@@ -83,6 +92,8 @@ public sealed class FixedAssetService
     public async Task<DepreciationRun> RunDepreciationAsync(int year, int month, CancellationToken ct = default)
     {
         _user.Require(Permission.ManageFixedAssets);
+        if (year is < 1 or > 9999 || month is < 1 or > 12)
+            throw new DomainException("Podaj poprawny rok (1–9999) i miesiąc (1–12) amortyzacji.");
         if (await _db.DepreciationRuns.AnyAsync(r => r.CompanyId == _user.CompanyId && r.Year == year && r.Month == month && !r.IsReversed, ct))
             throw new DomainException($"Amortyzacja za {month:00}.{year} została już naliczona.");
         var assets = await _db.FixedAssets.Include(a => a.Operations).Where(a => a.CompanyId == _user.CompanyId && a.Status == FixedAssetStatus.WEwidencji).ToListAsync(ct);
@@ -178,7 +189,9 @@ public sealed class FixedAssetService
         // a następny SaveChanges mógłby ją utrwalić mimo odmowy rozchodu.
         var plan = DepreciationCalculator.Plan(a, DepreciationBasis.Bilansowa);
         var expectedThroughMonth = plan.Where(p => new DateOnly(p.Year, p.Month, 1) <= new DateOnly(date.Year, date.Month, 1)).Sum(p => p.Amount);
-        var charged = (await _db.DepreciationCharges.Where(c => c.FixedAssetId == a.Id).Select(c => c.BookAmount).ToListAsync(ct)).Sum();
+        var charged = (await _db.DepreciationCharges.Where(c =>
+                c.CompanyId == _user.CompanyId && c.FixedAssetId == a.Id)
+            .Select(c => c.BookAmount).ToListAsync(ct)).Sum();
         if (charged < expectedThroughMonth)
             throw new DomainException($"Najpierw nalicz amortyzację do miesiąca rozchodu włącznie (naliczono {Money.Format(charged)}, wymagane {Money.Format(expectedThroughMonth)}).");
         var p = await new SettingsService(_db, _clock).GetAsync(_user.CompanyId, PostingSettings.SettingKey, () => new PostingSettings(), ct);
