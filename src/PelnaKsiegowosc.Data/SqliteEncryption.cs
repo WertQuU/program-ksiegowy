@@ -35,9 +35,16 @@ public static class SqliteEncryption
     public static void ApplyKey(DbConnection connection, string hexKey)
     {
         if (hexKey.Length != 64 || !hexKey.All(Uri.IsHexDigit)) throw new InvalidOperationException("Nieprawidłowy klucz szyfrowania bazy.");
+        // ExecuteScalar() on a multi-statement command may return from the first
+        // PRAGMA without evaluating sqlite_master. Verify the key with a separate
+        // schema query so an incorrect SQLCipher key fails during connection opening.
         using var cmd = connection.CreateCommand();
-        cmd.CommandText = $"PRAGMA key = \"x'{hexKey}'\"; PRAGMA foreign_keys = ON; SELECT count(*) FROM sqlite_master;";
+        cmd.CommandText = $"PRAGMA key = \"x'{hexKey}'\"";
+        cmd.ExecuteNonQuery();
+        cmd.CommandText = "SELECT count(*) FROM sqlite_master";
         cmd.ExecuteScalar();
+        cmd.CommandText = "PRAGMA foreign_keys = ON";
+        cmd.ExecuteNonQuery();
     }
 
     /// <summary>
