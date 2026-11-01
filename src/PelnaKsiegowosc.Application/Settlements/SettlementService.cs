@@ -35,16 +35,40 @@ public sealed class SettlementService
     public async Task<List<AgingRow>> AgingAsync(OpenItemSide side, DateOnly asOf, bool overdueOnly = false, Guid? counterpartyId = null, CancellationToken ct = default)
     {
         _user.Require(Permission.ViewData);
-        var q = _db.OpenItems.AsNoTracking().Where(o => o.CompanyId == _user.CompanyId && o.Side == side && o.Status != OpenItemStatus.Rozliczona);
+        // Stan bieżący OpenItem nie jest historycznym stanem na dzień asOf.
+        // Raport musi uwzględnić również rozrachunki spłacone PO asOf oraz
+        // jedynie alokacje dokonane do wskazanego dnia.
+        var q = _db.OpenItems.AsNoTracking().Where(o => o.CompanyId == _user.CompanyId && o.Side == side);
         if (counterpartyId is { } c) q = q.Where(o => o.CounterpartyId == c);
-        var items = await q.ToListAsync(ct);
-        var names = await _db.Counterparties.AsNoTracking().Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, x => x.Name, ct);
-        var rows = items.Where(o => o.RemainingPln != 0).Select(o =>
+        var candidates = await q.ToListAsync(ct);
+        var entryIds = candidates.Select(o => o.JournalEntryId).Distinct().ToArray();
+        var existingEntries = await _db.JournalEntries.AsNoTracking()
+            .Where(e => e.CompanyId == _user.CompanyId && entryIds.Contains(e.Id) &&
+                        e.PostingDate <= asOf && e.Status == EntryStatus.Zaksiegowany)
+            .Select(e => e.Id).ToListAsync(ct);
+        var validIds = existingEntries.ToHashSet();
+        var items = candidates.Where(o => validIds.Contains(o.JournalEntryId)).ToList();
+        var openIds = items.Select(o => o.Id).ToArray();
+        var allocations = await _db.SettlementAllocations.AsNoTracking()
+            .Where(a => a.CompanyId == _user.CompanyId && openIds.Contains(a.OpenItemId) &&
+                        !a.IsReversed && a.Date <= asOf)
+            .ToListAsync(ct);
+        var settled = allocations.GroupBy(a => a.OpenItemId).ToDictionary(g => g.Key,
+            g => (Amount: g.Sum(a => a.Amount), AmountPln: g.Sum(a => a.AmountPln)));
+        var names = await _db.Counterparties.AsNoTracking()
+            .Where(x => x.CompanyId == _user.CompanyId).ToDictionaryAsync(x => x.Id, x => x.Name, ct);
+        var rows = items.Select(o =>
         {
-            var d = o.DaysOverdue(asOf);
+            settled.TryGetValue(o.Id, out var paid);
+            var remaining = o.Amount - paid.Amount;
+            var remainingPln = o.AmountPln - paid.AmountPln;
+            var d = o.DueDate is { } due && asOf > due && remainingPln > 0
+                ? asOf.DayNumber - due.DayNumber : 0;
             var bucket = Buckets.First(b => d >= b.from && d <= b.to).name;
-            return new AgingRow(o.Id, names.GetValueOrDefault(o.CounterpartyId, "?"), o.Reference, o.AccountNumber, o.DocumentDate, o.DueDate, o.Currency, o.Amount, o.Remaining, o.RemainingPln, d, bucket);
-        });
+            return new AgingRow(o.Id, names.GetValueOrDefault(o.CounterpartyId, "?"), o.Reference,
+                o.AccountNumber, o.DocumentDate, o.DueDate, o.Currency, o.Amount,
+                remaining, remainingPln, d, bucket);
+        }).Where(r => r.RemainingPln != 0);
         if (overdueOnly) rows = rows.Where(r => r.DaysOverdue > 0);
         return rows.OrderBy(r => r.CounterpartyName).ThenBy(r => r.DueDate).ToList();
     }
