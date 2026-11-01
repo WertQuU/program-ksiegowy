@@ -10,6 +10,12 @@
 - **Otwarte ryzyko P0:** operator, któremu przyznano bezpośrednie `INSERT/UPDATE/DELETE` do tabel biznesowych, może użyć zewnętrznego klienta SQL i ominąć uprawnienia aplikacji. Nie można usunąć tej luki samymi filtrami EF, TLS, triggerami ani hasłami użytkowników. Do pełnej izolacji operacji potrzebny jest zaufany backend/API wykonujący operacje na serwerze, a dla stacji roboczych tylko uprawnienia klienta API. RLS opierające się na dowolnej wartości ustawianej przez klienta nie jest wystarczające.
 - Użytkownicy z dostępem do produkcyjnej bazy muszą mieć uprawnienia przyznawane i odbierane imiennie, a operacje administracyjne powinny być rejestrowane niezależnie od klienta desktopowego.
 
+### Uprawnienia dziennika audytowego
+
+Przy **pierwszym** przygotowaniu nowej bazy aplikacja przyznaje operatorowi `SELECT/INSERT` do `public."AuditEvents"`, lecz odbiera `UPDATE/DELETE`. Pozwala to dopisywać ślad audytowy bez bezpośredniego edytowania i usuwania historii. Jest to dodatkowa warstwa ochrony obok triggerów — **nie usuwa ryzyka P0**, ponieważ operator mający bezpośrednie prawo `INSERT` do bazy nadal może omijać logikę aplikacji i fałszować nowe wpisy.
+
+**Istniejące bazy nie są automatycznie modyfikowane.** Administrator musi po wykonaniu kopii i przeglądzie ról odebrać efektywne uprawnienia `UPDATE/DELETE` do `public."AuditEvents"` operatorom i rolom, z których dziedziczą uprawnienia. Kontrolę przeprowadza `scripts/postgres-operator-preflight.sql`, uruchamiany pod kontem operatora. Nie nadawaj operatorowi własności tabel ani uprawnień `TRIGGER`; wyzwalacze nie zastępują kontroli dostępu.
+
 ### Minimalna kontrola konfiguracji DBA
 
 Wykonuj poniższe zapytania **pod kontem operatora**, nie administratora:
