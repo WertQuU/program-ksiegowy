@@ -52,13 +52,39 @@ public sealed class HrService
         return end < start ? 0 : WorkingDays(start, end);
     }
 
+    /// <summary>
+    /// Źródłowej ewidencji nieobecności nie wolno zmienić w miesiącu,
+    /// za który zatwierdzono już listę płac tej osoby. Korekta wymaga
+    /// formalnego odwrócenia listy i ponownego wyliczenia rozrachunków.
+    /// </summary>
+    private async Task EnsureAbsencePeriodOpenAsync(Guid employeeId, DateOnly from, DateOnly to, CancellationToken ct)
+    {
+        var firstMonth = new DateOnly(from.Year, from.Month, 1);
+        var lastMonth = new DateOnly(to.Year, to.Month, 1);
+        var hasPostedPayroll = await (from item in _db.PayrollItems.AsNoTracking()
+                                      join list in _db.PayrollLists.AsNoTracking()
+                                          on item.PayrollListId equals list.Id
+                                      where list.CompanyId == _user.CompanyId
+                                          && list.Status == PayrollStatus.Zaksiegowana
+                                          && list.Month >= firstMonth && list.Month <= lastMonth
+                                          && item.EmployeeId == employeeId
+                                      select item.Id).AnyAsync(ct);
+        if (hasPostedPayroll)
+            throw new DomainException("Za wskazany okres istnieje zaksięgowana lista płac pracownika. " +
+                "Nie można dodawać ani usuwać źródłowych nieobecności bez korekty tej listy.");
+    }
+
     public async Task<Absence> AddAbsenceAsync(Guid employeeId, AbsenceKind kind, DateOnly from, DateOnly to, string? notes = null, CancellationToken ct = default)
     {
         _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
+        if (!Enum.IsDefined(kind)) throw new DomainException("Nieprawidłowy rodzaj nieobecności.");
         if (to < from) throw new DomainException("Data „do” jest wcześniejsza niż „od”.");
         var e = await _db.Employees.AsNoTracking().FirstAsync(x => x.Id == employeeId && x.CompanyId == _user.CompanyId, ct);
-        if (await _db.Absences.AnyAsync(a => a.EmployeeId == employeeId && a.From <= to && a.To >= from, ct))
+        if (from < e.StartDate || (e.EndDate is { } endDate && to > endDate))
+            throw new DomainException("Nieobecność musi mieścić się w potwierdzonym okresie zatrudnienia.");
+        await EnsureAbsencePeriodOpenAsync(employeeId, from, to, ct);
+        if (await _db.Absences.AnyAsync(a => a.CompanyId == _user.CompanyId && a.EmployeeId == employeeId && a.From <= to && a.To >= from, ct))
             throw new DomainException("Nieobecność nakłada się na już zarejestrowaną.");
         if (kind is AbsenceKind.UrlopWypoczynkowy or AbsenceKind.UrlopNaZadanie)
         {
@@ -88,6 +114,7 @@ public sealed class HrService
         _user.Require(Permission.ManagePayrollData);
         _user.Require(Permission.PostEntries);
         var a = await _db.Absences.FirstAsync(x => x.Id == id && x.CompanyId == _user.CompanyId, ct);
+        await EnsureAbsencePeriodOpenAsync(a.EmployeeId, a.From, a.To, ct);
         _db.Absences.Remove(a);
         await new AuditService(_db, _clock).AddAsync(_user, "NIEOBECNOSC_USUNIETA", "Absence", a.Id.ToString(), $"{a.Kind}; {a.From}–{a.To}", ct);
         await _db.SaveChangesAsync(ct);
