@@ -321,25 +321,37 @@ public sealed class PeriodService
             throw new DomainException("Zamknięcie roku wymaga potwierdzenia ostrzeżeń z uzasadnieniem.");
 
         await using var tx = await _db.Database.BeginTransactionAsync(ct);
-        var ledger = new LedgerService(_db, _user, _clock) { SkipReadinessCheck = true };
-        fy.Status = FiscalYearStatus.WZamknieciu;
-        await _db.SaveChangesAsync(ct);
-        if (preview.ClosingLines.Count > 0)
+        try
         {
-            await ledger.CreateAndPostAsync(new EntryInput("ZAM", fy.EndDate, fy.EndDate, fy.EndDate, $"Zamknięcie roku obrotowego {fy.Name} — przeksięgowanie kont wynikowych",
-                "PK", $"PK/ZAM/{fy.Name}", preview.ClosingLines, Kind: EntryKind.Zamkniecie), ct);
+            var ledger = new LedgerService(_db, _user, _clock) { SkipReadinessCheck = true };
+            fy.Status = FiscalYearStatus.WZamknieciu;
             await _db.SaveChangesAsync(ct);
-        }
-        fy.Status = FiscalYearStatus.Zamkniety;
-        fy.ClosedAtUtc = _clock.UtcNow;
-        fy.ClosedByUserId = _user.UserId;
-        await _audit.AddAsync(_user, "ROK_ZAMKNIETY", "FiscalYear", fy.Id.ToString(), $"{fy.Name}; wynik: {Money.Format(preview.NetResult)}; potwierdzenie: {acknowledgementReason}", ct);
-        await _db.SaveChangesAsync(ct);
+            if (preview.ClosingLines.Count > 0)
+            {
+                await ledger.CreateAndPostAsync(new EntryInput("ZAM", fy.EndDate, fy.EndDate, fy.EndDate, $"Zamknięcie roku obrotowego {fy.Name} — przeksięgowanie kont wynikowych",
+                    "PK", $"PK/ZAM/{fy.Name}", preview.ClosingLines, Kind: EntryKind.Zamkniecie), ct);
+                await _db.SaveChangesAsync(ct);
+            }
+            fy.Status = FiscalYearStatus.Zamkniety;
+            fy.ClosedAtUtc = _clock.UtcNow;
+            fy.ClosedByUserId = _user.UserId;
+            await _audit.AddAsync(_user, "ROK_ZAMKNIETY", "FiscalYear", fy.Id.ToString(), $"{fy.Name}; wynik: {Money.Format(preview.NetResult)}; potwierdzenie: {acknowledgementReason}", ct);
+            await _db.SaveChangesAsync(ct);
 
-        var next = await EnsureNextYearAsync(fy, ct);
-        await PostOpeningBalanceAsync(fy, next, ct);
-        await tx.CommitAsync(ct);
-        return next;
+            var next = await EnsureNextYearAsync(fy, ct);
+            await PostOpeningBalanceAsync(fy, next, ct);
+            await tx.CommitAsync(ct);
+            return next;
+        }
+        catch
+        {
+            // Rollback samej transakcji nie odtwarza śledzonych obiektów EF Core.
+            // Po nieudanym zamknięciu mogą one nadal pokazywać rok jako zamknięty,
+            // a kolejne operacje w tym kontekście mogłyby utrwalić niepełny stan.
+            await tx.RollbackAsync(CancellationToken.None);
+            _db.ChangeTracker.Clear();
+            throw;
+        }
     }
 
     private async Task<FiscalYear> EnsureNextYearAsync(FiscalYear fy, CancellationToken ct)
