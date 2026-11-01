@@ -133,6 +133,10 @@ public sealed class DatabaseProfile
 
 public static class DbContextFactory
 {
+    // IMaterializationInterceptor is a singleton service in EF Core. Reuse this
+    // stateless instance so each context does not create a new service provider.
+    private static readonly ProtectedFieldsMaterializationInterceptor ProtectedFieldsInterceptor = new();
+
     public const string SqliteMigrationsAssembly = "PelnaKsiegowosc.Migrations.Sqlite";
     public const string PostgresMigrationsAssembly = "PelnaKsiegowosc.Migrations.PostgreSql";
 
@@ -151,7 +155,7 @@ public static class DbContextFactory
                     o.MigrationsAssembly(PostgresMigrationsAssembly);
                     o.EnableRetryOnFailure(0);
                 });
-                b.AddInterceptors(new ProtectedFieldsMaterializationInterceptor());
+                b.AddInterceptors(ProtectedFieldsInterceptor);
                 break;
         }
         b.EnableSensitiveDataLogging(false);

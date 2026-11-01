@@ -119,7 +119,7 @@ public sealed class PsaCapitalPostingTests
             CreditorProtectionRequirementsConfirmed = true
         };
         var errors = assessment.Problems(ev);
-        Assert.Contains(errors, e => e.Contains("1200.00"));
+        Assert.Contains(errors, e => e.Contains(1200m.ToString("0.00", System.Globalization.CultureInfo.CurrentCulture)));
         Assert.Contains(errors, e => e.Contains("nie pokrywa całego obniżenia"));
     }
 
