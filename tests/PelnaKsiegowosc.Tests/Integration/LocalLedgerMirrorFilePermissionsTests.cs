@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using PelnaKsiegowosc.Infrastructure.Integrity;
 
 namespace PelnaKsiegowosc.Tests.Integration;
@@ -30,6 +31,32 @@ public sealed class LocalLedgerMirrorFilePermissionsTests
         }
         finally
         {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Precreated_private_mirror_file_can_be_initialized_by_sqlite()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "pk-mirror-open-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var path = Path.Combine(root, "KontrolaIntegralnosci", "mirror.sqlite");
+            LocalLedgerMirror.PreparePrivateMirrorFile(path);
+            await using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+            {
+                DataSource = path,
+                Mode = SqliteOpenMode.ReadWriteCreate
+            }.ToString());
+            await connection.OpenAsync();
+            await using var command = connection.CreateCommand();
+            command.CommandText = "CREATE TABLE test_integrity (id INTEGER PRIMARY KEY)";
+            await command.ExecuteNonQueryAsync();
+            Assert.True(File.Exists(path));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
     }
