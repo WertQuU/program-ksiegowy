@@ -620,7 +620,8 @@ public sealed partial class CitViewModel : SectionViewModel
             throw new DomainException(gap + " Plik JPK_CIT nie został zapisany — część RPD musi odpowiadać rozliczeniu podatku.");
         // XSD jest warunkiem koniecznym, ale nie wystarczającym. Nie oznaczamy roboczego
         // pliku jako wygenerowanego do dalszego przekazania, gdy rok nie jest zamknięty.
-        var ready = r.Validation.IsValid && fy.Status == Domain.Periods.FiscalYearStatus.Zamkniety;
+        var yearClosed = fy.Status is Domain.Periods.FiscalYearStatus.Zamkniety or Domain.Periods.FiscalYearStatus.Zarchiwizowany;
+        var ready = r.Validation.IsValid && yearClosed;
         var limitations = "Program generuje wyłącznie JPK_KR_PD, nie generuje JPK_ST_KR. " +
             "Przed złożeniem sprawdź, czy dla jednostki i danego roku obowiązuje JPK_ST_KR " +
             "oraz czy weszło w życie właściwe zwolnienie opublikowane w Dzienniku Ustaw. " +
@@ -643,7 +644,7 @@ public sealed partial class CitViewModel : SectionViewModel
         var draftWarning = ready ? "" :
             "PLIK ROBOCZY — nie wysyłaj go. " +
             (!r.Validation.IsValid ? "Nie przeszedł walidacji XSD MF. " : "") +
-            (fy.Status != Domain.Periods.FiscalYearStatus.Zamkniety ? "Rok nie jest zamknięty. " : "") +
+            (!yearClosed ? "Rok nie jest zamknięty. " : "") +
             "Nie oznaczono okresu jako przygotowanego." + Environment.NewLine + Environment.NewLine;
         await Dialogs.ShowTextAsync("JPK_KR_PD", draftWarning +
             $"Zapisano: {target}{Environment.NewLine}Status: {r.Status}{Environment.NewLine}{Environment.NewLine}" +
