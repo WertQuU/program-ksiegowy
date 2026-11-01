@@ -237,9 +237,21 @@ public sealed partial class PayrollService
         _user.Require(Permission.PostEntries);
         Validate(changed);
         var e = await _db.Employees.FirstAsync(x => x.Id == changed.Id && x.CompanyId == _user.CompanyId, ct);
+        // Id kontrahenta, identyfikator firmy i data utworzenia są polami systemowymi.
+        // Ich przejęcie z niezaufanego formularza pozwalałoby przepiąć pracownika do
+        // kontrahenta innej jednostki i nadpisać tam jego dane osobowe.
+        var counterpartyId = e.CounterpartyId;
+        var createdAtUtc = e.CreatedAtUtc;
+        if (changed.CounterpartyId != counterpartyId)
+            throw new DomainException("Nie można zmieniać powiązanego kontrahenta pracownika przez edycję danych kadrowych.");
+        var cp = await _db.Counterparties.FirstOrDefaultAsync(
+            c => c.Id == counterpartyId && c.CompanyId == _user.CompanyId, ct);
+        if (cp is null)
+            throw new DomainException("Powiązany kontrahent nie należy do aktualnej jednostki. Zgłoś niespójność danych administratorowi.");
         _db.Entry(e).CurrentValues.SetValues(changed);
         e.CompanyId = _user.CompanyId;
-        var cp = await _db.Counterparties.FirstAsync(c => c.Id == e.CounterpartyId, ct);
+        e.CounterpartyId = counterpartyId;
+        e.CreatedAtUtc = createdAtUtc;
         cp.Name = e.FullName;
         cp.Pesel = e.Pesel;
         cp.BankAccountIban = e.BankAccountIban;
