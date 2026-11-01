@@ -39,10 +39,10 @@ public sealed class FixedAssetService
         // Identyfikatory dostawców są dostarczane przez formularz; nie wolno
         // zapisywać relacji do kontrahentów innych jednostek, nawet bez dekretu OT.
         foreach (var supplierId in new Guid?[] { asset.SupplierId, supplierCounterpartyId }
-                     .Where(id => id.HasValue).Distinct())
+                     .OfType<Guid>().Distinct())
         {
             if (!await _db.Counterparties.AnyAsync(cp =>
-                    cp.Id == supplierId!.Value && cp.CompanyId == _user.CompanyId, ct))
+                    cp.Id == supplierId && cp.CompanyId == _user.CompanyId, ct))
                 throw new DomainException("Dostawca środka trwałego nie należy do aktualnej jednostki.");
         }
         if (await _db.FixedAssets.AnyAsync(a => a.CompanyId == _user.CompanyId && a.InventoryNumber == asset.InventoryNumber, ct))
