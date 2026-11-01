@@ -145,7 +145,11 @@ public sealed class FixedAssetService
         var a = await _db.FixedAssets.Include(x => x.Operations).FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
         if (a.Status is FixedAssetStatus.Zlikwidowany or FixedAssetStatus.Sprzedany) throw new DomainException("Środek trwały został już wycofany z ewidencji.");
         if (string.IsNullOrWhiteSpace(reason)) throw new DomainException("Podaj przyczynę / podstawę rozchodu (protokół LT, umowa sprzedaży).");
-        a.DisposalDate = date;
+        if (date < a.PlacedInServiceDate)
+            throw new DomainException("Data rozchodu środka trwałego nie może poprzedzać przyjęcia go do używania.");
+        // Nie ustawiamy DisposalDate przed kontrolą amortyzacji i księgowaniem.
+        // W razie wyjątku EF Core pozostawiłby zmianę śledzoną w pamięci,
+        // a następny SaveChanges mógłby ją utrwalić mimo odmowy rozchodu.
         var plan = DepreciationCalculator.Plan(a, DepreciationBasis.Bilansowa);
         var expectedThroughMonth = plan.Where(p => new DateOnly(p.Year, p.Month, 1) <= new DateOnly(date.Year, date.Month, 1)).Sum(p => p.Amount);
         var charged = (await _db.DepreciationCharges.Where(c => c.FixedAssetId == a.Id).Select(c => c.BookAmount).ToListAsync(ct)).Sum();
@@ -161,6 +165,7 @@ public sealed class FixedAssetService
         lines.Add(new LineInput(a.AssetAccountNumber, 0, gross, Description: "Wyksięgowanie wartości początkowej"));
         var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date,
             $"{(isSale ? "Sprzedaż" : "Likwidacja")} {a.InventoryNumber} {a.Name}: {reason}", "LT", $"LT/{a.InventoryNumber}", lines), ct);
+        a.DisposalDate = date;
         a.Status = isSale ? FixedAssetStatus.Sprzedany : FixedAssetStatus.Zlikwidowany;
         a.Operations.Add(new FixedAssetOperation
         {
