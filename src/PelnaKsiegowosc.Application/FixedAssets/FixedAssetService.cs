@@ -136,8 +136,19 @@ public sealed class FixedAssetService
     {
         _user.Require(Permission.ManageFixedAssets);
         if (amount <= 0) throw new DomainException("Wartość ulepszenia musi być dodatnia.");
+        if (string.IsNullOrWhiteSpace(description)) throw new DomainException("Podaj udokumentowaną podstawę ulepszenia środka trwałego.");
         var a = await _db.FixedAssets.Include(x => x.Operations).FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
         if (a.Status is FixedAssetStatus.Zlikwidowany or FixedAssetStatus.Sprzedany) throw new DomainException("Środek trwały został wycofany z ewidencji.");
+        if (date < a.PlacedInServiceDate)
+            throw new DomainException("Data ulepszenia nie może poprzedzać przyjęcia środka trwałego do używania.");
+        // Ulepszenie zmienia podstawę amortyzacji od następnego miesiąca.
+        // Wcześniej można było wstecznie zmienić wartość już naliczonych odpisów.
+        var firstAffectedMonth = new DateOnly(date.Year, date.Month, 1).AddMonths(1);
+        if (await _db.DepreciationCharges.AnyAsync(c =>
+                c.CompanyId == _user.CompanyId && c.FixedAssetId == assetId &&
+                (c.Year > firstAffectedMonth.Year ||
+                 (c.Year == firstAffectedMonth.Year && c.Month >= firstAffectedMonth.Month)), ct))
+            throw new DomainException("Nie można wstecznie ulepszyć środka trwałego po naliczeniu amortyzacji za okres zależny od ulepszenia. Wymagana jest formalna korekta odpisów.");
         var entry = await new LedgerService(_db, _user, _clock).CreateAndPostAsync(new EntryInput("PK", date, date, date, $"Ulepszenie {a.InventoryNumber}: {description}", "OT", $"OT-U/{a.InventoryNumber}/{date:yyyyMMdd}",
             new List<LineInput> { new(a.AssetAccountNumber, amount, 0), new(offsetAccountNumber, 0, amount, counterpartyId) }), ct);
         a.Operations.Add(new FixedAssetOperation
@@ -195,12 +206,32 @@ public sealed class FixedAssetService
 
     public async Task<(decimal gross, decimal accumulatedBook, decimal accumulatedTax, decimal netBook)> ValuesAsOfAsync(Guid assetId, DateOnly asOf, CancellationToken ct = default)
     {
-        var a = await _db.FixedAssets.AsNoTracking().Include(x => x.Operations).FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
-        var charges = await _db.DepreciationCharges.AsNoTracking().Where(c => c.FixedAssetId == assetId).ToListAsync(ct);
-        var upto = charges.Where(c => new DateOnly(c.Year, c.Month, 1) <= asOf).ToList();
-        var gross = a.InitialValueBook + a.Operations.Where(o => o.Date <= asOf && o.Type is FixedAssetOperationType.Ulepszenie or FixedAssetOperationType.AktualizacjaWyceny or FixedAssetOperationType.CzesciowaLikwidacja).Sum(o => o.BookValueChange);
-        var accB = a.OpeningAccumulatedBook + upto.Sum(c => c.BookAmount);
-        var accT = a.OpeningAccumulatedTax + upto.Sum(c => c.TaxAmount);
+        _user.Require(Permission.ViewData);
+        var a = await _db.FixedAssets.AsNoTracking().Include(x => x.Operations)
+            .FirstAsync(x => x.Id == assetId && x.CompanyId == _user.CompanyId, ct);
+        if (asOf < a.AcquisitionDate) return (0m, 0m, 0m, 0m);
+        // Rozchód wyksięgowuje zarówno wartość początkową, jak i umorzenie.
+        // Nie wolno pokazywać pozostałej wartości środka po jego likwidacji/sprzedaży.
+        if (a.Operations.Any(o => o.Date <= asOf &&
+                o.Type is FixedAssetOperationType.Likwidacja or FixedAssetOperationType.Sprzedaz))
+            return (0m, 0m, 0m, 0m);
+
+        var charges = await _db.DepreciationCharges.AsNoTracking()
+            .Where(c => c.CompanyId == _user.CompanyId && c.FixedAssetId == assetId)
+            .ToListAsync(ct);
+        // Odpis jest ujmowany z datą ostatniego dnia miesiąca. Nie należy
+        // wykazywać całomiesięcznego umorzenia np. już pierwszego dnia miesiąca.
+        var upto = charges.Where(c =>
+            new DateOnly(c.Year, c.Month, DateTime.DaysInMonth(c.Year, c.Month)) <= asOf).ToList();
+        var gross = a.InitialValueBook + a.Operations
+            .Where(o => o.Date <= asOf &&
+                o.Type is FixedAssetOperationType.Ulepszenie or
+                    FixedAssetOperationType.AktualizacjaWyceny or
+                    FixedAssetOperationType.CzesciowaLikwidacja)
+            .Sum(o => o.BookValueChange);
+        var openingApplies = a.OpeningAccumulatedAsOf is null || asOf >= a.OpeningAccumulatedAsOf.Value;
+        var accB = (openingApplies ? a.OpeningAccumulatedBook : 0m) + upto.Sum(c => c.BookAmount);
+        var accT = (openingApplies ? a.OpeningAccumulatedTax : 0m) + upto.Sum(c => c.TaxAmount);
         return (gross, accB, accT, gross - accB);
     }
 }
